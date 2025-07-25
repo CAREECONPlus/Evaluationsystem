@@ -122,9 +122,9 @@ class GoalSettingPage {
     // Load existing goals
     await this.loadExistingGoals()
 
-    // Initialize with one empty goal if none exist
+　　// Initialize with one empty goal if none exist
     if (this.goals.length === 0) {
-      this.addGoal()
+      GoalSettingPage.addGoal()
     }
 
     this.renderGoals()
