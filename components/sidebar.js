@@ -159,7 +159,7 @@ class SidebarComponent {
           </div>
 
           <!-- User info at bottom -->
-          <div class="sidebar-footer border-top border-secondary p-3 mt-auto">
+          <div class="sidebar-footer border-top border-secondary p-3">
             ${
               !this.isCollapsed
                 ? `
