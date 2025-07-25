@@ -160,7 +160,7 @@ class UserManagementPage {
    */
   async init() {
     // Check permissions
-    if (!this.app.hasRole("manager")) {
+    if (!this.app.hasRole("admin")) {
       this.app.navigate("/dashboard")
       return
     }
