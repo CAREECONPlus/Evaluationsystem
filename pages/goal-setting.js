@@ -34,7 +34,6 @@ class GoalSettingPage {
                     </div>
                 </div>
                 
-                <!-- Instructions -->
                 <div class="alert alert-info">
                     <h4>目標設定について</h4>
                     <ul>
@@ -45,7 +44,6 @@ class GoalSettingPage {
                     </ul>
                 </div>
                 
-                <!-- Current Status -->
                 <div class="card mb-2" id="currentStatusCard" style="display: none;">
                     <div class="card-header">
                         <h3>現在の状態</h3>
@@ -54,7 +52,6 @@ class GoalSettingPage {
                     </div>
                 </div>
                 
-                <!-- Goal Setting Form -->
                 <div class="card">
                     <div class="card-header">
                         <div class="d-flex justify-content-between align-items-center">
@@ -68,8 +65,7 @@ class GoalSettingPage {
                     </div>
                     <div class="card-body">
                         <div id="goalsContainer">
-                            <!-- Goals will be rendered here -->
-                        </div>
+                            </div>
                         
                         <button class="btn btn-primary" onclick="GoalSettingPage.addGoal()" 
                                 id="addGoalBtn">
@@ -78,7 +74,6 @@ class GoalSettingPage {
                     </div>
                 </div>
                 
-                <!-- Evaluation Period Selection -->
                 <div class="card mt-2">
                     <div class="card-header">
                         <h3>評価期間</h3>
@@ -122,8 +117,9 @@ class GoalSettingPage {
     // Load existing goals
     await this.loadExistingGoals()
 
-　　// Initialize with one empty goal if none exist
+    // Initialize with one empty goal if none exist
     if (this.goals.length === 0) {
+      // 修正点：this.addGoal() から GoalSettingPage.addGoal() へ変更
       GoalSettingPage.addGoal()
     }
 
@@ -173,7 +169,7 @@ class GoalSettingPage {
 
     card.style.display = "block"
     content.innerHTML = `
-            <div class="alert ${status === "approved" ? "alert-success" : status === "rejected" ? "alert-error" : "alert-warning"}">
+            <div class="alert ${status === "approved" ? "alert-success" : status === "rejected" ? "alert-danger" : "alert-warning"}">
                 <strong>状態:</strong> ${statusMessages[status] || status}
                 ${
                   status === "rejected"
@@ -190,7 +186,16 @@ class GoalSettingPage {
    */
   static addGoal() {
     const page = window.app.currentPage
-    if (!page) return
+    if (!page || !(page instanceof GoalSettingPage)) {
+      // Find the correct page instance if currentPage is not set yet
+      const router = window.app.router;
+      if (router && router.currentPageInstance) {
+          page = router.currentPageInstance;
+      } else {
+          return;
+      }
+    }
+
 
     if (page.goals.length >= page.maxGoals) {
       window.app.showError(`目標は最大${page.maxGoals}つまでです。`)
@@ -260,6 +265,7 @@ class GoalSettingPage {
    */
   renderGoals() {
     const container = document.getElementById("goalsContainer")
+    if (!container) return;
 
     container.innerHTML = this.goals
       .map(
@@ -349,10 +355,12 @@ class GoalSettingPage {
   updateSubmitButton() {
     const submitBtn = document.getElementById("submitBtn")
     if (submitBtn) {
+      const period = document.getElementById("evaluationPeriod") ? document.getElementById("evaluationPeriod").value : "";
       const isValid =
         this.totalWeight === 100 &&
         this.goals.length > 0 &&
         this.goals.every((goal) => goal.text.trim().length > 0) &&
+        period &&
         !this.isSubmitted
 
       submitBtn.disabled = !isValid
