@@ -1,4 +1,3 @@
-import { Chart } from "@/components/ui/chart"
 /**
  * Dashboard Page Component
  * ダッシュボードページコンポーネント
