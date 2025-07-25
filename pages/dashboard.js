@@ -25,7 +25,6 @@ class DashboardPage {
 
       return `
         <div class="dashboard-page">
-          <!-- Page Header -->
           <div class="page-header mb-4">
             <div class="container-fluid">
               <div class="row align-items-center">
@@ -48,15 +47,12 @@ class DashboardPage {
             </div>
           </div>
 
-          <!-- Stats Cards -->
           <div class="container-fluid">
             <div class="row mb-4">
               ${this.renderStatsCards()}
             </div>
 
-            <!-- Main Content -->
             <div class="row">
-              <!-- Chart Section -->
               <div class="col-lg-8 mb-4">
                 <div class="card shadow-sm h-100">
                   <div class="card-header bg-white border-bottom">
@@ -91,7 +87,6 @@ class DashboardPage {
                 </div>
               </div>
 
-              <!-- Recent Activity -->
               <div class="col-lg-4 mb-4">
                 <div class="card shadow-sm h-100">
                   <div class="card-header bg-white border-bottom">
@@ -107,7 +102,6 @@ class DashboardPage {
               </div>
             </div>
 
-            <!-- Additional Information -->
             <div class="row">
               <div class="col-md-6 mb-4">
                 <div class="card shadow-sm">
@@ -149,12 +143,12 @@ class DashboardPage {
                         <span class="badge bg-primary">1</span>
                       </div>
                       <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
-                        <span><i class="fas fa-user-tie me-2 text-info"></i>マネージャー</span>
+                        <span><i class="fas fa-user-tie me-2 text-info"></i>評価者</span>
                         <span class="badge bg-info">1</span>
                       </div>
                       <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
-                        <span><i class="fas fa-user me-2 text-success"></i>従業員</span>
-                        <span class="badge bg-success">${this.stats?.totalEmployees || 1}</span>
+                        <span><i class="fas fa-user me-2 text-success"></i>作業員</span>
+                        <span class="badge bg-success">${this.stats?.totalEmployees ? this.stats.totalEmployees - 2 : 1}</span>
                       </div>
                     </div>
                   </div>
