@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ページが見つかりません - 建設業評価管理システム</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="error-page">
+        <div class="error-container">
+            <div class="error-code">404</div>
+            <div class="error-message">
+                <h1>ページが見つかりません</h1>
+                <p>お探しのページは存在しないか、移動された可能性があります。</p>
+            </div>
+            <div class="error-actions">
+                <a href="/" class="btn btn-primary">ホームに戻る</a>
+                <button onclick="history.back()" class="btn btn-secondary">前のページに戻る</button>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        .error-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .error-container {
+            text-align: center;
+            background: white;
+            padding: 60px 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .error-code {
+            font-size: 8rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 20px;
+            line-height: 1;
+        }
+        
+        .error-message h1 {
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .error-message p {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+        
+        .error-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
+        .btn-secondary:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+        
+        @media (max-width: 480px) {
+            .error-container {
+                padding: 40px 20px;
+            }
+            
+            .error-code {
+                font-size: 6rem;
+            }
+            
+            .error-message h1 {
+                font-size: 1.5rem;
+            }
+            
+            .error-actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+
+    <!-- Same scripts as index.html for SPA routing -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="i18n.js"></script>
+    <script src="api.js"></script>
+    <script src="auth.js"></script>
+    <script src="router.js"></script>
+    <script src="components/header.js"></script>
+    <script src="components/sidebar.js"></script>
+    <script src="components/polygon-chart.js"></script>
+    <script src="pages/login.js"></script>
+    <script src="pages/register-admin.js"></script>
+    <script src="pages/register.js"></script>
+    <script src="pages/dashboard.js"></script>
+    <script src="pages/developer.js"></script>
+    <script src="pages/user-management.js"></script>
+    <script src="pages/settings.js"></script>
+    <script src="pages/goal-setting.js"></script>
+    <script src="pages/goal-approvals.js"></script>
+    <script src="pages/evaluation-form.js"></script>
+    <script src="pages/evaluations.js"></script>
+    <script src="app.js"></script>
+
+    <script>
+        // Application initialization for 404 page
+        const app = new ConstructionEvaluationApp();
+        app.init();
+    </script>
+</body>
+</html>
