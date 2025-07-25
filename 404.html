@@ -129,6 +129,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="i18n.js"></script>
     <script src="api.js"></script>
     <script src="auth.js"></script>
@@ -136,23 +137,28 @@
     <script src="components/header.js"></script>
     <script src="components/sidebar.js"></script>
     <script src="components/polygon-chart.js"></script>
+    <script src="components/ui/chart.js"></script>
+    
     <script src="pages/login.js"></script>
-    <script src="pages/register-admin.js"></script>
-    <script src="pages/register.js"></script>
     <script src="pages/dashboard.js"></script>
-    <script src="pages/developer.js"></script>
+    <script src="pages/register.js"></script>
+    <script src="pages/register-admin.js"></script>
     <script src="pages/user-management.js"></script>
     <script src="pages/settings.js"></script>
     <script src="pages/goal-setting.js"></script>
     <script src="pages/goal-approvals.js"></script>
     <script src="pages/evaluation-form.js"></script>
     <script src="pages/evaluations.js"></script>
-    <script src="app.js"></script>
+    <script src="pages/developer.js"></script>
 
+    <script src="app.js"></script>
+    
     <script>
         // Application initialization for 404 page
-        const app = new ConstructionEvaluationApp();
-        app.init();
+        document.addEventListener('DOMContentLoaded', () => {
+          const app = new App();
+          app.init();
+        });
     </script>
 </body>
 </html>
