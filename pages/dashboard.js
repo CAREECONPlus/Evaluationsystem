@@ -23,11 +23,11 @@ class DashboardPage {
     try {
       console.log("Rendering dashboard page...");
 
-      // Load data first
+      // Load data first before rendering static parts dependent on data
       await this.loadData();
 
       const userRole = this.app.currentUser?.role;
-      const isManagerOrAdmin = userRole === "manager" || userRole === "admin";
+      const isManagerOrAdmin = userRole === "evaluator" || userRole === "admin"; // マネージャー（evaluator）または管理者
 
       return `
         <div class="dashboard-page">
@@ -40,13 +40,13 @@ class DashboardPage {
                     <span data-i18n="nav.dashboard"></span>
                   </h1>
                   <p class="page-subtitle text-muted mb-0">
-                    <span data-i18n="dashboard.system_overview">システム概要と最新の活動状況</span>
+                    <span data-i18n="dashboard.system_overview"></span>
                   </p>
                 </div>
                 <div class="col-auto">
                   <button class="btn btn-outline-primary btn-sm" onclick="window.app.currentPage.refreshData()">
                     <i class="fas fa-sync-alt me-1"></i>
-                    <span data-i18n="common.refresh">更新</span>
+                    <span data-i18n="common.refresh"></span>
                   </button>
                 </div>
               </div>
@@ -65,31 +65,31 @@ class DashboardPage {
                     <div class="d-flex justify-content-between align-items-center">
                       <h5 class="card-title mb-0">
                         <i class="fas fa-chart-radar me-2 text-info"></i>
-                        <span data-i18n="dashboard.performance_analysis">パフォーマンス分析</span>
+                        <span data-i18n="dashboard.performance_analysis"></span>
                       </h5>
                       <div class="chart-controls">
                         ${isManagerOrAdmin ? `
                           <div class="btn-group btn-group-sm me-2" role="group">
                             <button type="button" class="btn btn-outline-secondary ${this.currentChartScope === 'all' ? 'active' : ''}" data-scope="all" onclick="window.app.currentPage.switchChartScope('all')">
-                              <span data-i18n="dashboard.overall_scope">全体</span>
+                              <span data-i18n="dashboard.overall_scope"></span>
                             </button>
                             <button type="button" class="btn btn-outline-secondary ${this.currentChartScope === 'personal' ? 'active' : ''}" data-scope="personal" onclick="window.app.currentPage.switchChartScope('personal')">
-                              <span data-i18n="dashboard.personal_scope">個人</span>
+                              <span data-i18n="dashboard.personal_scope"></span>
                             </button>
                           </div>
                         ` : ''}
                         <div class="btn-group btn-group-sm" role="group">
                           <button type="button" class="btn btn-outline-primary ${this.currentChartType === 'radar' ? 'active' : ''}" data-chart="radar" onclick="window.app.currentPage.switchChartType('radar')">
                             <i class="fas fa-chart-area me-1"></i>
-                            <span data-i18n="dashboard.radar">レーダー</span>
+                            <span data-i18n="dashboard.radar"></span>
                           </button>
                           <button type="button" class="btn btn-outline-primary ${this.currentChartType === 'bar' ? 'active' : ''}" data-chart="bar" onclick="window.app.currentPage.switchChartType('bar')">
                             <i class="fas fa-chart-bar me-1"></i>
-                            <span data-i18n="dashboard.bar">バー</span>
+                            <span data-i18n="dashboard.bar"></span>
                           </button>
                           <button type="button" class="btn btn-outline-primary ${this.currentChartType === 'line' ? 'active' : ''}" data-chart="line" onclick="window.app.currentPage.switchChartType('line')">
                             <i class="fas fa-chart-line me-1"></i>
-                            <span data-i18n="dashboard.line">ライン</span>
+                            <span data-i18n="dashboard.line"></span>
                           </button>
                         </div>
                       </div>
@@ -108,7 +108,7 @@ class DashboardPage {
                   <div class="card-header bg-white border-bottom">
                     <h5 class="card-title mb-0">
                       <i class="fas fa-clock me-2 text-warning"></i>
-                      <span data-i18n="dashboard.recent_evaluations">最近の評価</span>
+                      <span data-i18n="dashboard.recent_evaluations"></span>
                     </h5>
                   </div>
                   <div class="card-body">
@@ -126,10 +126,10 @@ class DashboardPage {
         <div class="container-fluid">
           <div class="alert alert-danger">
             <h4><i class="fas fa-exclamation-triangle me-2"></i><span data-i18n="common.error"></span></h4>
-            <p><span data-i18n="dashboard.load_error">ダッシュボードの読み込みに失敗しました。</span></p>
+            <p><span data-i18n="dashboard.load_error"></span></p>
             <button class="btn btn-primary" onclick="location.reload()">
               <i class="fas fa-sync-alt me-1"></i>
-              <span data-i18n="common.reload">再読み込み</span>
+              <span data-i18n="common.reload"></span>
             </button>
           </div>
         </div>
@@ -162,15 +162,12 @@ class DashboardPage {
         window.SidebarComponent.show(this.app.currentUser);
       }
 
-      // Initialize chart after DOM is ready
-      setTimeout(() => {
-        this.initializeChart();
-      }, 100);
-
       // UI翻訳を適用
       if (this.app.i18n) {
         this.app.i18n.updateUI();
       }
+      
+      // render()メソッド内でawait this.loadData()が呼ばれるため、initではチャート初期化を直接呼ばない
 
       console.log("Dashboard page initialized successfully");
     } catch (error) {
@@ -187,77 +184,48 @@ class DashboardPage {
     try {
       console.log("Loading dashboard data...");
 
+      // APIサービスが未初期化の場合に初期化を試みる
       if (!this.app?.api) {
-        const apiInstance = new window.API();
-        apiInstance.app = this.app;
-        apiInstance.init();
-        this.app.api = apiInstance;
+        this.app.api = new window.API();
+        this.app.api.app = this.app;
+        this.app.api.init();
       }
 
-      const userRole = this.app.currentUser?.role;
-      const currentUserId = this.app.currentUser?.id;
-
-      let statsPromise;
-      let recentEvaluationsPromise;
-      let chartDataPromise;
-
-      // ロールに基づいたデータ取得ロジック
-      if (userRole === "admin") {
-        // 管理者: 全テナントの統計、全ての最近の評価、全体のチャートデータ
-        statsPromise = this.app.api.getDashboardStats(); // 現在のモックは全体データ
-        recentEvaluationsPromise = this.app.api.getRecentEvaluations(); // 現在のモックは全体データ
-        chartDataPromise = this.app.api.getEvaluationChartData(); // 現在のモックは全体データ
-      } else if (userRole === "manager") {
-        // マネージャー: チームの統計、チームの最近の評価、チームと個人のチャートデータ
-        statsPromise = this.app.api.getDashboardStats(); // モックデータではチームの概念がないため、一旦全体
-        recentEvaluationsPromise = this.app.api.getRecentEvaluations(); // モックデータではチームの概念がないため、一旦全体
-        
-        // チャートデータは「全体」と「個人」の両方を持つ
-        const allChartData = await this.app.api.getEvaluationChartData(); // 全体データ
-        const personalChartData = this.getPersonalChartData(allChartData, currentUserId); // 個人のモックデータ生成
-        this.chartDataAll = allChartData;
-        this.chartDataPersonal = personalChartData;
-        chartDataPromise = Promise.resolve(allChartData); // 初期表示は全体
-      } else if (userRole === "worker") {
-        // 作業員: 個人の統計、個人の最近の評価、個人のチャートデータ
-        statsPromise = this.app.api.getDashboardStats(); // モックデータでは個人の統計がないため、一旦全体
-        recentEvaluationsPromise = this.app.api.getRecentEvaluations(); // モックデータでは個人にフィルタリング
-        chartDataPromise = Promise.resolve(this.getPersonalChartData(await this.app.api.getEvaluationChartData(), currentUserId)); // 個人のモックデータ生成
+      const currentUser = this.app.currentUser;
+      if (!currentUser) {
+        throw new Error("Current user is not defined.");
       }
 
-      const [stats, recentEvaluations, chartData] = await Promise.all([
-        statsPromise,
-        recentEvaluationsPromise,
-        chartDataPromise,
-      ]);
-
-      this.stats = stats;
-      
-      // 最近の評価データをロールに基づいてフィルタリング（モック）
-      if (userRole === "worker") {
-        this.recentEvaluations = recentEvaluations.filter(evalItem => evalItem.employeeName === this.app.currentUser.name); // 例: 従業員名でフィルタ
-      } else if (userRole === "manager") {
-        // マネージャーの場合、自分が評価した従業員、または自分の評価を表示する
-        this.recentEvaluations = recentEvaluations.filter(evalItem => 
-            evalItem.evaluatorName === this.app.currentUser.name || evalItem.employeeName === this.app.currentUser.name
-        );
-      } else {
-        this.recentEvaluations = recentEvaluations;
-      }
-      
-      // チャートデータの初期設定
-      if (userRole === "manager") {
-          this.chartData = this.chartDataAll; // マネージャーは初期は全体を表示
-          this.currentChartScope = "all";
-      } else if (userRole === "worker") {
-          this.chartData = this.chartDataPersonal; // 作業員は個人を表示
+      // ロールに基づいたチャートデータの取得
+      if (currentUser.role === "worker") {
+          // 作業員: 個人のチャートデータのみ
+          this.chartDataPersonal = await this.app.api.getEvaluationChartData('personal', currentUser.id);
+          this.chartDataAll = null; // 全体データはなし
+          this.chartData = this.chartDataPersonal; // 初期は個人スコープ
           this.currentChartScope = "personal";
-      } else { // admin
-          this.chartData = chartData;
+      } else if (currentUser.role === "evaluator") {
+          // 評価者: チーム全体のチャートデータと個人のチャートデータ
+          this.chartDataAll = await this.app.api.getEvaluationChartData('team', currentUser.id); // 'team'スコープを追加想定
+          this.chartDataPersonal = await this.app.api.getEvaluationChartData('personal', currentUser.id);
+          this.chartData = this.chartDataAll; // 初期は全体スコープ
+          this.currentChartScope = "all";
+      } else if (currentUser.role === "admin") {
+          // 管理者: 全テナントのチャートデータ
+          this.chartDataAll = await this.app.api.getEvaluationChartData('all');
+          this.chartDataPersonal = await this.app.api.getEvaluationChartData('personal', currentUser.id); // 管理者自身の個人データも取得
+          this.chartData = this.chartDataAll; // 初期は全体スコープ
           this.currentChartScope = "all";
       }
+      
+      // 統計と最近の評価の取得
+      this.stats = await this.app.api.getDashboardStats(); // API内でロールフィルタリング済み
+      this.recentEvaluations = await this.app.api.getRecentEvaluations(); // API内でロールフィルタリング済み
 
       console.log("Dashboard data loaded successfully");
+
+      // データロードが完了したらチャートを初期化
+      this.initializeChart();
+
     } catch (error) {
       console.error("Error loading dashboard data:", error);
       // Fallback data
@@ -269,73 +237,6 @@ class DashboardPage {
       this.app.showError(this.app.i18n.t("errors.dashboard_load_failed"));
     }
   }
-
-  // 個人のチャートデータを生成するモック関数
-  getPersonalChartData(allChartData, userId) {
-      // 例として、従業員ユーザー（id=3）のデータに固定
-      // 実際にはAPIで個人の評価データを取得する
-      if (userId === "3") { // employee@example.com のID
-          return {
-              radar: {
-                  labels: ["技術力", "コミュニケーション", "リーダーシップ", "安全管理", "チームワーク", "積極性"],
-                  datasets: [
-                      {
-                          label: "従業員個人のスコア",
-                          data: [75, 80, 70, 90, 85, 70], // 個人向けの異なるデータ
-                          backgroundColor: "rgba(255, 99, 132, 0.2)",
-                          borderColor: "rgba(255, 99, 132, 1)",
-                          borderWidth: 2,
-                          pointBackgroundColor: "rgba(255, 99, 132, 1)",
-                          pointBorderColor: "#fff",
-                          pointHoverBackgroundColor: "#fff",
-                          pointHoverBorderColor: "rgba(255, 99, 132, 1)",
-                      },
-                  ],
-              },
-              bar: {
-                  labels: ["技術力", "コミュニケーション", "リーダーシップ", "安全管理", "チームワーク", "積極性"],
-                  datasets: [
-                      {
-                          label: "従業員個人のスコア",
-                          data: [75, 80, 70, 90, 85, 70],
-                          backgroundColor: [
-                              "rgba(255, 99, 132, 0.8)",
-                              "rgba(54, 162, 235, 0.8)",
-                              "rgba(255, 205, 86, 0.8)",
-                              "rgba(75, 192, 192, 0.8)",
-                              "rgba(153, 102, 255, 0.8)",
-                              "rgba(255, 159, 64, 0.8)",
-                          ],
-                          borderColor: [
-                              "rgba(255, 99, 132, 1)",
-                              "rgba(54, 162, 235, 1)",
-                              "rgba(255, 205, 86, 1)",
-                              "rgba(75, 192, 192, 1)",
-                              "rgba(153, 102, 255, 1)",
-                              "rgba(255, 159, 64, 1)",
-                          ],
-                          borderWidth: 1,
-                      },
-                  ],
-              },
-              line: {
-                  labels: ["1月", "2月", "3月", "4月", "5月", "6月"],
-                  datasets: [
-                      {
-                          label: "従業員個人のスコア推移",
-                          data: [70, 75, 80, 78, 85, 82],
-                          fill: false,
-                          borderColor: "rgba(255, 99, 132, 1)",
-                          backgroundColor: "rgba(255, 99, 132, 0.2)",
-                          tension: 0.1,
-                      },
-                  ],
-              },
-          };
-      }
-      return { radar: { labels: [], datasets: [] }, bar: { labels: [], datasets: [] }, line: { labels: [], datasets: [] } }; // それ以外のユーザーは空
-  }
-
 
   /**
    * Render stats cards
@@ -350,17 +251,6 @@ class DashboardPage {
       { titleKey: "dashboard.completed_evaluations_count", value: this.stats.completedEvaluations, icon: "fas fa-check-circle", bgColor: "bg-success" },
       { titleKey: "dashboard.average_score", value: this.stats.averageScore.toFixed(1), icon: "fas fa-star", bgColor: "bg-info" },
     ];
-
-    const userRole = this.app.currentUser?.role;
-
-    // 作業員アカウントの場合、一部の統計情報を非表示にするか、個人の情報に調整する (現在は表示)
-    // 今後のバックエンド実装で個人の統計情報が提供されるようになれば、そのデータを使う
-    if (userRole === "worker") {
-        // 例えば、作業員は「総従業員数」や「未完了評価（全体）」は不要、個人の評価数のみ
-        // 現時点ではモックの制約でそのまま表示
-        // return `<div class="col-xl-3 col-md-6 mb-4">...個人の統計カードのみ...</div>`;
-    }
-
 
     return cards.map(card => `
       <div class="col-xl-3 col-md-6 mb-4">
@@ -396,16 +286,16 @@ class DashboardPage {
               <small class="text-muted"><i class="fas fa-building me-1"></i>${this.app.sanitizeHtml(evaluation.department)}</small>
             </div>
             <div class="evaluation-status text-end">
-              <span class="badge ${evaluation.status === "completed" ? "bg-success" : "bg-warning"} mb-1" data-i18n="status.${evaluation.status}">
+              <span class="badge ${this.app.getStatusBadgeClass(evaluation.status)} mb-1" data-i18n="status.${evaluation.status}">
               </span>
-              <div class="small text-muted"><i class="fas fa-calendar me-1"></i>${this.app.formatDate(evaluation.date)}</div>
-              ${evaluation.score ? `<div class="small text-primary fw-bold" data-i18n="evaluation.score_display" data-i18n-params='{"score": ${evaluation.score}}'></div>` : ""}
+              <div class="small text-muted"><i class="fas fa-calendar me-1"></i>${this.app.formatDate(evaluation.submittedAt || evaluation.date)}</div>
+              ${evaluation.totalScore ? `<div class="small text-primary fw-bold" data-i18n="evaluation.score_display" data-i18n-params='{"score": ${evaluation.totalScore}}'></div>` : ""}
             </div>
           </div>`).join("")}
       </div>
       <div class="text-center mt-3">
         <a href="#" onclick="window.app.navigate('/evaluations')" class="btn btn-sm btn-outline-primary">
-          <i class="fas fa-list me-1"></i><span data-i18n="common.view_all">すべて表示</span>
+          <i class="fas fa-list me-1"></i><span data-i18n="common.view_all"></span>
         </a>
       </div>`;
   }
@@ -418,6 +308,7 @@ class DashboardPage {
     const canvas = document.getElementById("performanceChart");
     if (!canvas) {
       console.warn("Performance chart canvas not found");
+      this.showChartFallback(null); // canvasがない場合はフォールバック表示
       return;
     }
 
@@ -434,9 +325,9 @@ class DashboardPage {
 
       const ctx = canvas.getContext("2d");
       // 現在のスコープに応じたチャートデータをセット
-      const activeChartData = this.currentChartScope === 'personal' && this.chartDataPersonal ? this.chartDataPersonal[this.currentChartType] : this.chartData[this.currentChartType];
+      const activeChartData = this.currentChartScope === 'personal' ? this.chartDataPersonal : this.chartDataAll;
       
-      const chartDataToRender = activeChartData || {
+      const chartDataToRender = activeChartData && activeChartData[this.currentChartType] ? activeChartData[this.currentChartType] : {
         labels: [this.app.i18n.t("common.no_data")],
         datasets: [{ label: this.app.i18n.t("evaluation.average_score"), data: [0] }],
       };
@@ -469,14 +360,14 @@ class DashboardPage {
    * チャートフォールバックを表示
    */
   showChartFallback(canvas) {
-    const container = canvas.parentElement;
+    const container = canvas ? canvas.parentElement : document.querySelector('.chart-container'); // canvasがnullの場合もコンテナを探す
     if (container) {
       container.innerHTML = `
         <div class="text-center py-5">
           <i class="fas fa-chart-area fa-3x text-muted mb-3"></i>
           <p class="text-muted" data-i18n="dashboard.chart_load_error"></p>
           <button class="btn btn-sm btn-outline-primary" onclick="window.app.currentPage.initializeChart()">
-            <i class="fas fa-sync-alt me-1"></i><span data-i18n="common.retry">再試行</span>
+            <i class="fas fa-sync-alt me-1"></i><span data-i18n="common.retry"></span>
           </button>
         </div>`;
       this.app.i18n.updateUI(container); // 翻訳適用
@@ -489,7 +380,12 @@ class DashboardPage {
    */
   switchChartType(type) {
     try {
-      if (!this.chart || !this.chartData) return;
+      // chartDataAllやchartDataPersonalがnullの場合があるのでチェック
+      const activeChartDataContainer = this.currentChartScope === 'personal' ? this.chartDataPersonal : this.chartDataAll;
+      if (!activeChartDataContainer) {
+        this.app.showWarning(this.app.i18n.t("warnings.no_data_for_scope"));
+        return;
+      }
 
       document.querySelectorAll(".chart-controls .btn-group button[data-chart]").forEach(btn => btn.classList.remove("active"));
       const activeButton = document.querySelector(`[data-chart="${type}"]`);
@@ -499,15 +395,17 @@ class DashboardPage {
 
       this.currentChartType = type;
       // 現在のスコープに応じたチャートデータを取得
-      const activeChartData = this.currentChartScope === 'personal' && this.chartDataPersonal ? this.chartDataPersonal[type] : this.chartData[type];
+      const newChartData = activeChartDataContainer[type];
       
-      if (activeChartData) {
+      if (this.chart && newChartData) {
         this.chart.config.type = type;
-        this.chart.data = activeChartData;
+        this.chart.data = newChartData;
         this.chart.options.scales = (type === 'radar') 
             ? { r: { beginAtZero: true, max: 100, ticks: { stepSize: 20, backdropColor: "rgba(255, 255, 255, 0.75)" }, grid: { color: "#e0e0e0" }, angleLines: { color: "#e0e0e0" } } } 
             : { y: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } };
         this.chart.update();
+      } else {
+        this.app.showError(this.app.i18n.t("errors.chart_data_unavailable"));
       }
     } catch (error) {
       console.error("Error switching chart type:", error);
@@ -521,7 +419,11 @@ class DashboardPage {
    */
   switchChartScope(scope) {
       try {
-          if (!this.chart || (!this.chartDataAll && !this.chartDataPersonal)) return;
+          // chartDataAllやchartDataPersonalがnullの場合があるのでチェック
+          if (!this.chartDataAll && !this.chartDataPersonal) {
+              this.app.showWarning(this.app.i18n.t("warnings.no_data_for_scope"));
+              return;
+          }
 
           document.querySelectorAll(".chart-controls .btn-group button[data-scope]").forEach(btn => btn.classList.remove("active"));
           const activeButton = document.querySelector(`[data-scope="${scope}"]`);
@@ -538,13 +440,22 @@ class DashboardPage {
               newChartData = this.chartDataPersonal[this.currentChartType];
           } else {
               this.app.showWarning(this.app.i18n.t("warnings.no_data_for_scope"));
+              // データがない場合はチャートをクリア
+              if (this.chart) {
+                this.chart.destroy();
+                this.chart = null;
+              }
+              this.showChartFallback(null); // フォールバック表示
               return;
           }
 
-          if (newChartData) {
+          if (this.chart && newChartData) {
               this.chart.data = newChartData;
               this.chart.update();
-          } else {
+          } else if (newChartData) { // チャートがまだ初期化されていないがデータはある場合
+              this.initializeChart(); // 再初期化
+          }
+          else {
               this.app.showError(this.app.i18n.t("errors.chart_data_unavailable"));
           }
       } catch (error) {
@@ -566,15 +477,16 @@ class DashboardPage {
         refreshBtn.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i><span data-i18n="common.refreshing"></span>`;
         this.app.i18n.updateUI(refreshBtn); // 翻訳適用
       }
-      await this.loadData();
+      await this.loadData(); // データ再ロード
       
+      // UI要素を再レンダリング (render()でまとめて行う方が確実だが、部分更新の例として)
       const statsContainer = document.querySelector(".row.mb-4");
       if (statsContainer) statsContainer.innerHTML = this.renderStatsCards();
       
       const recentContainerParent = document.querySelector(".recent-evaluations")?.parentElement;
       if (recentContainerParent) recentContainerParent.innerHTML = this.renderRecentEvaluations();
       
-      this.initializeChart(); // チャートも再初期化
+      // チャートはloadData()の最後で initializeChart() が呼ばれるため、ここでは不要
 
       // 各要素の翻訳を再度適用
       if (this.app.i18n) {
