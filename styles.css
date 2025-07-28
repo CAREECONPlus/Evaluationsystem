@@ -205,10 +205,16 @@ body {
   color: white !important;
 }
 
+/* main-contentのマージンをSidebarの表示状態に応じて調整 */
 .main-content {
   transition: margin-left 0.3s ease;
   padding-top: 56px;
   min-height: 100vh;
+  margin-left: 250px; /* デフォルトでサイドバーが表示される幅 */
+}
+
+.main-content.sidebar-hidden {
+  margin-left: 0 !important; /* サイドバー非表示時はマージンをリセット */
 }
 /* --- CORRECTED LAYOUT STYLES END --- */
 
@@ -233,7 +239,7 @@ body {
   }
 
   .main-content {
-    margin-left: 0 !important;
+    margin-left: 0 !important; /* モバイルでは常にマージンをリセット */
   }
 
   .login-page .col-lg-6:first-child {
