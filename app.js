@@ -33,7 +33,7 @@ class App {
     try {
       console.log("Starting application initialization...")
 
-      // Initialize Firebase
+      // Initialize Firebase (if firebase script is loaded)
       if (typeof window.firebase !== "undefined") {
         window.firebase.initializeApp(this.firebaseConfig)
         console.log("Firebase initialized")
@@ -58,10 +58,21 @@ class App {
       this.router.init()
 
       // Initialize page instances with app reference
+      // 各ページコンポーネントがappインスタンスを持つようにする
       console.log("Initializing page instances...")
+      // DashboardPage, LoginPage, RegisterPage などは router.loadPage でインスタンスが生成されるため、
+      // ここでnewする必要はないが、window.dashboardPageなどのグローバル参照が必要な場合は定義
       if (window.DashboardPage) {
-        window.dashboardPage = new window.DashboardPage(this)
+        // window.dashboardPage = new window.DashboardPage(this); // routerがインスタンスを生成するので不要
       }
+      // HeaderComponentとSidebarComponentにappインスタンスを設定
+      if (window.HeaderComponent) {
+          window.HeaderComponent.app = this;
+      }
+      if (window.SidebarComponent) {
+          window.SidebarComponent.app = this;
+      }
+
 
       this.isInitialized = true
       console.log("Application initialized successfully")
@@ -70,7 +81,7 @@ class App {
       this.showApp()
     } catch (error) {
       console.error("Failed to initialize application:", error)
-      this.showError("アプリケーションの初期化に失敗しました。")
+      this.showError(this.i18n.t("errors.app_init_failed")); // 翻訳キー
     }
   }
 
@@ -91,7 +102,7 @@ class App {
 
     // Navigate to initial route if not already navigated
     if (this.router && !this.router.currentRoute) {
-      const initialRoute = window.location.pathname === "/" ? "/login" : window.location.pathname
+      const initialRoute = window.location.pathname === this.router.basePath || window.location.pathname === this.router.basePath + '/' ? "/dashboard" : window.location.pathname;
       this.router.navigate(initialRoute, false)
     }
   }
@@ -105,11 +116,11 @@ class App {
       console.log("App.login called with:", email)
 
       if (!this.auth) {
-        throw new Error("Auth service not initialized")
+        throw new Error(this.i18n.t("errors.auth_service_not_initialized")); // 翻訳キー
       }
 
       if (!email || !password) {
-        throw new Error("Email and password are required")
+        throw new Error(this.i18n.t("errors.email_password_required")); // 翻訳キー
       }
 
       // Call auth service login
@@ -120,7 +131,7 @@ class App {
         console.log("Login successful in app:", user)
 
         // Show success message
-        this.showSuccess(`${user.name}さん、ログインしました。`)
+        this.showSuccess(this.i18n.t("messages.login_success", { userName: user.name })); // 翻訳キー
 
         // Navigate to dashboard
         setTimeout(() => {
@@ -129,11 +140,11 @@ class App {
 
         return true
       } else {
-        throw new Error("Login failed")
+        throw new Error(this.i18n.t("errors.login_failed_generic")); // 翻訳キー
       }
     } catch (error) {
       console.error("App login failed:", error)
-      throw error
+      throw error // ログインページでエラーをハンドルさせる
     }
   }
 
@@ -233,7 +244,7 @@ class App {
     toast.innerHTML = `
       <div class="toast-content" style="display: flex; justify-content: space-between; align-items: center;">
         <span class="toast-message">${this.sanitizeHtml(message)}</span>
-        <button class="toast-close" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; margin-left: 10px;" onclick="this.parentElement.parentElement.remove()">&times;</button>
+        <button class="toast-close" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; margin-left: 10px;" onclick="this.parentElement.parentElement.remove()" aria-label="${this.i18n.t('common.close')}">&times;</button>
       </div>
     `
 
@@ -262,6 +273,7 @@ class App {
    * XSS防止のためHTMLをサニタイズ
    */
   sanitizeHtml(str) {
+    if (typeof str !== 'string') return str; // 文字列以外はそのまま返す
     const div = document.createElement("div")
     div.textContent = str
     return div.innerHTML
@@ -303,21 +315,44 @@ class App {
    */
   getStatusBadge(status) {
     const statusConfig = {
-      active: { class: "badge-success", text: "アクティブ" },
-      pending_approval: { class: "badge-warning", text: "承認待ち" },
-      developer_approval_pending: { class: "badge-warning", text: "開発者承認待ち" },
-      inactive: { class: "badge-secondary", text: "無効" },
-      draft: { class: "badge-secondary", text: "下書き" },
-      approved: { class: "badge-success", text: "承認済み" },
-      completed: { class: "badge-success", text: "完了" },
-      self_assessed: { class: "badge-info", text: "自己評価完了" },
-      approved_by_evaluator: { class: "badge-success", text: "評価者承認済み" },
-      rejected: { class: "badge-danger", text: "拒否" },
-      pending: { class: "badge-warning", text: "未完了" },
+      active: { class: "bg-success", textKey: "status.active" },
+      pending_approval: { class: "bg-warning", textKey: "status.pending_approval" },
+      developer_approval_pending: { class: "bg-warning", textKey: "status.developer_approval_pending" },
+      inactive: { class: "bg-secondary", textKey: "status.inactive" },
+      draft: { class: "bg-secondary", textKey: "status.draft" },
+      approved: { class: "bg-success", textKey: "status.approved" },
+      completed: { class: "bg-success", textKey: "status.completed" },
+      self_assessed: { class: "bg-info", textKey: "status.self_assessed" },
+      approved_by_evaluator: { class: "bg-primary", textKey: "status.approved_by_evaluator" },
+      rejected: { class: "bg-danger", textKey: "status.rejected" },
+      pending: { class: "bg-warning", textKey: "status.pending" }, // 評価一覧で使われる
     }
 
-    const config = statusConfig[status] || { class: "badge-secondary", text: status }
-    return `<span class="badge ${config.class}">${config.text}</span>`
+    const config = statusConfig[status] || { class: "bg-secondary", textKey: status };
+    const translatedText = this.i18n.t(config.textKey);
+    return `<span class="badge ${config.class}">${translatedText}</span>`
+  }
+
+  /**
+   * Get status badge class (for use in dynamic class binding)
+   * ステータスバッジのCSSクラス名のみを取得
+   */
+  getStatusBadgeClass(status) {
+    const statusConfig = {
+      active: { class: "bg-success" },
+      pending_approval: { class: "bg-warning" },
+      developer_approval_pending: { class: "bg-warning" },
+      inactive: { class: "bg-secondary" },
+      draft: { class: "bg-secondary" },
+      approved: { class: "bg-success" },
+      completed: { class: "bg-success" },
+      self_assessed: { class: "bg-info" },
+      approved_by_evaluator: { class: "bg-primary" },
+      rejected: { class: "bg-danger" },
+      pending: { class: "bg-warning" },
+    }
+    const config = statusConfig[status] || { class: "bg-secondary" };
+    return config.class;
   }
 
   /**
@@ -326,7 +361,8 @@ class App {
    */
   showLoading(element) {
     if (element) {
-      element.innerHTML = '<div class="loading">読み込み中...</div>'
+      element.innerHTML = `<div class="loading"><span data-i18n="common.loading"></span></div>`;
+      this.i18n.updateUI(element); // 翻訳適用
     }
   }
 
@@ -378,7 +414,7 @@ class App {
     if (typeof obj === "object") {
       const clonedObj = {}
       for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) { // hasOwnPropertyを明示的に使用
           clonedObj[key] = this.deepClone(obj[key])
         }
       }
@@ -401,7 +437,7 @@ class App {
    */
   getUserDisplayName(user) {
     if (!user) return ""
-    return user.name || user.email || "Unknown User"
+    return user.name || user.email || this.i18n.t("common.unknown_user"); // 翻訳キー
   }
 
   /**
@@ -432,10 +468,10 @@ class App {
       }
 
       this.navigate("/login")
-      this.showSuccess("ログアウトしました。")
+      this.showSuccess(this.i18n.t("messages.logout_success")); // 翻訳キー
     } catch (error) {
       console.error("Logout error:", error)
-      this.showError("ログアウトに失敗しました。")
+      this.showError(this.i18n.t("errors.logout_failed")); // 翻訳キー
     }
   }
 
@@ -446,13 +482,25 @@ class App {
   handleError(error) {
     console.error("Application error:", error)
 
-    if (error && error.code === "permission-denied") {
-      this.showError("権限がありません。")
-    } else if (error && error.code === "network-error") {
-      this.showError("ネットワークエラーが発生しました。")
-    } else {
-      this.showError("エラーが発生しました。")
+    let errorMessage = this.i18n.t("errors.system"); // デフォルトエラーメッセージ
+    if (error && error.code) {
+        if (error.code === "permission-denied") {
+            errorMessage = this.i18n.t("errors.permission_denied");
+        } else if (error.code === "network-error") {
+            errorMessage = this.i18n.t("errors.network");
+        } else if (error.code === "unauthenticated") {
+            errorMessage = this.i18n.t("errors.unauthorized");
+            this.navigate("/login"); // 認証エラーの場合はログインページへ
+        }
+    } else if (error && error.message) {
+        // 特定のカスタムエラーメッセージがあればそれを使う
+        if (error.message.includes("undefined")) { // 例: 'Cannot read properties of undefined'
+             errorMessage = this.i18n.t("errors.component_init_failed"); // より具体的なメッセージ
+        } else {
+            errorMessage = error.message; // エラーメッセージがあれば表示
+        }
     }
+    this.showError(errorMessage);
   }
 }
 
@@ -460,7 +508,7 @@ class App {
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("DOM loaded, initializing app...")
 
-  // Wait for all scripts to load
+  // Wait for all scripts to load (a small delay to ensure all global components are defined)
   setTimeout(async () => {
     try {
       window.app = new App()
@@ -473,11 +521,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (loadingContent) {
         loadingContent.innerHTML = `
           <div class="alert alert-danger">
-            <h4>初期化エラー</h4>
-            <p>アプリケーションの初期化に失敗しました。</p>
-            <button class="btn btn-primary mt-3" onclick="location.reload()">再読み込み</button>
+            <h4><span data-i18n="errors.init_error_title"></span></h4>
+            <p><span data-i18n="errors.app_init_failed"></span></p>
+            <button class="btn btn-primary mt-3" onclick="location.reload()"><span data-i18n="common.reload"></span></button>
           </div>
         `
+        if (window.app && window.app.i18n) {
+            window.app.i18n.updateUI(loadingContent); // 翻訳を適用
+        }
       }
     }
   }, 500)
@@ -487,6 +538,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 window.addEventListener("error", (event) => {
   console.error("Global error:", event.error)
   if (window.app && typeof window.app.handleError === "function") {
+    event.preventDefault(); // デフォルトのエラー表示を抑制
     window.app.handleError(event.error)
   }
 })
@@ -495,6 +547,7 @@ window.addEventListener("error", (event) => {
 window.addEventListener("unhandledrejection", (event) => {
   console.error("Unhandled promise rejection:", event.reason)
   if (window.app && typeof window.app.handleError === "function") {
+    event.preventDefault(); // デフォルトのコンソール表示を抑制
     window.app.handleError(event.reason)
   }
 })
