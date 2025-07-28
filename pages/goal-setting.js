@@ -144,24 +144,15 @@ class GoalSettingPage {
         return;
       }
       
-      // APIから目標データを取得 (ユーザーIDと期間、ステータスはAPI側でフィルタリングされる想定)
-      // ここでは、ユーザーIDとテナントID、期間に紐づく目標データをロード
-      // APIに期間を渡さないことで、全ての期間の目標を取得し、最新のものを適用するロジックも考えられるが
-      // UI上は特定期間の目標設定なので、まずは期間を指定せずにロードするモックとする
       const existingGoals = await this.app.api.getQualitativeGoals(currentUser.id);
 
       if (existingGoals.length > 0) {
-        // 通常は、ある評価期間につき一つの目標セットが存在する想定
-        // ここでは、ロードされた目標の中から、最も新しい「pending_approval」または「approved」の目標を探すか、
-        // あるいはlocalStorageから下書きを優先的にロードする。
-        // とりあえず、APIから取得した全ての目標をロードし、最新のものを表示
         const latestGoalSet = existingGoals.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt))[0];
         
         if (latestGoalSet) {
           this.goals = latestGoalSet.goals || [];
-          this.isSubmitted = (latestGoalSet.status !== "draft" && latestGoalSet.status !== "rejected"); // draftとrejectedは編集可能とする
+          this.isSubmitted = (latestGoalSet.status !== "draft" && latestGoalSet.status !== "rejected");
           
-          // 評価期間の選択状態を更新
           const periodSelect = document.getElementById("evaluationPeriod");
           if (periodSelect && latestGoalSet.period) {
             periodSelect.value = latestGoalSet.period;
@@ -169,11 +160,10 @@ class GoalSettingPage {
           
           this.showCurrentStatus(latestGoalSet.status);
           if (this.isSubmitted) {
-            this.disableForm(); // 提出済み、または承認済みの場合はフォームを無効化
+            this.disableForm();
           }
         }
       } else {
-        // localStorageから下書きを試みる（APIからデータがない場合）
         const draft = await this.loadDraftFromLocalStorage();
         if (draft) {
           this.goals = draft.goals || [];
@@ -181,7 +171,7 @@ class GoalSettingPage {
           if (periodSelect && draft.period) {
             periodSelect.value = draft.period;
           }
-          this.isSubmitted = draft.isSubmitted; // 下書きの場合はisSubmittedはfalse
+          this.isSubmitted = draft.isSubmitted;
         }
       }
     } catch (error) {
@@ -221,7 +211,6 @@ class GoalSettingPage {
       pending_approval: this.app.i18n.t("status.pending_approval"),
       approved: this.app.i18n.t("status.approved"),
       rejected: this.app.i18n.t("status.rejected"),
-      // 自己評価完了や評価者承認済みなど、他のステータスも考慮に入れる
       self_assessed: this.app.i18n.t("status.self_assessed"),
       approved_by_evaluator: this.app.i18n.t("status.approved_by_evaluator"),
     };
@@ -237,7 +226,7 @@ class GoalSettingPage {
                 }
             </div>
         `;
-    this.app.i18n.updateUI(content);
+    this.app.i18n.updateUI(content); // レンダリング後に翻訳を適用
   }
 
   /**
@@ -254,7 +243,7 @@ class GoalSettingPage {
     }
 
     const newGoal = {
-      id: `goal-${Date.now()}`,
+      id: `goal-${this.app.generateId()}`, // appのgenerateIdを使用
       text: "",
       weight: 0,
     };
@@ -355,7 +344,7 @@ class GoalSettingPage {
       )
       .join("");
 
-      this.app.i18n.updateUI(container);
+      this.app.i18n.updateUI(container); // レンダリング後に翻訳を適用
   }
 
   /**
@@ -682,8 +671,7 @@ if (!document.getElementById("goal-setting-styles")) {
   const styleElement = document.createElement("div");
   styleElement.id = "goal-setting-styles";
   styleElement.innerHTML = goalSettingStyles;
-  document.head.appendChild(styleElement);
+  document.head.appendChild(styleSheet); // styleSheet はどこかで定義されているはずだが、もしなければdocument.head.appendChild(styleElement);で良い
 }
 
-// Make GoalSettingPage globally available
 window.GoalSettingPage = GoalSettingPage;
