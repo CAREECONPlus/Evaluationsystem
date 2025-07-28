@@ -21,7 +21,7 @@ class GoalSettingPage {
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h1 data-i18n="goals.title">目標設定</h1>
                     <div class="goal-actions">
-                        {/* ★★★ 修正点: onclickの呼び出し先をインスタンスメソッドに変更 ★★★ */}
+                        {/* onclickの呼び出し先をインスタンスメソッドに変更 */}
                         <button class="btn btn-secondary" onclick="window.app.currentPage.loadDraft()" id="loadDraftBtn">
                             下書きを読み込み
                         </button>
@@ -68,7 +68,7 @@ class GoalSettingPage {
                         <div id="goalsContainer">
                             </div>
 
-                        {/* ★★★ 修正点: onclickの呼び出し先をインスタンスメソッドに変更 ★★★ */}
+                        {/* onclickの呼び出し先をインスタンスメソッドに変更 */}
                         <button class="btn btn-primary" onclick="window.app.currentPage.addGoal()"
                                 id="addGoalBtn">
                             <span data-i18n="goals.add_goal">目標を追加</span>
@@ -102,7 +102,7 @@ class GoalSettingPage {
    * 目標設定ページを初期化
    */
   async init() {
-    // ★★★ 修正点: 自身のインスタンスをappに登録 ★★★
+    // 自身のインスタンスをappに登録
     this.app.currentPage = this;
 
     // Check permissions
@@ -186,7 +186,7 @@ class GoalSettingPage {
 
   /**
    * Add new goal
-   * ★★★ 修正点: staticを削除 ★★★
+   * staticを削除
    */
   addGoal() {
     if (this.goals.length >= this.maxGoals) {
@@ -207,9 +207,10 @@ class GoalSettingPage {
 
   /**
    * Remove goal
-   * ★★★ 修正点: staticを削除 ★★★
+   * staticを削除
    */
   removeGoal(goalId) {
+    if (this.goals.length <= 1) return; // 最後の1つは消せないようにする
     this.goals = this.goals.filter((goal) => goal.id !== goalId);
     this.renderGoals();
     this.updateWeightIndicator();
@@ -219,7 +220,7 @@ class GoalSettingPage {
 
   /**
    * Update goal text
-   * ★★★ 修正点: staticを削除 ★★★
+   * staticを削除
    */
   updateGoalText(goalId, text) {
     const goal = this.goals.find((g) => g.id === goalId);
@@ -231,7 +232,7 @@ class GoalSettingPage {
 
   /**
    * Update goal weight
-   * ★★★ 修正点: staticを削除 ★★★
+   * staticを削除
    */
   updateGoalWeight(goalId, weight) {
     const goal = this.goals.find((g) => g.id === goalId);
@@ -256,7 +257,7 @@ class GoalSettingPage {
             <div class="goal-item" data-goal-id="${goal.id}">
                 <div class="goal-header">
                     <h4>目標 ${index + 1}</h4>
-                    {/* ★★★ 修正点: onclickの呼び出し先をインスタンスメソッドに変更 ★★★ */}
+                    {/* onclickの呼び出し先をインスタンスメソッドに変更 */}
                     <button class="btn btn-danger btn-sm"
                             onclick="window.app.currentPage.removeGoal('${goal.id}')"
                             ${this.goals.length <= 1 ? "disabled" : ""}>
@@ -267,25 +268,25 @@ class GoalSettingPage {
                 <div class="goal-content">
                     <div class="form-group">
                         <label for="goalText-${goal.id}" data-i18n="goals.goal_text">目標内容</label>
-                        {/* ★★★ 修正点: onchangeの呼び出し先をインスタンスメソッドに変更 ★★★ */}
+                        {/* onchangeの呼び出し先をインスタンスメソッドに変更 */}
                         <textarea id="goalText-${goal.id}"
                                   class="form-control goal-text-input"
                                   rows="3"
                                   placeholder="具体的で測定可能な目標を記入してください"
-                                  onchange="window.app.currentPage.updateGoalText('${goal.id}', this.value)"
+                                  oninput="window.app.currentPage.updateGoalText('${goal.id}', this.value)"
                                   ${this.isSubmitted ? "readonly" : ""}>${this.app.sanitizeHtml(goal.text)}</textarea>
                     </div>
 
                     <div class="form-group">
                         <label for="goalWeight-${goal.id}" data-i18n="goals.weight_percent">ウェイト（%）</label>
-                        {/* ★★★ 修正点: onchangeの呼び出し先をインスタンスメソッドに変更 ★★★ */}
+                        {/* onchangeの呼び出し先をインスタンスメソッドに変更 */}
                         <input type="number"
                                id="goalWeight-${goal.id}"
                                class="form-control goal-weight-input"
                                min="0"
                                max="100"
                                value="${goal.weight}"
-                               onchange="window.app.currentPage.updateGoalWeight('${goal.id}', this.value)"
+                               oninput="window.app.currentPage.updateGoalWeight('${goal.id}', this.value)"
                                ${this.isSubmitted ? "readonly" : ""}>
                     </div>
                 </div>
@@ -355,7 +356,7 @@ class GoalSettingPage {
 
   /**
    * Save draft
-   * ★★★ 修正点: staticを削除 ★★★
+   * staticを削除
    */
   async saveDraft() {
     try {
@@ -366,10 +367,8 @@ class GoalSettingPage {
       };
 
       // Save to localStorage as fallback
-      localStorage.setItem(`goals-draft-${this.app.currentUser.id}`, JSON.stringify(draftData));
-
-      // Mock API call
-      // await this.app.api.saveGoalsDraft(draftData);
+      const userId = this.app.currentUser?.id || 'guest';
+      localStorage.setItem(`goals-draft-${userId}`, JSON.stringify(draftData));
 
       this.app.showSuccess("下書きを保存しました。");
     } catch (error) {
@@ -380,24 +379,27 @@ class GoalSettingPage {
 
   /**
    * Load draft
-   * ★★★ 修正点: staticを削除 ★★★
+   * staticを削除
    */
   async loadDraft() {
     try {
       // Load from localStorage as fallback
-      const draftData = localStorage.getItem(`goals-draft-${this.app.currentUser.id}`);
+      const userId = this.app.currentUser?.id || 'guest';
+      const draftData = localStorage.getItem(`goals-draft-${userId}`);
 
       if (draftData) {
         const draft = JSON.parse(draftData);
         this.goals = draft.goals || [];
 
         if (draft.period) {
-          document.getElementById("evaluationPeriod").value = draft.period;
+          const periodSelect = document.getElementById("evaluationPeriod");
+          if(periodSelect) periodSelect.value = draft.period;
         }
 
         this.renderGoals();
         this.updateWeightIndicator();
         this.updateSubmitButton();
+        this.updateAddGoalButton();
 
         this.app.showSuccess("下書きを読み込みました。");
       } else {
@@ -411,7 +413,7 @@ class GoalSettingPage {
 
   /**
    * Submit goals
-   * ★★★ 修正点: staticを削除 ★★★
+   * staticを削除
    */
   async submitGoals() {
     const period = document.getElementById("evaluationPeriod").value;
@@ -438,7 +440,8 @@ class GoalSettingPage {
       // await this.app.api.submitGoals(goalsData);
 
       // Clear draft
-      localStorage.removeItem(`goals-draft-${this.app.currentUser.id}`);
+      const userId = this.app.currentUser?.id || 'guest';
+      localStorage.removeItem(`goals-draft-${userId}`);
 
       this.isSubmitted = true;
       this.showCurrentStatus("pending_approval");
@@ -459,14 +462,14 @@ class GoalSettingPage {
 
   /**
    * Handle period change
-   * ★★★ 修正点: staticを削除 ★★★
+   * staticを削除
    */
   onPeriodChange() {
     this.updateSubmitButton();
   }
 }
 
-// Add goal-setting-specific styles (変更なし)
+// Add goal-setting-specific styles
 const goalSettingStyles = `
 <style>
 .goal-setting-page {
@@ -546,17 +549,24 @@ const goalSettingStyles = `
 @media (max-width: 768px) {
     .goal-actions {
         flex-direction: column;
+        align-items: flex-end;
         gap: 5px;
     }
 
     .goal-actions button {
         font-size: 0.9rem;
         padding: 8px 12px;
+        width: 100%;
+    }
+    
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        align-items: stretch !important;
     }
 
     .weight-indicator {
         font-size: 1rem;
-        text-align: center;
+        text-align: right;
         margin-top: 10px;
     }
 
