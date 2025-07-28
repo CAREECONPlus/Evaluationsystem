@@ -4,19 +4,17 @@
     <meta charset="utf-8">
     <title>リダイレクト中...</title>
     <script>
-      // 訪問しようとしたパスをセッションストレージに保存
+      // 訪問しようとしたパス(例: /EvaluationSystem/dashboard)をセッションストレージに保存
       sessionStorage.setItem('redirectPath', window.location.pathname);
       
       // リポジトリ名を取得 (例: /EvaluationSystem)
       const repoName = window.location.pathname.split('/')[1] || '';
       
-      // アプリのルート (index.html) にリダイレクト
+      // アプリのルート (index.htmlがある場所) にリダイレクト
       window.location.replace(
         window.location.protocol + '//' + window.location.host + '/' + repoName
       );
     </script>
   </head>
-  <body>
-    リダイレクトしています...
-  </body>
+  <body>リダイレクトしています...</body>
 </html>
