@@ -4,38 +4,46 @@
  */
 class SidebarComponent {
   constructor() {
-    this.isVisible = false;
-    this.currentUser = null;
-    this.isCollapsed = false;
+    this.isVisible = false
+    this.currentUser = null // app.currentUser から取得するため不要になるが、互換性のため残す
+    this.isCollapsed = false
+    this.app = null; // appインスタンスを保持するプロパティを追加
   }
 
   /**
    * Show sidebar
-   * サイドバーを表示
+   * ヘッダーを表示
+   * @param {Object} user - 現在のユーザー情報 (app.currentUserを使用するため、この引数は冗長だが、呼び出し元からの互換性維持のため残す)
    */
   show(user) {
     try {
-      console.log("Showing sidebar for user:", user?.name);
-      this.currentUser = user;
-      this.render();
-      this.isVisible = true;
+      // appインスタンスが設定されていることを確認
+      if (!this.app) {
+        console.error("SidebarComponent: app instance is not set. Cannot show sidebar.");
+        return;
+      }
+      this.currentUser = user || this.app.currentUser; // app.currentUserを優先
+
+      console.log("Showing sidebar for user:", this.currentUser?.name)
+      this.render()
+      this.isVisible = true
     } catch (error) {
-      console.error("Error showing sidebar:", error);
+      console.error("Error showing sidebar:", error)
     }
   }
 
   /**
    * Hide sidebar
-   * サイドバーを非表示
+   * ヘッダーを非表示
    */
   hide() {
     try {
-      console.log("Sidebar hidden");
-      this.isVisible = false;
-      const sidebarContainer = document.getElementById("sidebar-container");
+      console.log("Sidebar hidden")
+      this.isVisible = false
+      const sidebarContainer = document.getElementById("sidebar-container")
       if (sidebarContainer) {
-        sidebarContainer.innerHTML = "";
-        sidebarContainer.style.display = "none";
+        sidebarContainer.innerHTML = ""
+        sidebarContainer.style.display = "none"
       }
 
       // Reset main content margin
@@ -47,19 +55,24 @@ class SidebarComponent {
       const existingToggle = document.querySelector('.sidebar-toggle');
       if (existingToggle) existingToggle.remove();
 
-    } catch (error) { // ★★★ 修正点: 構文エラーを修正 ★★★
+    } catch (error) {
       console.error("Error hiding sidebar:", error);
     }
   }
 
   /**
    * Update sidebar
-   * サイドバーを更新
+   * ヘッダーを更新
+   * @param {Object} user - 現在のユーザー情報 (app.currentUserを使用するため、この引数は冗長だが、互換性のため残す)
    */
   update(user) {
-    this.currentUser = user;
+    if (!this.app) { // appインスタンスが設定されていない場合は更新しない
+      console.warn("SidebarComponent: app instance not set during update. Skipping render.");
+      return;
+    }
+    this.currentUser = user || this.app.currentUser; // app.currentUserを優先
     if (this.isVisible) {
-      this.render();
+      this.render()
     }
   }
 
@@ -74,11 +87,18 @@ class SidebarComponent {
 
   /**
    * Render sidebar
-   * サイドバーを描画
+   * ヘッダーを描画
    */
   render() {
     try {
-      let sidebarContainer = document.getElementById("sidebar-container");
+      // appインスタンスとcurrentUserの存在を確実にチェック
+      if (!this.app || !this.app.currentUser) {
+        console.log("SidebarComponent: App or current user not available, hiding sidebar.");
+        this.hide(); // ユーザー情報がない場合は非表示にする
+        return;
+      }
+
+      let sidebarContainer = document.getElementById("sidebar-container")
       if (!sidebarContainer) {
         sidebarContainer = document.createElement("div");
         sidebarContainer.id = "sidebar-container";
@@ -94,7 +114,7 @@ class SidebarComponent {
       sidebarContainer.style.display = "block";
 
       const sidebarWidth = this.isCollapsed ? "80px" : "250px";
-      const userRole = this.currentUser?.role;
+      const userRole = this.app.currentUser.role; // app.currentUserからロールを取得
 
       sidebarContainer.innerHTML = `
         <div class="sidebar bg-dark text-white d-flex flex-column" style="width: ${sidebarWidth}; transition: width 0.3s ease;">
@@ -102,7 +122,6 @@ class SidebarComponent {
             <nav class="nav flex-column p-2">
               ${this.renderMenuItem("/dashboard", "fas fa-tachometer-alt", "dashboard")}
               
-              {/* ★★★ 修正点: ロールによる表示制御 ★★★ */}
               ${userRole === "admin" ? this.renderMenuItem("/users", "fas fa-users", "users") : ""}
               ${this.renderMenuItem("/evaluations", "fas fa-clipboard-list", "evaluations")}
               ${userRole === "admin" ? this.renderMenuItem("/goal-approvals", "fas fa-check-circle", "goal_approvals") : ""}
@@ -114,7 +133,7 @@ class SidebarComponent {
 
               <hr class="border-secondary my-2">
 
-              ${userRole === "admin" ? this.renderMenuItem("/settings", "fas fa-cog", "settings") : ""}
+              ${userRole === "admin" || userRole === "developer" ? this.renderMenuItem("/settings", "fas fa-cog", "settings") : ""}
               ${userRole === "developer" ? this.renderMenuItem("/developer", "fas fa-code", "developer") : ""}
             </nav>
           </div>
@@ -123,7 +142,7 @@ class SidebarComponent {
             <div class="d-flex align-items-center justify-content-center">
               ${!this.isCollapsed ? `
                 <div class="user-info small flex-grow-1">
-                  <div>${this.sanitizeHtml(this.currentUser?.name || "ユーザー")}</div>
+                  <div>${this.sanitizeHtml(this.app.currentUser.name || "ユーザー")}</div>
                   <div class="text-white-50">${this.getRoleDisplayName(userRole)}</div>
                 </div>
               ` : ''}
@@ -146,7 +165,8 @@ class SidebarComponent {
       this.updateToggleButton(sidebarWidth);
 
       // 翻訳を適用
-      if(this.app && this.app.i18n) {
+      // this.app.i18n が確実に存在することを確認
+      if(this.app.i18n) {
           this.app.i18n.updateUI(sidebarContainer);
       }
 
@@ -181,19 +201,27 @@ class SidebarComponent {
       toggleButton.onclick = () => this.toggleCollapse();
   }
 
-  // ★★★ 修正点: 翻訳キーを使うように変更 ★★★
   renderMenuItem(path, icon, translationKey) {
+    // app.i18n が確実に存在することを確認し、存在しない場合はフォールバック
+    const translatedText = this.app?.i18n?.t('nav.' + translationKey) || translationKey;
+    const translatedTitle = this.app?.i18n?.t('nav.' + translationKey) || translationKey; // title属性用
+
     return `
       <a href="#" class="nav-link text-white p-2 mb-1 rounded" onclick="event.preventDefault(); window.app.navigate('${path}')" data-path="${path}">
         <div class="d-flex align-items-center ${this.isCollapsed ? 'justify-content-center' : ''}">
-          <i class="${icon} ${this.isCollapsed ? '' : 'me-2'}" style="width: 20px;" title="${this.app.i18n.t('nav.' + translationKey)}"></i>
-          ${!this.isCollapsed ? `<span data-i18n="nav.${translationKey}"></span>` : ''}
+          <i class="${icon} ${this.isCollapsed ? '' : 'me-2'}" style="width: 20px;" title="${this.sanitizeHtml(translatedTitle)}"></i>
+          ${!this.isCollapsed ? `<span data-i18n="nav.${translationKey}">${this.sanitizeHtml(translatedText)}</span>` : ''}
         </div>
       </a>
     `;
   }
 
   highlightCurrentPage() {
+    // app.router が確実に存在することを確認
+    if (!this.app || !this.app.router) {
+      console.warn("SidebarComponent: app.router not available for highlighting current page.");
+      return;
+    }
     const currentPath = window.location.pathname.replace(this.app.router.basePath, '') || '/';
     document.querySelectorAll(".sidebar .nav-link").forEach(link => {
       link.classList.remove("active");
@@ -204,7 +232,7 @@ class SidebarComponent {
   }
 
   getRoleDisplayName(role) {
-    if (this.app && this.app.i18n) {
+    if (this.app?.i18n) {
       return this.app.i18n.t('roles.' + role);
     }
     const roleNames = { admin: "管理者", evaluator: "評価者", worker: "作業員", developer: "開発者" };
@@ -213,6 +241,9 @@ class SidebarComponent {
 
   sanitizeHtml(str) {
     if (!str) return "";
+    if (this.app?.sanitizeHtml) { // app.jsのsanitizeHtml関数があればそれを使う
+        return this.app.sanitizeHtml(str);
+    }
     const div = document.createElement("div");
     div.textContent = str;
     return div.innerHTML;
