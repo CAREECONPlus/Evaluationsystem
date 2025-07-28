@@ -34,11 +34,14 @@ class I18n {
       let translation = this.translations[this.currentLanguage];
       for (const k of keys) {
         translation = translation?.[k];
-        if (translation === undefined) return key;
+        if (translation === undefined) {
+          // console.warn("Translation missing for key:", key); // デバッグ用に有効化
+          return key; // キーが見つからない場合はキー自体を返す
+        }
       }
-      let result = translation;
+      let result = String(translation); // 翻訳が数値などの場合も文字列として扱う
       Object.keys(params).forEach(param => {
-        result = result.replace(`{{${param}}}`, params[param]);
+        result = result.replace(new RegExp(`{{${param}}}`, 'g'), params[param]);
       });
       return result;
     } catch (error) {
@@ -51,24 +54,44 @@ class I18n {
     if (this.translations[language]) {
       this.currentLanguage = language;
       localStorage.setItem("language", language);
-      this.updateUI();
-      if (window.app?.router?.currentPageInstance) {
-        window.app.router.loadPage(window.app.router.currentRoute.substring(1), true);
+      this.updateUI(); // UI全体を更新
+      // 必要であれば現在のページを再ロードして内容を更新
+      if (window.app?.router?.currentRoute) {
+        // window.app.router.loadPage(window.app.router.currentRoute.substring(1), true); // ルーターで再ロードは行わない
       }
     } else {
       console.warn("Language not supported:", language);
     }
   }
 
-  updateUI() {
-    document.querySelectorAll("[data-i18n]").forEach(el => {
+  /**
+   * DOM内のi18n属性を持つ要素を翻訳する。特定の要素以下のみ翻訳することも可能。
+   * @param {HTMLElement} [root=document] 翻訳を適用するDOMのルート要素
+   */
+  updateUI(root = document) {
+    // data-i18n 属性を持つ要素のテキストコンテンツを更新
+    root.querySelectorAll("[data-i18n]").forEach(el => {
       const key = el.getAttribute("data-i18n");
-      if(key) el.textContent = this.t(key);
+      const paramsAttr = el.getAttribute("data-i18n-params");
+      let params = {};
+      if (paramsAttr) {
+        try {
+          // JSONパース前にエンティティをデコード
+          const decodedParamsAttr = paramsAttr.replace(/&quot;/g, '"');
+          params = JSON.parse(decodedParamsAttr);
+        } catch (e) {
+          console.error("Failed to parse data-i18n-params:", paramsAttr, e);
+        }
+      }
+      if(key) el.textContent = this.t(key, params);
     });
-    document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+
+    // data-i18n-placeholder 属性を持つ要素のプレースホルダーを更新
+    root.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
       const key = el.getAttribute("data-i18n-placeholder");
       if(key) el.placeholder = this.t(key);
     });
+    // 今後必要であれば他の属性（data-i18n-titleなど）も追加
   }
 }
 
