@@ -1,6 +1,6 @@
 /**
- * Router Service
- * ルーターサービス
+ * Router Service (Final Version with Base Path Support)
+ * ルーターサービス (ベースパス対応最終版)
  */
 class Router {
   constructor(app) {
@@ -8,64 +8,70 @@ class Router {
     this.currentRoute = null;
     this.currentPageInstance = null;
     this.routes = {};
-    this.isInitialized = false;
+    // ★★★ 修正点 ★★★
+    // リポジトリ名をベースパスとして定義
+    this.basePath = '/EvaluationSystem'; 
   }
 
   init() {
-    try {
-      console.log("Initializing Router...");
-      this.routes = {
-        "/login": { page: "LoginPage", auth: false },
-        "/register": { page: "RegisterPage", auth: false },
-        "/register-admin": { page: "RegisterAdminPage", auth: false },
-        "/dashboard": { page: "DashboardPage", auth: true },
-        "/users": { page: "UserManagementPage", auth: true },
-        "/goal-setting": { page: "GoalSettingPage", auth: true },
-        "/goal-approvals": { page: "GoalApprovalsPage", auth: true },
-        "/evaluation-form": { page: "EvaluationFormPage", auth: true },
-        "/evaluations": { page: "EvaluationsPage", auth: true },
-        "/settings": { page: "SettingsPage", auth: true },
-        "/developer": { page: "DeveloperPage", auth: true },
-        "/404": { page: "NotFoundPage", auth: false },
-      };
-      window.addEventListener("popstate", () => this.handleLocation());
-      this.isInitialized = true;
-      console.log("Router initialized");
-      this.handleLocation();
-    } catch (error) {
-      console.error("Failed to initialize Router:", error);
-    }
+    this.routes = {
+      "/": "/login",
+      "/login": "LoginPage",
+      "/register": "RegisterPage",
+      "/register-admin": "RegisterAdminPage",
+      "/dashboard": "DashboardPage",
+      "/users": "UserManagementPage",
+      "/goal-setting": "GoalSettingPage",
+      "/goal-approvals": "GoalApprovalsPage",
+      "/evaluation-form": "EvaluationFormPage",
+      "/evaluations": "EvaluationsPage",
+      "/settings": "SettingsPage",
+      "/developer": "DeveloperPage",
+      "/404": "NotFoundPage",
+    };
+    window.addEventListener("popstate", () => this.handleLocation());
+    this.handleLocation();
   }
 
   handleLocation() {
-    const path = window.location.pathname.replace(/\/$/, "") || "/"; //末尾のスラッシュを削除
-    const route = this.routes[path];
+    // ★★★ 修正点 ★★★
+    // 現在のURLパスからベースパス（リポジトリ名）を取り除く
+    let path = window.location.pathname;
+    if (path.toLowerCase().startsWith(this.basePath.toLowerCase())) {
+      path = path.substring(this.basePath.length) || "/";
+    }
 
-    if (route) {
-      this.loadPage(path, route.page, route.auth);
-    } else {
-      // /Evaluationsystem/ のようなサブディレクトリのルートパスの場合、ログインページにリダイレクト
-      // それ以外の未定義パスは404ページへ
-      const isSubdirectoryRoot = !Object.keys(this.routes).some(r => path.startsWith(r) && r.length > 1);
-      if (isSubdirectoryRoot) {
-        this.navigate("/login");
+    const routeTarget = this.routes[path];
+
+    if (routeTarget) {
+      if (typeof routeTarget === 'string' && routeTarget.startsWith('/')) {
+        // リダイレクトルートの場合 (例: "/" は "/login" へ)
+        this.navigate(routeTarget);
       } else {
-        this.loadPage("/404", "NotFoundPage", false);
+        // ページクラス名の場合
+        this.loadPage(path, routeTarget);
       }
+    } else {
+      // どのルートにも一致しない場合は404ページへ
+      this.loadPage("/404", "NotFoundPage");
     }
   }
 
   navigate(path) {
-    if (window.location.pathname !== path) {
-      window.history.pushState({}, "", path);
+    // ★★★ 修正点 ★★★
+    // 新しいパスにベースパスを追加して、完全なURLを構築する
+    const fullPath = this.basePath + (path === "/" ? "" : path);
+    if (window.location.pathname !== fullPath) {
+      window.history.pushState({}, "", fullPath);
     }
     this.handleLocation();
   }
 
-  async loadPage(path, pageClassName, requiresAuth) {
+  async loadPage(path, pageClassName) {
     try {
       this.currentRoute = path;
-      
+      const requiresAuth = !["/login", "/register", "/register-admin", "/404"].includes(path);
+
       if (requiresAuth && !this.app.isAuthenticated()) {
         this.navigate("/login");
         return;
@@ -92,23 +98,22 @@ class Router {
       if (this.currentPageInstance.init) {
         await this.currentPageInstance.init();
       }
-      
-      // 翻訳適用のためにUI更新
       this.app.i18n.updateUI();
-
     } catch (error) {
       console.error(`Failed to load page ${path}:`, error);
-      document.getElementById("content").innerHTML = "ページの読み込みに失敗しました。";
     }
   }
 }
 
 window.Router = Router;
 
-// 404ページ用のクラス定義
 class NotFoundPage {
   constructor(app) { this.app = app; }
-  async render() { return `<div class="container mt-5 text-center"><h1>404 Not Found</h1><p>お探しのページは見つかりませんでした。</p><a href="/" onclick="event.preventDefault(); window.app.router.navigate('/login');" class="btn btn-primary">ログインページに戻る</a></div>`; }
+  async render() { 
+    // 404ページからホームに戻るリンクもベースパスを考慮
+    const base = new Router().basePath;
+    return `<div class="container mt-5 text-center"><h1>404 Not Found</h1><p>お探しのページは見つかりませんでした。</p><a href="${base}/" class="btn btn-primary">ログインページに戻る</a></div>`; 
+  }
   async init() {}
 }
 window.NotFoundPage = NotFoundPage;
