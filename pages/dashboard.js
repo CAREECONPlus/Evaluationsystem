@@ -24,7 +24,8 @@ class DashboardPage {
       console.log("Rendering dashboard page...");
 
       // Load data first before rendering static parts dependent on data
-      await this.loadData();
+      // これにより、renderが完了する前にデータが確実にロードされる
+      await this.loadData(); 
 
       const userRole = this.app.currentUser?.role;
       const isManagerOrAdmin = userRole === "evaluator" || userRole === "admin"; // マネージャー（evaluator）または管理者
@@ -167,7 +168,8 @@ class DashboardPage {
         this.app.i18n.updateUI();
       }
       
-      // render()メソッド内でawait this.loadData()が呼ばれるため、initではチャート初期化を直接呼ばない
+      // render()メソッド内でawait this.loadData()が呼ばれ、その中でinitializeChart()も呼ばれる
+      // そのため、init()で直接initializeChart()を呼ぶ必要はない
 
       console.log("Dashboard page initialized successfully");
     } catch (error) {
@@ -224,6 +226,8 @@ class DashboardPage {
       console.log("Dashboard data loaded successfully");
 
       // データロードが完了したらチャートを初期化
+      // render() メソッドが await this.loadData() を呼ぶため、ここで initializeChart() を呼ぶことで、
+      // DOMレンダリング後にデータが揃った状態でチャートが描画されることを保証する
       this.initializeChart();
 
     } catch (error) {
@@ -308,7 +312,7 @@ class DashboardPage {
     const canvas = document.getElementById("performanceChart");
     if (!canvas) {
       console.warn("Performance chart canvas not found");
-      this.showChartFallback(null); // canvasがない場合はフォールバック表示
+      this.showChartFallback(null); // canvasがない場合もフォールバック表示
       return;
     }
 
@@ -325,9 +329,9 @@ class DashboardPage {
 
       const ctx = canvas.getContext("2d");
       // 現在のスコープに応じたチャートデータをセット
-      const activeChartData = this.currentChartScope === 'personal' ? this.chartDataPersonal : this.chartDataAll;
+      const activeChartDataContainer = this.currentChartScope === 'personal' ? this.chartDataPersonal : this.chartDataAll;
       
-      const chartDataToRender = activeChartData && activeChartData[this.currentChartType] ? activeChartData[this.currentChartType] : {
+      const chartDataToRender = activeChartDataContainer && activeChartDataContainer[this.currentChartType] ? activeChartDataContainer[this.currentChartType] : {
         labels: [this.app.i18n.t("common.no_data")],
         datasets: [{ label: this.app.i18n.t("evaluation.average_score"), data: [0] }],
       };
