@@ -22,96 +22,90 @@ class RegisterAdminPage {
                                     <div class="card-header">
                                         <h3 class="mb-0">
                                             <i class="fas fa-user-shield me-2"></i>
-                                            管理者アカウント登録
+                                            <span data-i18n="registration.admin_registration_title">管理者アカウント登録</span>
                                         </h3>
-                                        <p class="mb-0 mt-2 text-muted">新しい管理者アカウントを作成します</p>
+                                        <p class="mb-0 mt-2 text-muted" data-i18n="registration.create_new_admin_account">新しい管理者アカウントを作成します</p>
                                     </div>
                                     <div class="card-body">
-                                        <form id="registerAdminForm" onsubmit="RegisterAdminPage.handleSubmit(event)">
+                                        <form id="registerAdminForm">
                                             <div class="row">
                                                 <div class="col-md-6">
                                                     <div class="mb-3">
-                                                        <label for="firstName" class="form-label">姓 *</label>
-                                                        <input type="text" class="form-control" id="firstName" required>
+                                                        <label for="firstName" class="form-label" data-i18n="common.first_name_label"></label>
+                                                        <input type="text" class="form-control" id="firstName" required data-i18n-placeholder="common.first_name_placeholder">
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <div class="mb-3">
-                                                        <label for="lastName" class="form-label">名 *</label>
-                                                        <input type="text" class="form-control" id="lastName" required>
+                                                        <label for="lastName" class="form-label" data-i18n="common.last_name_label"></label>
+                                                        <input type="text" class="form-control" id="lastName" required data-i18n-placeholder="common.last_name_placeholder">
                                                     </div>
                                                 </div>
                                             </div>
                                             
                                             <div class="mb-3">
-                                                <label for="email" class="form-label">メールアドレス *</label>
-                                                <input type="email" class="form-control" id="email" required>
-                                                <div class="form-text">このメールアドレスがログインIDになります</div>
+                                                <label for="email" class="form-label" data-i18n="auth.email_label"></label>
+                                                <input type="email" class="form-control" id="email" required data-i18n-placeholder="auth.email_placeholder">
+                                                <div class="form-text" data-i18n="auth.email_as_login_id"></div>
                                             </div>
                                             
                                             <div class="row">
                                                 <div class="col-md-6">
                                                     <div class="mb-3">
-                                                        <label for="password" class="form-label">パスワード *</label>
+                                                        <label for="password" class="form-label" data-i18n="auth.password_label"></label>
                                                         <input type="password" class="form-control" id="password" required 
-                                                               minlength="8" onkeyup="RegisterAdminPage.checkPasswordStrength()">
-                                                        <div class="form-text">8文字以上で入力してください</div>
+                                                               minlength="8" onkeyup="window.app.currentPage.checkPasswordStrength()">
+                                                        <div class="form-text" data-i18n="auth.password_min_length_hint"></div>
                                                         <div id="passwordStrength" class="password-strength"></div>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <div class="mb-3">
-                                                        <label for="confirmPassword" class="form-label">パスワード確認 *</label>
+                                                        <label for="confirmPassword" class="form-label" data-i18n="auth.confirm_password_label"></label>
                                                         <input type="password" class="form-control" id="confirmPassword" required 
-                                                               onkeyup="RegisterAdminPage.checkPasswordMatch()">
+                                                               onkeyup="window.app.currentPage.checkPasswordMatch()">
                                                         <div id="passwordMatch" class="password-match"></div>
                                                     </div>
                                                 </div>
                                             </div>
                                             
                                             <div class="mb-3">
-                                                <label for="department" class="form-label">部署</label>
+                                                <label for="department" class="form-label" data-i18n="common.department_label"></label>
                                                 <select class="form-select" id="department">
-                                                    <option value="">部署を選択してください</option>
-                                                    <option value="management">経営管理</option>
-                                                    <option value="construction">建設部</option>
-                                                    <option value="engineering">技術部</option>
-                                                    <option value="safety">安全管理部</option>
-                                                    <option value="hr">人事部</option>
-                                                    <option value="finance">経理部</option>
+                                                    <option value="" data-i18n="common.select_department"></option>
+                                                    <option value="management" data-i18n="departments.management"></option>
+                                                    <option value="construction" data-i18n="departments.construction"></option>
+                                                    <option value="engineering" data-i18n="departments.engineering"></option>
+                                                    <option value="safety" data-i18n="departments.safety"></option>
+                                                    <option value="hr" data-i18n="departments.hr"></option>
+                                                    <option value="finance" data-i18n="departments.finance"></option>
                                                 </select>
                                             </div>
                                             
                                             <div class="mb-3">
-                                                <label for="position" class="form-label">役職</label>
+                                                <label for="position" class="form-label" data-i18n="common.position_label"></label>
                                                 <input type="text" class="form-control" id="position" 
-                                                       placeholder="例: 部長、課長、主任">
+                                                       data-i18n-placeholder="common.position_placeholder">
                                             </div>
                                             
                                             <div class="mb-3">
-                                                <label for="phone" class="form-label">電話番号</label>
+                                                <label for="phone" class="form-label" data-i18n="common.phone_label"></label>
                                                 <input type="tel" class="form-control" id="phone" 
-                                                       placeholder="例: 090-1234-5678">
+                                                       data-i18n-placeholder="common.phone_placeholder">
                                             </div>
                                             
                                             <div class="mb-3">
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" id="canManageUsers" checked>
-                                                    <label class="form-check-label" for="canManageUsers">
-                                                        ユーザー管理権限
-                                                    </label>
+                                                    <label class="form-check-label" for="canManageUsers" data-i18n="permissions.manage_users"></label>
                                                 </div>
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" id="canManageEvaluations" checked>
-                                                    <label class="form-check-label" for="canManageEvaluations">
-                                                        評価管理権限
-                                                    </label>
+                                                    <label class="form-check-label" for="canManageEvaluations" data-i18n="permissions.manage_evaluations"></label>
                                                 </div>
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" id="canViewReports" checked>
-                                                    <label class="form-check-label" for="canViewReports">
-                                                        レポート閲覧権限
-                                                    </label>
+                                                    <label class="form-check-label" for="canViewReports" data-i18n="permissions.view_reports"></label>
                                                 </div>
                                             </div>
                                             
@@ -119,7 +113,7 @@ class RegisterAdminPage {
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" id="agreeTerms" required>
                                                     <label class="form-check-label" for="agreeTerms">
-                                                        <a href="#" onclick="RegisterAdminPage.showTerms()">利用規約</a>に同意します *
+                                                        <a href="#" onclick="window.app.currentPage.showTerms()"><span data-i18n="registration.terms_of_service"></span></a><span data-i18n="common.agree_to_terms"></span>
                                                     </label>
                                                 </div>
                                             </div>
@@ -127,11 +121,11 @@ class RegisterAdminPage {
                                             <div class="d-grid gap-2">
                                                 <button type="submit" class="btn btn-primary btn-lg" id="submitBtn" disabled>
                                                     <i class="fas fa-user-plus me-2"></i>
-                                                    管理者アカウントを作成
+                                                    <span data-i18n="registration.create_admin_account"></span>
                                                 </button>
-                                                <a href="#/login" class="btn btn-outline-secondary">
+                                                <a href="#/login" class="btn btn-outline-secondary" onclick="event.preventDefault(); window.app.navigate('/login')">
                                                     <i class="fas fa-arrow-left me-2"></i>
-                                                    ログインページに戻る
+                                                    <span data-i18n="common.back_to_login"></span>
                                                 </a>
                                             </div>
                                         </form>
@@ -152,6 +146,14 @@ class RegisterAdminPage {
   async afterRender() {
     this.setupEventListeners()
     this.checkFormValidity()
+    if (this.app.i18n) {
+      this.app.i18n.updateUI(); // 翻訳を適用
+    }
+    // フォーム送信ハンドラをインスタンスメソッドにバインド
+    const form = document.getElementById("registerAdminForm");
+    if (form) {
+        form.addEventListener("submit", (e) => this.handleSubmit(e));
+    }
   }
 
   /**
@@ -188,14 +190,14 @@ class RegisterAdminPage {
       password.value === confirmPassword.value &&
       password.value.length >= 8
 
-    submitBtn.disabled = !isValid
+    if(submitBtn) submitBtn.disabled = !isValid
   }
 
   /**
    * Check password strength
    * パスワード強度をチェック
    */
-  static checkPasswordStrength() {
+  checkPasswordStrength() {
     const password = document.getElementById("password").value
     const strengthDiv = document.getElementById("passwordStrength")
 
@@ -203,91 +205,106 @@ class RegisterAdminPage {
     const feedback = []
 
     if (password.length >= 8) strength++
-    else feedback.push("8文字以上")
+    else feedback.push(this.app.i18n.t("forms.password_hint_length")) // 翻訳キー
 
     if (/[a-z]/.test(password)) strength++
-    else feedback.push("小文字")
+    else feedback.push(this.app.i18n.t("forms.password_hint_lowercase")) // 翻訳キー
 
     if (/[A-Z]/.test(password)) strength++
-    else feedback.push("大文字")
+    else feedback.push(this.app.i18n.t("forms.password_hint_uppercase")) // 翻訳キー
 
     if (/[0-9]/.test(password)) strength++
-    else feedback.push("数字")
+    else feedback.push(this.app.i18n.t("forms.password_hint_number")) // 翻訳キー
 
     if (/[^A-Za-z0-9]/.test(password)) strength++
-    else feedback.push("記号")
+    else feedback.push(this.app.i18n.t("forms.password_hint_symbol")) // 翻訳キー
 
-    const levels = ["非常に弱い", "弱い", "普通", "強い", "非常に強い"]
+    const levels = [
+        this.app.i18n.t("forms.password_strength_very_weak"), // 非常に弱い
+        this.app.i18n.t("forms.password_strength_weak"),      // 弱い
+        this.app.i18n.t("forms.password_strength_normal"),     // 普通
+        this.app.i18n.t("forms.password_strength_strong"),     // 強い
+        this.app.i18n.t("forms.password_strength_very_strong") // 非常に強い
+    ];
     const colors = ["#dc3545", "#fd7e14", "#ffc107", "#198754", "#0d6efd"]
 
-    strengthDiv.innerHTML = `
+    if(strengthDiv) {
+        strengthDiv.innerHTML = `
             <div class="password-strength-bar">
                 <div class="strength-level" style="width: ${(strength / 5) * 100}%; background-color: ${colors[strength - 1] || "#dc3545"}"></div>
             </div>
             <small class="text-muted">
-                強度: ${levels[strength - 1] || levels[0]}
-                ${feedback.length > 0 ? ` (必要: ${feedback.join(", ")})` : ""}
+                <span data-i18n="forms.password_strength">強度</span>: ${levels[strength - 1] || levels[0]}
+                ${feedback.length > 0 ? ` (<span data-i18n="forms.required">必要</span>: ${feedback.join(", ")})` : ""}
             </small>
         `
+        this.app.i18n.updateUI(strengthDiv); // 翻訳を適用
+    }
+    this.checkFormValidity(); // 強度チェック後にフォームの有効性を再確認
   }
 
   /**
    * Check password match
    * パスワード一致をチェック
    */
-  static checkPasswordMatch() {
+  checkPasswordMatch() {
     const password = document.getElementById("password").value
     const confirmPassword = document.getElementById("confirmPassword").value
     const matchDiv = document.getElementById("passwordMatch")
 
     if (confirmPassword.length === 0) {
-      matchDiv.innerHTML = ""
+      if(matchDiv) matchDiv.innerHTML = ""
+      this.checkFormValidity(); // 一致チェック後にフォームの有効性を再確認
       return
     }
 
-    if (password === confirmPassword) {
-      matchDiv.innerHTML = '<small class="text-success"><i class="fas fa-check"></i> パスワードが一致しています</small>'
-    } else {
-      matchDiv.innerHTML = '<small class="text-danger"><i class="fas fa-times"></i> パスワードが一致しません</small>'
+    if(matchDiv) {
+        if (password === confirmPassword) {
+            matchDiv.innerHTML = `<small class="text-success"><i class="fas fa-check"></i> <span data-i18n="forms.password_match"></span></small>`
+        } else {
+            matchDiv.innerHTML = `<small class="text-danger"><i class="fas fa-times"></i> <span data-i18n="forms.password_mismatch"></span></small>`
+        }
+        this.app.i18n.updateUI(matchDiv); // 翻訳を適用
     }
+    this.checkFormValidity(); // 一致チェック後にフォームの有効性を再確認
   }
 
   /**
    * Show terms modal
    * 利用規約モーダルを表示
    */
-  static showTerms() {
+  showTerms() {
     const modal = `
             <div class="modal fade" id="termsModal" tabindex="-1">
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title">利用規約</h5>
+                            <h5 class="modal-title" data-i18n="registration.terms_of_service"></h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <h6>第1条（適用）</h6>
-                            <p>本規約は、建設業従業員評価管理システムの利用に関して適用されます。</p>
+                            <h6 data-i18n="terms.article1_title"></h6>
+                            <p data-i18n="terms.article1_content"></p>
                             
-                            <h6>第2条（利用資格）</h6>
-                            <p>本システムは、管理者権限を付与された者のみが利用できます。</p>
+                            <h6 data-i18n="terms.article2_title"></h6>
+                            <p data-i18n="terms.article2_content"></p>
                             
-                            <h6>第3条（禁止事項）</h6>
+                            <h6 data-i18n="terms.article3_title"></h6>
                             <ul>
-                                <li>システムの不正利用</li>
-                                <li>他者のアカウントの無断使用</li>
-                                <li>機密情報の外部漏洩</li>
-                                <li>システムの改ざんや破壊行為</li>
+                                <li data-i18n="terms.article3_item1"></li>
+                                <li data-i18n="terms.article3_item2"></li>
+                                <li data-i18n="terms.article3_item3"></li>
+                                <li data-i18n="terms.article3_item4"></li>
                             </ul>
                             
-                            <h6>第4条（個人情報の取扱い）</h6>
-                            <p>収集した個人情報は、評価管理の目的でのみ使用し、適切に保護します。</p>
+                            <h6 data-i18n="terms.article4_title"></h6>
+                            <p data-i18n="terms.article4_content"></p>
                             
-                            <h6>第5条（責任の制限）</h6>
-                            <p>システムの利用により生じた損害について、当社は責任を負いません。</p>
+                            <h6 data-i18n="terms.article5_title"></h6>
+                            <p data-i18n="terms.article5_content"></p>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.close"></button>
                         </div>
                     </div>
                 </div>
@@ -295,7 +312,8 @@ class RegisterAdminPage {
         `
 
     document.body.insertAdjacentHTML("beforeend", modal)
-    const modalElement = window.bootstrap.Modal(document.getElementById("termsModal"))
+    const modalElement = new window.bootstrap.Modal(document.getElementById("termsModal"))
+    this.app.i18n.updateUI(document.getElementById("termsModal")); // モーダル内の翻訳を適用
     modalElement.show()
 
     document.getElementById("termsModal").addEventListener("hidden.bs.modal", function () {
@@ -307,7 +325,7 @@ class RegisterAdminPage {
    * Handle form submission
    * フォーム送信処理
    */
-  static async handleSubmit(event) {
+  async handleSubmit(event) {
     event.preventDefault()
 
     const submitBtn = document.getElementById("submitBtn")
@@ -315,14 +333,15 @@ class RegisterAdminPage {
 
     try {
       submitBtn.disabled = true
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>作成中...'
+      submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i><span data-i18n="common.creating"></span>`
+      this.app.i18n.updateUI(submitBtn); // 翻訳を適用
 
-      const formData = new FormData(event.target)
+      // 実際にはformData.get()はフォーム入力のname属性に依存
       const adminData = {
         firstName: document.getElementById("firstName").value,
         lastName: document.getElementById("lastName").value,
         email: document.getElementById("email").value,
-        password: document.getElementById("password").value,
+        password: document.getElementById("password").value, // In real app, password should not be directly passed or should be hashed
         department: document.getElementById("department").value,
         position: document.getElementById("position").value,
         phone: document.getElementById("phone").value,
@@ -332,25 +351,25 @@ class RegisterAdminPage {
           canViewReports: document.getElementById("canViewReports").checked,
         },
         role: "admin",
-        status: "active",
+        status: "developer_approval_pending", // 初回は開発者承認待ち
         createdAt: new Date().toISOString(),
-        tenantId: "default", // In real app, this would be dynamic
+        tenantId: "default", // For initial mock, tenantId is not yet assigned. Firebase function would assign it.
       }
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Simulate API call for creating admin for approval
+      // await this.app.api.createAdminForApproval(adminData); // ここにAPI呼び出しが入る
 
-      // In real implementation, call API to create admin user
-      // const result = await api.createAdminUser(adminData)
+      await new Promise((resolve) => setTimeout(resolve, 2000))
 
       // Show success message
       const alertDiv = document.createElement("div")
-      alertDiv.className = "alert alert-success alert-dismissible fade show"
+      alertDiv.className = "alert alert-success alert-dismissible fade show mt-3"
       alertDiv.innerHTML = `
                 <i class="fas fa-check-circle me-2"></i>
-                管理者アカウントが正常に作成されました。
+                <span data-i18n="messages.admin_registration_success"></span>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `
+      this.app.i18n.updateUI(alertDiv); // 翻訳を適用
 
       const form = document.getElementById("registerAdminForm")
       form.parentNode.insertBefore(alertDiv, form)
@@ -360,24 +379,30 @@ class RegisterAdminPage {
 
       // Redirect to login after 3 seconds
       setTimeout(() => {
-        window.location.hash = "#/login"
+        window.app.navigate("#/login")
       }, 3000)
     } catch (error) {
       console.error("Admin registration error:", error)
 
+      let errorMessage = this.app.i18n.t("errors.registration_failed"); // 翻訳キー
+      // Firebase Authenticationエラーコードに応じたメッセージ表示はAuthサービスで行う
+      // 例: if (error.code === 'auth/email-already-in-use') errorMessage = this.app.i18n.t("errors.email_already_in_use");
+
       const alertDiv = document.createElement("div")
-      alertDiv.className = "alert alert-danger alert-dismissible fade show"
+      alertDiv.className = "alert alert-danger alert-dismissible fade show mt-3"
       alertDiv.innerHTML = `
                 <i class="fas fa-exclamation-triangle me-2"></i>
-                管理者アカウントの作成に失敗しました: ${error.message}
+                <span data-i18n="common.error_message_prefix"></span>${errorMessage}: ${this.app.sanitizeHtml(error.message)}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `
+      this.app.i18n.updateUI(alertDiv); // 翻訳を適用
 
       const form = document.getElementById("registerAdminForm")
       form.parentNode.insertBefore(alertDiv, form)
     } finally {
       submitBtn.disabled = false
-      submitBtn.innerHTML = originalText
+      submitBtn.innerHTML = originalText // 元のテキストに戻す
+      this.app.i18n.updateUI(submitBtn); // 翻訳を適用
     }
   }
 }
@@ -385,5 +410,6 @@ class RegisterAdminPage {
 // Export for use in router
 window.RegisterAdminPage = RegisterAdminPage
 
-// Import Bootstrap
-window.bootstrap = window.bootstrap || {}
+// Note: window.bootstrap is usually defined by the Bootstrap script itself.
+// This line might not be necessary if Bootstrap is loaded correctly before this script.
+// window.bootstrap = window.bootstrap || {}
