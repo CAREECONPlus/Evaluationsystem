@@ -19,16 +19,20 @@ class Auth {
         status: "active",
         createdAt: new Date("2024-01-01"),
         lastLogin: null,
+        tenantId: "tenant-001", // 追加: テナントID
+        jobType: "管理職", // 追加: 職種
       },
       {
         id: "2",
         email: "manager@example.com",
         password: "password",
         name: "マネージャー",
-        role: "evaluator",
+        role: "evaluator", // 評価者 (マネージャー)
         status: "active",
         createdAt: new Date("2024-01-01"),
         lastLogin: null,
+        tenantId: "tenant-001", // 追加: テナントID
+        jobType: "現場監督", // 追加: 職種
       },
       {
         id: "3",
@@ -39,6 +43,21 @@ class Auth {
         status: "active",
         createdAt: new Date("2024-01-01"),
         lastLogin: null,
+        tenantId: "tenant-001", // 追加: テナントID
+        jobType: "建設作業員", // 追加: 職種
+      },
+      // テナントを跨ぐテスト用ユーザー（必要に応じて）
+      {
+        id: "4",
+        email: "admin2@example.com",
+        password: "password",
+        name: "管理者2",
+        role: "admin",
+        status: "active",
+        createdAt: new Date("2024-01-05"),
+        lastLogin: null,
+        tenantId: "tenant-002",
+        jobType: "管理職",
       },
     ]
   }
@@ -55,12 +74,23 @@ class Auth {
       const savedUser = localStorage.getItem("currentUser")
       if (savedUser) {
         try {
-          this.currentUser = JSON.parse(savedUser)
-          this.app.currentUser = this.currentUser
-          console.log("Restored user session:", this.currentUser.email)
+          // localStorageに保存されているユーザーIDでdemoUsersから完全なユーザー情報を取得
+          const parsedUser = JSON.parse(savedUser);
+          const userFromDemo = this.demoUsers.find(u => u.id === parsedUser.id);
+
+          if (userFromDemo) {
+            this.currentUser = { ...userFromDemo };
+            delete this.currentUser.password; // パスワードはセッションから除く
+            this.app.currentUser = this.currentUser;
+            console.log("Restored user session:", this.currentUser.email);
+          } else {
+            // demoUsersに存在しない場合はセッションをクリア
+            console.warn("User in localStorage not found in demoUsers. Clearing session.");
+            localStorage.removeItem("currentUser");
+          }
         } catch (error) {
-          console.warn("Failed to restore user session:", error)
-          localStorage.removeItem("currentUser")
+          console.warn("Failed to restore user session:", error);
+          localStorage.removeItem("currentUser");
         }
       }
 
@@ -81,7 +111,7 @@ class Auth {
       console.log("Auth.login called with:", email)
 
       if (!email || !password) {
-        throw new Error("メールアドレスとパスワードを入力してください。")
+        throw new Error(this.app.i18n.t("errors.email_password_required"));
       }
 
       // Simulate API delay
@@ -91,22 +121,22 @@ class Auth {
       const user = this.demoUsers.find((u) => u.email === email && u.password === password)
 
       if (!user) {
-        throw new Error("メールアドレスまたはパスワードが正しくありません。")
+        throw new Error(this.app.i18n.t("errors.invalid_email_password"));
       }
 
       if (user.status !== "active") {
-        throw new Error("アカウントが無効です。管理者にお問い合わせください。")
+        throw new Error(this.app.i18n.t("errors.account_inactive"));
       }
 
       // Update last login
-      user.lastLogin = new Date()
+      user.lastLogin = new Date();
 
       // Set current user
-      this.currentUser = { ...user }
-      delete this.currentUser.password // Remove password from session
+      this.currentUser = { ...user };
+      delete this.currentUser.password; // Remove password from session
 
       // Save to localStorage
-      localStorage.setItem("currentUser", JSON.stringify(this.currentUser))
+      localStorage.setItem("currentUser", JSON.stringify({ id: this.currentUser.id, email: this.currentUser.email })); // パスワードなしの最小限の情報
 
       console.log("Login successful:", this.currentUser)
       return this.currentUser
@@ -170,7 +200,7 @@ class Auth {
   }
 
   /**
-   * Register new user
+   * Register new user (from invitation link)
    * 新しいユーザーを登録
    */
   async register(userData) {
@@ -179,13 +209,13 @@ class Auth {
 
       // Validate required fields
       if (!userData.email || !userData.password || !userData.name) {
-        throw new Error("必須項目を入力してください。")
+        throw new Error(this.app.i18n.t("errors.required_fields_missing"));
       }
 
       // Check if user already exists
       const existingUser = this.demoUsers.find((u) => u.email === userData.email)
       if (existingUser) {
-        throw new Error("このメールアドレスは既に登録されています。")
+        throw new Error(this.app.i18n.t("errors.email_already_in_use"));
       }
 
       // Simulate API delay
@@ -197,13 +227,15 @@ class Auth {
         email: userData.email,
         password: userData.password,
         name: userData.name,
-        role: userData.role || "employee",
-        status: "pending_approval",
+        role: userData.role || "worker", // 招待で指定されたロール、なければworker
+        status: "pending_approval", // 承認待ちで作成
         createdAt: new Date(),
         lastLogin: null,
+        tenantId: userData.tenantId || "tenant-001", // 招待で指定されたテナントID、なければデフォルト
+        jobType: userData.jobType || "未設定", // 招待で指定された職種、なければ未設定
       }
 
-      // Add to demo users
+      // Add to demo users (in a real app, this would be a backend call)
       this.demoUsers.push(newUser)
 
       console.log("User registered successfully:", newUser.email)
@@ -221,13 +253,13 @@ class Auth {
   async changePassword(currentPassword, newPassword) {
     try {
       if (!this.currentUser) {
-        throw new Error("ログインが必要です。")
+        throw new Error(this.app.i18n.t("errors.login_required"));
       }
 
       // Find user in demo users
       const user = this.demoUsers.find((u) => u.id === this.currentUser.id)
       if (!user || user.password !== currentPassword) {
-        throw new Error("現在のパスワードが正しくありません。")
+        throw new Error(this.app.i18n.t("errors.invalid_current_password"));
       }
 
       // Simulate API delay
