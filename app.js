@@ -52,20 +52,9 @@ class App {
       console.log("Initializing Auth...")
       this.auth = new window.Auth(this)
       await this.auth.init()
-
-      console.log("Initializing Router...")
-      this.router = new window.Router(this)
-      this.router.init()
-
-      // Initialize page instances with app reference
-      // 各ページコンポーネントがappインスタンスを持つようにする
-      console.log("Initializing page instances...")
-      // DashboardPage, LoginPage, RegisterPage などは router.loadPage でインスタンスが生成されるため、
-      // ここでnewする必要はないが、window.dashboardPageなどのグローバル参照が必要な場合は定義
-      if (window.DashboardPage) {
-        // window.dashboardPage = new window.DashboardPage(this); // routerがインスタンスを生成するので不要
-      }
+      
       // HeaderComponentとSidebarComponentにappインスタンスを設定
+      // ルーター初期化前に設定することで、コンポーネントがapp.i18n等にアクセスできるようにする
       if (window.HeaderComponent) {
           window.HeaderComponent.app = this;
       }
@@ -73,6 +62,16 @@ class App {
           window.SidebarComponent.app = this;
       }
 
+      console.log("Initializing Router...")
+      this.router = new window.Router(this)
+      this.router.init()
+
+      // Initialize page instances with app reference
+      // DashboardPage, LoginPage, RegisterPage などは router.loadPage でインスタンスが生成されるため、
+      // ここでnewする必要はないが、window.dashboardPageなどのグローバル参照が必要な場合は定義
+      if (window.DashboardPage) {
+        // window.dashboardPage = new window.DashboardPage(this); // routerがインスタンスを生成するので不要
+      }
 
       this.isInitialized = true
       console.log("Application initialized successfully")
