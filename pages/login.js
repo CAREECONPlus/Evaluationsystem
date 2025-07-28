@@ -75,21 +75,23 @@ class LoginPage {
 
     // フォームとボタンへのイベントリスナーを設定
     const form = document.getElementById("loginForm");
-    const loginButton = document.getElementById("loginButton");
     const demoAdminBtn = document.getElementById("demoAdminBtn");
     const demoEvaluatorBtn = document.getElementById("demoEvaluatorBtn");
     const demoWorkerBtn = document.getElementById("demoWorkerBtn");
 
-    // フォーム送信イベント
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      this.handleLogin();
-    });
+    // ★★★ 修正点 ★★★
+    // form要素が存在することを確認してからイベントリスナーを設定
+    if (form) {
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        this.handleLogin();
+      });
+    }
 
-    // デモアカウントボタンのクリックイベント
-    demoAdminBtn.addEventListener("click", () => this.loginDemo("admin"));
-    demoEvaluatorBtn.addEventListener("click", () => this.loginDemo("evaluator"));
-    demoWorkerBtn.addEventListener("click", () => this.loginDemo("worker"));
+    // デモアカウントボタンのクリックイベント（同様にnullチェックを追加）
+    if (demoAdminBtn) demoAdminBtn.addEventListener("click", () => this.loginDemo("admin"));
+    if (demoEvaluatorBtn) demoEvaluatorBtn.addEventListener("click", () => this.loginDemo("evaluator"));
+    if (demoWorkerBtn) demoWorkerBtn.addEventListener("click", () => this.loginDemo("worker"));
 
     setTimeout(() => document.getElementById("email")?.focus(), 100);
     console.log("Login page initialized successfully");
