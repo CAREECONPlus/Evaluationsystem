@@ -101,60 +101,6 @@ class DashboardPage {
                 </div>
               </div>
             </div>
-
-            <div class="row">
-              <div class="col-md-6 mb-4">
-                <div class="card shadow-sm">
-                  <div class="card-header bg-white border-bottom">
-                    <h5 class="card-title mb-0">
-                      <i class="fas fa-info-circle me-2 text-info"></i>
-                      システム情報
-                    </h5>
-                  </div>
-                  <div class="card-body">
-                    <div class="row">
-                      <div class="col-sm-6">
-                        <h6 class="text-muted mb-2">評価期間</h6>
-                        <p class="mb-1 fw-bold">2024年第1四半期</p>
-                        <small class="text-muted">2024年1月 - 2024年3月</small>
-                      </div>
-                      <div class="col-sm-6">
-                        <h6 class="text-muted mb-2">次回評価期限</h6>
-                        <p class="mb-1 fw-bold">2024年3月31日</p>
-                        <small class="text-muted">あと ${this.getDaysUntilDeadline()} 日</small>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="col-md-6 mb-4">
-                <div class="card shadow-sm">
-                  <div class="card-header bg-white border-bottom">
-                    <h5 class="card-title mb-0">
-                      <i class="fas fa-users me-2 text-success"></i>
-                      ユーザー概要
-                    </h5>
-                  </div>
-                  <div class="card-body">
-                    <div class="user-summary">
-                      <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
-                        <span><i class="fas fa-user-shield me-2 text-primary"></i>管理者</span>
-                        <span class="badge bg-primary">1</span>
-                      </div>
-                      <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
-                        <span><i class="fas fa-user-tie me-2 text-info"></i>評価者</span>
-                        <span class="badge bg-info">1</span>
-                      </div>
-                      <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
-                        <span><i class="fas fa-user me-2 text-success"></i>作業員</span>
-                        <span class="badge bg-success">${this.stats?.totalEmployees ? this.stats.totalEmployees - 2 : 1}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       `
