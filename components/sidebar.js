@@ -4,32 +4,31 @@
  */
 class SidebarComponent {
   constructor() {
-    this.isVisible = false
-    this.currentUser = null // app.currentUser から取得するため不要になるが、互換性のため残す
-    this.isCollapsed = false
-    this.app = null; // appインスタンスを保持するプロパティを追加
+    this.isVisible = false;
+    this.currentUser = null; // App.jsから受け取る currentUser を保持 (冗長だが互換性のため残す)
+    this.isCollapsed = false;
+    this.app = null; // Appインスタンスへの参照
   }
 
   /**
    * Show sidebar
    * サイドバーを表示
-   * @param {Object} user - 現在のユーザー情報 (app.currentUserを使用するため、この引数は冗長だが、呼び出し元からの互換性維持のため残す)
    */
-  show(user) {
+  show() { // user引数は削除しました。Appクラスから設定されるthis.app.currentUser を直接参照します。
     try {
-      // appインスタンスが設定されていることを確認
-      if (!this.app || !this.app.i18n) { // i18nも確実に初期化されていることを確認
+      // appインスタンスとi18nが設定されていることを確実に確認
+      if (!this.app || !this.app.i18n) {
         console.error("SidebarComponent: app instance or i18n is not set. Cannot show sidebar.");
-        this.hide(); // 必須コンポーネントがない場合は非表示にする
+        this.hide(); // 必須の依存関係がない場合は非表示にする
         return;
       }
-      this.currentUser = user || this.app.currentUser; // app.currentUserを優先
+      this.currentUser = this.app.currentUser; // Appインスタンスから最新のユーザー情報を取得
 
-      console.log("Showing sidebar for user:", this.currentUser?.name)
-      this.render()
-      this.isVisible = true
+      console.log("Showing sidebar for user:", this.currentUser?.name);
+      this.render();
+      this.isVisible = true;
     } catch (error) {
-      console.error("Error showing sidebar:", error)
+      console.error("Error showing sidebar:", error);
     }
   }
 
@@ -39,22 +38,22 @@ class SidebarComponent {
    */
   hide() {
     try {
-      console.log("Sidebar hidden")
-      this.isVisible = false
-      const sidebarContainer = document.getElementById("sidebar-container")
+      console.log("Sidebar hidden");
+      this.isVisible = false;
+      const sidebarContainer = document.getElementById("sidebar-container");
       if (sidebarContainer) {
-        sidebarContainer.innerHTML = ""
-        sidebarContainer.style.display = "none"
+        sidebarContainer.innerHTML = ""; // コンテンツをクリア
+        sidebarContainer.style.display = "none"; // 非表示にする
       }
 
-      // Reset main content margin by adding sidebar-hidden class
+      // メインコンテンツのマージンをリセットするクラスを追加
       const mainContent = document.getElementById("content");
       if (mainContent) {
         mainContent.classList.add("sidebar-hidden");
       }
 
       const existingToggle = document.querySelector('.sidebar-toggle');
-      if (existingToggle) existingToggle.remove();
+      if (existingToggle) existingToggle.remove(); // トグルボタンも削除
 
     } catch (error) {
       console.error("Error hiding sidebar:", error);
@@ -64,16 +63,16 @@ class SidebarComponent {
   /**
    * Update sidebar
    * サイドバーを更新
-   * @param {Object} user - 現在のユーザー情報 (app.currentUserを使用するため、この引数は冗長だが、互換性のため残す)
    */
-  update(user) {
-    if (!this.app || !this.app.i18n) { // appインスタンスやi18nが設定されていない場合は更新しない
+  update() { // user引数は削除しました。Appクラスから設定されるthis.app.currentUser を直接参照します。
+    // appインスタンスとi18nが設定されていない場合は更新しない
+    if (!this.app || !this.app.i18n) {
       console.warn("SidebarComponent: app instance or i18n not set during update. Skipping render.");
       return;
     }
-    this.currentUser = user || this.app.currentUser; // app.currentUserを優先
+    this.currentUser = this.app.currentUser; // Appインスタンスから最新のユーザー情報を取得
     if (this.isVisible) {
-      this.render()
+      this.render();
     }
   }
 
@@ -92,15 +91,16 @@ class SidebarComponent {
    */
   render() {
     try {
-      // appインスタンスとcurrentUserの存在を確実にチェック
+      // appインスタンス、currentUser、i18nが全て存在することを確実にチェック
       if (!this.app || !this.app.currentUser || !this.app.i18n) {
         console.log("SidebarComponent: App, current user, or i18n not available, hiding sidebar.");
         this.hide(); // ユーザー情報がない場合は非表示にする
         return;
       }
 
-      let sidebarContainer = document.getElementById("sidebar-container")
+      let sidebarContainer = document.getElementById("sidebar-container");
       if (!sidebarContainer) {
+        // コンテナが存在しない場合は作成し、DOMに追加
         sidebarContainer = document.createElement("div");
         sidebarContainer.id = "sidebar-container";
         sidebarContainer.className = "sidebar-container";
@@ -112,7 +112,7 @@ class SidebarComponent {
         }
       }
 
-      sidebarContainer.style.display = "block";
+      sidebarContainer.style.display = "block"; // コンテナを表示する
 
       const sidebarWidth = this.isCollapsed ? "80px" : "250px";
       const userRole = this.app.currentUser.role; // app.currentUserからロールを取得
@@ -155,11 +155,11 @@ class SidebarComponent {
         </div>
       `;
 
-      // Adjust main content margin by removing sidebar-hidden class
+      // メインコンテンツのマージンを調整し、sidebar-hiddenクラスを削除
       const mainContent = document.getElementById("content");
       if (mainContent) {
         mainContent.style.marginLeft = sidebarWidth;
-        mainContent.classList.remove("sidebar-hidden");
+        mainContent.classList.remove("sidebar-hidden"); // サイドバーが表示される場合は非表示クラスを削除
         mainContent.style.transition = 'margin-left 0.3s ease';
       }
 
@@ -201,7 +201,7 @@ class SidebarComponent {
   }
 
   renderMenuItem(path, icon, translationKey) {
-    // app.i18n が確実に存在することを確認
+    // this.app.i18n が確実に存在することを確認し、存在しない場合はフォールバック
     const translatedText = this.app?.i18n?.t('nav.' + translationKey) || translationKey;
     const translatedTitle = this.app?.i18n?.t('nav.' + translationKey) || translationKey; // title属性用
 
@@ -216,7 +216,7 @@ class SidebarComponent {
   }
 
   highlightCurrentPage() {
-    // app.router が確実に存在することを確認
+    // this.app.router が確実に存在することを確認
     if (!this.app || !this.app.router) {
       console.warn("SidebarComponent: app.router not available for highlighting current page.");
       return;
@@ -240,7 +240,8 @@ class SidebarComponent {
 
   sanitizeHtml(str) {
     if (!str) return "";
-    if (this.app?.sanitizeHtml) { // app.jsのsanitizeHtml関数があればそれを使う
+    // this.app.sanitizeHtml が存在することを確認
+    if (this.app?.sanitizeHtml) {
         return this.app.sanitizeHtml(str);
     }
     const div = document.createElement("div");
@@ -249,5 +250,5 @@ class SidebarComponent {
   }
 }
 
-// Create global instance
+// グローバルインスタンスの作成
 window.SidebarComponent = new SidebarComponent();
