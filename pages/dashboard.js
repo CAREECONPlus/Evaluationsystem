@@ -157,10 +157,10 @@ class DashboardPage {
 
       // Update header and sidebar (App.jsで制御されるが念のため)
       if (window.HeaderComponent) {
-        window.HeaderComponent.show(this.app.currentUser);
+        window.HeaderComponent.show(); // 引数なしで呼び出す
       }
       if (window.SidebarComponent) {
-        window.SidebarComponent.show(this.app.currentUser);
+        window.SidebarComponent.show(); // 引数なしで呼び出す
       }
 
       // UI翻訳を適用
@@ -311,7 +311,7 @@ class DashboardPage {
   initializeChart() {
     const canvas = document.getElementById("performanceChart");
     if (!canvas) {
-      console.warn("Performance chart canvas not found");
+      console.warn("Performance chart canvas not found. Attempting fallback.");
       this.showChartFallback(null); // canvasがない場合もフォールバック表示
       return;
     }
@@ -322,7 +322,7 @@ class DashboardPage {
       }
 
       if (typeof Chart === "undefined") {
-        console.warn("Chart.js not loaded");
+        console.warn("Chart.js not loaded.");
         this.showChartFallback(canvas);
         return;
       }
