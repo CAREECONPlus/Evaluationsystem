@@ -472,3 +472,29 @@ body {
     border: 1px solid #ddd !important;
   }
 }
+
+/* --- レイアウト修正のために一番下に追加 --- */
+
+#app {
+  display: flex;
+  flex-direction: row;
+}
+
+.sidebar-container {
+  /* position: fixed から変更してレイアウトフローの一部にする */
+  position: sticky;
+  top: 56px; /* 上部ヘッダーの高さ */
+  height: calc(100vh - 56px);
+  flex-shrink: 0; /* サイドバーが縮まないようにする */
+}
+
+.main-content {
+  flex-grow: 1; /* 残りの利用可能なスペースをすべて埋める */
+  margin-left: 0 !important; /* JavaScriptによるマージン設定を無効化 */
+  overflow-y: auto; /* コンテンツがはみ出た場合にスクロールさせる */
+}
+
+/* サイドバーが折りたたまれている時のための調整 */
+.sidebar-collapsed + .main-content {
+  /* このクラスは将来の実装のために残します */
+}
