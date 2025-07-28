@@ -540,7 +540,7 @@ class GoalSettingPage {
   }
 }
 
-// Add goal-setting-specific styles (変更なし)
+// Add goal-setting-specific styles
 const goalSettingStyles = `
 <style>
 .goal-setting-page {
@@ -671,7 +671,7 @@ if (!document.getElementById("goal-setting-styles")) {
   const styleElement = document.createElement("div");
   styleElement.id = "goal-setting-styles";
   styleElement.innerHTML = goalSettingStyles;
-  document.head.appendChild(styleSheet); // styleSheet はどこかで定義されているはずだが、もしなければdocument.head.appendChild(styleElement);で良い
+  document.head.appendChild(styleElement); // ここを修正しました (styleSheet -> styleElement)
 }
 
 window.GoalSettingPage = GoalSettingPage;
