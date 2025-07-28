@@ -396,3 +396,149 @@ body {
   width: 100%;
   padding: 1.5rem;
 }
+
+/* --- Goal Approvals Page Styles --- */
+.goal-approvals-page {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.goal-approval-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.goal-approval-card.approved {
+    border-color: #28a745;
+    background: #f8fff9;
+}
+
+.goal-approval-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.user-info h5 {
+    margin: 0 0 5px 0;
+    color: #333;
+}
+
+.user-info p, .user-info small {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.approval-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.goals-list {
+    background: #fafafa;
+    border-radius: 6px;
+    padding: 15px;
+}
+
+@media (max-width: 768px) {
+    .goal-approval-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .approval-actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+    
+    .approval-actions button {
+        flex: 1;
+    }
+}
+
+/* --- Evaluations Page Styles --- */
+.evaluations-page .view-controls {
+  display: flex;
+  gap: 10px;
+}
+.evaluations-page .filters-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  align-items: end;
+}
+.evaluations-page .score-badge {
+  background-color: #007bff;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+.evaluations-page .view-content {
+  display: none;
+}
+.evaluations-page .view-content.active {
+  display: block;
+}
+.chart-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+}
+.evaluation-list-group .list-group-item {
+  cursor: pointer;
+}
+.evaluation-list-group .list-group-item:hover {
+  background-color: #f8f9fa;
+}
+.evaluation-list-group .list-group-item.active {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+.chart-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  color: #666;
+}
+@media (max-width: 992px) {
+  .chart-layout {
+    grid-template-columns: 1fr;
+  }
+}
