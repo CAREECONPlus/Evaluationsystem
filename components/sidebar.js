@@ -12,14 +12,15 @@ class SidebarComponent {
 
   /**
    * Show sidebar
-   * ヘッダーを表示
+   * サイドバーを表示
    * @param {Object} user - 現在のユーザー情報 (app.currentUserを使用するため、この引数は冗長だが、呼び出し元からの互換性維持のため残す)
    */
   show(user) {
     try {
       // appインスタンスが設定されていることを確認
-      if (!this.app) {
-        console.error("SidebarComponent: app instance is not set. Cannot show sidebar.");
+      if (!this.app || !this.app.i18n) { // i18nも確実に初期化されていることを確認
+        console.error("SidebarComponent: app instance or i18n is not set. Cannot show sidebar.");
+        this.hide(); // 必須コンポーネントがない場合は非表示にする
         return;
       }
       this.currentUser = user || this.app.currentUser; // app.currentUserを優先
@@ -34,7 +35,7 @@ class SidebarComponent {
 
   /**
    * Hide sidebar
-   * ヘッダーを非表示
+   * サイドバーを非表示
    */
   hide() {
     try {
@@ -46,10 +47,10 @@ class SidebarComponent {
         sidebarContainer.style.display = "none"
       }
 
-      // Reset main content margin
+      // Reset main content margin by adding sidebar-hidden class
       const mainContent = document.getElementById("content");
       if (mainContent) {
-        mainContent.style.marginLeft = "0";
+        mainContent.classList.add("sidebar-hidden");
       }
 
       const existingToggle = document.querySelector('.sidebar-toggle');
@@ -62,12 +63,12 @@ class SidebarComponent {
 
   /**
    * Update sidebar
-   * ヘッダーを更新
+   * サイドバーを更新
    * @param {Object} user - 現在のユーザー情報 (app.currentUserを使用するため、この引数は冗長だが、互換性のため残す)
    */
   update(user) {
-    if (!this.app) { // appインスタンスが設定されていない場合は更新しない
-      console.warn("SidebarComponent: app instance not set during update. Skipping render.");
+    if (!this.app || !this.app.i18n) { // appインスタンスやi18nが設定されていない場合は更新しない
+      console.warn("SidebarComponent: app instance or i18n not set during update. Skipping render.");
       return;
     }
     this.currentUser = user || this.app.currentUser; // app.currentUserを優先
@@ -87,13 +88,13 @@ class SidebarComponent {
 
   /**
    * Render sidebar
-   * ヘッダーを描画
+   * サイドバーを描画
    */
   render() {
     try {
       // appインスタンスとcurrentUserの存在を確実にチェック
-      if (!this.app || !this.app.currentUser) {
-        console.log("SidebarComponent: App or current user not available, hiding sidebar.");
+      if (!this.app || !this.app.currentUser || !this.app.i18n) {
+        console.log("SidebarComponent: App, current user, or i18n not available, hiding sidebar.");
         this.hide(); // ユーザー情報がない場合は非表示にする
         return;
       }
@@ -142,11 +143,11 @@ class SidebarComponent {
             <div class="d-flex align-items-center justify-content-center">
               ${!this.isCollapsed ? `
                 <div class="user-info small flex-grow-1">
-                  <div>${this.sanitizeHtml(this.app.currentUser.name || "ユーザー")}</div>
+                  <div>${this.sanitizeHtml(this.app.currentUser.name || this.app.i18n.t("common.user"))}</div>
                   <div class="text-white-50">${this.getRoleDisplayName(userRole)}</div>
                 </div>
               ` : ''}
-              <button class="btn btn-sm btn-outline-light" onclick="window.app.logout()" title="ログアウト">
+              <button class="btn btn-sm btn-outline-light" onclick="window.app.logout()" title="${this.app.i18n.t('nav.logout')}">
                 <i class="fas fa-sign-out-alt"></i>
               </button>
             </div>
@@ -154,10 +155,11 @@ class SidebarComponent {
         </div>
       `;
 
-      // Adjust main content margin
+      // Adjust main content margin by removing sidebar-hidden class
       const mainContent = document.getElementById("content");
       if (mainContent) {
         mainContent.style.marginLeft = sidebarWidth;
+        mainContent.classList.remove("sidebar-hidden");
         mainContent.style.transition = 'margin-left 0.3s ease';
       }
 
@@ -165,10 +167,7 @@ class SidebarComponent {
       this.updateToggleButton(sidebarWidth);
 
       // 翻訳を適用
-      // this.app.i18n が確実に存在することを確認
-      if(this.app.i18n) {
-          this.app.i18n.updateUI(sidebarContainer);
-      }
+      this.app.i18n.updateUI(sidebarContainer);
 
     } catch (error) {
       console.error("Error rendering sidebar:", error);
@@ -202,7 +201,7 @@ class SidebarComponent {
   }
 
   renderMenuItem(path, icon, translationKey) {
-    // app.i18n が確実に存在することを確認し、存在しない場合はフォールバック
+    // app.i18n が確実に存在することを確認
     const translatedText = this.app?.i18n?.t('nav.' + translationKey) || translationKey;
     const translatedTitle = this.app?.i18n?.t('nav.' + translationKey) || translationKey; // title属性用
 
