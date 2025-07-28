@@ -43,8 +43,11 @@ class SidebarComponent {
       if (mainContent) {
         mainContent.style.marginLeft = "0"
       }
-    } catch (error) {
-      console.error("Error hiding sidebar:", error)
+      
+      const existingToggle = document.querySelector('.sidebar-toggle');
+      if(existingToggle) existingToggle.remove();
+
+    } catch (error)      console.error("Error hiding sidebar:", error)
     }
   }
 
@@ -74,216 +77,133 @@ class SidebarComponent {
    */
   render() {
     try {
-      let sidebarContainer = document.getElementById("sidebar-container")
-
+      let sidebarContainer = document.getElementById("sidebar-container");
       if (!sidebarContainer) {
-        // Create sidebar container if it doesn't exist
-        sidebarContainer = document.createElement("div")
-        sidebarContainer.id = "sidebar-container"
-        sidebarContainer.className = "sidebar-container"
-
-        // Insert after header
-        const headerContainer = document.getElementById("header-container")
+        sidebarContainer = document.createElement("div");
+        sidebarContainer.id = "sidebar-container";
+        sidebarContainer.className = "sidebar-container";
+        const headerContainer = document.getElementById("header-container");
         if (headerContainer) {
-          headerContainer.insertAdjacentElement("afterend", sidebarContainer)
+          headerContainer.insertAdjacentElement("afterend", sidebarContainer);
         } else {
-          document.body.insertBefore(sidebarContainer, document.body.firstChild)
+          document.body.insertBefore(sidebarContainer, document.body.firstChild);
         }
       }
 
-      sidebarContainer.style.display = "block"
+      sidebarContainer.style.display = "block";
 
-      const sidebarWidth = this.isCollapsed ? "60px" : "250px"
+      const sidebarWidth = this.isCollapsed ? "80px" : "250px";
 
       sidebarContainer.innerHTML = `
-        <div class="sidebar bg-dark text-white" style="width: ${sidebarWidth}; transition: width 0.3s ease;">
-          <div class="sidebar-header p-3 border-bottom border-secondary">
-            <div class="d-flex align-items-center justify-content-between">
-              ${
-                !this.isCollapsed
-                  ? `
-                <div class="sidebar-brand">
-                  <i class="fas fa-hard-hat me-2"></i>
-                  <span class="fw-bold">評価システム</span>
-                </div>
-              `
-                  : `
-                <div class="sidebar-brand text-center w-100">
-                  <i class="fas fa-hard-hat"></i>
-                </div>
-              `
-              }
-              <button class="btn btn-sm btn-outline-light d-none d-lg-block" onclick="window.sidebarComponent.toggleCollapse()">
-                <i class="fas fa-${this.isCollapsed ? "angle-right" : "angle-left"}"></i>
-              </button>
-            </div>
-          </div>
-
+        <div class="sidebar bg-dark text-white d-flex flex-column" style="width: ${sidebarWidth};">
           <div class="sidebar-content">
             <nav class="nav flex-column p-2">
               ${this.renderMenuItem("/dashboard", "fas fa-tachometer-alt", "ダッシュボード")}
-              
-              ${
-                this.currentUser?.role === "admin"
-                  ? `
-                ${this.renderMenuItem("/users", "fas fa-users", "ユーザー管理")}
-              `
-                  : ""
-              }
-              
+              ${this.currentUser?.role === "admin" ? this.renderMenuItem("/users", "fas fa-users", "ユーザー管理") : ""}
               ${this.renderMenuItem("/evaluations", "fas fa-clipboard-list", "評価管理")}
-              ${this.renderMenuItem("/goal-setting", "fas fa-bullseye", "目標設定")}
-              
-              ${
-                this.currentUser?.role !== "employee"
-                  ? `
-                ${this.renderMenuItem("/goal-approvals", "fas fa-check-circle", "目標承認")}
-              `
-                  : ""
-              }
-              
+              ${(this.currentUser?.role === 'evaluator' || this.currentUser?.role === 'worker') ? this.renderMenuItem("/goal-setting", "fas fa-bullseye", "目標設定") : ""}
+              ${this.currentUser?.role === "admin" ? this.renderMenuItem("/goal-approvals", "fas fa-check-circle", "目標承認") : ""}
               ${this.renderMenuItem("/evaluation-form", "fas fa-edit", "評価フォーム")}
-              
-              <hr class="border-secondary my-3">
-              
+              <hr class="border-secondary my-2">
               ${this.renderMenuItem("/settings", "fas fa-cog", "設定")}
-              
-              ${
-                this.currentUser?.role === "admin"
-                  ? `
-                ${this.renderMenuItem("/developer", "fas fa-code", "開発者")}
-              `
-                  : ""
-              }
+              ${this.currentUser?.role === "developer" ? this.renderMenuItem("/developer", "fas fa-code", "開発者") : ""}
             </nav>
           </div>
 
-          <!-- User info at bottom -->
           <div class="sidebar-footer border-top border-secondary p-3">
-            ${
-              !this.isCollapsed
-                ? `
-              <div class="user-info">
-                <div class="d-flex align-items-center">
-                  <div class="user-avatar me-2">
-                    <i class="fas fa-user-circle fa-2x"></i>
-                  </div>
-                  <div class="user-details flex-grow-1">
-                    <div class="user-name fw-bold small">${this.sanitizeHtml(this.currentUser?.name || "ユーザー")}</div>
-                    <div class="user-role text-muted small">${this.getRoleDisplayName(this.currentUser?.role)}</div>
-                  </div>
+            <div class="d-flex align-items-center justify-content-center">
+              ${!this.isCollapsed ? `
+                <div class="user-info small flex-grow-1">
+                  <div>${this.sanitizeHtml(this.currentUser?.name || "ユーザー")}</div>
+                  <div class="text-white-50">${this.getRoleDisplayName(this.currentUser?.role)}</div>
                 </div>
-                <div class="user-actions mt-2">
-                  <button class="btn btn-outline-light btn-sm w-100" onclick="window.app.logout()">
-                    <i class="fas fa-sign-out-alt me-1"></i>
-                    ログアウト
-                  </button>
-                </div>
-              </div>
-            `
-                : `
-              <div class="text-center">
-                <button class="btn btn-outline-light btn-sm" onclick="window.app.logout()" title="ログアウト">
-                  <i class="fas fa-sign-out-alt"></i>
-                </button>
-              </div>
-            `
-            }
+              ` : ''}
+              <button class="btn btn-sm btn-outline-light" onclick="window.app.logout()" title="ログアウト">
+                <i class="fas fa-sign-out-alt"></i>
+              </button>
+            </div>
           </div>
         </div>
-      `
+      `;
 
-      // //...
-     //...
       // Adjust main content margin
-      const mainContent = document.getElementById("content")
+      const mainContent = document.getElementById("content");
       if (mainContent) {
-        mainContent.style.marginLeft = sidebarWidth
-        mainContent.style.transition = "margin-left 0.3s ease"
+        mainContent.style.marginLeft = sidebarWidth;
       }
 
-      // Highlight current page
-      this.highlightCurrentPage()
+      this.highlightCurrentPage();
+      this.updateToggleButton(sidebarWidth);
 
-      console.log("Sidebar rendered successfully")
     } catch (error) {
-      console.error("Error rendering sidebar:", error)
+      console.error("Error rendering sidebar:", error);
     }
   }
+  
+  updateToggleButton(sidebarWidth) {
+      let toggleButton = document.querySelector('.sidebar-toggle');
+      if (!toggleButton) {
+          toggleButton = document.createElement('button');
+          toggleButton.className = 'btn btn-dark sidebar-toggle';
+          Object.assign(toggleButton.style, {
+              position: 'fixed',
+              top: '58px',
+              zIndex: '1031',
+              width: '30px',
+              height: '30px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1px solid #555'
+          });
+          document.body.appendChild(toggleButton);
+      }
+      
+      toggleButton.style.left = `calc(${sidebarWidth} - 15px)`;
+      toggleButton.innerHTML = `<i class="fas fa-angle-${this.isCollapsed ? 'right' : 'left'}"></i>`;
+      toggleButton.onclick = () => this.toggleCollapse();
+  }
 
-  /**
-   * Render menu item
-   * メニューアイテムを描画
-   */
   renderMenuItem(path, icon, label) {
-    const isActive = window.location.pathname === path
-    const activeClass = isActive ? "active bg-primary" : ""
+    const isActive = window.location.pathname === path;
+    const activeClass = isActive ? "active" : "";
 
-    if (this.isCollapsed) {
-      return `
-        <a href="#" class="nav-link text-white p-2 mb-1 rounded ${activeClass}" 
-           onclick="window.app.navigate('${path}')" 
-           title="${label}">
-          <div class="text-center">
-            <i class="${icon}"></i>
-          </div>
-        </a>
-      `
-    } else {
-      return `
-        <a href="#" class="nav-link text-white p-2 mb-1 rounded ${activeClass}" 
-           onclick="window.app.navigate('${path}')">
-          <i class="${icon} me-2"></i>
-          ${label}
-        </a>
-      `
-    }
+    return `
+      <a href="#" class="nav-link text-white p-2 mb-1 rounded ${activeClass}" onclick="window.app.navigate('${path}')" title="${label}">
+        <div class="d-flex align-items-center ${this.isCollapsed ? 'justify-content-center' : ''}">
+          <i class="${icon} ${this.isCollapsed ? '' : 'me-2'}" style="width: 20px;"></i>
+          ${!this.isCollapsed ? `<span>${label}</span>` : ''}
+        </div>
+      </a>
+    `;
   }
 
-  /**
-   * Highlight current page
-   * 現在のページをハイライト
-   */
   highlightCurrentPage() {
-    try {
-      const currentPath = window.location.pathname
-      const navLinks = document.querySelectorAll(".sidebar .nav-link")
-
-      navLinks.forEach((link) => {
-        link.classList.remove("active", "bg-primary")
-
-        const onclick = link.getAttribute("onclick")
-        if (onclick && onclick.includes(currentPath)) {
-          link.classList.add("active", "bg-primary")
-        }
-      })
-    } catch (error) {
-      console.error("Error highlighting current page:", error)
-    }
+    const currentPath = window.location.pathname;
+    document.querySelectorAll(".sidebar .nav-link").forEach(link => {
+      link.classList.remove("active");
+      if (link.getAttribute("onclick").includes(`'${currentPath}'`)) {
+        link.classList.add("active");
+      }
+    });
   }
 
-  /**
-   * Get role display name
-   * ロール表示名を取得
-   */
   getRoleDisplayName(role) {
     const roleNames = {
       admin: "管理者",
-      manager: "マネージャー",
-      employee: "従業員",
-    }
-    return roleNames[role] || role || "不明"
+      evaluator: "評価者",
+      worker: "作業員",
+      developer: "開発者",
+    };
+    return roleNames[role] || role || "不明";
   }
 
-  /**
-   * Sanitize HTML to prevent XSS
-   * XSS防止のためHTMLをサニタイズ
-   */
   sanitizeHtml(str) {
-    if (!str) return ""
-    const div = document.createElement("div")
-    div.textContent = str
-    return div.innerHTML
+    if (!str) return "";
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
   }
 }
 
