@@ -542,3 +542,45 @@ body {
     grid-template-columns: 1fr;
   }
 }
+/* =================================================================== */
+/* レイアウト最終定義 (Final Layout)                  */
+/* =================================================================== */
+
+/* サイドバーのコンテナ：画面左側に固定 */
+.sidebar-container {
+  position: fixed;
+  top: 56px; /* 上部ヘッダーの高さ */
+  left: 0;
+  height: calc(100vh - 56px);
+  z-index: 1020; /* 他の要素より手前に表示 */
+}
+
+/* メインコンテンツエリア */
+.main-content {
+  padding-top: 56px; /* 上部ヘッダーの高さ */
+  min-height: 100vh;
+  /* margin-left は sidebar.js によって動的に設定される */
+  transition: margin-left 0.25s ease-in-out;
+}
+
+/* 各ページコンテンツの共通パディング */
+.main-content > div {
+  padding: 1.5rem;
+}
+
+/* サイドバー開閉ボタン */
+.sidebar-toggle {
+  position: fixed;
+  top: 64px;
+  z-index: 1021;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: left 0.25s ease-in-out;
+}
