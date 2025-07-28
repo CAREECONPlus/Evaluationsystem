@@ -4,11 +4,11 @@
  */
 class GoalSettingPage {
   constructor(app) {
-    this.app = app
-    this.goals = []
-    this.totalWeight = 0
-    this.maxGoals = 5
-    this.isSubmitted = false
+    this.app = app;
+    this.goals = [];
+    this.totalWeight = 0;
+    this.maxGoals = 5;
+    this.isSubmitted = false;
   }
 
   /**
@@ -21,19 +21,20 @@ class GoalSettingPage {
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h1 data-i18n="goals.title">目標設定</h1>
                     <div class="goal-actions">
-                        <button class="btn btn-secondary" onclick="GoalSettingPage.loadDraft()" id="loadDraftBtn">
+                        {/* ★★★ 修正点: onclickの呼び出し先をインスタンスメソッドに変更 ★★★ */}
+                        <button class="btn btn-secondary" onclick="window.app.currentPage.loadDraft()" id="loadDraftBtn">
                             下書きを読み込み
                         </button>
-                        <button class="btn btn-primary" onclick="GoalSettingPage.saveDraft()" id="saveDraftBtn">
+                        <button class="btn btn-primary" onclick="window.app.currentPage.saveDraft()" id="saveDraftBtn">
                             下書き保存
                         </button>
-                        <button class="btn btn-success" onclick="GoalSettingPage.submitGoals()" 
+                        <button class="btn btn-success" onclick="window.app.currentPage.submitGoals()"
                                 id="submitBtn" disabled>
                             <span data-i18n="goals.apply">申請</span>
                         </button>
                     </div>
                 </div>
-                
+
                 <div class="alert alert-info">
                     <h4>目標設定について</h4>
                     <ul>
@@ -43,7 +44,7 @@ class GoalSettingPage {
                         <li>申請後は管理者の承認が必要です</li>
                     </ul>
                 </div>
-                
+
                 <div class="card mb-2" id="currentStatusCard" style="display: none;">
                     <div class="card-header">
                         <h3>現在の状態</h3>
@@ -51,7 +52,7 @@ class GoalSettingPage {
                     <div class="card-body" id="currentStatusContent">
                     </div>
                 </div>
-                
+
                 <div class="card">
                     <div class="card-header">
                         <div class="d-flex justify-content-between align-items-center">
@@ -66,14 +67,15 @@ class GoalSettingPage {
                     <div class="card-body">
                         <div id="goalsContainer">
                             </div>
-                        
-                        <button class="btn btn-primary" onclick="GoalSettingPage.addGoal()" 
+
+                        {/* ★★★ 修正点: onclickの呼び出し先をインスタンスメソッドに変更 ★★★ */}
+                        <button class="btn btn-primary" onclick="window.app.currentPage.addGoal()"
                                 id="addGoalBtn">
                             <span data-i18n="goals.add_goal">目標を追加</span>
                         </button>
                     </div>
                 </div>
-                
+
                 <div class="card mt-2">
                     <div class="card-header">
                         <h3>評価期間</h3>
@@ -81,7 +83,7 @@ class GoalSettingPage {
                     <div class="card-body">
                         <div class="form-group">
                             <label for="evaluationPeriod">評価期間を選択</label>
-                            <select id="evaluationPeriod" class="form-control" onchange="GoalSettingPage.onPeriodChange()">
+                            <select id="evaluationPeriod" class="form-control" onchange="window.app.currentPage.onPeriodChange()">
                                 <option value="">選択してください</option>
                                 <option value="2024-q1">2024年 第1四半期</option>
                                 <option value="2024-q2">2024年 第2四半期</option>
@@ -92,7 +94,7 @@ class GoalSettingPage {
                     </div>
                 </div>
             </div>
-        `
+        `;
   }
 
   /**
@@ -100,35 +102,37 @@ class GoalSettingPage {
    * 目標設定ページを初期化
    */
   async init() {
+    // ★★★ 修正点: 自身のインスタンスをappに登録 ★★★
+    this.app.currentPage = this;
+
     // Check permissions
     if (!this.app.hasRole("evaluator") && !this.app.hasRole("worker")) {
-      this.app.navigate("/dashboard")
-      return
+      this.app.navigate("/dashboard");
+      return;
     }
 
     // Update header and sidebar
     if (window.HeaderComponent) {
-      window.HeaderComponent.update(this.app.currentUser)
+      window.HeaderComponent.update(this.app.currentUser);
     }
     if (window.SidebarComponent) {
-      window.SidebarComponent.update(this.app.currentUser)
+      window.SidebarComponent.update(this.app.currentUser);
     }
 
     // Load existing goals
-    await this.loadExistingGoals()
+    await this.loadExistingGoals();
 
     // Initialize with one empty goal if none exist
     if (this.goals.length === 0) {
-      // 修正点：this.addGoal() から GoalSettingPage.addGoal() へ変更
-      GoalSettingPage.addGoal()
+      this.addGoal(); // インスタンス自身のメソッドを呼び出す
     }
 
-    this.renderGoals()
-    this.updateWeightIndicator()
+    this.renderGoals();
+    this.updateWeightIndicator();
 
     // Update UI with current language
     if (this.app.i18n) {
-      this.app.i18n.updateUI()
+      this.app.i18n.updateUI();
     }
   }
 
@@ -139,16 +143,16 @@ class GoalSettingPage {
   async loadExistingGoals() {
     try {
       // Mock data - implement actual API call
-      const existingGoals = []
+      const existingGoals = [];
 
       if (existingGoals.length > 0) {
-        this.goals = existingGoals
-        this.isSubmitted = existingGoals[0].status !== "draft"
-        this.showCurrentStatus(existingGoals[0].status)
+        this.goals = existingGoals;
+        this.isSubmitted = existingGoals[0].status !== "draft";
+        this.showCurrentStatus(existingGoals[0].status);
       }
     } catch (error) {
-      console.error("Error loading existing goals:", error)
-      this.app.showError("既存の目標の読み込みに失敗しました。")
+      console.error("Error loading existing goals:", error);
+      this.app.showError("既存の目標の読み込みに失敗しました。");
     }
   }
 
@@ -157,17 +161,17 @@ class GoalSettingPage {
    * 現在の状態を表示
    */
   showCurrentStatus(status) {
-    const card = document.getElementById("currentStatusCard")
-    const content = document.getElementById("currentStatusContent")
+    const card = document.getElementById("currentStatusCard");
+    const content = document.getElementById("currentStatusContent");
 
     const statusMessages = {
       draft: "下書き保存済み",
       pending_approval: "承認待ち",
       approved: "承認済み",
       rejected: "差し戻し",
-    }
+    };
 
-    card.style.display = "block"
+    card.style.display = "block";
     content.innerHTML = `
             <div class="alert ${status === "approved" ? "alert-success" : status === "rejected" ? "alert-danger" : "alert-warning"}">
                 <strong>状態:</strong> ${statusMessages[status] || status}
@@ -177,85 +181,64 @@ class GoalSettingPage {
                     : ""
                 }
             </div>
-        `
+        `;
   }
 
   /**
    * Add new goal
-   * 新しい目標を追加
+   * ★★★ 修正点: staticを削除 ★★★
    */
-  static addGoal() {
-    const page = window.app.currentPage
-    if (!page || !(page instanceof GoalSettingPage)) {
-      // Find the correct page instance if currentPage is not set yet
-      const router = window.app.router;
-      if (router && router.currentPageInstance) {
-          page = router.currentPageInstance;
-      } else {
-          return;
-      }
-    }
-
-
-    if (page.goals.length >= page.maxGoals) {
-      window.app.showError(`目標は最大${page.maxGoals}つまでです。`)
-      return
+  addGoal() {
+    if (this.goals.length >= this.maxGoals) {
+      this.app.showError(`目標は最大${this.maxGoals}つまでです。`);
+      return;
     }
 
     const newGoal = {
       id: `goal-${Date.now()}`,
       text: "",
       weight: 0,
-    }
+    };
 
-    page.goals.push(newGoal)
-    page.renderGoals()
-    page.updateAddGoalButton()
+    this.goals.push(newGoal);
+    this.renderGoals();
+    this.updateAddGoalButton();
   }
 
   /**
    * Remove goal
-   * 目標を削除
+   * ★★★ 修正点: staticを削除 ★★★
    */
-  static removeGoal(goalId) {
-    const page = window.app.currentPage
-    if (!page) return
-
-    page.goals = page.goals.filter((goal) => goal.id !== goalId)
-    page.renderGoals()
-    page.updateWeightIndicator()
-    page.updateAddGoalButton()
-    page.updateSubmitButton()
+  removeGoal(goalId) {
+    this.goals = this.goals.filter((goal) => goal.id !== goalId);
+    this.renderGoals();
+    this.updateWeightIndicator();
+    this.updateAddGoalButton();
+    this.updateSubmitButton();
   }
 
   /**
    * Update goal text
-   * 目標テキストを更新
+   * ★★★ 修正点: staticを削除 ★★★
    */
-  static updateGoalText(goalId, text) {
-    const page = window.app.currentPage
-    if (!page) return
-
-    const goal = page.goals.find((g) => g.id === goalId)
+  updateGoalText(goalId, text) {
+    const goal = this.goals.find((g) => g.id === goalId);
     if (goal) {
-      goal.text = text
-      page.updateSubmitButton()
+      goal.text = text;
+      this.updateSubmitButton();
     }
   }
 
   /**
    * Update goal weight
-   * 目標ウェイトを更新
+   * ★★★ 修正点: staticを削除 ★★★
    */
-  static updateGoalWeight(goalId, weight) {
-    const page = window.app.currentPage
-    if (!page) return
-
-    const goal = page.goals.find((g) => g.id === goalId)
+  updateGoalWeight(goalId, weight) {
+    const goal = this.goals.find((g) => g.id === goalId);
     if (goal) {
-      goal.weight = Number.parseInt(weight) || 0
-      page.updateWeightIndicator()
-      page.updateSubmitButton()
+      goal.weight = Number.parseInt(weight) || 0;
+      this.updateWeightIndicator();
+      this.updateSubmitButton();
     }
   }
 
@@ -264,7 +247,7 @@ class GoalSettingPage {
    * 目標を描画
    */
   renderGoals() {
-    const container = document.getElementById("goalsContainer")
+    const container = document.getElementById("goalsContainer");
     if (!container) return;
 
     container.innerHTML = this.goals
@@ -273,40 +256,43 @@ class GoalSettingPage {
             <div class="goal-item" data-goal-id="${goal.id}">
                 <div class="goal-header">
                     <h4>目標 ${index + 1}</h4>
-                    <button class="btn btn-danger btn-sm" 
-                            onclick="GoalSettingPage.removeGoal('${goal.id}')"
+                    {/* ★★★ 修正点: onclickの呼び出し先をインスタンスメソッドに変更 ★★★ */}
+                    <button class="btn btn-danger btn-sm"
+                            onclick="window.app.currentPage.removeGoal('${goal.id}')"
                             ${this.goals.length <= 1 ? "disabled" : ""}>
                         <span data-i18n="goals.remove_goal">削除</span>
                     </button>
                 </div>
-                
+
                 <div class="goal-content">
                     <div class="form-group">
                         <label for="goalText-${goal.id}" data-i18n="goals.goal_text">目標内容</label>
-                        <textarea id="goalText-${goal.id}" 
-                                  class="form-control goal-text-input" 
-                                  rows="3" 
+                        {/* ★★★ 修正点: onchangeの呼び出し先をインスタンスメソッドに変更 ★★★ */}
+                        <textarea id="goalText-${goal.id}"
+                                  class="form-control goal-text-input"
+                                  rows="3"
                                   placeholder="具体的で測定可能な目標を記入してください"
-                                  onchange="GoalSettingPage.updateGoalText('${goal.id}', this.value)"
+                                  onchange="window.app.currentPage.updateGoalText('${goal.id}', this.value)"
                                   ${this.isSubmitted ? "readonly" : ""}>${this.app.sanitizeHtml(goal.text)}</textarea>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="goalWeight-${goal.id}" data-i18n="goals.weight_percent">ウェイト（%）</label>
-                        <input type="number" 
-                               id="goalWeight-${goal.id}" 
-                               class="form-control goal-weight-input" 
-                               min="0" 
-                               max="100" 
+                        {/* ★★★ 修正点: onchangeの呼び出し先をインスタンスメソッドに変更 ★★★ */}
+                        <input type="number"
+                               id="goalWeight-${goal.id}"
+                               class="form-control goal-weight-input"
+                               min="0"
+                               max="100"
                                value="${goal.weight}"
-                               onchange="GoalSettingPage.updateGoalWeight('${goal.id}', this.value)"
+                               onchange="window.app.currentPage.updateGoalWeight('${goal.id}', this.value)"
                                ${this.isSubmitted ? "readonly" : ""}>
                     </div>
                 </div>
             </div>
         `,
       )
-      .join("")
+      .join("");
   }
 
   /**
@@ -314,25 +300,25 @@ class GoalSettingPage {
    * ウェイト表示を更新
    */
   updateWeightIndicator() {
-    this.totalWeight = this.goals.reduce((sum, goal) => sum + (goal.weight || 0), 0)
+    this.totalWeight = this.goals.reduce((sum, goal) => sum + (goal.weight || 0), 0);
 
-    const totalWeightElement = document.getElementById("totalWeight")
-    const weightStatusElement = document.getElementById("weightStatus")
+    const totalWeightElement = document.getElementById("totalWeight");
+    const weightStatusElement = document.getElementById("weightStatus");
 
     if (totalWeightElement) {
-      totalWeightElement.textContent = this.totalWeight
+      totalWeightElement.textContent = this.totalWeight;
     }
 
     if (weightStatusElement) {
       if (this.totalWeight === 100) {
-        weightStatusElement.textContent = "✓"
-        weightStatusElement.className = "weight-status valid"
+        weightStatusElement.textContent = "✓";
+        weightStatusElement.className = "weight-status valid";
       } else if (this.totalWeight > 100) {
-        weightStatusElement.textContent = "超過"
-        weightStatusElement.className = "weight-status invalid"
+        weightStatusElement.textContent = "超過";
+        weightStatusElement.className = "weight-status invalid";
       } else {
-        weightStatusElement.textContent = "不足"
-        weightStatusElement.className = "weight-status invalid"
+        weightStatusElement.textContent = "不足";
+        weightStatusElement.className = "weight-status invalid";
       }
     }
   }
@@ -342,9 +328,9 @@ class GoalSettingPage {
    * 目標追加ボタンを更新
    */
   updateAddGoalButton() {
-    const addBtn = document.getElementById("addGoalBtn")
+    const addBtn = document.getElementById("addGoalBtn");
     if (addBtn) {
-      addBtn.disabled = this.goals.length >= this.maxGoals || this.isSubmitted
+      addBtn.disabled = this.goals.length >= this.maxGoals || this.isSubmitted;
     }
   }
 
@@ -353,7 +339,7 @@ class GoalSettingPage {
    * 申請ボタンを更新
    */
   updateSubmitButton() {
-    const submitBtn = document.getElementById("submitBtn")
+    const submitBtn = document.getElementById("submitBtn");
     if (submitBtn) {
       const period = document.getElementById("evaluationPeriod") ? document.getElementById("evaluationPeriod").value : "";
       const isValid =
@@ -361,138 +347,126 @@ class GoalSettingPage {
         this.goals.length > 0 &&
         this.goals.every((goal) => goal.text.trim().length > 0) &&
         period &&
-        !this.isSubmitted
+        !this.isSubmitted;
 
-      submitBtn.disabled = !isValid
+      submitBtn.disabled = !isValid;
     }
   }
 
   /**
    * Save draft
-   * 下書きを保存
+   * ★★★ 修正点: staticを削除 ★★★
    */
-  static async saveDraft() {
-    const page = window.app.currentPage
-    if (!page) return
-
+  async saveDraft() {
     try {
       const draftData = {
-        goals: page.goals,
+        goals: this.goals,
         period: document.getElementById("evaluationPeriod").value,
         status: "draft",
-      }
+      };
 
       // Save to localStorage as fallback
-      localStorage.setItem(`goals-draft-${window.app.currentUser.uid}`, JSON.stringify(draftData))
+      localStorage.setItem(`goals-draft-${this.app.currentUser.id}`, JSON.stringify(draftData));
 
       // Mock API call
-      // await window.app.api.saveGoalsDraft(draftData)
+      // await this.app.api.saveGoalsDraft(draftData);
 
-      window.app.showSuccess("下書きを保存しました。")
+      this.app.showSuccess("下書きを保存しました。");
     } catch (error) {
-      console.error("Error saving draft:", error)
-      window.app.showError("下書きの保存に失敗しました。")
+      console.error("Error saving draft:", error);
+      this.app.showError("下書きの保存に失敗しました。");
     }
   }
 
   /**
    * Load draft
-   * 下書きを読み込み
+   * ★★★ 修正点: staticを削除 ★★★
    */
-  static async loadDraft() {
-    const page = window.app.currentPage
-    if (!page) return
-
+  async loadDraft() {
     try {
       // Load from localStorage as fallback
-      const draftData = localStorage.getItem(`goals-draft-${window.app.currentUser.uid}`)
+      const draftData = localStorage.getItem(`goals-draft-${this.app.currentUser.id}`);
 
       if (draftData) {
-        const draft = JSON.parse(draftData)
-        page.goals = draft.goals || []
+        const draft = JSON.parse(draftData);
+        this.goals = draft.goals || [];
 
         if (draft.period) {
-          document.getElementById("evaluationPeriod").value = draft.period
+          document.getElementById("evaluationPeriod").value = draft.period;
         }
 
-        page.renderGoals()
-        page.updateWeightIndicator()
-        page.updateSubmitButton()
+        this.renderGoals();
+        this.updateWeightIndicator();
+        this.updateSubmitButton();
 
-        window.app.showSuccess("下書きを読み込みました。")
+        this.app.showSuccess("下書きを読み込みました。");
       } else {
-        window.app.showError("保存された下書きがありません。")
+        this.app.showError("保存された下書きがありません。");
       }
     } catch (error) {
-      console.error("Error loading draft:", error)
-      window.app.showError("下書きの読み込みに失敗しました。")
+      console.error("Error loading draft:", error);
+      this.app.showError("下書きの読み込みに失敗しました。");
     }
   }
 
   /**
    * Submit goals
-   * 目標を申請
+   * ★★★ 修正点: staticを削除 ★★★
    */
-  static async submitGoals() {
-    const page = window.app.currentPage
-    if (!page) return
-
-    const period = document.getElementById("evaluationPeriod").value
+  async submitGoals() {
+    const period = document.getElementById("evaluationPeriod").value;
     if (!period) {
-      window.app.showError("評価期間を選択してください。")
-      return
+      this.app.showError("評価期間を選択してください。");
+      return;
     }
 
     if (!confirm("目標を申請しますか？申請後は編集できません。")) {
-      return
+      return;
     }
 
     try {
       const goalsData = {
-        userId: window.app.currentUser.uid,
-        tenantId: window.app.currentUser.tenantId,
+        userId: this.app.currentUser.id,
+        tenantId: this.app.currentUser.tenantId,
         period: period,
-        goals: page.goals,
+        goals: this.goals,
         status: "pending_approval",
         submittedAt: new Date(),
-      }
+      };
 
       // Mock API call
-      // await window.app.api.submitGoals(goalsData)
+      // await this.app.api.submitGoals(goalsData);
 
       // Clear draft
-      localStorage.removeItem(`goals-draft-${window.app.currentUser.uid}`)
+      localStorage.removeItem(`goals-draft-${this.app.currentUser.id}`);
 
-      page.isSubmitted = true
-      page.showCurrentStatus("pending_approval")
-      page.renderGoals()
-      page.updateAddGoalButton()
-      page.updateSubmitButton()
+      this.isSubmitted = true;
+      this.showCurrentStatus("pending_approval");
+      this.renderGoals();
+      this.updateAddGoalButton();
+      this.updateSubmitButton();
 
       // Disable form elements
-      const inputs = document.querySelectorAll(".goal-text-input, .goal-weight-input")
-      inputs.forEach((input) => (input.readOnly = true))
+      const inputs = document.querySelectorAll(".goal-text-input, .goal-weight-input");
+      inputs.forEach((input) => (input.readOnly = true));
 
-      window.app.showSuccess("目標を申請しました。承認をお待ちください。")
+      this.app.showSuccess("目標を申請しました。承認をお待ちください。");
     } catch (error) {
-      console.error("Error submitting goals:", error)
-      window.app.showError("目標の申請に失敗しました。")
+      console.error("Error submitting goals:", error);
+      this.app.showError("目標の申請に失敗しました。");
     }
   }
 
   /**
    * Handle period change
-   * 期間変更を処理
+   * ★★★ 修正点: staticを削除 ★★★
    */
-  static onPeriodChange() {
-    const page = window.app.currentPage
-    if (!page) return
-
-    page.updateSubmitButton()
+  onPeriodChange() {
+    this.updateSubmitButton();
   }
 }
 
-// Add goal-setting-specific styles
+// Add goal-setting-specific styles (変更なし)
 const goalSettingStyles = `
 <style>
 .goal-setting-page {
@@ -574,23 +548,23 @@ const goalSettingStyles = `
         flex-direction: column;
         gap: 5px;
     }
-    
+
     .goal-actions button {
         font-size: 0.9rem;
         padding: 8px 12px;
     }
-    
+
     .weight-indicator {
         font-size: 1rem;
         text-align: center;
         margin-top: 10px;
     }
-    
+
     .goal-content {
         grid-template-columns: 1fr;
         gap: 15px;
     }
-    
+
     .goal-header {
         flex-direction: column;
         align-items: stretch;
@@ -602,21 +576,21 @@ const goalSettingStyles = `
     .goal-setting-page {
         margin: 0 10px;
     }
-    
+
     .goal-item {
         padding: 15px;
     }
 }
 </style>
-`
+`;
 
 // Inject goal-setting styles
 if (!document.getElementById("goal-setting-styles")) {
-  const styleElement = document.createElement("div")
-  styleElement.id = "goal-setting-styles"
-  styleElement.innerHTML = goalSettingStyles
-  document.head.appendChild(styleElement)
+  const styleElement = document.createElement("div");
+  styleElement.id = "goal-setting-styles";
+  styleElement.innerHTML = goalSettingStyles;
+  document.head.appendChild(styleElement);
 }
 
 // Make GoalSettingPage globally available
-window.GoalSettingPage = GoalSettingPage
+window.GoalSettingPage = GoalSettingPage;
