@@ -82,13 +82,24 @@ class Router {
       return;
     }
 
-    // ★★★ 修正点: コンポーネントの存在をチェックしてから呼び出す ★★★
+    // HeaderComponentとSidebarComponentがwindowに存在し、かつappインスタンスが設定済みであることを確認
+    // show/hide メソッドに引数は渡さない。コンポーネント自身が this.app.currentUser を参照する
     if (requiresAuth) {
-      if (window.HeaderComponent) window.HeaderComponent.show(this.app.currentUser);
-      if (window.SidebarComponent) window.SidebarComponent.show(this.app.currentUser);
+      if (window.HeaderComponent) window.HeaderComponent.show(); // 引数なし
+      if (window.SidebarComponent) window.SidebarComponent.show(); // 引数なし
+      // サイドバー非表示時のマージンリセットを確実に行う (Hide側で処理されるべきだが念のため)
+      const mainContent = document.getElementById("content");
+      if (mainContent) {
+          mainContent.classList.remove("sidebar-hidden");
+      }
     } else {
       if (window.HeaderComponent) window.HeaderComponent.hide();
       if (window.SidebarComponent) window.SidebarComponent.hide();
+      // サイドバーが非表示の場合は、メインコンテンツのマージンをリセットするクラスを追加
+      const mainContent = document.getElementById("content");
+      if (mainContent) {
+          mainContent.classList.add("sidebar-hidden");
+      }
     }
     
     const PageClass = window[pageClassName];
