@@ -41,7 +41,6 @@ class SidebarComponent {
     }
     sidebarContainer.style.display = "block";
 
-    // サイドバーの現在の幅を計算
     const sidebarWidth = this.isCollapsed ? "80px" : "250px";
 
     sidebarContainer.innerHTML = `
@@ -65,7 +64,6 @@ class SidebarComponent {
         </div>
       </div>`;
 
-    // メインコンテンツのmargin-leftを動的に設定
     const mainContent = document.getElementById("content");
     if (mainContent) {
       mainContent.style.marginLeft = sidebarWidth;
@@ -83,7 +81,7 @@ class SidebarComponent {
       document.body.appendChild(toggleButton);
     }
     toggleButton.style.display = "flex";
-    toggleButton.style.left = `calc(${sidebarWidth} - 16px)`;
+    toggleButton.style.left = `calc(${sidebarWidth} - 18px)`;
     toggleButton.innerHTML = `<i class="fas fa-angle-${this.isCollapsed ? 'right' : 'left'}"></i>`;
     toggleButton.onclick = () => this.toggleCollapse();
   }
@@ -126,7 +124,7 @@ class SidebarComponent {
   }
 
   highlightCurrentPage() {
-    // renderMenuItemでactiveクラスを付与するため、この関数はシンプルにするか削除可能
+    // This is now handled by the activeClass in renderMenuItem
   }
 
   getRoleDisplayName(role) {
