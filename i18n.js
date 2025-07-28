@@ -41,6 +41,7 @@ class I18n {
       }
       let result = String(translation); // 翻訳が数値などの場合も文字列として扱う
       Object.keys(params).forEach(param => {
+        // 正規表現で全ての出現箇所を置換
         result = result.replace(new RegExp(`{{${param}}}`, 'g'), params[param]);
       });
       return result;
@@ -74,13 +75,16 @@ class I18n {
       const key = el.getAttribute("data-i18n");
       const paramsAttr = el.getAttribute("data-i18n-params");
       let params = {};
-      if (paramsAttr) {
+      if (paramsAttr) { // paramsAttr が null や空文字列でないことを確認
         try {
-          // JSONパース前にエンティティをデコード
-          const decodedParamsAttr = paramsAttr.replace(/&quot;/g, '"');
+          // JSONパース前にHTMLエンティティをデコード（例: &quot; -> "）
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(`<!doctype html><body>${paramsAttr}`, 'text/html');
+          const decodedParamsAttr = doc.body.textContent;
           params = JSON.parse(decodedParamsAttr);
         } catch (e) {
           console.error("Failed to parse data-i18n-params:", paramsAttr, e);
+          params = {}; // パース失敗時は空のパラメータを使用
         }
       }
       if(key) el.textContent = this.t(key, params);
