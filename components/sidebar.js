@@ -1,13 +1,11 @@
 /**
  * Sidebar Component (Final Version)
- * サイドバーコンポーネント (最終版)
  */
 class SidebarComponent {
   constructor() {
     this.isVisible = false;
     this.currentUser = null;
-    // ★★★ 修正点：デフォルトで折りたたむ ★★★
-    this.isCollapsed = true; 
+    this.isCollapsed = true; // デフォルトで折りたたむ
   }
 
   show(user) {
@@ -110,7 +108,8 @@ class SidebarComponent {
   }
 
   renderMenuItem(path, icon, label) {
-    const isActive = window.location.pathname === path;
+    const fullPath = (this.app?.router?.basePath || '') + path;
+    const isActive = window.location.pathname === fullPath;
     const activeClass = isActive ? "active" : "";
     return `
       <a href="#" class="nav-link text-white p-2 mb-1 rounded ${activeClass}" onclick="window.app.navigate('${path}')" title="${label}">
