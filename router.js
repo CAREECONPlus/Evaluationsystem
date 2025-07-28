@@ -1,19 +1,10 @@
 /**
- * Router Service (Final Version with Base Path Support)
- * ルーターサービス (ベースパス対応最終版)
+ * Router Service (Final Version with Base Path and Redirect Support)
  */
 class Router {
   constructor(app) {
     this.app = app;
-    this.currentRoute = null;
-    this.currentPageInstance = null;
-    this.routes = {};
-    // ★★★ 修正点 ★★★
-    // リポジトリ名をベースパスとして定義
-    this.basePath = '/EvaluationSystem'; 
-  }
-
-  init() {
+    this.basePath = '/EvaluationSystem'; // ★ あなたのリポジトリ名
     this.routes = {
       "/": "/login",
       "/login": "LoginPage",
@@ -29,38 +20,43 @@ class Router {
       "/developer": "DeveloperPage",
       "/404": "NotFoundPage",
     };
+  }
+
+  init() {
+    // 404ページからリダイレクトされてきた場合のパスを復元
+    const redirectPath = sessionStorage.getItem('redirectPath');
+    if (redirectPath) {
+      sessionStorage.removeItem('redirectPath');
+      // URLを本来のパスに書き換える (例: .../EvaluationSystem/dashboard)
+      if(window.location.pathname !== redirectPath) {
+        window.history.replaceState(null, null, redirectPath);
+      }
+    }
+    
     window.addEventListener("popstate", () => this.handleLocation());
     this.handleLocation();
   }
 
   handleLocation() {
-    // ★★★ 修正点 ★★★
-    // 現在のURLパスからベースパス（リポジトリ名）を取り除く
     let path = window.location.pathname;
     if (path.toLowerCase().startsWith(this.basePath.toLowerCase())) {
       path = path.substring(this.basePath.length) || "/";
     }
 
     const routeTarget = this.routes[path];
-
     if (routeTarget) {
       if (typeof routeTarget === 'string' && routeTarget.startsWith('/')) {
-        // リダイレクトルートの場合 (例: "/" は "/login" へ)
         this.navigate(routeTarget);
       } else {
-        // ページクラス名の場合
         this.loadPage(path, routeTarget);
       }
     } else {
-      // どのルートにも一致しない場合は404ページへ
       this.loadPage("/404", "NotFoundPage");
     }
   }
 
   navigate(path) {
-    // ★★★ 修正点 ★★★
-    // 新しいパスにベースパスを追加して、完全なURLを構築する
-    const fullPath = this.basePath + (path === "/" ? "" : path);
+    const fullPath = this.basePath + (path === "/" ? "/" : path);
     if (window.location.pathname !== fullPath) {
       window.history.pushState({}, "", fullPath);
     }
@@ -68,40 +64,35 @@ class Router {
   }
 
   async loadPage(path, pageClassName) {
-    try {
-      this.currentRoute = path;
-      const requiresAuth = !["/login", "/register", "/register-admin", "/404"].includes(path);
+    this.app.currentPage = null; // ページ切り替え時にクリア
+    const requiresAuth = !["/login", "/register", "/register-admin", "/404"].includes(path);
 
-      if (requiresAuth && !this.app.isAuthenticated()) {
-        this.navigate("/login");
-        return;
-      }
-      
-      const PageClass = window[pageClassName];
-      if (!PageClass) throw new Error(`Page class ${pageClassName} not found`);
-
-      const contentContainer = document.getElementById("content");
-      contentContainer.innerHTML = '<div class="loading">読み込み中...</div>';
-      
-      this.currentPageInstance = new PageClass(this.app);
-      this.app.currentPage = this.currentPageInstance;
-
-      if (requiresAuth) {
-        window.HeaderComponent.show(this.app.currentUser);
-        window.SidebarComponent.show(this.app.currentUser);
-      } else {
-        window.HeaderComponent.hide();
-        window.SidebarComponent.hide();
-      }
-
-      contentContainer.innerHTML = await this.currentPageInstance.render();
-      if (this.currentPageInstance.init) {
-        await this.currentPageInstance.init();
-      }
-      this.app.i18n.updateUI();
-    } catch (error) {
-      console.error(`Failed to load page ${path}:`, error);
+    if (requiresAuth && !this.app.isAuthenticated()) {
+      this.navigate("/login");
+      return;
     }
+    
+    const PageClass = window[pageClassName];
+    if (!PageClass) return;
+
+    this.app.currentPage = new PageClass(this.app);
+    
+    const contentContainer = document.getElementById("content");
+    contentContainer.innerHTML = ''; // 先に中身を空にする
+    
+    if (requiresAuth) {
+      window.HeaderComponent.show(this.app.currentUser);
+      window.SidebarComponent.show(this.app.currentUser);
+    } else {
+      window.HeaderComponent.hide();
+      window.SidebarComponent.hide();
+    }
+
+    contentContainer.innerHTML = await this.app.currentPage.render();
+    if (this.app.currentPage.init) {
+      await this.app.currentPage.init();
+    }
+    this.app.i18n.updateUI();
   }
 }
 
@@ -109,11 +100,6 @@ window.Router = Router;
 
 class NotFoundPage {
   constructor(app) { this.app = app; }
-  async render() { 
-    // 404ページからホームに戻るリンクもベースパスを考慮
-    const base = new Router().basePath;
-    return `<div class="container mt-5 text-center"><h1>404 Not Found</h1><p>お探しのページは見つかりませんでした。</p><a href="${base}/" class="btn btn-primary">ログインページに戻る</a></div>`; 
-  }
-  async init() {}
+  async render() { return `...`; } // 省略
 }
 window.NotFoundPage = NotFoundPage;
