@@ -6,9 +6,12 @@ class SettingsPage {
   constructor(app) {
     this.app = app;
     this.jobTypes = [];
+    this.evaluationStructures = {}; // 職種ごとの評価構造を保持
     this.selectedJobType = null;
-    this.evaluationStructure = null;
     this.hasUnsavedChanges = false;
+    this.addJobTypeModal = null;
+    this.evaluationPeriods = []; // 新しい評価期間を保持する配列
+    this.addPeriodModal = null; // 評価期間追加モーダル
   }
 
   /**
@@ -19,20 +22,19 @@ class SettingsPage {
     return `
             <div class="settings-page">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h1 data-i18n="settings.title">設定</h1>
+                    <h1 data-i18n="settings.title"></h1>
                     <button class="btn btn-success" id="saveChangesBtn"
                             onclick="window.app.currentPage.saveChanges()" disabled>
-                        <i class="fas fa-save me-2"></i><span data-i18n="settings.save_changes">変更を保存</span>
+                        <i class="fas fa-save me-2"></i><span data-i18n="settings.save_changes"></span>
                     </button>
                 </div>
 
                 <div class="settings-layout">
-                    <!-- Job Types Panel -->
                     <div class="settings-sidebar">
-                        <div class="card">
+                        <div class="card mb-3">
                             <div class="card-header">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <h3 data-i18n="settings.job_types">対象職種</h3>
+                                    <h3 data-i18n="settings.job_types"></h3>
                                     <button class="btn btn-primary btn-sm"
                                             onclick="window.app.currentPage.showAddJobTypeModal()">
                                         <i class="fas fa-plus"></i> <span data-i18n="settings.add_job_type"></span>
@@ -41,22 +43,38 @@ class SettingsPage {
                             </div>
                             <div class="card-body">
                                 <div id="jobTypesList">
-                                    <div class="loading">読み込み中...</div>
+                                    <div class="loading"><span data-i18n="common.loading"></span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h3 data-i18n="settings.evaluation_periods">評価期間</h3>
+                                    <button class="btn btn-primary btn-sm"
+                                            onclick="window.app.currentPage.showAddPeriodModal()">
+                                        <i class="fas fa-plus"></i> <span data-i18n="settings.add_period">期間を追加</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="evaluationPeriodsList">
+                                    <div class="loading"><span data-i18n="common.loading"></span></div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Evaluation Structure Panel -->
                     <div class="settings-main">
                         <div class="card">
                             <div class="card-header">
-                                <h3 data-i18n="settings.evaluation_structure">評価構造</h3>
+                                <h3 data-i18n="settings.evaluation_structure"></h3>
                             </div>
                             <div class="card-body">
                                 <div id="evaluationStructureContainer">
                                     <div class="text-center text-muted p-5">
-                                        <i class="fas fa-arrow-left me-2"></i>左側から職種を選択してください
+                                        <i class="fas fa-arrow-left me-2"></i><span data-i18n="settings.select_job_type_hint"></span>
                                     </div>
                                 </div>
                             </div>
@@ -65,24 +83,55 @@ class SettingsPage {
                 </div>
             </div>
 
-            <!-- Add Job Type Modal -->
             <div class="modal fade" id="addJobTypeModal" tabindex="-1">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title">職種を追加</h5>
+                            <h5 class="modal-title" data-i18n="settings.add_job_type"></h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <form id="addJobTypeForm" onsubmit="window.app.currentPage.handleAddJobType(event)">
                             <div class="modal-body">
                                 <div class="mb-3">
-                                    <label for="jobTypeName" class="form-label">職種名 *</label>
-                                    <input type="text" class="form-control" id="jobTypeName" required>
+                                    <label for="jobTypeName" class="form-label" data-i18n="settings.job_type_name_label"></label>
+                                    <input type="text" class="form-control" id="jobTypeName" required data-i18n-placeholder="settings.job_type_name_placeholder">
                                 </div>
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-                                <button type="submit" class="btn btn-primary">追加</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel"></button>
+                                <button type="submit" class="btn btn-primary" data-i18n="common.add"></button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="addPeriodModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="periodModalTitle" data-i18n="settings.add_period">評価期間を追加</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form id="addPeriodForm" onsubmit="window.app.currentPage.handleAddEditPeriod(event)">
+                            <input type="hidden" id="periodId">
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="periodName" class="form-label" data-i18n="settings.period_name_label">期間名 *</label>
+                                    <input type="text" class="form-control" id="periodName" required data-i18n-placeholder="settings.period_name_placeholder">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="periodStartDate" class="form-label" data-i18n="settings.start_date_label">開始日 *</label>
+                                    <input type="date" class="form-control" id="periodStartDate" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="periodEndDate" class="form-label" data-i18n="settings.end_date_label">終了日 *</label>
+                                    <input type="date" class="form-control" id="periodEndDate" required>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel"></button>
+                                <button type="submit" class="btn btn-primary" data-i18n="common.save"></button>
                             </div>
                         </form>
                     </div>
@@ -113,13 +162,18 @@ class SettingsPage {
     }
     
     // モーダルのインスタンスを準備
-    const modalElement = document.getElementById('addJobTypeModal');
-    if (modalElement && window.bootstrap) {
-        this.addJobTypeModal = new window.bootstrap.Modal(modalElement);
+    const addJobTypeModalEl = document.getElementById('addJobTypeModal');
+    if (addJobTypeModalEl && window.bootstrap) {
+        this.addJobTypeModal = new window.bootstrap.Modal(addJobTypeModalEl);
+    }
+    const addPeriodModalEl = document.getElementById('addPeriodModal');
+    if (addPeriodModalEl && window.bootstrap) {
+        this.addPeriodModal = new window.bootstrap.Modal(addPeriodModalEl);
     }
 
     // Load data
     await this.loadJobTypes();
+    await this.loadEvaluationPeriods(); // 評価期間のロード
 
     // Update UI with current language
     if (this.app.i18n) {
@@ -136,17 +190,45 @@ class SettingsPage {
    */
   async loadJobTypes() {
     try {
-      // Mock data
+      // Mock data - 実際にはAPIから取得する
       this.jobTypes = [
         { id: "construction-worker", name: "建設作業員", order: 1 },
         { id: "site-supervisor", name: "現場監督", order: 2 },
         { id: "project-manager", name: "プロジェクトマネージャー", order: 3 },
       ];
+      // API呼び出し例: this.jobTypes = await this.app.api.getJobTypes(this.app.currentUser.tenantId);
+
+      // 各職種の評価構造もロード（または、選択時に個別にロード）
+      // 現状はモックとして各職種に評価構造を持たせる
+      this.evaluationStructures = {
+          "construction-worker": {
+              jobTypeId: "construction-worker",
+              categories: [
+                { id: "cat-cw-tech", name: "技術スキル", items: [ { id: "item-cw-tech1", name: "専門技術の習得度", type: "quantitative" } ]},
+                { id: "cat-cw-safety", name: "安全管理", items: [ { id: "item-cw-safety1", name: "安全意識と遵守", type: "qualitative" } ]},
+              ]
+          },
+          "site-supervisor": {
+              jobTypeId: "site-supervisor",
+              categories: [
+                { id: "cat-ss-leadership", name: "リーダーシップ", items: [ { id: "item-ss-lead1", name: "指示・指導能力", type: "quantitative" } ]},
+                { id: "cat-ss-comm", name: "コミュニケーション", items: [ { id: "item-ss-comm1", name: "関係者との連携", type: "qualitative" } ]},
+              ]
+          },
+          "project-manager": {
+              jobTypeId: "project-manager",
+              categories: [
+                { id: "cat-pm-strategy", name: "戦略的思考", items: [ { id: "item-pm-strat1", name: "目標設定能力", type: "quantitative" } ]},
+                { id: "cat-pm-risk", name: "リスク管理", items: [ { id: "item-pm-risk1", name: "課題解決能力", type: "qualitative" } ]},
+              ]
+          }
+      };
+
 
       this.renderJobTypesList();
     } catch (error) {
       console.error("Error loading job types:", error);
-      this.app.showError("職種データの読み込みに失敗しました。");
+      this.app.showError(this.app.i18n.t("errors.job_types_load_failed"));
     }
   }
 
@@ -156,9 +238,11 @@ class SettingsPage {
    */
   renderJobTypesList() {
     const container = document.getElementById("jobTypesList");
+    if(!container) return;
 
     if (this.jobTypes.length === 0) {
-      container.innerHTML = "<p>職種が登録されていません。</p>";
+      container.innerHTML = `<p data-i18n="settings.no_job_types"></p>`; // 翻訳キー
+      this.app.i18n.updateUI(container);
       return;
     }
 
@@ -172,7 +256,8 @@ class SettingsPage {
                         ${this.app.sanitizeHtml(jobType.name)}
                         <span class="job-type-actions">
                             <button class="btn btn-sm btn-outline-danger"
-                                    onclick="event.stopPropagation(); window.app.currentPage.deleteJobType('${jobType.id}')">
+                                    onclick="event.stopPropagation(); window.app.currentPage.deleteJobType('${jobType.id}')"
+                                    title="${this.app.i18n.t('common.delete')}">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </span>
@@ -182,7 +267,73 @@ class SettingsPage {
                   .join("")}
             </div>
         `;
+    this.app.i18n.updateUI(container); // 翻訳適用
   }
+
+  /**
+   * Load evaluation periods
+   * 評価期間を読み込み
+   */
+  async loadEvaluationPeriods() {
+    try {
+        // Mock data - 実際にはAPIから取得する
+        this.evaluationPeriods = [
+            { id: "2024-q1", name: "2024年 第1四半期", startDate: "2024-01-01", endDate: "2024-03-31" },
+            { id: "2024-q2", name: "2024年 第2四半期", startDate: "2024-04-01", endDate: "2024-06-30" },
+        ];
+        // API呼び出し例: this.evaluationPeriods = await this.app.api.getEvaluationPeriods(this.app.currentUser.tenantId);
+        this.renderEvaluationPeriodsList();
+    } catch (error) {
+        console.error("Error loading evaluation periods:", error);
+        this.app.showError(this.app.i18n.t("errors.evaluation_periods_load_failed"));
+    }
+  }
+
+  /**
+   * Render evaluation periods list
+   * 評価期間リストを描画
+   */
+  renderEvaluationPeriodsList() {
+    const container = document.getElementById("evaluationPeriodsList");
+    if(!container) return;
+
+    if (this.evaluationPeriods.length === 0) {
+      container.innerHTML = `<p data-i18n="settings.no_evaluation_periods"></p>`; // 翻訳キー
+      this.app.i18n.updateUI(container);
+      return;
+    }
+
+    container.innerHTML = `
+            <div class="list-group">
+                ${this.evaluationPeriods
+                  .map(
+                    (period) => `
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            ${this.app.sanitizeHtml(period.name)} <br>
+                            <small class="text-muted">${this.app.formatDate(period.startDate)} - ${this.app.formatDate(period.endDate)}</small>
+                        </div>
+                        <span class="period-actions">
+                            <button class="btn btn-sm btn-outline-primary me-1"
+                                    onclick="window.app.currentPage.showEditPeriodModal('${period.id}')"
+                                    title="${this.app.i18n.t('common.edit')}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger"
+                                    onclick="window.app.currentPage.deletePeriod('${period.id}')"
+                                    title="${this.app.i18n.t('common.delete')}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </span>
+                    </div>
+                `,
+                  )
+                  .join("")}
+            </div>
+        `;
+    this.app.i18n.updateUI(container); // 翻訳適用
+  }
+
 
   /**
    * Select job type
@@ -190,64 +341,54 @@ class SettingsPage {
    */
   async selectJobType(jobTypeId) {
     if (this.hasUnsavedChanges) {
-        if(!confirm("未保存の変更があります。移動しますか？")) {
+        if(!confirm(this.app.i18n.t("messages.unsaved_changes_confirm"))) { // 翻訳キー
             return;
         }
     }
     this.selectedJobType = this.jobTypes.find((jt) => jt.id === jobTypeId);
     this.hasUnsavedChanges = false;
     document.getElementById("saveChangesBtn").disabled = true;
-    this.renderJobTypesList();
-    await this.loadEvaluationStructure(jobTypeId);
+    this.renderJobTypesList(); // アクティブ状態を更新するため再描画
+    this.renderEvaluationStructure(); // 選択した職種の評価構造を表示
   }
 
   /**
    * Load evaluation structure for job type
    * 職種の評価構造を読み込み
-   */
-  async loadEvaluationStructure(jobTypeId) {
-    try {
-      // Mock data
-      this.evaluationStructure = {
-          jobTypeId,
-          categories: [
-            { id: `cat-${jobTypeId}-1`, name: "技術スキル", items: [ { id: `item-${jobTypeId}-1`, name: "専門技術", type: "quantitative" } ]},
-            { id: `cat-${jobTypeId}-2`, name: "コミュニケーション", items: [ { id: `item-${jobTypeId}-2`, name: "チームワーク", type: "qualitative" } ]},
-          ]
-      };
-      this.renderEvaluationStructure();
-    } catch (error) {
-      console.error("Error loading evaluation structure:", error);
-      this.app.showError("評価構造の読み込みに失敗しました。");
-    }
-  }
-
-  /**
-   * Render evaluation structure
-   * 評価構造を描画
+   * NOTE: このメソッドはselectJobTypeから呼ばれるため、mockStructuresから直接取得する
    */
   renderEvaluationStructure() {
     const container = document.getElementById("evaluationStructureContainer");
+    if (!container) return;
 
     if (!this.selectedJobType) {
-      container.innerHTML = `<div class="text-center text-muted p-5"><i class="fas fa-arrow-left me-2"></i>左側から職種を選択してください</div>`;
+      container.innerHTML = `<div class="text-center text-muted p-5"><i class="fas fa-arrow-left me-2"></i><span data-i18n="settings.select_job_type_hint"></span></div>`; // 翻訳キー
+      this.app.i18n.updateUI(container);
       return;
+    }
+
+    const currentStructure = this.evaluationStructures[this.selectedJobType.id];
+    if (!currentStructure) {
+        container.innerHTML = `<div class="text-center text-muted p-5"><span data-i18n="settings.no_structure_for_job_type">この職種には評価構造が設定されていません。</span></div>`; // 翻訳キー
+        this.app.i18n.updateUI(container);
+        return;
     }
 
     container.innerHTML = `
             <div class="evaluation-structure-editor">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4>${this.app.sanitizeHtml(this.selectedJobType.name)} の評価構造</h4>
+                    <h4>${this.app.sanitizeHtml(this.selectedJobType.name)} <span data-i18n="settings.evaluation_structure_of">の評価構造</span></h4>
                     <button class="btn btn-outline-primary btn-sm"
                             onclick="window.app.currentPage.addCategory()">
-                        <i class="fas fa-plus me-2"></i><span data-i18n="settings.add_category">カテゴリを追加</span>
+                        <i class="fas fa-plus me-2"></i><span data-i18n="settings.add_category"></span>
                     </button>
                 </div>
                 <div id="categoriesList">
-                    ${this.evaluationStructure.categories.map((category, categoryIndex) => this.renderCategory(category, categoryIndex)).join("")}
+                    ${currentStructure.categories.map((category, categoryIndex) => this.renderCategory(category, categoryIndex)).join("")}
                 </div>
             </div>
         `;
+    this.app.i18n.updateUI(container); // 翻訳適用
   }
   
   renderCategory(category, categoryIndex) {
@@ -256,9 +397,11 @@ class SettingsPage {
             <div class="card-header category-header">
                 <input type="text" class="form-control form-control-sm category-name-input"
                        value="${this.app.sanitizeHtml(category.name)}"
-                       onchange="window.app.currentPage.updateCategoryName(${categoryIndex}, this.value)">
+                       onchange="window.app.currentPage.updateCategoryName(${categoryIndex}, this.value)"
+                       data-i18n-placeholder="settings.category_name_placeholder">
                 <button class="btn btn-sm btn-outline-danger"
-                        onclick="window.app.currentPage.deleteCategory(${categoryIndex})">
+                        onclick="window.app.currentPage.deleteCategory(${categoryIndex})"
+                        title="${this.app.i18n.t('common.delete')}">
                     <i class="fas fa-trash"></i>
                 </button>
             </div>
@@ -267,7 +410,7 @@ class SettingsPage {
                 <div class="list-group-item">
                     <button class="btn btn-secondary btn-sm w-100 add-item-btn"
                             onclick="window.app.currentPage.addItem(${categoryIndex})">
-                        <i class="fas fa-plus me-2"></i><span data-i18n="settings.add_item">項目を追加</span>
+                        <i class="fas fa-plus me-2"></i><span data-i18n="settings.add_item"></span>
                     </button>
                 </div>
             </div>
@@ -280,14 +423,16 @@ class SettingsPage {
         <div class="list-group-item item-row" data-item-index="${itemIndex}">
             <input type="text" class="form-control form-control-sm"
                    value="${this.app.sanitizeHtml(item.name)}"
-                   onchange="window.app.currentPage.updateItemName(${categoryIndex}, ${itemIndex}, this.value)">
+                   onchange="window.app.currentPage.updateItemName(${categoryIndex}, ${itemIndex}, this.value)"
+                   data-i18n-placeholder="settings.item_name_placeholder">
             <select class="form-select form-select-sm"
                     onchange="window.app.currentPage.updateItemType(${categoryIndex}, ${itemIndex}, this.value)">
-                <option value="quantitative" ${item.type === "quantitative" ? "selected" : ""}>定量的</option>
-                <option value="qualitative" ${item.type === "qualitative" ? "selected" : ""}>定性的</option>
+                <option value="quantitative" ${item.type === "quantitative" ? "selected" : ""} data-i18n="settings.quantitative"></option>
+                <option value="qualitative" ${item.type === "qualitative" ? "selected" : ""} data-i18n="settings.qualitative"></option>
             </select>
             <button class="btn btn-sm btn-outline-danger"
-                    onclick="window.app.currentPage.deleteItem(${categoryIndex}, ${itemIndex})">
+                    onclick="window.app.currentPage.deleteItem(${categoryIndex}, ${itemIndex})"
+                    title="${this.app.i18n.t('common.delete')}">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -304,112 +449,242 @@ class SettingsPage {
     window.onbeforeunload = (e) => {
       if (this.hasUnsavedChanges) {
         e.preventDefault();
-        return e.returnValue = "未保存の変更があります。ページを離れますか？";
+        return e.returnValue = this.app.i18n.t("messages.unsaved_changes_warning"); // 翻訳キー
       }
     };
   }
 
   addCategory() {
-    if (!this.evaluationStructure) return;
-    const newCategory = { id: `category-${Date.now()}`, name: "新しいカテゴリ", items: [] };
-    this.evaluationStructure.categories.push(newCategory);
+    if (!this.selectedJobType) return;
+    const currentStructure = this.evaluationStructures[this.selectedJobType.id];
+    if (!currentStructure) { // 構造が存在しない場合は初期化
+        this.evaluationStructures[this.selectedJobType.id] = { jobTypeId: this.selectedJobType.id, categories: [] };
+    }
+    const newCategory = { id: `category-${Date.now()}`, name: this.app.i18n.t("settings.new_category"), items: [] }; // 翻訳キー
+    this.evaluationStructures[this.selectedJobType.id].categories.push(newCategory);
     this.renderEvaluationStructure();
     this.markUnsavedChanges();
   }
 
   deleteCategory(categoryIndex) {
-    if (!confirm("このカテゴリを削除しますか？カテゴリ内の項目もすべて削除されます。")) return;
-    this.evaluationStructure.categories.splice(categoryIndex, 1);
-    this.renderEvaluationStructure();
-    this.markUnsavedChanges();
+    if (!this.selectedJobType) return;
+    if (!confirm(this.app.i18n.t("settings.confirm_delete_category"))) return; // 翻訳キー
+    
+    const currentStructure = this.evaluationStructures[this.selectedJobType.id];
+    if (currentStructure) {
+      currentStructure.categories.splice(categoryIndex, 1);
+      this.renderEvaluationStructure();
+      this.markUnsavedChanges();
+    }
   }
 
   updateCategoryName(categoryIndex, newName) {
-    this.evaluationStructure.categories[categoryIndex].name = newName;
-    this.markUnsavedChanges();
+    if (!this.selectedJobType) return;
+    const currentStructure = this.evaluationStructures[this.selectedJobType.id];
+    if (currentStructure && currentStructure.categories[categoryIndex]) {
+      currentStructure.categories[categoryIndex].name = newName;
+      this.markUnsavedChanges();
+    }
   }
 
   addItem(categoryIndex) {
-    const newItem = { id: `item-${Date.now()}`, name: "新しい項目", type: "quantitative" };
-    this.evaluationStructure.categories[categoryIndex].items.push(newItem);
-    this.renderEvaluationStructure();
-    this.markUnsavedChanges();
+    if (!this.selectedJobType) return;
+    const currentStructure = this.evaluationStructures[this.selectedJobType.id];
+    if (currentStructure && currentStructure.categories[categoryIndex]) {
+        const newItem = { id: `item-${Date.now()}`, name: this.app.i18n.t("settings.new_item"), type: "quantitative" }; // 翻訳キー
+        currentStructure.categories[categoryIndex].items.push(newItem);
+        this.renderEvaluationStructure();
+        this.markUnsavedChanges();
+    }
   }
 
   deleteItem(categoryIndex, itemIndex) {
-    if (!confirm("この項目を削除しますか？")) return;
-    this.evaluationStructure.categories[categoryIndex].items.splice(itemIndex, 1);
-    this.renderEvaluationStructure();
-    this.markUnsavedChanges();
+    if (!this.selectedJobType) return;
+    if (!confirm(this.app.i18n.t("settings.confirm_delete_item"))) return; // 翻訳キー
+    
+    const currentStructure = this.evaluationStructures[this.selectedJobType.id];
+    if (currentStructure && currentStructure.categories[categoryIndex]) {
+      currentStructure.categories[categoryIndex].items.splice(itemIndex, 1);
+      this.renderEvaluationStructure();
+      this.markUnsavedChanges();
+    }
   }
 
   updateItemName(categoryIndex, itemIndex, newName) {
-    this.evaluationStructure.categories[categoryIndex].items[itemIndex].name = newName;
-    this.markUnsavedChanges();
+    if (!this.selectedJobType) return;
+    const currentStructure = this.evaluationStructures[this.selectedJobType.id];
+    if (currentStructure && currentStructure.categories[categoryIndex] && currentStructure.categories[categoryIndex].items[itemIndex]) {
+      currentStructure.categories[categoryIndex].items[itemIndex].name = newName;
+      this.markUnsavedChanges();
+    }
   }
 
   updateItemType(categoryIndex, itemIndex, newType) {
-    this.evaluationStructure.categories[categoryIndex].items[itemIndex].type = newType;
-    this.markUnsavedChanges();
+    if (!this.selectedJobType) return;
+    const currentStructure = this.evaluationStructures[this.selectedJobType.id];
+    if (currentStructure && currentStructure.categories[categoryIndex] && currentStructure.categories[categoryIndex].items[itemIndex]) {
+      currentStructure.categories[categoryIndex].items[itemIndex].type = newType;
+      this.markUnsavedChanges();
+    }
   }
 
   async saveChanges() {
-    if (!this.evaluationStructure) return;
+    if (!this.selectedJobType) {
+        this.app.showError(this.app.i18n.t("errors.no_job_type_selected")); // 翻訳キー
+        return;
+    }
+    if (!this.evaluationStructures[this.selectedJobType.id]) {
+        this.app.showWarning(this.app.i18n.t("warnings.no_changes_to_save")); // 翻訳キー
+        return;
+    }
+    
     try {
       // Mock API call
-      console.log("Saving changes:", this.evaluationStructure);
+      console.log("Saving changes for job type:", this.selectedJobType.id, this.evaluationStructures[this.selectedJobType.id]);
+      // 職種と評価期間をまとめて保存するモック
+      const dataToSave = {
+          jobTypes: this.jobTypes,
+          evaluationStructures: this.evaluationStructures,
+          evaluationPeriods: this.evaluationPeriods
+      };
+      localStorage.setItem(`settings-data-${this.app.currentUser.tenantId}`, JSON.stringify(dataToSave));
+
       await new Promise(resolve => setTimeout(resolve, 500)); 
       
-      this.app.showSuccess("設定を保存しました。");
+      this.app.showSuccess(this.app.i18n.t("messages.settings_saved")); // 翻訳キー
       this.hasUnsavedChanges = false;
       document.getElementById("saveChangesBtn").disabled = true;
     } catch (error) {
       console.error("Error saving settings:", error);
-      this.app.showError("設定の保存に失敗しました。");
+      this.app.showError(this.app.i18n.t("errors.save_settings_failed")); // 翻訳キー
     }
   }
 
   showAddJobTypeModal() {
     if(this.addJobTypeModal) {
         document.getElementById('addJobTypeForm').reset();
+        document.getElementById('jobTypeName').value = ''; // 確実にクリア
         this.addJobTypeModal.show();
+        this.app.i18n.updateUI(document.getElementById('addJobTypeModal')); // モーダル内の翻訳を更新
     }
   }
 
   async handleAddJobType(event) {
     event.preventDefault();
-    const name = document.getElementById("jobTypeName").value;
-    if (!name) return;
+    const name = document.getElementById("jobTypeName").value.trim();
+    if (!name) {
+        this.app.showError(this.app.i18n.t("errors.job_type_name_required"));
+        return;
+    }
 
     try {
       const newJobType = { id: `job-type-${Date.now()}`, name: name, order: this.jobTypes.length + 1 };
       this.jobTypes.push(newJobType);
       this.renderJobTypesList();
-      this.app.showSuccess("職種を追加しました。");
+      this.markUnsavedChanges(); // 新しい職種が追加されたら変更ありとマーク
+      this.app.showSuccess(this.app.i18n.t("messages.add_job_type_success"));
       if(this.addJobTypeModal) this.addJobTypeModal.hide();
     } catch (error) {
       console.error("Error adding job type:", error);
-      this.app.showError("職種の追加に失敗しました。");
+      this.app.showError(this.app.i18n.t("errors.add_job_type_failed"));
     }
   }
   
   async deleteJobType(jobTypeId) {
-    if (!confirm("この職種を削除しますか？関連する評価構造も削除されます。")) return;
+    if (!confirm(this.app.i18n.t("settings.confirm_delete_job_type"))) return; // 翻訳キー
     
     try {
       this.jobTypes = this.jobTypes.filter((jt) => jt.id !== jobTypeId);
+      // 関連する評価構造も削除（モック）
+      delete this.evaluationStructures[jobTypeId];
+
       if (this.selectedJobType?.id === jobTypeId) {
         this.selectedJobType = null;
-        this.evaluationStructure = null;
-        this.hasUnsavedChanges = false;
-        document.getElementById("saveChangesBtn").disabled = true;
-        this.renderEvaluationStructure();
+        this.renderEvaluationStructure(); // 空の状態をレンダリング
       }
       this.renderJobTypesList();
-      this.app.showSuccess("職種を削除しました。");
+      this.markUnsavedChanges(); // 職種が削除されたら変更ありとマーク
+      this.app.showSuccess(this.app.i18n.t("messages.delete_job_type_success"));
     } catch (error) {
       console.error("Error deleting job type:", error);
-      this.app.showError("職種の削除に失敗しました。");
+      this.app.showError(this.app.i18n.t("errors.delete_job_type_failed"));
+    }
+  }
+
+  showAddPeriodModal() {
+    if (this.addPeriodModal) {
+      document.getElementById('addPeriodForm').reset();
+      document.getElementById('periodId').value = '';
+      document.getElementById('periodModalTitle').textContent = this.app.i18n.t("settings.add_period");
+      this.addPeriodModal.show();
+      this.app.i18n.updateUI(document.getElementById('addPeriodModal'));
+    }
+  }
+
+  showEditPeriodModal(periodId) {
+    const period = this.evaluationPeriods.find(p => p.id === periodId);
+    if (!period) {
+        this.app.showError(this.app.i18n.t("errors.period_not_found"));
+        return;
+    }
+    if (this.addPeriodModal) {
+        document.getElementById('addPeriodForm').reset();
+        document.getElementById('periodId').value = period.id;
+        document.getElementById('periodName').value = period.name;
+        document.getElementById('periodStartDate').value = period.startDate;
+        document.getElementById('periodEndDate').value = period.endDate;
+        document.getElementById('periodModalTitle').textContent = this.app.i18n.t("settings.edit_period");
+        this.addPeriodModal.show();
+        this.app.i18n.updateUI(document.getElementById('addPeriodModal'));
+    }
+  }
+
+  async handleAddEditPeriod(event) {
+    event.preventDefault();
+    const periodId = document.getElementById('periodId').value;
+    const name = document.getElementById('periodName').value.trim();
+    const startDate = document.getElementById('periodStartDate').value;
+    const endDate = document.getElementById('periodEndDate').value;
+
+    if (!name || !startDate || !endDate) {
+        this.app.showError(this.app.i18n.t("errors.all_fields_required"));
+        return;
+    }
+
+    const periodData = { name, startDate, endDate };
+
+    try {
+      if (periodId) { // Edit existing period
+        const index = this.evaluationPeriods.findIndex(p => p.id === periodId);
+        if (index > -1) {
+          this.evaluationPeriods[index] = { ...this.evaluationPeriods[index], ...periodData };
+          this.app.showSuccess(this.app.i18n.t("messages.update_period_success"));
+        }
+      } else { // Add new period
+        const newPeriod = { id: `period-${Date.now()}`, ...periodData };
+        this.evaluationPeriods.push(newPeriod);
+        this.app.showSuccess(this.app.i18n.t("messages.add_period_success"));
+      }
+      this.renderEvaluationPeriodsList();
+      this.markUnsavedChanges();
+      if(this.addPeriodModal) this.addPeriodModal.hide();
+    } catch (error) {
+      console.error("Error saving evaluation period:", error);
+      this.app.showError(this.app.i18n.t("errors.save_period_failed"));
+    }
+  }
+
+  async deletePeriod(periodId) {
+    if (!confirm(this.app.i18n.t("settings.confirm_delete_period"))) return;
+    
+    try {
+      this.evaluationPeriods = this.evaluationPeriods.filter(p => p.id !== periodId);
+      this.renderEvaluationPeriodsList();
+      this.markUnsavedChanges();
+      this.app.showSuccess(this.app.i18n.t("messages.delete_period_success"));
+    } catch (error) {
+      console.error("Error deleting evaluation period:", error);
+      this.app.showError(this.app.i18n.t("errors.delete_period_failed"));
     }
   }
 }
@@ -437,11 +712,11 @@ const settingsStyles = `
 .settings-sidebar .card-body, .settings-main .card-body {
     overflow-y: auto;
 }
-.job-type-actions {
+.job-type-actions, .period-actions {
     opacity: 0;
     transition: opacity 0.2s;
 }
-.list-group-item:hover .job-type-actions {
+.list-group-item:hover .job-type-actions, .list-group-item:hover .period-actions {
     opacity: 1;
 }
 .evaluation-structure-editor {
