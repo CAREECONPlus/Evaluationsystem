@@ -15,19 +15,18 @@ class Router {
     try {
       console.log("Initializing Router...");
       this.routes = {
-        "/": "/login", // ルートパスは/loginへリダイレクト
-        "/login": "LoginPage",
-        "/register": "RegisterPage",
-        "/register-admin": "RegisterAdminPage",
-        "/dashboard": "DashboardPage",
-        "/users": "UserManagementPage",
-        "/goal-setting": "GoalSettingPage",
-        "/goal-approvals": "GoalApprovalsPage",
-        "/evaluation-form": "EvaluationFormPage",
-        "/evaluations": "EvaluationsPage",
-        "/settings": "SettingsPage",
-        "/developer": "DeveloperPage",
-        "/404": "NotFoundPage",
+        "/login": { page: "LoginPage", auth: false },
+        "/register": { page: "RegisterPage", auth: false },
+        "/register-admin": { page: "RegisterAdminPage", auth: false },
+        "/dashboard": { page: "DashboardPage", auth: true },
+        "/users": { page: "UserManagementPage", auth: true },
+        "/goal-setting": { page: "GoalSettingPage", auth: true },
+        "/goal-approvals": { page: "GoalApprovalsPage", auth: true },
+        "/evaluation-form": { page: "EvaluationFormPage", auth: true },
+        "/evaluations": { page: "EvaluationsPage", auth: true },
+        "/settings": { page: "SettingsPage", auth: true },
+        "/developer": { page: "DeveloperPage", auth: true },
+        "/404": { page: "NotFoundPage", auth: false },
       };
       window.addEventListener("popstate", () => this.handleLocation());
       this.isInitialized = true;
@@ -39,36 +38,39 @@ class Router {
   }
 
   handleLocation() {
-    const path = window.location.pathname;
-    const routeTarget = this.routes[path];
+    const path = window.location.pathname.replace(/\/$/, "") || "/"; //末尾のスラッシュを削除
+    const route = this.routes[path];
 
-    if (routeTarget) {
-      // ルートが見つかった場合
-      if (typeof routeTarget === 'string' && routeTarget.startsWith('/')) {
-        // リダイレクトルートの場合 (例: "/" -> "/login")
-        this.navigate(routeTarget, false);
-      } else {
-        // ページクラス名の場合
-        this.loadPage(path, routeTarget);
-      }
+    if (route) {
+      this.loadPage(path, route.page, route.auth);
     } else {
-      // ★★★ 修正点 ★★★
-      // ルートが見つからない場合 (例: /Evaluationsystem/ など)
-      // デフォルトの開始ルートにリダイレクトする
-      this.navigate(this.routes["/"], false);
+      // /Evaluationsystem/ のようなサブディレクトリのルートパスの場合、ログインページにリダイレクト
+      // それ以外の未定義パスは404ページへ
+      const isSubdirectoryRoot = !Object.keys(this.routes).some(r => path.startsWith(r) && r.length > 1);
+      if (isSubdirectoryRoot) {
+        this.navigate("/login");
+      } else {
+        this.loadPage("/404", "NotFoundPage", false);
+      }
     }
   }
 
-  navigate(path, pushState = true) {
-    if (pushState && window.location.pathname !== path) {
+  navigate(path) {
+    if (window.location.pathname !== path) {
       window.history.pushState({}, "", path);
     }
     this.handleLocation();
   }
 
-  async loadPage(path, pageClassName) {
+  async loadPage(path, pageClassName, requiresAuth) {
     try {
       this.currentRoute = path;
+      
+      if (requiresAuth && !this.app.isAuthenticated()) {
+        this.navigate("/login");
+        return;
+      }
+      
       const PageClass = window[pageClassName];
       if (!PageClass) throw new Error(`Page class ${pageClassName} not found`);
 
@@ -78,12 +80,6 @@ class Router {
       this.currentPageInstance = new PageClass(this.app);
       this.app.currentPage = this.currentPageInstance;
 
-      const requiresAuth = !["/login", "/register", "/register-admin"].includes(path);
-      if (requiresAuth && !this.app.isAuthenticated()) {
-        this.navigate("/login", false);
-        return;
-      }
-      
       if (requiresAuth) {
         window.HeaderComponent.show(this.app.currentUser);
         window.SidebarComponent.show(this.app.currentUser);
@@ -96,6 +92,8 @@ class Router {
       if (this.currentPageInstance.init) {
         await this.currentPageInstance.init();
       }
+      
+      // 翻訳適用のためにUI更新
       this.app.i18n.updateUI();
 
     } catch (error) {
@@ -107,9 +105,10 @@ class Router {
 
 window.Router = Router;
 
+// 404ページ用のクラス定義
 class NotFoundPage {
   constructor(app) { this.app = app; }
-  async render() { return `<div class="container mt-5 text-center"><h1>404 Not Found</h1><p>お探しのページは見つかりませんでした。</p><a href="/" class="btn btn-primary">ホームに戻る</a></div>`; }
+  async render() { return `<div class="container mt-5 text-center"><h1>404 Not Found</h1><p>お探しのページは見つかりませんでした。</p><a href="/" onclick="event.preventDefault(); window.app.router.navigate('/login');" class="btn btn-primary">ログインページに戻る</a></div>`; }
   async init() {}
 }
 window.NotFoundPage = NotFoundPage;
