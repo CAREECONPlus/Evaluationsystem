@@ -69,36 +69,35 @@ class HeaderComponent {
       }
 
       headerContainer.style.display = "block"
+      const userRole = this.app?.currentUser?.role; // appインスタンスからロールを取得
+
       headerContainer.innerHTML = `
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
           <div class="container-fluid">
-            <!-- Brand -->
             <a class="navbar-brand d-flex align-items-center" href="#" onclick="window.app.navigate('/dashboard')">
               <i class="fas fa-hard-hat me-2"></i>
-              <span class="fw-bold">評価管理システム</span>
+              <span class="fw-bold" data-i18n="app.system_name">評価管理システム</span>
             </a>
 
-            <!-- Mobile toggle button -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="${this.app?.i18n.t('common.toggle_navigation')}">
               <span class="navbar-toggler-icon"></span>
             </button>
 
-            <!-- Navigation -->
             <div class="collapse navbar-collapse" id="navbarNav">
               <ul class="navbar-nav me-auto">
                 <li class="nav-item">
                   <a class="nav-link" href="#" onclick="window.app.navigate('/dashboard')">
                     <i class="fas fa-tachometer-alt me-1"></i>
-                    ダッシュボード
+                    <span data-i18n="nav.dashboard"></span>
                   </a>
                 </li>
                 ${
-                  this.currentUser?.role === "admin"
+                  userRole === "admin"
                     ? `
                 <li class="nav-item">
                   <a class="nav-link" href="#" onclick="window.app.navigate('/users')">
                     <i class="fas fa-users me-1"></i>
-                    ユーザー管理
+                    <span data-i18n="nav.users"></span>
                   </a>
                 </li>
                 `
@@ -107,24 +106,22 @@ class HeaderComponent {
                 <li class="nav-item">
                   <a class="nav-link" href="#" onclick="window.app.navigate('/evaluations')">
                     <i class="fas fa-clipboard-list me-1"></i>
-                    評価管理
+                    <span data-i18n="nav.evaluations"></span>
                   </a>
                 </li>
                 <li class="nav-item">
                   <a class="nav-link" href="#" onclick="window.app.navigate('/goal-setting')">
                     <i class="fas fa-bullseye me-1"></i>
-                    目標設定
+                    <span data-i18n="nav.goals"></span>
                   </a>
                 </li>
               </ul>
 
-              <!-- User menu -->
               <ul class="navbar-nav">
-                <!-- Language selector -->
                 <li class="nav-item dropdown">
-                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="fas fa-globe me-1"></i>
-                    言語
+                    <span data-i18n="common.language"></span>
                   </a>
                   <ul class="dropdown-menu">
                     <li>
@@ -145,42 +142,43 @@ class HeaderComponent {
                   </ul>
                 </li>
 
-                <!-- User dropdown -->
                 <li class="nav-item dropdown">
-                  <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
+                  <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <div class="user-avatar me-2">
                       <i class="fas fa-user-circle fa-lg"></i>
                     </div>
                     <div class="user-info d-none d-md-block">
-                      <div class="user-name">${this.sanitizeHtml(this.currentUser?.name || "ユーザー")}</div>
+                      <div class="user-name">${this.sanitizeHtml(this.currentUser?.name || this.app?.i18n.t('common.user'))}</div>
                       <small class="user-role text-muted">${this.getRoleDisplayName(this.currentUser?.role)}</small>
                     </div>
                   </a>
                   <ul class="dropdown-menu dropdown-menu-end">
                     <li>
                       <div class="dropdown-header">
-                        <div class="fw-bold">${this.sanitizeHtml(this.currentUser?.name || "ユーザー")}</div>
+                        <div class="fw-bold">${this.sanitizeHtml(this.currentUser?.name || this.app?.i18n.t('common.user'))}</div>
                         <small class="text-muted">${this.sanitizeHtml(this.currentUser?.email || "")}</small>
                       </div>
                     </li>
                     <li><hr class="dropdown-divider"></li>
+                    ${userRole === "admin" || userRole === "developer" ? `
                     <li>
                       <a class="dropdown-item" href="#" onclick="window.app.navigate('/settings')">
                         <i class="fas fa-cog me-2"></i>
-                        設定
+                        <span data-i18n="nav.settings"></span>
                       </a>
                     </li>
+                    ` : ''}
                     <li>
                       <a class="dropdown-item" href="#" onclick="window.headerComponent.showProfile()">
                         <i class="fas fa-user me-2"></i>
-                        プロフィール
+                        <span data-i18n="nav.profile"></span>
                       </a>
                     </li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
                       <a class="dropdown-item text-danger" href="#" onclick="window.headerComponent.logout()">
                         <i class="fas fa-sign-out-alt me-2"></i>
-                        ログアウト
+                        <span data-i18n="nav.logout"></span>
                       </a>
                     </li>
                   </ul>
@@ -190,6 +188,10 @@ class HeaderComponent {
           </div>
         </nav>
       `
+      // render後に翻訳を適用
+      if (this.app?.i18n) {
+          this.app.i18n.updateUI(headerContainer);
+      }
 
       console.log("Header rendered successfully")
     } catch (error) {
@@ -207,14 +209,13 @@ class HeaderComponent {
 
       if (window.app?.i18n) {
         await window.app.i18n.setLanguage(langCode)
-        window.app.showSuccess("言語を変更しました。")
-
+        window.app.showSuccess(window.app.i18n.t("messages.language_changed")); // 翻訳キー
         // Re-render header with new language
         this.render()
       }
     } catch (error) {
       console.error("Error changing language:", error)
-      window.app?.showError("言語の変更に失敗しました。")
+      window.app?.showError(window.app.i18n.t("errors.language_change_failed")); // 翻訳キー
     }
   }
 
@@ -228,47 +229,49 @@ class HeaderComponent {
 
       // Create modal HTML
       const modalHtml = `
-        <div class="modal fade" id="profileModal" tabindex="-1">
+        <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
           <div class="modal-dialog">
             <div class="modal-content">
               <div class="modal-header">
                 <h5 class="modal-title">
                   <i class="fas fa-user me-2"></i>
-                  プロフィール
+                  <span data-i18n="nav.profile"></span>
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="${this.app?.i18n.t('common.close')}"></button>
               </div>
               <div class="modal-body">
                 <div class="text-center mb-4">
                   <i class="fas fa-user-circle fa-5x text-muted"></i>
                 </div>
                 <div class="row">
-                  <div class="col-sm-4 fw-bold">名前:</div>
+                  <div class="col-sm-4 fw-bold" data-i18n="auth.name"></div>
                   <div class="col-sm-8">${this.sanitizeHtml(this.currentUser?.name || "")}</div>
                 </div>
                 <hr>
                 <div class="row">
-                  <div class="col-sm-4 fw-bold">メール:</div>
+                  <div class="col-sm-4 fw-bold" data-i18n="auth.email"></div>
                   <div class="col-sm-8">${this.sanitizeHtml(this.currentUser?.email || "")}</div>
                 </div>
                 <hr>
                 <div class="row">
-                  <div class="col-sm-4 fw-bold">ロール:</div>
+                  <div class="col-sm-4 fw-bold" data-i18n="users.role"></div>
                   <div class="col-sm-8">${this.getRoleDisplayName(this.currentUser?.role)}</div>
                 </div>
                 <hr>
                 <div class="row">
-                  <div class="col-sm-4 fw-bold">最終ログイン:</div>
+                  <div class="col-sm-4 fw-bold" data-i18n="common.last_login"></div>
                   <div class="col-sm-8">${this.formatDate(this.currentUser?.lastLogin)}</div>
                 </div>
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                  閉じる
+                  <span data-i18n="common.close"></span>
                 </button>
-                <button type="button" class="btn btn-primary" onclick="window.app.navigate('/settings')">
-                  設定を開く
+                ${this.currentUser?.role === "admin" || this.currentUser?.role === "developer" ? `
+                <button type="button" class="btn btn-primary" onclick="window.app.navigate('/settings'); window.bootstrap.Modal.getInstance(document.getElementById('profileModal')).hide();">
+                  <span data-i18n="nav.settings"></span>
                 </button>
+                ` : ''}
               </div>
             </div>
           </div>
@@ -285,16 +288,20 @@ class HeaderComponent {
       document.body.insertAdjacentHTML("beforeend", modalHtml)
 
       // Show modal
-      const modal = new this.bootstrap.Modal(document.getElementById("profileModal"))
+      const modalElement = document.getElementById("profileModal");
+      const modal = new this.bootstrap.Modal(modalElement)
+      if (this.app?.i18n) {
+          this.app.i18n.updateUI(modalElement); // モーダル内の翻訳を適用
+      }
       modal.show()
 
       // Clean up modal after it's hidden
-      document.getElementById("profileModal").addEventListener("hidden.bs.modal", function () {
+      modalElement.addEventListener("hidden.bs.modal", function () {
         this.remove()
       })
     } catch (error) {
       console.error("Error showing profile modal:", error)
-      window.app?.showError("プロフィールの表示に失敗しました。")
+      window.app?.showError(window.app.i18n.t("errors.profile_display_failed")); // 翻訳キー
     }
   }
 
@@ -306,12 +313,12 @@ class HeaderComponent {
     try {
       console.log("Logging out user")
 
-      if (confirm("ログアウトしますか？")) {
+      if (confirm(window.app.i18n.t("auth.confirm_logout"))) { // 翻訳キー
         await window.app?.logout()
       }
     } catch (error) {
       console.error("Error during logout:", error)
-      window.app?.showError("ログアウトに失敗しました。")
+      window.app?.showError(window.app.i18n.t("errors.logout_failed")); // 翻訳キー
     }
   }
 
@@ -320,10 +327,16 @@ class HeaderComponent {
    * ロール表示名を取得
    */
   getRoleDisplayName(role) {
+    if (this.app?.i18n) { // appとi18nが利用可能かチェック
+      return this.app.i18n.t('roles.' + role);
+    }
     const roleNames = {
       admin: "管理者",
       manager: "マネージャー",
       employee: "従業員",
+      evaluator: "評価者", // 追加
+      worker: "作業員", // 追加
+      developer: "開発者" // 追加
     }
     return roleNames[role] || role || "不明"
   }
@@ -333,10 +346,14 @@ class HeaderComponent {
    * 日付をフォーマット
    */
   formatDate(date) {
-    if (!date) return "不明"
+    if (!date) return this.app?.i18n.t("common.unknown") || "不明"; // 翻訳キー
 
     try {
       const d = new Date(date)
+      // i18nサービスで提供されるフォーマット関数があればそれを使う
+      if (this.app?.formatDateTime) {
+          return this.app.formatDateTime(d);
+      }
       return d.toLocaleDateString("ja-JP", {
         year: "numeric",
         month: "2-digit",
@@ -345,7 +362,7 @@ class HeaderComponent {
         minute: "2-digit",
       })
     } catch (error) {
-      return "不明"
+      return this.app?.i18n.t("common.unknown") || "不明"; // 翻訳キー
     }
   }
 
@@ -355,6 +372,10 @@ class HeaderComponent {
    */
   sanitizeHtml(str) {
     if (!str) return ""
+    // app.jsにsanitizeHtml関数があればそれを使う
+    if (this.app?.sanitizeHtml) {
+        return this.app.sanitizeHtml(str);
+    }
     const div = document.createElement("div")
     div.textContent = str
     return div.innerHTML
@@ -363,4 +384,6 @@ class HeaderComponent {
 
 // Create global instance
 window.HeaderComponent = new HeaderComponent()
-window.headerComponent = window.HeaderComponent
+// appインスタンスへの参照をHeaderComponentに追加
+// app.jsのDOMContentLoadedイベント内で実行されるようにする
+// window.HeaderComponent.app = window.app; // これはAppクラスのinitで設定する
