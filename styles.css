@@ -390,3 +390,9 @@ body {
     border: 1px solid #ddd !important;
   }
 }
+
+/* --- コンテンツエリアのレイアウトを安定させるための追加CSS --- */
+.main-content > div {
+  width: 100%;
+  padding: 1.5rem;
+}
