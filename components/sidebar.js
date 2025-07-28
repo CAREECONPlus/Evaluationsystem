@@ -30,24 +30,25 @@ class SidebarComponent {
    */
   hide() {
     try {
-      console.log("Sidebar hidden")
-      this.isVisible = false
-      const sidebarContainer = document.getElementById("sidebar-container")
+      console.log("Sidebar hidden");
+      this.isVisible = false;
+      const sidebarContainer = document.getElementById("sidebar-container");
       if (sidebarContainer) {
-        sidebarContainer.innerHTML = ""
-        sidebarContainer.style.display = "none"
+        sidebarContainer.innerHTML = "";
+        sidebarContainer.style.display = "none";
       }
 
       // Reset main content margin
-      const mainContent = document.getElementById("content")
+      const mainContent = document.getElementById("content");
       if (mainContent) {
-        mainContent.style.marginLeft = "0"
+        mainContent.style.marginLeft = "0";
       }
       
       const existingToggle = document.querySelector('.sidebar-toggle');
       if(existingToggle) existingToggle.remove();
 
-    } catch (error)      console.error("Error hiding sidebar:", error)
+    } catch (error) {
+      console.error("Error hiding sidebar:", error);
     }
   }
 
