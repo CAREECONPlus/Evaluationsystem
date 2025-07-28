@@ -193,12 +193,14 @@ class SidebarComponent {
         </div>
       `
 
+      // //...
       // Adjust main content margin
       const mainContent = document.getElementById("content")
-      if (mainContent) {
-        mainContent.style.marginLeft = sidebarWidth
-        mainContent.style.transition = "margin-left 0.3s ease"
-      }
+      // if (mainContent) {
+      //   mainContent.style.marginLeft = sidebarWidth
+      //   mainContent.style.transition = "margin-left 0.3s ease"
+      // }
+
 
       // Highlight current page
       this.highlightCurrentPage()
