@@ -15,7 +15,7 @@ class Router {
     try {
       console.log("Initializing Router...");
       this.routes = {
-        "/": "/login",
+        "/": "/login", // ルートパスは/loginへリダイレクト
         "/login": "LoginPage",
         "/register": "RegisterPage",
         "/register-admin": "RegisterAdminPage",
@@ -40,16 +40,27 @@ class Router {
 
   handleLocation() {
     const path = window.location.pathname;
-    const route = this.routes[path] || this.routes["/404"];
-    if (typeof route === 'string' && route.startsWith('/')) {
-        this.navigate(route);
-        return;
+    const routeTarget = this.routes[path];
+
+    if (routeTarget) {
+      // ルートが見つかった場合
+      if (typeof routeTarget === 'string' && routeTarget.startsWith('/')) {
+        // リダイレクトルートの場合 (例: "/" -> "/login")
+        this.navigate(routeTarget, false);
+      } else {
+        // ページクラス名の場合
+        this.loadPage(path, routeTarget);
+      }
+    } else {
+      // ★★★ 修正点 ★★★
+      // ルートが見つからない場合 (例: /Evaluationsystem/ など)
+      // デフォルトの開始ルートにリダイレクトする
+      this.navigate(this.routes["/"], false);
     }
-    this.loadPage(path, route);
   }
 
-  navigate(path) {
-    if (window.location.pathname !== path) {
+  navigate(path, pushState = true) {
+    if (pushState && window.location.pathname !== path) {
       window.history.pushState({}, "", path);
     }
     this.handleLocation();
@@ -69,11 +80,11 @@ class Router {
 
       const requiresAuth = !["/login", "/register", "/register-admin"].includes(path);
       if (requiresAuth && !this.app.isAuthenticated()) {
-        this.navigate("/login");
+        this.navigate("/login", false);
         return;
       }
       
-      if(requiresAuth) {
+      if (requiresAuth) {
         window.HeaderComponent.show(this.app.currentUser);
         window.SidebarComponent.show(this.app.currentUser);
       } else {
@@ -98,7 +109,7 @@ window.Router = Router;
 
 class NotFoundPage {
   constructor(app) { this.app = app; }
-  async render() { return `<div class="container mt-5"><h1>404 Not Found</h1></div>`; }
+  async render() { return `<div class="container mt-5 text-center"><h1>404 Not Found</h1><p>お探しのページは見つかりませんでした。</p><a href="/" class="btn btn-primary">ホームに戻る</a></div>`; }
   async init() {}
 }
 window.NotFoundPage = NotFoundPage;
