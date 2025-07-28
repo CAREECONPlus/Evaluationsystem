@@ -27,7 +27,6 @@ class Router {
     const redirectPath = sessionStorage.getItem('redirectPath');
     if (redirectPath) {
       sessionStorage.removeItem('redirectPath');
-      // URLを本来のパスに書き換える (例: .../EvaluationSystem/dashboard)
       if(window.location.pathname !== redirectPath) {
         window.history.replaceState(null, null, redirectPath);
       }
@@ -56,15 +55,18 @@ class Router {
   }
 
   navigate(path) {
-    const fullPath = this.basePath + (path === "/" ? "/" : path);
-    if (window.location.pathname !== fullPath) {
-      window.history.pushState({}, "", fullPath);
+    const fullPath = this.basePath + (path === "/" ? "" : path);
+    // ルートパスの場合、末尾にスラッシュを追加
+    const finalPath = (path === "/") ? fullPath + "/" : fullPath;
+
+    if (window.location.pathname !== finalPath) {
+      window.history.pushState({}, "", finalPath);
     }
     this.handleLocation();
   }
 
   async loadPage(path, pageClassName) {
-    this.app.currentPage = null; // ページ切り替え時にクリア
+    this.app.currentPage = null; 
     const requiresAuth = !["/login", "/register", "/register-admin", "/404"].includes(path);
 
     if (requiresAuth && !this.app.isAuthenticated()) {
@@ -78,7 +80,7 @@ class Router {
     this.app.currentPage = new PageClass(this.app);
     
     const contentContainer = document.getElementById("content");
-    contentContainer.innerHTML = ''; // 先に中身を空にする
+    contentContainer.innerHTML = ''; 
     
     if (requiresAuth) {
       window.HeaderComponent.show(this.app.currentUser);
@@ -100,6 +102,9 @@ window.Router = Router;
 
 class NotFoundPage {
   constructor(app) { this.app = app; }
-  async render() { return `...`; } // 省略
+  async render() { 
+    const base = new Router().basePath;
+    return `<div class="container mt-5 text-center"><h1>404 Not Found</h1><p>お探しのページは見つかりませんでした。</p><a href="${base}/" class="btn btn-primary">ログインページに戻る</a></div>`; 
+  }
 }
 window.NotFoundPage = NotFoundPage;
