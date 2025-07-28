@@ -12,10 +12,15 @@ class I18n {
   async init() {
     try {
       console.log("Initializing I18n service...");
-      // 外部ファイルではなく、直接ここに翻訳を保持
-      this.translations.ja = window.langJA;
-      this.translations.en = window.langEN;
-      this.translations.vi = window.langVI;
+
+      // 各言語のJSONファイルを非同期で読み込む
+      const [ja, en, vi] = await Promise.all([
+        fetch('./locales/ja.json').then(res => res.json()),
+        fetch('./locales/en.json').then(res => res.json()),
+        fetch('./locales/vi.json').then(res => res.json())
+      ]);
+
+      this.translations = { ja, en, vi };
       
       const savedLanguage = localStorage.getItem("language") || "ja";
       this.currentLanguage = this.translations[savedLanguage] ? savedLanguage : "ja";
@@ -28,21 +33,13 @@ class I18n {
     }
   }
 
-  /**
-   * Get translation for key (e.g., "common.save" or "nav.dashboard")
-   * ネストされたキーに対応する翻訳を取得
-   */
   t(key, params = {}) {
     try {
-      // ★★★ 修正点 ★★★
-      // 'evaluation.title' のようなキーを分割して、ネストされたオブジェクトをたどる
       const keys = key.split('.');
       let translation = this.translations[this.currentLanguage];
       for (const k of keys) {
-        translation = translation[k];
-        if (translation === undefined) {
-          return key; // 見つからなかった場合はキーをそのまま返す
-        }
+        translation = translation?.[k];
+        if (translation === undefined) return key;
       }
 
       let result = translation;
@@ -61,10 +58,10 @@ class I18n {
       this.currentLanguage = language;
       localStorage.setItem("language", language);
       this.updateUI();
-      // ヘッダーやサイドバーも再描画して言語を反映
-      if (window.app && window.app.currentPage) {
-        window.HeaderComponent.show(window.app.currentUser);
-        window.SidebarComponent.show(window.app.currentUser);
+      
+      // ページコンテンツが存在すれば、UIを再描画して言語を完全に反映させる
+      if (window.app && window.app.router && window.app.router.currentPageInstance) {
+        window.app.router.loadPage(window.app.router.currentPageInstance.constructor.name.replace('Page','').toLowerCase(), true);
       }
       console.log("Language changed to:", language);
     } else {
@@ -79,20 +76,13 @@ class I18n {
   updateUI() {
     document.querySelectorAll("[data-i18n]").forEach((element) => {
       const key = element.getAttribute("data-i18n");
-      element.textContent = this.t(key);
+      if(key) element.textContent = this.t(key);
     });
     document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
       const key = element.getAttribute("data-i18n-placeholder");
-      element.placeholder = this.t(key);
+      if(key) element.placeholder = this.t(key);
     });
   }
 }
 
-// Make I18n globally available
 window.I18n = I18n;
-
-// Load language files into global variables
-// 実際のプロジェクトでは非同期で読み込むべきですが、現在の構造に合わせてグローバル変数に格納します
-fetch('./locales/ja.json').then(r => r.json()).then(data => window.langJA = data);
-fetch('./locales/en.json').then(r => r.json()).then(data => window.langEN = data);
-fetch('./locales/vi.json').then(r => r.json()).then(data => window.langVI = data);
