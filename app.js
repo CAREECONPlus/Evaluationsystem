@@ -39,7 +39,7 @@ class App {
         console.log("Firebase initialized")
       }
 
-      // Initialize modules in correct order
+      // Initialize core modules
       console.log("Initializing I18n...")
       this.i18n = new window.I18n()
       await this.i18n.init()
@@ -54,7 +54,7 @@ class App {
       await this.auth.init()
       
       // HeaderComponentとSidebarComponentにappインスタンスを設定
-      // ルーター初期化前に設定することで、コンポーネントがapp.i18n等にアクセスできるようにする
+      // これらが render を呼ぶ前にapp参照が設定されていることを保証する
       if (window.HeaderComponent) {
           window.HeaderComponent.app = this;
       }
@@ -64,14 +64,9 @@ class App {
 
       console.log("Initializing Router...")
       this.router = new window.Router(this)
-      this.router.init()
+      // ルーターの初期化は、すべての依存関係（Auth, API, i18n, コンポーネントへのapp参照）が整ってから行う
+      this.router.init() // router.init() が handleLocation を呼び、そこで show/hide が呼ばれる
 
-      // Initialize page instances with app reference
-      // DashboardPage, LoginPage, RegisterPage などは router.loadPage でインスタンスが生成されるため、
-      // ここでnewする必要はないが、window.dashboardPageなどのグローバル参照が必要な場合は定義
-      if (window.DashboardPage) {
-        // window.dashboardPage = new window.DashboardPage(this); // routerがインスタンスを生成するので不要
-      }
 
       this.isInitialized = true
       console.log("Application initialized successfully")
@@ -99,10 +94,19 @@ class App {
       app.classList.remove("d-none")
     }
 
-    // Navigate to initial route if not already navigated
-    if (this.router && !this.router.currentRoute) {
+    // router.init()が既にhandleLocationを呼び出しているはずなので、
+    // ここでの navigate は不要な場合が多い。
+    // ただし、もしリダイレクトパスがセッションストレージにあり、
+    // それに沿った遷移を app.js が行うべきなら残すことも検討。
+    // 現状は router.js の handleLocation が初期パスを処理する。
+    // ロード後のリダイレクトパスがあればそれに従う
+    const redirectPath = sessionStorage.getItem('redirectPath');
+    if (redirectPath) {
+        sessionStorage.removeItem('redirectPath');
+        this.navigate(redirectPath);
+    } else if (this.router && !this.router.currentRoute) { // ルーターがまだパスを処理していない場合
       const initialRoute = window.location.pathname === this.router.basePath || window.location.pathname === this.router.basePath + '/' ? "/dashboard" : window.location.pathname;
-      this.router.navigate(initialRoute, false)
+      this.router.navigate(initialRoute, false); // handleLocationを直接呼ぶことで再帰を防ぐ
     }
   }
 
