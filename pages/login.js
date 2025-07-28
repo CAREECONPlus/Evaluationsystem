@@ -13,6 +13,22 @@ class LoginPage {
    * ログインページを描画
    */
   async render() {
+    // UIテキストをi18nで統一
+    const appSystemName = this.app.i18n.t('app.system_name');
+    const loginLead = this.app.i18n.t('login.lead_text');
+    const loginTitle = this.app.i18n.t('auth.login');
+    const signInHint = this.app.i18n.t('login.sign_in_hint');
+    const emailLabel = this.app.i18n.t('auth.email_label');
+    const emailPlaceholder = this.app.i18n.t('auth.email_placeholder');
+    const passwordLabel = this.app.i18n.t('auth.password_label');
+    const passwordPlaceholder = this.app.i18n.t('auth.password_placeholder');
+    const loginButtonText = this.app.i18n.t('auth.login');
+    const loggingInText = this.app.i18n.t('auth.logging_in');
+    const orLoginDemo = this.app.i18n.t('login.or_login_demo');
+    const adminRole = this.app.i18n.t('roles.admin');
+    const evaluatorRole = this.app.i18n.t('roles.evaluator');
+    const workerRole = this.app.i18n.t('roles.worker');
+
     return `
       <div class="login-page">
         <div class="container-fluid vh-100">
@@ -20,8 +36,8 @@ class LoginPage {
             <div class="col-lg-6 d-none d-lg-flex align-items-center justify-content-center bg-primary text-white">
               <div class="text-center p-5">
                 <i class="fas fa-hard-hat fa-5x mb-4 opacity-75"></i>
-                <h1 class="display-4 fw-bold mb-4">建設業従業員評価管理システム</h1>
-                <p class="lead">効率的な人事評価で組織の成長を支援します</p>
+                <h1 class="display-4 fw-bold mb-4">${this.app.sanitizeHtml(appSystemName)}</h1>
+                <p class="lead">${this.app.sanitizeHtml(loginLead)}</p>
               </div>
             </div>
 
@@ -30,31 +46,31 @@ class LoginPage {
                 <div class="card shadow-lg border-0">
                   <div class="card-body p-5">
                     <div class="text-center mb-4">
-                      <h2 class="card-title h3 mb-2">ログイン</h2>
-                      <p class="text-muted">アカウントにサインインしてください</p>
+                      <h2 class="card-title h3 mb-2">${this.app.sanitizeHtml(loginTitle)}</h2>
+                      <p class="text-muted">${this.app.sanitizeHtml(signInHint)}</p>
                     </div>
 
                     <form id="loginForm">
                       <div class="mb-3">
-                        <label for="email" class="form-label fw-bold">メールアドレス</label>
-                        <input type="email" class="form-control form-control-lg" id="email" required autocomplete="email" placeholder="example@company.com">
+                        <label for="email" class="form-label fw-bold">${this.app.sanitizeHtml(emailLabel)}</label>
+                        <input type="email" class="form-control form-control-lg" id="email" required autocomplete="email" placeholder="${this.app.sanitizeHtml(emailPlaceholder)}">
                       </div>
                       <div class="mb-4">
-                        <label for="password" class="form-label fw-bold">パスワード</label>
-                        <input type="password" class="form-control form-control-lg" id="password" required autocomplete="current-password" placeholder="パスワードを入力">
+                        <label for="password" class="form-label fw-bold">${this.app.sanitizeHtml(passwordLabel)}</label>
+                        <input type="password" class="form-control form-control-lg" id="password" required autocomplete="current-password" placeholder="${this.app.sanitizeHtml(passwordPlaceholder)}">
                       </div>
                       <button type="submit" class="btn btn-primary btn-lg w-100" id="loginButton">
-                        <span class="login-text"><i class="fas fa-sign-in-alt me-2"></i>ログイン</span>
-                        <span class="login-spinner d-none"><i class="fas fa-spinner fa-spin me-2"></i>ログイン中...</span>
+                        <span class="login-text"><i class="fas fa-sign-in-alt me-2"></i>${this.app.sanitizeHtml(loginButtonText)}</span>
+                        <span class="login-spinner d-none"><i class="fas fa-spinner fa-spin me-2"></i>${this.app.sanitizeHtml(loggingInText)}</span>
                       </button>
                     </form>
 
                     <hr class="my-4">
-                    <h6 class="text-center text-muted mb-3">またはデモアカウントでログイン</h6>
+                    <h6 class="text-center text-muted mb-3">${this.app.sanitizeHtml(orLoginDemo)}</h6>
                     <div class="d-grid gap-2">
-                      <button type="button" class="btn btn-outline-success demo-btn" id="demoAdminBtn">管理者 (admin@example.com)</button>
-                      <button type="button" class="btn btn-outline-info demo-btn" id="demoEvaluatorBtn">評価者 (manager@example.com)</button>
-                      <button type="button" class="btn btn-outline-secondary demo-btn" id="demoWorkerBtn">作業員 (employee@example.com)</button>
+                      <button type="button" class="btn btn-outline-success demo-btn" id="demoAdminBtn">${this.app.sanitizeHtml(adminRole)} (admin@example.com)</button>
+                      <button type="button" class="btn btn-outline-info demo-btn" id="demoEvaluatorBtn">${this.app.sanitizeHtml(evaluatorRole)} (manager@example.com)</button>
+                      <button type="button" class="btn btn-outline-secondary demo-btn" id="demoWorkerBtn">${this.app.sanitizeHtml(workerRole)} (employee@example.com)</button>
                     </div>
                   </div>
                 </div>
@@ -79,7 +95,6 @@ class LoginPage {
     const demoEvaluatorBtn = document.getElementById("demoEvaluatorBtn");
     const demoWorkerBtn = document.getElementById("demoWorkerBtn");
 
-    // ★★★ 修正点 ★★★
     // form要素が存在することを確認してからイベントリスナーを設定
     if (form) {
       form.addEventListener("submit", (e) => {
@@ -92,6 +107,11 @@ class LoginPage {
     if (demoAdminBtn) demoAdminBtn.addEventListener("click", () => this.loginDemo("admin"));
     if (demoEvaluatorBtn) demoEvaluatorBtn.addEventListener("click", () => this.loginDemo("evaluator"));
     if (demoWorkerBtn) demoWorkerBtn.addEventListener("click", () => this.loginDemo("worker"));
+
+    // UI翻訳を適用 (レンダリング後にinitが呼ばれるため、ここでUIを更新)
+    if (this.app.i18n) {
+      this.app.i18n.updateUI();
+    }
 
     setTimeout(() => document.getElementById("email")?.focus(), 100);
     console.log("Login page initialized successfully");
@@ -108,11 +128,13 @@ class LoginPage {
     try {
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
-      if (!email || !password) throw new Error("メールアドレスとパスワードを入力してください。");
+      // エラーメッセージはAppクラスのshowErrorでi18nから取得される
+      if (!email || !password) throw new Error(this.app.i18n.t("errors.email_password_required")); // 翻訳キーを使用
       await this.app.login(email, password);
     } catch (error) {
       console.error("Login error:", error);
-      this.app.showError(error.message || "ログインに失敗しました。");
+      // loginメソッド内で既にエラーメッセージがi18n化されている場合があるので、直接表示
+      this.app.showError(error.message || this.app.i18n.t("errors.login_failed_generic")); // 翻訳キーを使用
     } finally {
       this.setLoadingState(false);
     }
@@ -136,12 +158,16 @@ class LoginPage {
 
     this.setLoadingState(true);
     try {
-      document.getElementById("email").value = account.email;
-      document.getElementById("password").value = account.password;
+      // フォームの入力値を設定
+      const emailInput = document.getElementById("email");
+      const passwordInput = document.getElementById("password");
+      if (emailInput) emailInput.value = account.email;
+      if (passwordInput) passwordInput.value = account.password;
+
       await this.app.login(account.email, account.password);
     } catch (error) {
       console.error("Demo login error:", error);
-      this.app.showError(error.message || "デモログインに失敗しました。");
+      this.app.showError(error.message || this.app.i18n.t("errors.demo_login_failed")); // 翻訳キーを使用
     } finally {
       this.setLoadingState(false);
     }
@@ -167,6 +193,10 @@ class LoginPage {
     } else {
       loginText?.classList.remove("d-none");
       loginSpinner?.classList.add("d-none");
+    }
+    // ロード状態が変化したらUIを更新して翻訳を適用
+    if (this.app.i18n) {
+      this.app.i18n.updateUI(document.querySelector('.login-form-container'));
     }
   }
 }
