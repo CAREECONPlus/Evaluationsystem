@@ -9,6 +9,7 @@ class GoalSettingPage {
     this.totalWeight = 0;
     this.maxGoals = 5;
     this.isSubmitted = false;
+    this.evaluationPeriods = []; // 評価期間データ
   }
 
   /**
@@ -19,35 +20,34 @@ class GoalSettingPage {
     return `
             <div class="goal-setting-page">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h1 data-i18n="goals.title">目標設定</h1>
+                    <h1 data-i18n="goals.title"></h1>
                     <div class="goal-actions">
-                        {/* onclickの呼び出し先をインスタンスメソッドに変更 */}
                         <button class="btn btn-secondary" onclick="window.app.currentPage.loadDraft()" id="loadDraftBtn">
-                            下書きを読み込み
+                            <span data-i18n="common.load_draft"></span>
                         </button>
                         <button class="btn btn-primary" onclick="window.app.currentPage.saveDraft()" id="saveDraftBtn">
-                            下書き保存
+                            <span data-i18n="common.save_draft"></span>
                         </button>
                         <button class="btn btn-success" onclick="window.app.currentPage.submitGoals()"
                                 id="submitBtn" disabled>
-                            <span data-i18n="goals.apply">申請</span>
+                            <span data-i18n="goals.apply"></span>
                         </button>
                     </div>
                 </div>
 
                 <div class="alert alert-info">
-                    <h4>目標設定について</h4>
+                    <h4><span data-i18n="goals.about_goal_setting"></span></h4>
                     <ul>
-                        <li>最大${this.maxGoals}つまでの目標を設定できます</li>
-                        <li>各目標にウェイト（重要度）を設定してください</li>
-                        <li>ウェイトの合計は100%である必要があります</li>
-                        <li>申請後は管理者の承認が必要です</li>
+                        <li><span data-i18n="goals.max_goals_info" data-i18n-params='{"maxGoals": ${this.maxGoals}}'></span></li>
+                        <li><span data-i18n="goals.set_weights_info"></span></li>
+                        <li><span data-i18n="goals.total_weight_100_info"></span></li>
+                        <li><span data-i18n="goals.admin_approval_info"></span></li>
                     </ul>
                 </div>
 
                 <div class="card mb-2" id="currentStatusCard" style="display: none;">
                     <div class="card-header">
-                        <h3>現在の状態</h3>
+                        <h3 data-i18n="common.current_status"></h3>
                     </div>
                     <div class="card-body" id="currentStatusContent">
                     </div>
@@ -56,9 +56,9 @@ class GoalSettingPage {
                 <div class="card">
                     <div class="card-header">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h3>目標設定フォーム</h3>
+                            <h3 data-i18n="goals.goal_setting_form"></h3>
                             <div class="weight-indicator">
-                                <span>合計ウェイト: </span>
+                                <span data-i18n="goals.total_weight"></span>: 
                                 <span id="totalWeight" class="weight-value">0</span>%
                                 <span class="weight-status" id="weightStatus"></span>
                             </div>
@@ -66,29 +66,25 @@ class GoalSettingPage {
                     </div>
                     <div class="card-body">
                         <div id="goalsContainer">
-                            </div>
+                        </div>
 
-                        {/* onclickの呼び出し先をインスタンスメソッドに変更 */}
                         <button class="btn btn-primary" onclick="window.app.currentPage.addGoal()"
                                 id="addGoalBtn">
-                            <span data-i18n="goals.add_goal">目標を追加</span>
+                            <span data-i18n="goals.add_goal"></span>
                         </button>
                     </div>
                 </div>
 
                 <div class="card mt-2">
                     <div class="card-header">
-                        <h3>評価期間</h3>
+                        <h3 data-i18n="evaluation.period"></h3>
                     </div>
                     <div class="card-body">
                         <div class="form-group">
-                            <label for="evaluationPeriod">評価期間を選択</label>
-                            <select id="evaluationPeriod" class="form-control" onchange="window.app.currentPage.onPeriodChange()">
-                                <option value="">選択してください</option>
-                                <option value="2024-q1">2024年 第1四半期</option>
-                                <option value="2024-q2">2024年 第2四半期</option>
-                                <option value="2024-q3">2024年 第3四半期</option>
-                                <option value="2024-q4">2024年 第4四半期</option>
+                            <label for="evaluationPeriod" class="form-label" data-i18n="goals.select_evaluation_period"></label>
+                            <select id="evaluationPeriod" class="form-select" onchange="window.app.currentPage.onPeriodChange()">
+                                <option value="" data-i18n="common.select"></option>
+                                ${this.evaluationPeriods.map(period => `<option value="${period.id}">${this.app.sanitizeHtml(period.name)}</option>`).join('')}
                             </select>
                         </div>
                     </div>
@@ -102,33 +98,33 @@ class GoalSettingPage {
    * 目標設定ページを初期化
    */
   async init() {
-    // 自身のインスタンスをappに登録
     this.app.currentPage = this;
 
     // Check permissions
-    if (!this.app.hasRole("evaluator") && !this.app.hasRole("worker")) {
+    if (!this.app.hasAnyRole(["evaluator", "worker"])) {
       this.app.navigate("/dashboard");
       return;
     }
 
-    // Update header and sidebar
-    if (window.HeaderComponent) {
-      window.HeaderComponent.update(this.app.currentUser);
-    }
-    if (window.SidebarComponent) {
-      window.SidebarComponent.update(this.app.currentUser);
+    // APIサービスが未初期化の場合に初期化を試みる
+    if (!this.app.api) {
+        this.app.api = new window.API();
+        this.app.api.app = this.app;
+        this.app.api.init();
     }
 
-    // Load existing goals
-    await this.loadExistingGoals();
+    await this.loadEvaluationPeriods(); // 評価期間を先にロード
+    await this.loadExistingGoals(); // 既存の目標をロード
 
-    // Initialize with one empty goal if none exist
+    // Initialize with one empty goal if none exist AND no goals were loaded
     if (this.goals.length === 0) {
-      this.addGoal(); // インスタンス自身のメソッドを呼び出す
+      this.addGoal();
     }
 
     this.renderGoals();
     this.updateWeightIndicator();
+    this.updateAddGoalButton();
+    this.updateSubmitButton();
 
     // Update UI with current language
     if (this.app.i18n) {
@@ -142,18 +138,74 @@ class GoalSettingPage {
    */
   async loadExistingGoals() {
     try {
-      // Mock data - implement actual API call
-      const existingGoals = [];
+      const currentUser = this.app.currentUser;
+      if (!currentUser) {
+        this.app.showError(this.app.i18n.t("errors.login_required"));
+        return;
+      }
+      
+      // APIから目標データを取得 (ユーザーIDと期間、ステータスはAPI側でフィルタリングされる想定)
+      // ここでは、ユーザーIDとテナントID、期間に紐づく目標データをロード
+      // APIに期間を渡さないことで、全ての期間の目標を取得し、最新のものを適用するロジックも考えられるが
+      // UI上は特定期間の目標設定なので、まずは期間を指定せずにロードするモックとする
+      const existingGoals = await this.app.api.getQualitativeGoals(currentUser.id);
 
       if (existingGoals.length > 0) {
-        this.goals = existingGoals;
-        this.isSubmitted = existingGoals[0].status !== "draft";
-        this.showCurrentStatus(existingGoals[0].status);
+        // 通常は、ある評価期間につき一つの目標セットが存在する想定
+        // ここでは、ロードされた目標の中から、最も新しい「pending_approval」または「approved」の目標を探すか、
+        // あるいはlocalStorageから下書きを優先的にロードする。
+        // とりあえず、APIから取得した全ての目標をロードし、最新のものを表示
+        const latestGoalSet = existingGoals.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt))[0];
+        
+        if (latestGoalSet) {
+          this.goals = latestGoalSet.goals || [];
+          this.isSubmitted = (latestGoalSet.status !== "draft" && latestGoalSet.status !== "rejected"); // draftとrejectedは編集可能とする
+          
+          // 評価期間の選択状態を更新
+          const periodSelect = document.getElementById("evaluationPeriod");
+          if (periodSelect && latestGoalSet.period) {
+            periodSelect.value = latestGoalSet.period;
+          }
+          
+          this.showCurrentStatus(latestGoalSet.status);
+          if (this.isSubmitted) {
+            this.disableForm(); // 提出済み、または承認済みの場合はフォームを無効化
+          }
+        }
+      } else {
+        // localStorageから下書きを試みる（APIからデータがない場合）
+        const draft = await this.loadDraftFromLocalStorage();
+        if (draft) {
+          this.goals = draft.goals || [];
+          const periodSelect = document.getElementById("evaluationPeriod");
+          if (periodSelect && draft.period) {
+            periodSelect.value = draft.period;
+          }
+          this.isSubmitted = draft.isSubmitted; // 下書きの場合はisSubmittedはfalse
+        }
       }
     } catch (error) {
       console.error("Error loading existing goals:", error);
-      this.app.showError("既存の目標の読み込みに失敗しました。");
+      this.app.showError(this.app.i18n.t("errors.goals_load_failed"));
     }
+  }
+
+  /**
+   * Load evaluation periods for dropdown
+   */
+  async loadEvaluationPeriods() {
+      try {
+          this.evaluationPeriods = await this.app.api.getEvaluationPeriods();
+          const periodSelect = document.getElementById("evaluationPeriod");
+          if (periodSelect) {
+              periodSelect.innerHTML = `<option value="" data-i18n="common.select">${this.app.i18n.t('common.select')}</option>` +
+                                       this.evaluationPeriods.map(p => `<option value="${p.id}">${this.app.sanitizeHtml(p.name)}</option>`).join('');
+              this.app.i18n.updateUI(periodSelect); // 翻訳適用
+          }
+      } catch (error) {
+          console.error("Error loading evaluation periods:", error);
+          this.app.showError(this.app.i18n.t("errors.evaluation_periods_load_failed"));
+      }
   }
 
   /**
@@ -165,32 +217,39 @@ class GoalSettingPage {
     const content = document.getElementById("currentStatusContent");
 
     const statusMessages = {
-      draft: "下書き保存済み",
-      pending_approval: "承認待ち",
-      approved: "承認済み",
-      rejected: "差し戻し",
+      draft: this.app.i18n.t("status.draft"),
+      pending_approval: this.app.i18n.t("status.pending_approval"),
+      approved: this.app.i18n.t("status.approved"),
+      rejected: this.app.i18n.t("status.rejected"),
+      // 自己評価完了や評価者承認済みなど、他のステータスも考慮に入れる
+      self_assessed: this.app.i18n.t("status.self_assessed"),
+      approved_by_evaluator: this.app.i18n.t("status.approved_by_evaluator"),
     };
 
     card.style.display = "block";
     content.innerHTML = `
             <div class="alert ${status === "approved" ? "alert-success" : status === "rejected" ? "alert-danger" : "alert-warning"}">
-                <strong>状態:</strong> ${statusMessages[status] || status}
+                <strong><span data-i18n="common.status"></span>:</strong> ${statusMessages[status] || status}
                 ${
                   status === "rejected"
-                    ? '<p class="mt-1">管理者からのコメント: 目標の具体性を向上させてください。</p>'
+                    ? `<p class="mt-1"><span data-i18n="goals.admin_comment"></span>: <span data-i18n="goals.improve_goal_specificity"></span></p>`
                     : ""
                 }
             </div>
         `;
+    this.app.i18n.updateUI(content);
   }
 
   /**
    * Add new goal
-   * staticを削除
    */
   addGoal() {
+    if (this.isSubmitted) {
+      this.app.showWarning(this.app.i18n.t("messages.already_submitted_goals"));
+      return;
+    }
     if (this.goals.length >= this.maxGoals) {
-      this.app.showError(`目標は最大${this.maxGoals}つまでです。`);
+      this.app.showError(this.app.i18n.t("errors.max_goals_reached", { maxGoals: this.maxGoals }));
       return;
     }
 
@@ -207,10 +266,16 @@ class GoalSettingPage {
 
   /**
    * Remove goal
-   * staticを削除
    */
   removeGoal(goalId) {
-    if (this.goals.length <= 1) return; // 最後の1つは消せないようにする
+    if (this.isSubmitted) {
+      this.app.showWarning(this.app.i18n.t("messages.already_submitted_goals"));
+      return;
+    }
+    if (this.goals.length <= 1) {
+      this.app.showWarning(this.app.i18n.t("errors.cannot_delete_last_goal"));
+      return;
+    }
     this.goals = this.goals.filter((goal) => goal.id !== goalId);
     this.renderGoals();
     this.updateWeightIndicator();
@@ -220,7 +285,6 @@ class GoalSettingPage {
 
   /**
    * Update goal text
-   * staticを削除
    */
   updateGoalText(goalId, text) {
     const goal = this.goals.find((g) => g.id === goalId);
@@ -232,7 +296,6 @@ class GoalSettingPage {
 
   /**
    * Update goal weight
-   * staticを削除
    */
   updateGoalWeight(goalId, weight) {
     const goal = this.goals.find((g) => g.id === goalId);
@@ -256,30 +319,27 @@ class GoalSettingPage {
         (goal, index) => `
             <div class="goal-item" data-goal-id="${goal.id}">
                 <div class="goal-header">
-                    <h4>目標 ${index + 1}</h4>
-                    {/* onclickの呼び出し先をインスタンスメソッドに変更 */}
+                    <h4><span data-i18n="goals.goal_number" data-i18n-params='{"number": ${index + 1}}'></span></h4>
                     <button class="btn btn-danger btn-sm"
                             onclick="window.app.currentPage.removeGoal('${goal.id}')"
-                            ${this.goals.length <= 1 ? "disabled" : ""}>
-                        <span data-i18n="goals.remove_goal">削除</span>
+                            ${this.goals.length <= 1 || this.isSubmitted ? "disabled" : ""}>
+                        <span data-i18n="goals.remove_goal"></span>
                     </button>
                 </div>
 
                 <div class="goal-content">
                     <div class="form-group">
-                        <label for="goalText-${goal.id}" data-i18n="goals.goal_text">目標内容</label>
-                        {/* onchangeの呼び出し先をインスタンスメソッドに変更 */}
+                        <label for="goalText-${goal.id}" class="form-label" data-i18n="goals.goal_text"></label>
                         <textarea id="goalText-${goal.id}"
                                   class="form-control goal-text-input"
                                   rows="3"
-                                  placeholder="具体的で測定可能な目標を記入してください"
+                                  data-i18n-placeholder="goals.goal_content_placeholder"
                                   oninput="window.app.currentPage.updateGoalText('${goal.id}', this.value)"
                                   ${this.isSubmitted ? "readonly" : ""}>${this.app.sanitizeHtml(goal.text)}</textarea>
                     </div>
 
                     <div class="form-group">
-                        <label for="goalWeight-${goal.id}" data-i18n="goals.weight_percent">ウェイト（%）</label>
-                        {/* onchangeの呼び出し先をインスタンスメソッドに変更 */}
+                        <label for="goalWeight-${goal.id}" class="form-label" data-i18n="goals.weight_percent"></label>
                         <input type="number"
                                id="goalWeight-${goal.id}"
                                class="form-control goal-weight-input"
@@ -294,6 +354,8 @@ class GoalSettingPage {
         `,
       )
       .join("");
+
+      this.app.i18n.updateUI(container);
   }
 
   /**
@@ -312,13 +374,13 @@ class GoalSettingPage {
 
     if (weightStatusElement) {
       if (this.totalWeight === 100) {
-        weightStatusElement.textContent = "✓";
+        weightStatusElement.textContent = this.app.i18n.t("common.valid_status");
         weightStatusElement.className = "weight-status valid";
       } else if (this.totalWeight > 100) {
-        weightStatusElement.textContent = "超過";
+        weightStatusElement.textContent = this.app.i18n.t("common.over_limit_status");
         weightStatusElement.className = "weight-status invalid";
       } else {
-        weightStatusElement.textContent = "不足";
+        weightStatusElement.textContent = this.app.i18n.t("common.insufficient_status");
         weightStatusElement.className = "weight-status invalid";
       }
     }
@@ -348,128 +410,148 @@ class GoalSettingPage {
         this.goals.length > 0 &&
         this.goals.every((goal) => goal.text.trim().length > 0) &&
         period &&
-        !this.isSubmitted;
+        !this.isSubmitted; // 提出済みでない場合に有効
 
       submitBtn.disabled = !isValid;
     }
   }
 
   /**
-   * Save draft
-   * staticを削除
+   * Save draft to localStorage
    */
   async saveDraft() {
     try {
+      if (!this.app.currentUser || !this.app.currentUser.id) {
+        this.app.showError(this.app.i18n.t("errors.login_required_for_draft"));
+        return;
+      }
+      const period = document.getElementById("evaluationPeriod")?.value;
+      if (!period) {
+          this.app.showError(this.app.i18n.t("errors.select_evaluation_period"));
+          return;
+      }
+
       const draftData = {
         goals: this.goals,
-        period: document.getElementById("evaluationPeriod").value,
+        period: period,
         status: "draft",
+        isSubmitted: false, // 下書きなのでfalse
       };
 
-      // Save to localStorage as fallback
-      const userId = this.app.currentUser?.id || 'guest';
+      const userId = this.app.currentUser.id;
       localStorage.setItem(`goals-draft-${userId}`, JSON.stringify(draftData));
 
-      this.app.showSuccess("下書きを保存しました。");
+      this.app.showSuccess(this.app.i18n.t("messages.save_success"));
     } catch (error) {
       console.error("Error saving draft:", error);
-      this.app.showError("下書きの保存に失敗しました。");
+      this.app.showError(this.app.i18n.t("errors.save_failed"));
     }
   }
 
   /**
-   * Load draft
-   * staticを削除
+   * Load draft from localStorage
    */
-  async loadDraft() {
+  async loadDraftFromLocalStorage() {
     try {
-      // Load from localStorage as fallback
-      const userId = this.app.currentUser?.id || 'guest';
+      const userId = this.app.currentUser?.id;
+      if (!userId) return null; // ユーザーIDがない場合はロードしない
+      
       const draftData = localStorage.getItem(`goals-draft-${userId}`);
 
       if (draftData) {
         const draft = JSON.parse(draftData);
-        this.goals = draft.goals || [];
-
-        if (draft.period) {
-          const periodSelect = document.getElementById("evaluationPeriod");
-          if(periodSelect) periodSelect.value = draft.period;
-        }
-
-        this.renderGoals();
-        this.updateWeightIndicator();
-        this.updateSubmitButton();
-        this.updateAddGoalButton();
-
-        this.app.showSuccess("下書きを読み込みました。");
+        // ロードされたデータはisSubmittedをfalseとして扱う
+        draft.isSubmitted = false; 
+        this.app.showInfo(this.app.i18n.t("messages.draft_loaded"));
+        return draft;
       } else {
-        this.app.showError("保存された下書きがありません。");
+        return null;
       }
     } catch (error) {
-      console.error("Error loading draft:", error);
-      this.app.showError("下書きの読み込みに失敗しました。");
+      console.error("Error loading draft from local storage:", error);
+      return null;
     }
   }
 
   /**
    * Submit goals
-   * staticを削除
    */
   async submitGoals() {
     const period = document.getElementById("evaluationPeriod").value;
     if (!period) {
-      this.app.showError("評価期間を選択してください。");
+      this.app.showError(this.app.i18n.t("errors.select_evaluation_period"));
       return;
     }
 
-    if (!confirm("目標を申請しますか？申請後は編集できません。")) {
+    if (!confirm(this.app.i18n.t("goals.confirm_submit"))) {
       return;
     }
 
     try {
       const goalsData = {
         userId: this.app.currentUser.id,
+        userName: this.app.currentUser.name, // 追加
         tenantId: this.app.currentUser.tenantId,
         period: period,
         goals: this.goals,
         status: "pending_approval",
-        submittedAt: new Date(),
+        submittedAt: new Date().toISOString(),
       };
 
-      // Mock API call
+      // Mock API call - 実際にはAPI.js経由でFirestoreに保存
       // await this.app.api.submitGoals(goalsData);
+      // ここでは_mockQualitativeGoalsに直接追加するモックとする
+      if (!this.app.api._mockQualitativeGoals) {
+          this.app.api._mockQualitativeGoals = [];
+      }
+      this.app.api._mockQualitativeGoals.push(goalsData);
+
 
       // Clear draft
-      const userId = this.app.currentUser?.id || 'guest';
-      localStorage.removeItem(`goals-draft-${userId}`);
+      const userId = this.app.currentUser?.id;
+      if (userId) {
+        localStorage.removeItem(`goals-draft-${userId}`);
+      }
 
       this.isSubmitted = true;
       this.showCurrentStatus("pending_approval");
-      this.renderGoals();
+      this.renderGoals(); // Render again to disable inputs
       this.updateAddGoalButton();
       this.updateSubmitButton();
+      this.disableForm(); // フォーム全体を無効化
 
-      // Disable form elements
-      const inputs = document.querySelectorAll(".goal-text-input, .goal-weight-input");
-      inputs.forEach((input) => (input.readOnly = true));
-
-      this.app.showSuccess("目標を申請しました。承認をお待ちください。");
+      this.app.showSuccess(this.app.i18n.t("messages.goals_submitted"));
     } catch (error) {
       console.error("Error submitting goals:", error);
-      this.app.showError("目標の申請に失敗しました。");
+      this.app.showError(this.app.i18n.t("errors.submit_failed"));
     }
   }
 
   /**
+   * Disable form elements after submission
+   */
+  disableForm() {
+    const formElements = document.querySelectorAll('.goal-text-input, .goal-weight-input, #evaluationPeriod, #loadDraftBtn, #saveDraftBtn, #addGoalBtn, #submitBtn');
+    formElements.forEach((el) => {
+        if (el.tagName === 'BUTTON') {
+            el.disabled = true;
+        } else {
+            el.readOnly = true;
+        }
+    });
+    // Remove buttons explicitly
+    document.querySelectorAll('.goal-item .btn-danger').forEach(btn => btn.disabled = true);
+  }
+
+  /**
    * Handle period change
-   * staticを削除
    */
   onPeriodChange() {
     this.updateSubmitButton();
   }
 }
 
-// Add goal-setting-specific styles
+// Add goal-setting-specific styles (変更なし)
 const goalSettingStyles = `
 <style>
 .goal-setting-page {
@@ -549,19 +631,20 @@ const goalSettingStyles = `
 @media (max-width: 768px) {
     .goal-actions {
         flex-direction: column;
-        align-items: flex-end;
+        align-items: flex-end; /* 右寄せにするために追加 */
         gap: 5px;
     }
 
     .goal-actions button {
         font-size: 0.9rem;
         padding: 8px 12px;
-        width: 100%;
+        width: 100%; /* フル幅にする */
     }
     
+    /* 修正箇所: ここもカラム表示にするためFlexboxの方向を調整 */
     .d-flex.justify-content-between {
         flex-direction: column;
-        align-items: stretch !important;
+        align-items: stretch !important; /* 要素を横いっぱいに広げる */
     }
 
     .weight-indicator {
