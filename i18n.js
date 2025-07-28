@@ -12,19 +12,14 @@ class I18n {
   async init() {
     try {
       console.log("Initializing I18n service...");
-
-      // 各言語のJSONファイルを非同期で読み込む
       const [ja, en, vi] = await Promise.all([
         fetch('./locales/ja.json').then(res => res.json()),
         fetch('./locales/en.json').then(res => res.json()),
         fetch('./locales/vi.json').then(res => res.json())
       ]);
-
       this.translations = { ja, en, vi };
-      
       const savedLanguage = localStorage.getItem("language") || "ja";
       this.currentLanguage = this.translations[savedLanguage] ? savedLanguage : "ja";
-
       this.isInitialized = true;
       console.log("I18n service initialized with language:", this.currentLanguage);
     } catch (error) {
@@ -41,9 +36,8 @@ class I18n {
         translation = translation?.[k];
         if (translation === undefined) return key;
       }
-
       let result = translation;
-      Object.keys(params).forEach((param) => {
+      Object.keys(params).forEach(param => {
         result = result.replace(`{{${param}}}`, params[param]);
       });
       return result;
@@ -58,29 +52,22 @@ class I18n {
       this.currentLanguage = language;
       localStorage.setItem("language", language);
       this.updateUI();
-      
-      // ページコンテンツが存在すれば、UIを再描画して言語を完全に反映させる
-      if (window.app && window.app.router && window.app.router.currentPageInstance) {
-        window.app.router.loadPage(window.app.router.currentPageInstance.constructor.name.replace('Page','').toLowerCase(), true);
+      if (window.app?.router?.currentPageInstance) {
+        window.app.router.loadPage(window.app.router.currentRoute.substring(1), true);
       }
-      console.log("Language changed to:", language);
     } else {
       console.warn("Language not supported:", language);
     }
   }
 
-  getCurrentLanguage() {
-    return this.currentLanguage;
-  }
-
   updateUI() {
-    document.querySelectorAll("[data-i18n]").forEach((element) => {
-      const key = element.getAttribute("data-i18n");
-      if(key) element.textContent = this.t(key);
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+      const key = el.getAttribute("data-i18n");
+      if(key) el.textContent = this.t(key);
     });
-    document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
-      const key = element.getAttribute("data-i18n-placeholder");
-      if(key) element.placeholder = this.t(key);
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+      const key = el.getAttribute("data-i18n-placeholder");
+      if(key) el.placeholder = this.t(key);
     });
   }
 }
