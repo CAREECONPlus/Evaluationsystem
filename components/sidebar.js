@@ -4,9 +4,9 @@
  */
 class SidebarComponent {
   constructor() {
-    this.isVisible = false
-    this.currentUser = null
-    this.isCollapsed = false
+    this.isVisible = false;
+    this.currentUser = null;
+    this.isCollapsed = false;
   }
 
   /**
@@ -15,12 +15,12 @@ class SidebarComponent {
    */
   show(user) {
     try {
-      console.log("Showing sidebar for user:", user?.name)
-      this.currentUser = user
-      this.render()
-      this.isVisible = true
+      console.log("Showing sidebar for user:", user?.name);
+      this.currentUser = user;
+      this.render();
+      this.isVisible = true;
     } catch (error) {
-      console.error("Error showing sidebar:", error)
+      console.error("Error showing sidebar:", error);
     }
   }
 
@@ -30,24 +30,25 @@ class SidebarComponent {
    */
   hide() {
     try {
-      console.log("Sidebar hidden")
-      this.isVisible = false
-      const sidebarContainer = document.getElementById("sidebar-container")
+      console.log("Sidebar hidden");
+      this.isVisible = false;
+      const sidebarContainer = document.getElementById("sidebar-container");
       if (sidebarContainer) {
-        sidebarContainer.innerHTML = ""
-        sidebarContainer.style.display = "none"
+        sidebarContainer.innerHTML = "";
+        sidebarContainer.style.display = "none";
       }
 
       // Reset main content margin
-      const mainContent = document.getElementById("content")
+      const mainContent = document.getElementById("content");
       if (mainContent) {
-        mainContent.style.marginLeft = "0"
+        mainContent.style.marginLeft = "0";
       }
-      
-      const existingToggle = document.querySelector('.sidebar-toggle');
-      if(existingToggle) existingToggle.remove();
 
-    } catch (error)      console.error("Error hiding sidebar:", error)
+      const existingToggle = document.querySelector('.sidebar-toggle');
+      if (existingToggle) existingToggle.remove();
+
+    } catch (error) { // ★★★ 修正点: 構文エラーを修正 ★★★
+      console.error("Error hiding sidebar:", error);
     }
   }
 
@@ -56,9 +57,9 @@ class SidebarComponent {
    * サイドバーを更新
    */
   update(user) {
-    this.currentUser = user
+    this.currentUser = user;
     if (this.isVisible) {
-      this.render()
+      this.render();
     }
   }
 
@@ -67,8 +68,8 @@ class SidebarComponent {
    * サイドバーの折りたたみを切り替え
    */
   toggleCollapse() {
-    this.isCollapsed = !this.isCollapsed
-    this.render()
+    this.isCollapsed = !this.isCollapsed;
+    this.render();
   }
 
   /**
@@ -93,20 +94,28 @@ class SidebarComponent {
       sidebarContainer.style.display = "block";
 
       const sidebarWidth = this.isCollapsed ? "80px" : "250px";
+      const userRole = this.currentUser?.role;
 
       sidebarContainer.innerHTML = `
-        <div class="sidebar bg-dark text-white d-flex flex-column" style="width: ${sidebarWidth};">
+        <div class="sidebar bg-dark text-white d-flex flex-column" style="width: ${sidebarWidth}; transition: width 0.3s ease;">
           <div class="sidebar-content">
             <nav class="nav flex-column p-2">
-              ${this.renderMenuItem("/dashboard", "fas fa-tachometer-alt", "ダッシュボード")}
-              ${this.currentUser?.role === "admin" ? this.renderMenuItem("/users", "fas fa-users", "ユーザー管理") : ""}
-              ${this.renderMenuItem("/evaluations", "fas fa-clipboard-list", "評価管理")}
-              ${(this.currentUser?.role === 'evaluator' || this.currentUser?.role === 'worker') ? this.renderMenuItem("/goal-setting", "fas fa-bullseye", "目標設定") : ""}
-              ${this.currentUser?.role === "admin" ? this.renderMenuItem("/goal-approvals", "fas fa-check-circle", "目標承認") : ""}
-              ${this.renderMenuItem("/evaluation-form", "fas fa-edit", "評価フォーム")}
+              ${this.renderMenuItem("/dashboard", "fas fa-tachometer-alt", "dashboard")}
+              
+              {/* ★★★ 修正点: ロールによる表示制御 ★★★ */}
+              ${userRole === "admin" ? this.renderMenuItem("/users", "fas fa-users", "users") : ""}
+              ${this.renderMenuItem("/evaluations", "fas fa-clipboard-list", "evaluations")}
+              ${userRole === "admin" ? this.renderMenuItem("/goal-approvals", "fas fa-check-circle", "goal_approvals") : ""}
+              
               <hr class="border-secondary my-2">
-              ${this.renderMenuItem("/settings", "fas fa-cog", "設定")}
-              ${this.currentUser?.role === "developer" ? this.renderMenuItem("/developer", "fas fa-code", "開発者") : ""}
+              
+              ${this.renderMenuItem("/goal-setting", "fas fa-bullseye", "goals")}
+              ${this.renderMenuItem("/evaluation-form", "fas fa-edit", "evaluation")}
+
+              <hr class="border-secondary my-2">
+
+              ${userRole === "admin" ? this.renderMenuItem("/settings", "fas fa-cog", "settings") : ""}
+              ${userRole === "developer" ? this.renderMenuItem("/developer", "fas fa-code", "developer") : ""}
             </nav>
           </div>
 
@@ -115,7 +124,7 @@ class SidebarComponent {
               ${!this.isCollapsed ? `
                 <div class="user-info small flex-grow-1">
                   <div>${this.sanitizeHtml(this.currentUser?.name || "ユーザー")}</div>
-                  <div class="text-white-50">${this.getRoleDisplayName(this.currentUser?.role)}</div>
+                  <div class="text-white-50">${this.getRoleDisplayName(userRole)}</div>
                 </div>
               ` : ''}
               <button class="btn btn-sm btn-outline-light" onclick="window.app.logout()" title="ログアウト">
@@ -130,10 +139,16 @@ class SidebarComponent {
       const mainContent = document.getElementById("content");
       if (mainContent) {
         mainContent.style.marginLeft = sidebarWidth;
+        mainContent.style.transition = 'margin-left 0.3s ease';
       }
 
       this.highlightCurrentPage();
       this.updateToggleButton(sidebarWidth);
+
+      // 翻訳を適用
+      if(this.app && this.app.i18n) {
+          this.app.i18n.updateUI(sidebarContainer);
+      }
 
     } catch (error) {
       console.error("Error rendering sidebar:", error);
@@ -147,7 +162,7 @@ class SidebarComponent {
           toggleButton.className = 'btn btn-dark sidebar-toggle';
           Object.assign(toggleButton.style, {
               position: 'fixed',
-              top: '58px',
+              top: '60px',
               zIndex: '1031',
               width: '30px',
               height: '30px',
@@ -155,7 +170,8 @@ class SidebarComponent {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              border: '1px solid #555'
+              border: '1px solid #555',
+              transition: 'left 0.3s ease'
           });
           document.body.appendChild(toggleButton);
       }
@@ -165,37 +181,33 @@ class SidebarComponent {
       toggleButton.onclick = () => this.toggleCollapse();
   }
 
-  renderMenuItem(path, icon, label) {
-    const isActive = window.location.pathname === path;
-    const activeClass = isActive ? "active" : "";
-
+  // ★★★ 修正点: 翻訳キーを使うように変更 ★★★
+  renderMenuItem(path, icon, translationKey) {
     return `
-      <a href="#" class="nav-link text-white p-2 mb-1 rounded ${activeClass}" onclick="window.app.navigate('${path}')" title="${label}">
+      <a href="#" class="nav-link text-white p-2 mb-1 rounded" onclick="event.preventDefault(); window.app.navigate('${path}')" data-path="${path}">
         <div class="d-flex align-items-center ${this.isCollapsed ? 'justify-content-center' : ''}">
-          <i class="${icon} ${this.isCollapsed ? '' : 'me-2'}" style="width: 20px;"></i>
-          ${!this.isCollapsed ? `<span>${label}</span>` : ''}
+          <i class="${icon} ${this.isCollapsed ? '' : 'me-2'}" style="width: 20px;" title="${this.app.i18n.t('nav.' + translationKey)}"></i>
+          ${!this.isCollapsed ? `<span data-i18n="nav.${translationKey}"></span>` : ''}
         </div>
       </a>
     `;
   }
 
   highlightCurrentPage() {
-    const currentPath = window.location.pathname;
+    const currentPath = window.location.pathname.replace(this.app.router.basePath, '') || '/';
     document.querySelectorAll(".sidebar .nav-link").forEach(link => {
       link.classList.remove("active");
-      if (link.getAttribute("onclick").includes(`'${currentPath}'`)) {
+      if (link.getAttribute("data-path") === currentPath) {
         link.classList.add("active");
       }
     });
   }
 
   getRoleDisplayName(role) {
-    const roleNames = {
-      admin: "管理者",
-      evaluator: "評価者",
-      worker: "作業員",
-      developer: "開発者",
-    };
+    if (this.app && this.app.i18n) {
+      return this.app.i18n.t('roles.' + role);
+    }
+    const roleNames = { admin: "管理者", evaluator: "評価者", worker: "作業員", developer: "開発者" };
     return roleNames[role] || role || "不明";
   }
 
@@ -208,5 +220,4 @@ class SidebarComponent {
 }
 
 // Create global instance
-window.SidebarComponent = new SidebarComponent()
-window.sidebarComponent = window.SidebarComponent
+window.SidebarComponent = new SidebarComponent();
