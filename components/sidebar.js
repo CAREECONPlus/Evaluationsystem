@@ -6,7 +6,8 @@ class SidebarComponent {
   constructor() {
     this.isVisible = false;
     this.currentUser = null;
-    this.isCollapsed = false;
+    // ★★★ 修正点：デフォルトで折りたたむ ★★★
+    this.isCollapsed = true; 
   }
 
   show(user) {
@@ -70,7 +71,6 @@ class SidebarComponent {
     }
 
     this.updateToggleButton(sidebarWidth);
-    this.highlightCurrentPage();
   }
 
   updateToggleButton(sidebarWidth) {
@@ -101,9 +101,7 @@ class SidebarComponent {
     ];
 
     return menuConfig.map(item => {
-      if (item.type === 'divider') {
-        return '<hr class="border-secondary my-2">';
-      }
+      if (item.type === 'divider') return '<hr class="border-secondary my-2">';
       if (item.roles.includes(role)) {
         return this.renderMenuItem(item.path, item.icon, item.label);
       }
@@ -121,10 +119,6 @@ class SidebarComponent {
           ${!this.isCollapsed ? `<span>${label}</span>` : ''}
         </div>
       </a>`;
-  }
-
-  highlightCurrentPage() {
-    // This is now handled by the activeClass in renderMenuItem
   }
 
   getRoleDisplayName(role) {
