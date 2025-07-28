@@ -1,5 +1,9 @@
 /* Reset and Base Styles */
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   line-height: 1.6;
@@ -16,7 +20,7 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1030; /* サイドバー(1020)より手前に表示 */
+  z-index: 1030;
 }
 .sidebar-container {
   position: fixed;
@@ -27,12 +31,13 @@ body {
 }
 .main-content {
   padding-top: 56px; /* Navbar height */
+  min-height: 100vh;
   transition: margin-left 0.25s ease-in-out;
 }
 .sidebar-toggle {
   position: fixed;
   top: 64px;
-  z-index: 1021; /* サイドバー(1020)より手前に表示 */
+  z-index: 1021;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -44,10 +49,36 @@ body {
   border: 1px solid #ddd;
   transition: left 0.25s ease-in-out;
 }
+.main-content > div {
+  padding: 1.5rem;
+}
 
 /* =================================================================== */
 /* 汎用コンポーネントスタイル                                            */
 /* =================================================================== */
+.sidebar {
+  height: 100%;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-content {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+.sidebar .nav-link {
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+}
+.sidebar .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+.sidebar .nav-link.active {
+  background-color: #0d6efd;
+  color: white;
+  font-weight: 500;
+}
 .card {
   border: none;
   border-radius: 0.5rem;
@@ -59,16 +90,4 @@ body {
   align-items: center;
   padding: 3rem;
   color: #6c757d;
-}
-
-/* =================================================================== */
-/* ページ別スタイル                                                    */
-/* =================================================================== */
-
-/* 各ページコンテンツの共通パディング */
-.main-content > div {
-  padding: 1.5rem;
-}
-.dashboard-page .page-header {
-    margin-bottom: 1.5rem;
 }
