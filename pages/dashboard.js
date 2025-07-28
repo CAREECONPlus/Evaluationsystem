@@ -30,6 +30,15 @@ class DashboardPage {
       const userRole = this.app.currentUser?.role;
       const isManagerOrAdmin = userRole === "evaluator" || userRole === "admin"; // マネージャー（evaluator）または管理者
 
+      // render()内でDOMが構築された後にチャートを初期化
+      // initializeChart()を呼び出す前にDOM要素が確実に存在するように
+      // Chart.js の描画は canvas 要素が DOM に追加されてからでないと機能しないため、
+      // setTimeout(0) で、ブラウザのイベントループの次のサイクルで実行するようにすることで、
+      // canvas 要素が DOM にアタッチされていることを保証する。
+      setTimeout(() => {
+          this.initializeChart();
+      }, 0); 
+
       return `
         <div class="dashboard-page">
           <div class="page-header mb-4">
@@ -226,9 +235,7 @@ class DashboardPage {
       console.log("Dashboard data loaded successfully");
 
       // データロードが完了したらチャートを初期化
-      // render() メソッドが await this.loadData() を呼ぶため、ここで initializeChart() を呼ぶことで、
-      // DOMレンダリング後にデータが揃った状態でチャートが描画されることを保証する
-      this.initializeChart();
+      // initializeChart()はrender()のreturn直前に呼ばれるので、ここでは呼ばない
 
     } catch (error) {
       console.error("Error loading dashboard data:", error);
