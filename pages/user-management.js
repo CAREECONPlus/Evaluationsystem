@@ -4,12 +4,12 @@
  */
 class UserManagementPage {
   constructor(app) {
-    this.app = app
-    this.users = []
-    this.filteredUsers = []
-    this.currentFilter = "all"
-    this.searchQuery = ""
-    this.bootstrap = window.bootstrap // Declare the bootstrap variable
+    this.app = app;
+    this.users = [];
+    this.filteredUsers = [];
+    this.currentFilter = "all";
+    this.searchQuery = "";
+    this.userModal = null; // モーダルのインスタンスを保持
   }
 
   /**
@@ -24,7 +24,7 @@ class UserManagementPage {
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h1>ユーザー管理</h1>
                             <div class="user-actions">
-                                <button class="btn btn-primary" onclick="UserManagementPage.showAddUserModal()">
+                                <button class="btn btn-primary" onclick="window.app.currentPage.showAddUserModal()">
                                     <i class="fas fa-plus me-2"></i>新規ユーザー追加
                                 </button>
                             </div>
@@ -40,14 +40,13 @@ class UserManagementPage {
                                                 <i class="fas fa-search"></i>
                                             </span>
                                             <input type="text" class="form-control" placeholder="ユーザー名またはメールアドレスで検索"
-                                                   id="userSearch" onkeyup="UserManagementPage.handleSearch(this.value)">
+                                                   id="userSearch" onkeyup="window.app.currentPage.handleSearch(this.value)">
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <select class="form-select" id="roleFilter" onchange="UserManagementPage.handleFilter(this.value)">
+                                        <select class="form-select" id="roleFilter" onchange="window.app.currentPage.handleFilter(this.value)">
                                             <option value="all">全ての役割</option>
                                             <option value="admin">管理者</option>
-                                            <option value="manager">マネージャー</option>
                                             <option value="evaluator">評価者</option>
                                             <option value="worker">作業員</option>
                                         </select>
@@ -99,7 +98,7 @@ class UserManagementPage {
                             <h5 class="modal-title" id="userModalTitle">新規ユーザー追加</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-                        <form id="userForm" onsubmit="UserManagementPage.handleSubmit(event)">
+                        <form id="userForm" onsubmit="window.app.currentPage.handleSubmit(event)">
                             <div class="modal-body">
                                 <input type="hidden" id="userId">
                                 <div class="mb-3">
@@ -116,28 +115,21 @@ class UserManagementPage {
                                         <option value="">選択してください</option>
                                         <option value="worker">作業員</option>
                                         <option value="evaluator">評価者</option>
-                                        <option value="manager">マネージャー</option>
                                         <option value="admin">管理者</option>
                                     </select>
                                 </div>
                                 <div class="mb-3" id="passwordSection">
-                                    <label for="userPassword" class="form-label">パスワード *</label>
+                                    <label for="userPassword" class="form-label">パスワード</label>
                                     <input type="password" class="form-control" id="userPassword">
-                                    <div class="form-text">8文字以上で入力してください</div>
+                                    <div class="form-text">新規作成時のみ必須。8文字以上で入力してください</div>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="userDepartment" class="form-label">部署</label>
-                                    <input type="text" class="form-control" id="userDepartment">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="userPosition" class="form-label">役職</label>
-                                    <input type="text" class="form-control" id="userPosition">
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="userActive" checked>
-                                    <label class="form-check-label" for="userActive">
-                                        アクティブ
-                                    </label>
+                                    <label for="userStatus" class="form-label">ステータス *</label>
+                                    <select class="form-select" id="userStatus" required>
+                                        <option value="active">アクティブ</option>
+                                        <option value="pending_approval">承認待ち</option>
+                                        <option value="inactive">無効</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -151,7 +143,7 @@ class UserManagementPage {
                     </div>
                 </div>
             </div>
-        `
+        `;
   }
 
   /**
@@ -159,26 +151,34 @@ class UserManagementPage {
    * ユーザー管理ページを初期化
    */
   async init() {
+    this.app.currentPage = this;
+
     // Check permissions
     if (!this.app.hasRole("admin")) {
-      this.app.navigate("/dashboard")
-      return
+      this.app.navigate("/dashboard");
+      return;
     }
 
     // Update header and sidebar
     if (window.HeaderComponent) {
-      window.HeaderComponent.update(this.app.currentUser)
+      window.HeaderComponent.update(this.app.currentUser);
     }
     if (window.SidebarComponent) {
-      window.SidebarComponent.update(this.app.currentUser)
+      window.SidebarComponent.update(this.app.currentUser);
+    }
+
+    // モーダルのインスタンスを準備
+    const userModalElement = document.getElementById('userModal');
+    if (userModalElement && window.bootstrap) {
+        this.userModal = new window.bootstrap.Modal(userModalElement);
     }
 
     // Load users data
-    await this.loadUsers()
+    await this.loadUsers();
 
     // Update UI with current language
     if (this.app.i18n) {
-      this.app.i18n.updateUI()
+      this.app.i18n.updateUI();
     }
   }
 
@@ -188,55 +188,19 @@ class UserManagementPage {
    */
   async loadUsers() {
     try {
-      // Mock users data - in real app, fetch from API
+      // Mock users data
       this.users = [
-        {
-          id: 1,
-          name: "田中太郎",
-          email: "tanaka@example.com",
-          role: "worker",
-          department: "建設部",
-          position: "作業員",
-          status: "active",
-          lastLogin: "2024-01-15 09:30",
-        },
-        {
-          id: 2,
-          name: "佐藤花子",
-          email: "sato@example.com",
-          role: "evaluator",
-          department: "品質管理部",
-          position: "主任",
-          status: "active",
-          lastLogin: "2024-01-14 16:45",
-        },
-        {
-          id: 3,
-          name: "山田次郎",
-          email: "yamada@example.com",
-          role: "manager",
-          department: "管理部",
-          position: "マネージャー",
-          status: "active",
-          lastLogin: "2024-01-15 08:15",
-        },
-        {
-          id: 4,
-          name: "鈴木三郎",
-          email: "suzuki@example.com",
-          role: "worker",
-          department: "建設部",
-          position: "作業員",
-          status: "inactive",
-          lastLogin: "2024-01-10 17:20",
-        },
-      ]
+        { id: "1", name: "管理者 太郎", email: "admin@example.com", role: "admin", status: "active", lastLogin: "2024-07-28 09:30" },
+        { id: "2", name: "評価者 花子", email: "evaluator@example.com", role: "evaluator", status: "active", lastLogin: "2024-07-27 16:45" },
+        { id: "3", name: "作業員 次郎", email: "worker@example.com", role: "worker", status: "active", lastLogin: "2024-07-28 08:15" },
+        { id: "4", name: "承認待ち 三郎", email: "pending@example.com", role: "worker", status: "pending_approval", lastLogin: null },
+        { id: "5", name: "無効 四郎", email: "inactive@example.com", role: "worker", status: "inactive", lastLogin: "2024-07-10 17:20" },
+      ];
 
-      this.filteredUsers = [...this.users]
-      this.renderUsersTable()
-    } catch (error) {
-      console.error("Error loading users:", error)
-      this.app.showError("ユーザーデータの読み込みに失敗しました。")
+      this.filteredUsers = [...this.users];
+      this.renderUsersTable();
+    } catch (error)      console.error("Error loading users:", error);
+      this.app.showError("ユーザーデータの読み込みに失敗しました。");
     }
   }
 
@@ -245,120 +209,77 @@ class UserManagementPage {
    * ユーザーテーブルを描画
    */
   renderUsersTable() {
-    const tbody = document.getElementById("usersTableBody")
-    if (!tbody) return
+    const tbody = document.getElementById("usersTableBody");
+    if (!tbody) return;
 
     if (this.filteredUsers.length === 0) {
-      tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center text-muted">
-                        ユーザーが見つかりません
-                    </td>
-                </tr>
-            `
-      return
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">ユーザーが見つかりません</td></tr>`;
+      return;
     }
 
-    const rows = this.filteredUsers
-      .map(
-        (user) => `
+    tbody.innerHTML = this.filteredUsers.map(user => `
             <tr>
                 <td>
                     <div class="d-flex align-items-center">
-                        <div class="user-avatar-sm bg-primary text-white rounded-circle me-2 d-flex align-items-center justify-content-center" 
+                        <div class="user-avatar-sm bg-primary text-white rounded-circle me-2 d-flex align-items-center justify-content-center"
                              style="width: 32px; height: 32px; font-size: 0.8rem;">
-                            ${user.name.charAt(0)}
+                            ${this.app.sanitizeHtml(user.name.charAt(0))}
                         </div>
-                        <div>
-                            <div class="fw-bold">${this.app.sanitizeHtml(user.name)}</div>
-                            <small class="text-muted">${this.app.sanitizeHtml(user.department || "")}</small>
-                        </div>
+                        <div class="fw-bold">${this.app.sanitizeHtml(user.name)}</div>
                     </div>
                 </td>
                 <td>${this.app.sanitizeHtml(user.email)}</td>
-                <td>
-                    <span class="badge ${this.getRoleBadgeClass(user.role)}">
-                        ${this.getRoleLabel(user.role)}
-                    </span>
-                </td>
-                <td>
-                    <span class="badge ${user.status === "active" ? "bg-success" : "bg-secondary"}">
-                        ${user.status === "active" ? "アクティブ" : "無効"}
-                    </span>
-                </td>
-                <td>
-                    <small>${user.lastLogin || "なし"}</small>
-                </td>
+                <td><span class="badge ${this.getRoleBadgeClass(user.role)}">${this.getRoleLabel(user.role)}</span></td>
+                <td><span class="badge ${this.getStatusBadgeClass(user.status)}">${this.getStatusLabel(user.status)}</span></td>
+                <td><small>${user.lastLogin || "なし"}</small></td>
                 <td>
                     <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary" onclick="UserManagementPage.editUser(${user.id})" 
-                                title="編集">
+                        <button class="btn btn-outline-primary" onclick="window.app.currentPage.editUser('${user.id}')" title="編集">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-outline-danger" onclick="UserManagementPage.deleteUser(${user.id})" 
-                                title="削除" ${user.role === "admin" ? "disabled" : ""}>
+                        <button class="btn btn-outline-danger" onclick="window.app.currentPage.deleteUser('${user.id}')" title="削除" ${user.role === "admin" ? "disabled" : ""}>
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </td>
             </tr>
-        `,
-      )
-      .join("")
-
-    tbody.innerHTML = rows
+        `).join("");
   }
-
-  /**
-   * Get role badge class
-   * 役割バッジクラスを取得
-   */
+  
+  // ラベルとバッジクラスを取得するヘルパーメソッド群
   getRoleBadgeClass(role) {
-    const classes = {
-      admin: "bg-danger",
-      manager: "bg-warning",
-      evaluator: "bg-info",
-      worker: "bg-secondary",
-    }
-    return classes[role] || "bg-secondary"
+    const classes = { admin: "bg-danger", evaluator: "bg-info", worker: "bg-secondary" };
+    return classes[role] || "bg-secondary";
   }
-
-  /**
-   * Get role label
-   * 役割ラベルを取得
-   */
   getRoleLabel(role) {
-    const labels = {
-      admin: "管理者",
-      manager: "マネージャー",
-      evaluator: "評価者",
-      worker: "作業員",
-    }
-    return labels[role] || role
+    const labels = { admin: "管理者", evaluator: "評価者", worker: "作業員" };
+    return labels[role] || role;
+  }
+  getStatusBadgeClass(status) {
+      const classes = { active: "bg-success", pending_approval: "bg-warning", inactive: "bg-secondary"};
+      return classes[status] || "bg-dark";
+  }
+  getStatusLabel(status) {
+      const labels = { active: "アクティブ", pending_approval: "承認待ち", inactive: "無効" };
+      return labels[status] || status;
   }
 
   /**
    * Handle search
    * 検索を処理
    */
-  static handleSearch(query) {
-    const page = window.app.currentPage
-    if (!page) return
-
-    page.searchQuery = query.toLowerCase()
-    page.applyFilters()
+  handleSearch(query) {
+    this.searchQuery = query.toLowerCase();
+    this.applyFilters();
   }
 
   /**
    * Handle filter
    * フィルターを処理
    */
-  static handleFilter(filter) {
-    const page = window.app.currentPage
-    if (!page) return
-
-    page.currentFilter = filter
-    page.applyFilters()
+  handleFilter(filter) {
+    this.currentFilter = filter;
+    this.applyFilters();
   }
 
   /**
@@ -367,131 +288,108 @@ class UserManagementPage {
    */
   applyFilters() {
     this.filteredUsers = this.users.filter((user) => {
-      // Role filter
-      if (this.currentFilter !== "all" && user.role !== this.currentFilter) {
-        return false
-      }
-
-      // Search filter
-      if (this.searchQuery) {
-        const searchText = `${user.name} ${user.email}`.toLowerCase()
-        if (!searchText.includes(this.searchQuery)) {
-          return false
-        }
-      }
-
-      return true
-    })
-
-    this.renderUsersTable()
+      const roleMatch = this.currentFilter === "all" || user.role === this.currentFilter;
+      const searchMatch = this.searchQuery === "" ||
+        user.name.toLowerCase().includes(this.searchQuery) ||
+        user.email.toLowerCase().includes(this.searchQuery);
+      return roleMatch && searchMatch;
+    });
+    this.renderUsersTable();
   }
 
   /**
    * Show add user modal
    * ユーザー追加モーダルを表示
    */
-  static showAddUserModal() {
-    const modal = new window.bootstrap.Modal(document.getElementById("userModal"))
-    const form = document.getElementById("userForm")
-    const title = document.getElementById("userModalTitle")
-    const passwordSection = document.getElementById("passwordSection")
-    const passwordInput = document.getElementById("userPassword")
+  showAddUserModal() {
+    const form = document.getElementById("userForm");
+    const title = document.getElementById("userModalTitle");
+    const passwordSection = document.getElementById("passwordSection");
+    const passwordInput = document.getElementById("userPassword");
 
-    // Reset form
-    form.reset()
-    document.getElementById("userId").value = ""
-    title.textContent = "新規ユーザー追加"
-    passwordSection.style.display = "block"
-    passwordInput.required = true
+    form.reset();
+    document.getElementById("userId").value = "";
+    title.textContent = "新規ユーザー追加";
+    passwordSection.style.display = "block";
+    passwordInput.required = true;
 
-    modal.show()
+    if (this.userModal) this.userModal.show();
   }
 
   /**
    * Edit user
    * ユーザーを編集
    */
-  static editUser(userId) {
-    const page = window.app.currentPage
-    if (!page) return
+  editUser(userId) {
+    const user = this.users.find((u) => u.id === userId);
+    if (!user) return;
 
-    const user = page.users.find((u) => u.id === userId)
-    if (!user) return
+    const title = document.getElementById("userModalTitle");
+    const passwordSection = document.getElementById("passwordSection");
+    const passwordInput = document.getElementById("userPassword");
 
-    const modal = new window.bootstrap.Modal(document.getElementById("userModal"))
-    const title = document.getElementById("userModalTitle")
-    const passwordSection = document.getElementById("passwordSection")
-    const passwordInput = document.getElementById("userPassword")
+    document.getElementById("userId").value = user.id;
+    document.getElementById("userName").value = user.name;
+    document.getElementById("userEmail").value = user.email;
+    document.getElementById("userRole").value = user.role;
+    document.getElementById("userStatus").value = user.status;
 
-    // Fill form with user data
-    document.getElementById("userId").value = user.id
-    document.getElementById("userName").value = user.name
-    document.getElementById("userEmail").value = user.email
-    document.getElementById("userRole").value = user.role
-    document.getElementById("userDepartment").value = user.department || ""
-    document.getElementById("userPosition").value = user.position || ""
-    document.getElementById("userActive").checked = user.status === "active"
+    title.textContent = "ユーザー編集";
+    passwordSection.style.display = "block"; // パスワードは変更可能にする
+    passwordInput.required = false; // ただし必須ではない
+    passwordInput.placeholder = "変更する場合のみ入力";
 
-    title.textContent = "ユーザー編集"
-    passwordSection.style.display = "none"
-    passwordInput.required = false
-
-    modal.show()
+    if (this.userModal) this.userModal.show();
   }
 
   /**
    * Handle form submission
    * フォーム送信を処理
    */
-  static async handleSubmit(event) {
-    event.preventDefault()
+  async handleSubmit(event) {
+    event.preventDefault();
 
-    const page = window.app.currentPage
-    if (!page) return
+    const submitBtn = document.getElementById("submitBtn");
+    const submitSpinner = document.getElementById("submitSpinner");
+    const userId = document.getElementById("userId").value;
 
-    const submitBtn = document.getElementById("submitBtn")
-    const submitSpinner = document.getElementById("submitSpinner")
-    const userId = document.getElementById("userId").value
-
-    // Show loading state
-    submitBtn.disabled = true
-    submitSpinner.classList.remove("d-none")
+    submitBtn.disabled = true;
+    submitSpinner.classList.remove("d-none");
 
     try {
       const userData = {
         name: document.getElementById("userName").value,
         email: document.getElementById("userEmail").value,
         role: document.getElementById("userRole").value,
-        department: document.getElementById("userDepartment").value,
-        position: document.getElementById("userPosition").value,
-        status: document.getElementById("userActive").checked ? "active" : "inactive",
-      }
+        status: document.getElementById("userStatus").value,
+      };
 
-      if (!userId) {
-        // Add new user
-        userData.password = document.getElementById("userPassword").value
-        userData.id = Date.now() // Mock ID
-        userData.lastLogin = null
-        page.users.push(userData)
-        window.app.showSuccess("新規ユーザーを追加しました。")
-      } else {
-        // Update existing user
-        const userIndex = page.users.findIndex((u) => u.id === Number.parseInt(userId))
+      if (userId) { // 更新の場合
+        const userIndex = this.users.findIndex((u) => u.id === userId);
         if (userIndex !== -1) {
-          page.users[userIndex] = { ...page.users[userIndex], ...userData }
-          window.app.showSuccess("ユーザー情報を更新しました。")
+          this.users[userIndex] = { ...this.users[userIndex], ...userData };
+          this.app.showSuccess("ユーザー情報を更新しました。");
         }
+      } else { // 新規作成の場合
+        userData.password = document.getElementById("userPassword").value;
+        if (!userData.password || userData.password.length < 8) {
+            throw new Error("パスワードは8文字以上で入力してください。");
+        }
+        userData.id = `user-${Date.now()}`;
+        userData.lastLogin = null;
+        this.users.push(userData);
+        this.app.showSuccess("新規ユーザーを追加しました。");
       }
 
-      page.applyFilters()
-      window.bootstrap.Modal.getInstance(document.getElementById("userModal")).hide()
+      this.applyFilters();
+      if (this.userModal) this.userModal.hide();
+
     } catch (error) {
-      console.error("Error saving user:", error)
-      window.app.showError("ユーザーの保存に失敗しました。")
+      console.error("Error saving user:", error);
+      this.app.showError(error.message || "ユーザーの保存に失敗しました。");
     } finally {
-      // Hide loading state
-      submitBtn.disabled = false
-      submitSpinner.classList.add("d-none")
+      submitBtn.disabled = false;
+      submitSpinner.classList.add("d-none");
     }
   }
 
@@ -499,25 +397,21 @@ class UserManagementPage {
    * Delete user
    * ユーザーを削除
    */
-  static deleteUser(userId) {
-    const page = window.app.currentPage
-    if (!page) return
-
-    const user = page.users.find((u) => u.id === userId)
-    if (!user) return
-
+  deleteUser(userId) {
+    const user = this.users.find((u) => u.id === userId);
+    if (!user) return;
     if (user.role === "admin") {
-      window.app.showError("管理者ユーザーは削除できません。")
-      return
+      this.app.showError("管理者ユーザーは削除できません。");
+      return;
     }
 
     if (confirm(`${user.name} を削除しますか？この操作は取り消せません。`)) {
-      page.users = page.users.filter((u) => u.id !== userId)
-      page.applyFilters()
-      window.app.showSuccess("ユーザーを削除しました。")
+      this.users = this.users.filter((u) => u.id !== userId);
+      this.applyFilters();
+      this.app.showSuccess("ユーザーを削除しました。");
     }
   }
 }
 
 // Make UserManagementPage globally available
-window.UserManagementPage = UserManagementPage
+window.UserManagementPage = UserManagementPage;
