@@ -5,15 +5,7 @@
   box-sizing: border-box;
 }
 
-/* 全体をフレックスレイアウト化して、メイン領域のみスクロール可能に */
-html, body {
-  height: 100%;
-  overflow: hidden;
-}
-
-#app {
-  display: flex;
-  flex-direction: column;
+html, body, #app {
   height: 100%;
 }
 
@@ -217,17 +209,20 @@ body {
   color: white !important;
 }
 
-/* main-content を flex:1 + overflow-y:auto でスクロール可能に */
+/* main-content の高さを固定し、縦スクロールを有効化 */
 .main-content {
-  flex: 1;
+  position: absolute;
+  top: 56px;
+  right: 0;
+  bottom: 0;
+  left: 250px;
+  padding: 1rem;
   overflow-y: auto;
-  transition: margin-left 0.3s ease;
-  padding-top: 56px;
-  margin-left: 250px; /* デフォルトでサイドバー幅分のマージン */
+  transition: left 0.3s ease;
 }
 
 .main-content.sidebar-hidden {
-  margin-left: 0 !important;
+  left: 0 !important;
 }
 /* --- CORRECTED LAYOUT STYLES END --- */
 
@@ -252,7 +247,7 @@ body {
   }
 
   .main-content {
-    margin-left: 0 !important;
+    left: 0 !important;
   }
 
   .login-page .col-lg-6:first-child {
@@ -306,19 +301,11 @@ body {
 }
 
 @keyframes bounce {
-  0%,
-  20%,
-  50%,
-  80%,
-  100% {
+  0%, 20%, 50%, 80%, 100% {
     transform: translateY(0);
   }
-  40% {
-    transform: translateY(-10px);
-  }
-  60% {
-    transform: translateY(-5px);
-  }
+  40% { transform: translateY(-10px); }
+  60% { transform: translateY(-5px); }
 }
 
 @keyframes slideInLeft {
@@ -400,7 +387,7 @@ body {
   }
 
   .main-content {
-    margin-left: 0 !important;
+    left: 0 !important;
     padding-top: 0 !important;
   }
 
