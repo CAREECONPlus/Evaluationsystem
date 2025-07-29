@@ -6,7 +6,7 @@ class HeaderComponent {
   constructor() {
     this.isVisible = false;
     this.currentUser = null;
-    this.bootstrap = window.bootstrap; // Bootstrap JS を使うための参照
+    this.bootstrap = window.bootstrap; // Bootstrap JS 参照
   }
 
   show(user) {
@@ -61,36 +61,48 @@ class HeaderComponent {
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-              data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
-              aria-label="${this.app?.i18n.t('common.toggle_navigation')}">
+                    data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+                    aria-label="${this.app?.i18n.t('common.toggle_navigation')}">
               <span class="navbar-toggler-icon"></span>
             </button>
 
             <div class="collapse navbar-collapse" id="navbarNav">
               <ul class="navbar-nav me-auto">
+                <!-- ダッシュボード -->
                 <li class="nav-item">
                   <a class="nav-link" href="#" onclick="window.app.navigate('/dashboard')">
                     <i class="fas fa-tachometer-alt me-1"></i>
                     <span data-i18n="nav.dashboard"></span>
                   </a>
                 </li>
-                ${
-                  userRole === "admin"
-                    ? `
+
+                <!-- ユーザー管理（管理者のみ） -->
+                ${userRole === "admin" ? `
                 <li class="nav-item">
                   <a class="nav-link" href="#" onclick="window.app.navigate('/users')">
                     <i class="fas fa-users me-1"></i>
                     <span data-i18n="nav.users"></span>
                   </a>
-                </li>`
-                    : ""
-                }
+                </li>` : ""}
+
+                <!-- 評価一覧 -->
                 <li class="nav-item">
                   <a class="nav-link" href="#" onclick="window.app.navigate('/evaluations')">
                     <i class="fas fa-clipboard-list me-1"></i>
                     <span data-i18n="nav.evaluations"></span>
                   </a>
                 </li>
+
+                <!-- 目標承認（管理者のみ） -->
+                ${userRole === "admin" ? `
+                <li class="nav-item">
+                  <a class="nav-link" href="#" onclick="window.app.navigate('/goal-approvals')">
+                    <i class="fas fa-check-circle me-1"></i>
+                    <span data-i18n="nav.goal_approvals"></span>
+                  </a>
+                </li>` : ""}
+
+                <!-- 目標設定 -->
                 <li class="nav-item">
                   <a class="nav-link" href="#" onclick="window.app.navigate('/goal-setting')">
                     <i class="fas fa-bullseye me-1"></i>
@@ -100,6 +112,7 @@ class HeaderComponent {
               </ul>
 
               <ul class="navbar-nav">
+                <!-- 言語切替 -->
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                      aria-expanded="false">
@@ -107,53 +120,36 @@ class HeaderComponent {
                     <span data-i18n="common.language"></span>
                   </a>
                   <ul class="dropdown-menu">
-                    <li>
-                      <a class="dropdown-item" href="#" onclick="window.headerComponent.changeLanguage('ja')">
-                        <i class="fas fa-flag me-2"></i>日本語
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item" href="#" onclick="window.headerComponent.changeLanguage('en')">
-                        <i class="fas fa-flag me-2"></i>English
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item" href="#" onclick="window.headerComponent.changeLanguage('vi')">
-                        <i class="fas fa-flag me-2"></i>Tiếng Việt
-                      </a>
-                    </li>
+                    <li><a class="dropdown-item" href="#" onclick="window.headerComponent.changeLanguage('ja')">
+                          <i class="fas fa-flag me-2"></i>日本語
+                        </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="window.headerComponent.changeLanguage('en')">
+                          <i class="fas fa-flag me-2"></i>English
+                        </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="window.headerComponent.changeLanguage('vi')">
+                          <i class="fas fa-flag me-2"></i>Tiếng Việt
+                        </a></li>
                   </ul>
                 </li>
 
+                <!-- プロフィール・ログアウト -->
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button"
                      data-bs-toggle="dropdown" aria-expanded="false">
-                    <div class="user-avatar me-2">
-                      <i class="fas fa-user-circle fa-lg"></i>
-                    </div>
-                    <div class="user-info d-none d-md-block">
+                    <i class="fas fa-user-circle fa-lg me-2"></i>
+                    <div class="d-none d-md-block">
                       <div class="user-name">${this.sanitizeHtml(this.currentUser?.name || this.app?.i18n.t('common.user'))}</div>
-                      <small class="user-role text-muted">${this.getRoleDisplayName(this.currentUser?.role)}</small>
+                      <small class="user-role text-muted">${this.getRoleDisplayName(userRole)}</small>
                     </div>
                   </a>
                   <ul class="dropdown-menu dropdown-menu-end">
                     <li>
                       <div class="dropdown-header">
-                        <div class="fw-bold">${this.sanitizeHtml(this.currentUser?.name || this.app?.i18n.t('common.user'))}</div>
+                        <div class="fw-bold">${this.sanitizeHtml(this.currentUser?.name || "")}</div>
                         <small class="text-muted">${this.sanitizeHtml(this.currentUser?.email || "")}</small>
                       </div>
                     </li>
                     <li><hr class="dropdown-divider"></li>
-                    ${
-                      (userRole === "admin" || userRole === "developer")
-                        ? `<li>
-                             <a class="dropdown-item" href="#" onclick="window.app.navigate('/settings')">
-                               <i class="fas fa-cog me-2"></i>
-                               <span data-i18n="nav.settings"></span>
-                             </a>
-                           </li>`
-                        : ""
-                    }
                     <li>
                       <a class="dropdown-item" href="#" onclick="window.headerComponent.showProfile()">
                         <i class="fas fa-user me-2"></i>
@@ -169,13 +165,14 @@ class HeaderComponent {
                     </li>
                   </ul>
                 </li>
+
               </ul>
             </div>
           </div>
         </nav>
       `;
 
-      // 翻訳適用
+      // 翻訳を適用
       if (this.app?.i18n) {
         this.app.i18n.updateUI(headerContainer);
       }
@@ -188,37 +185,46 @@ class HeaderComponent {
   async changeLanguage(langCode) {
     try {
       console.log("Changing language to:", langCode);
-      if (window.app?.i18n) {
-        await window.app.i18n.setLanguage(langCode);
-        window.app.showSuccess(window.app.i18n.t("messages.language_changed"));
+      if (this.app?.i18n) {
+        await this.app.i18n.setLanguage(langCode);
         this.render();
       }
     } catch (error) {
       console.error("Error changing language:", error);
-      window.app?.showError(window.app.i18n.t("errors.language_change_failed"));
     }
   }
 
-  showProfile() { /* 省略: 既存実装のまま */ }
+  showProfile() {
+    // …（省略：既存のプロフィール表示ロジック）…
+  }
 
   async logout() {
     try {
       console.log("Logging out user");
-      if (confirm(window.app.i18n.t("auth.confirm_logout"))) {
-        await window.app.logout();
+      if (confirm(this.app.i18n.t("auth.confirm_logout"))) {
+        await this.app.logout();
       }
     } catch (error) {
       console.error("Error during logout:", error);
-      window.app?.showError(window.app.i18n.t("errors.logout_failed"));
     }
   }
 
-  getRoleDisplayName(role) { /* 省略: 既存実装 */ }
-  formatDate(date) { /* 省略: 既存実装 */ }
-  sanitizeHtml(str) { /* 省略: 既存実装 */ }
+  getRoleDisplayName(role) {
+    return this.app?.i18n
+      ? this.app.i18n.t('roles.' + role)
+      : { admin: "管理者", developer: "開発者", evaluator: "評価者", worker: "作業員" }[role] || role;
+  }
+
+  sanitizeHtml(str) {
+    if (!str) return "";
+    if (this.app?.sanitizeHtml) return this.app.sanitizeHtml(str);
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
 }
 
-// 大文字・小文字 両方にエクスポート
+// グローバルインスタンス
 const headerComponent = new HeaderComponent();
 window.HeaderComponent = headerComponent;
 window.headerComponent = headerComponent;
