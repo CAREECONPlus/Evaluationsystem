@@ -274,8 +274,7 @@
     "evaluation_structure_of": "の評価構造",
     "no_structure_for_job_type": "この職種には評価構造が設定されていません。",
     "new_category": "新しいカテゴリ",
-    "confirm_delete_category": "このカテゴリを削除しますか？カテゴリ内の項目もすべて削除されます。",
-    "new_item": "新しい項目",
+    "confirm_delete_category": "このカテゴリを削除しますか？カテゴリ内の項目もすべて削除されます。",    "new_item": "新しい項目",
     "confirm_delete_item": "この項目を削除しますか？",
     "item_name_placeholder": "例: 品質遵守度",
     "category_name_placeholder": "例: 技術スキル",
@@ -316,4 +315,22 @@
     "radar": "レーダー",
     "bar": "バー",
     "line": "ライン",
-    "recent_evaluations": "最近
+    "recent_evaluations": "最近の評価",
+    "no_recent_evaluations": "最近の評価はありません",
+    "chart_load_error": "チャートを読み込めませんでした",
+    "total_employees": "総従業員数",
+    "pending_evaluations_count": "未完了評価",
+    "completed_evaluations_count": "完了評価",
+    "average_score": "平均スコア",
+    "personal_score": "個人のスコア",
+    "average_score_trend": "平均スコア推移",
+    "personal_score_trend": "個人のスコア推移"
+  },
+  "messages": {
+    "save_success": "保存しました",
+    "delete_success": "削除しました",
+    "approval_success": "承認しました",
+    "rejection_success": "差し戻しました",
+    "invitation_sent": "招待を送信しました",
+    "password_reset_sent": "パスワー…
+}
