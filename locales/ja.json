@@ -332,5 +332,5 @@
     "approval_success": "承認しました",
     "rejection_success": "差し戻しました",
     "invitation_sent": "招待を送信しました",
-    "password_reset_sent": "パスワー…
-}
+    "password_reset_sent": "パスワードリセット"
+  }
