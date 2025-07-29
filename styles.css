@@ -5,13 +5,23 @@
   box-sizing: border-box;
 }
 
+/* 全体をフレックスレイアウト化して、メイン領域のみスクロール可能に */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.6;
   color: #333;
   background-color: #f8f9fa;
-  height: 100vh;
-  overflow: hidden;
 }
 
 /* Loading Screen */
@@ -171,47 +181,117 @@ body {
   font-size: 0.75rem;
 }
 
-/* --- FLEX LAYOUT STYLES START --- */
-/* 親要素をFlexコンテナに */
-.body-wrapper {
-  display: flex;
-  height: 100%;
-  overflow: hidden;
+/* --- CORRECTED LAYOUT STYLES START --- */
+.sidebar-container {
+  position: fixed;
+  top: 56px;
+  left: 0;
+  height: calc(100vh - 56px);
+  z-index: 1000;
 }
 
-/* サイドバーコンテナ */
-.sidebar-container {
-  flex: 0 0 250px;
+.sidebar {
   height: 100%;
   overflow-y: auto;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-  background-color: #343a40;
-}
-
-/* サイドバー内部 */
-.sidebar {
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
-/* メインコンテンツ */
+.sidebar-content {
+  flex-grow: 1;
+}
+
+.sidebar .nav-link {
+  transition: all 0.3s ease;
+  border-radius: 5px;
+}
+
+.sidebar .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateX(5px);
+}
+
+.sidebar .nav-link.active {
+  background-color: #007bff !important;
+  color: white !important;
+}
+
+/* main-content を flex:1 + overflow-y:auto でスクロール可能に */
 .main-content {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
+  transition: margin-left 0.3s ease;
   padding-top: 56px;
-  height: 100%;
+  margin-left: 250px; /* デフォルトでサイドバー幅分のマージン */
 }
 
-/* オプション：サイドバー非表示時 */
 .main-content.sidebar-hidden {
-  flex: 1 1 100%;
+  margin-left: 0 !important;
 }
-/* --- FLEX LAYOUT STYLES END --- */
+/* --- CORRECTED LAYOUT STYLES END --- */
 
-/* User Summary, Animations, Utility Classes, Print Styles */
-/* …（既存のトースト通知やアニメーション、 @media print 等はそのまま残してください）… */
+/* User Summary */
+.user-summary .d-flex {
+  transition: all 0.3s ease;
+}
+
+.user-summary .d-flex:hover {
+  background-color: #e9ecef !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .sidebar-container {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar-container.show {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+  }
+
+  .login-page .col-lg-6:first-child {
+    display: none;
+  }
+
+  .chart-container {
+    height: 300px;
+  }
+
+  .stats-card {
+    margin-bottom: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .page-header {
+    padding: 1rem;
+    margin: -1.5rem -1.5rem 1.5rem -1.5rem;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+
+  .chart-controls .btn-group {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .chart-controls .btn {
+    border-radius: 0.375rem !important;
+    margin-bottom: 0.25rem;
+  }
+}
 
 /* Animations */
 @keyframes fadeInUp {
@@ -226,7 +306,11 @@ body {
 }
 
 @keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
     transform: translateY(0);
   }
   40% {
@@ -248,6 +332,7 @@ body {
   }
 }
 
+/* Utility Classes */
 .shadow-sm {
   box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
 }
@@ -315,7 +400,7 @@ body {
   }
 
   .main-content {
-    flex: 1;
+    margin-left: 0 !important;
     padding-top: 0 !important;
   }
 
