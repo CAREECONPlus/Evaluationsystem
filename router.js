@@ -1,61 +1,85 @@
 // router.js
 
+/**
+ * シンプルな SPA ルーター（History API ベース）
+ * App インスタンスと、URL → ページクラスのマッピングを受け取って動作します。
+ */
 class Router {
-  constructor() {
-    // ブラウザの「戻る／進む」や hash の変更をキャッチ
-    window.addEventListener('popstate', () => this.loadPage());
-    window.addEventListener('hashchange', () => this.loadPage());
-  }
-
-  init() {
-    this.loadPage();
-  }
-
   /**
-   * 現在のハッシュから「#/foo/bar」を切り出し、
-   * path = '/foo/bar' として loadPage 内で使う
+   * @param {object} app - グローバル App インスタンス
+   * @param {string} basePath - index.html をホストしているベースパス（例: '/EvaluationSystem'）
    */
-  loadPage() {
-    // デフォルトはルート
-    const raw = window.location.hash || '#/';
-    const path = raw.slice(1);  // 先頭の '#' を除去
-    this.renderRoute(path);
+  constructor(app, basePath = '') {
+    this.app = app;
+    this.basePath = basePath.replace(/\/$/, ''); // 末尾スラッシュを取り除く
+    // URL パス（basePath を除いたもの）とページクラスの対応表
+    this.routes = {
+      '/': window.DashboardPage,
+      '/dashboard': window.DashboardPage,
+      '/login': window.LoginPage,
+      '/register': window.RegisterPage,
+      '/register-admin': window.RegisterAdminPage,
+      '/users': window.UserManagementPage,
+      '/settings': window.SettingsPage,
+      '/goal-setting': window.GoalSettingPage,
+      '/goal-approvals': window.GoalApprovalsPage,
+      '/evaluation-form': window.EvaluationFormPage,
+      '/evaluations': window.EvaluationsPage,
+      '/developer': window.DeveloperPage
+    };
+
+    // ブラウザの「戻る／進む」ボタンに反応
+    window.addEventListener('popstate', () => {
+      this.loadPage(location.pathname);
+    });
+  }
+
+  /** ルーターを開始します（App.init() 内から呼び出してください） */
+  async init() {
+    // 初回ロード時に現在の URL を読み込み
+    await this.loadPage(location.pathname);
   }
 
   /**
-   * 画面遷移
-   * @param {string} path '/dashboard' や '/evaluations' など
+   * 指定パスのページを読み込んで描画します。
+   * @param {string} fullPath - 例 '/EvaluationSystem/dashboard' など
+   */
+  async loadPage(fullPath) {
+    // basePath を取り除いた部分をキーに使う
+    let path = fullPath.replace(this.basePath, '') || '/';
+
+    // クエリやハッシュを取り除く
+    path = path.replace(/\?.*$/, '').replace(/#.*$/, '');
+
+    const PageClass = this.routes[path];
+    if (!PageClass) {
+      // ルート未定義の場合はダッシュボードへリダイレクト
+      return this.navigate('/dashboard');
+    }
+
+    // ページコンポーネント生成 → render() → init()
+    this.app.currentPage = new PageClass(this.app);
+    const html = await this.app.currentPage.render();
+    document.getElementById('content').innerHTML = html;
+    await this.app.currentPage.init();
+
+    // i18n があれば翻訳更新
+    if (this.app.i18n) {
+      this.app.i18n.updateUI(document.getElementById('content'));
+    }
+  }
+
+  /**
+   * アプリからプログラム的にルート遷移するために使います。
+   * history.pushState ＋ loadPage を同時に行います。
+   * @param {string} path - basePath を除いたパス（例 '/dashboard'）
    */
   navigate(path) {
-    // ハッシュ付きで履歴に積む
-    history.pushState(null, '', '#' + path);
-    this.loadPage();
-  }
-
-  /**
-   * path によってページコンポーネントを切り替え
-   */
-  renderRoute(path) {
-    switch (path) {
-      case '/':
-      case '/dashboard':
-        window.app.loadDashboard();
-        break;
-      case '/evaluations':
-        window.app.loadEvaluationsPage();
-        break;
-      case '/settings':
-        window.app.loadSettingsPage();
-        break;
-      // ... 他のルート
-      default:
-        window.app.loadNotFoundPage();
-    }
+    const full = this.basePath + path;
+    history.pushState({}, '', full);
+    return this.loadPage(full);
   }
 }
 
-// グローバルにひとつだけ作る
-window.app.router = new Router();
-window.addEventListener('DOMContentLoaded', () => {
-  window.app.router.init();
-});
+// グローバルで使えるように
+window.Router = Router;
