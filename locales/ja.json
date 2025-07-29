@@ -326,11 +326,13 @@
     "average_score_trend": "平均スコア推移",
     "personal_score_trend": "個人のスコア推移"
   },
+    …,
   "messages": {
     "save_success": "保存しました",
     "delete_success": "削除しました",
     "approval_success": "承認しました",
     "rejection_success": "差し戻しました",
     "invitation_sent": "招待を送信しました",
-    "password_reset_sent": "パスワードリセット"
+    "password_reset_sent": "パスワードリセットメールを送信しました"
   }
+}
