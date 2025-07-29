@@ -9,6 +9,9 @@ class HeaderComponent {
     this.bootstrap = window.bootstrap; // Bootstrap JS 参照
   }
 
+  /**
+   * ヘッダーを表示
+   */
   show(user) {
     try {
       console.log("Showing header for user:", user?.name);
@@ -20,6 +23,9 @@ class HeaderComponent {
     }
   }
 
+  /**
+   * ヘッダーを非表示
+   */
   hide() {
     try {
       console.log("Header hidden");
@@ -34,6 +40,9 @@ class HeaderComponent {
     }
   }
 
+  /**
+   * ヘッダーを更新
+   */
   update(user) {
     this.currentUser = user;
     if (this.isVisible) {
@@ -41,6 +50,9 @@ class HeaderComponent {
     }
   }
 
+  /**
+   * ヘッダーを描画
+   */
   render() {
     try {
       let headerContainer = document.getElementById("header-container");
@@ -59,13 +71,11 @@ class HeaderComponent {
               <i class="fas fa-hard-hat me-2"></i>
               <span class="fw-bold" data-i18n="app.system_name">評価管理システム</span>
             </a>
-
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                     data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
                     aria-label="${this.app?.i18n.t('common.toggle_navigation')}">
               <span class="navbar-toggler-icon"></span>
             </button>
-
             <div class="collapse navbar-collapse" id="navbarNav">
               <ul class="navbar-nav me-auto">
                 <!-- ダッシュボード -->
@@ -120,15 +130,21 @@ class HeaderComponent {
                     <span data-i18n="common.language"></span>
                   </a>
                   <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" onclick="window.headerComponent.changeLanguage('ja')">
-                          <i class="fas fa-flag me-2"></i>日本語
-                        </a></li>
-                    <li><a class="dropdown-item" href="#" onclick="window.headerComponent.changeLanguage('en')">
-                          <i class="fas fa-flag me-2"></i>English
-                        </a></li>
-                    <li><a class="dropdown-item" href="#" onclick="window.headerComponent.changeLanguage('vi')">
-                          <i class="fas fa-flag me-2"></i>Tiếng Việt
-                        </a></li>
+                    <li>
+                      <a class="dropdown-item" href="#" onclick="window.headerComponent.changeLanguage('ja')">
+                        <i class="fas fa-flag me-2"></i>日本語
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item" href="#" onclick="window.headerComponent.changeLanguage('en')">
+                        <i class="fas fa-flag me-2"></i>English
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item" href="#" onclick="window.headerComponent.changeLanguage('vi')">
+                        <i class="fas fa-flag me-2"></i>Tiếng Việt
+                      </a>
+                    </li>
                   </ul>
                 </li>
 
@@ -138,15 +154,23 @@ class HeaderComponent {
                      data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="fas fa-user-circle fa-lg me-2"></i>
                     <div class="d-none d-md-block">
-                      <div class="user-name">${this.sanitizeHtml(this.currentUser?.name || this.app?.i18n.t('common.user'))}</div>
-                      <small class="user-role text-muted">${this.getRoleDisplayName(userRole)}</small>
+                      <div class="user-name">
+                        ${this.sanitizeHtml(this.currentUser?.name || this.app?.i18n.t('common.user'))}
+                      </div>
+                      <small class="user-role text-muted">
+                        ${this.getRoleDisplayName(userRole)}
+                      </small>
                     </div>
                   </a>
                   <ul class="dropdown-menu dropdown-menu-end">
                     <li>
                       <div class="dropdown-header">
-                        <div class="fw-bold">${this.sanitizeHtml(this.currentUser?.name || "")}</div>
-                        <small class="text-muted">${this.sanitizeHtml(this.currentUser?.email || "")}</small>
+                        <div class="fw-bold">
+                          ${this.sanitizeHtml(this.currentUser?.name || "")}
+                        </div>
+                        <small class="text-muted">
+                          ${this.sanitizeHtml(this.currentUser?.email || "")}
+                        </small>
                       </div>
                     </li>
                     <li><hr class="dropdown-divider"></li>
@@ -165,8 +189,8 @@ class HeaderComponent {
                     </li>
                   </ul>
                 </li>
-
               </ul>
+
             </div>
           </div>
         </nav>
@@ -182,6 +206,9 @@ class HeaderComponent {
     }
   }
 
+  /**
+   * 言語を変更
+   */
   async changeLanguage(langCode) {
     try {
       console.log("Changing language to:", langCode);
@@ -194,10 +221,16 @@ class HeaderComponent {
     }
   }
 
+  /**
+   * プロフィールモーダルを表示
+   */
   showProfile() {
-    // …（省略：既存のプロフィール表示ロジック）…
+    // …（既存のプロフィール表示ロジック）…
   }
 
+  /**
+   * ログアウト
+   */
   async logout() {
     try {
       console.log("Logging out user");
@@ -209,12 +242,18 @@ class HeaderComponent {
     }
   }
 
+  /**
+   * ロールの表示名取得
+   */
   getRoleDisplayName(role) {
     return this.app?.i18n
       ? this.app.i18n.t('roles.' + role)
       : { admin: "管理者", developer: "開発者", evaluator: "評価者", worker: "作業員" }[role] || role;
   }
 
+  /**
+   * HTML サニタイズ
+   */
   sanitizeHtml(str) {
     if (!str) return "";
     if (this.app?.sanitizeHtml) return this.app.sanitizeHtml(str);
@@ -224,7 +263,7 @@ class HeaderComponent {
   }
 }
 
-// グローバルインスタンス
+// グローバルインスタンス登録
 const headerComponent = new HeaderComponent();
 window.HeaderComponent = headerComponent;
 window.headerComponent = headerComponent;
