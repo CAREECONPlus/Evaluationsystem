@@ -505,3 +505,15 @@
     "no_data_for_scope": "この範囲のデータは利用できません。"
   }
 }
+
+{
+  "evaluations": {
+    "new_evaluation": "新規評価",
+    "list_view": "一覧表示",
+    "chart_view": "チャート表示",
+    "select_eval": "評価を選択",
+    "chart_title": "評価チャート",
+    "no_completed_evals": "完了済みの評価がありません",
+    "select_to_view_chart": "チャートを表示する評価を選択してください"
+  }
+}
