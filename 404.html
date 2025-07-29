@@ -1,20 +1,18 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>リダイレクト中...</title>
-    <script>
-      // 訪問しようとしたパス(例: /EvaluationSystem/dashboard)をセッションストレージに保存
-      sessionStorage.setItem('redirectPath', window.location.pathname);
-      
-      // リポジトリ名を取得 (例: /EvaluationSystem)
-      const repoName = window.location.pathname.split('/')[1] || '';
-      
-      // アプリのルート (index.htmlがある場所) にリダイレクト
-      window.location.replace(
-        window.location.protocol + '//' + window.location.host + '/' + repoName
-      );
-    </script>
-  </head>
-  <body>リダイレクトしています...</body>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Redirecting…</title>
+  <script>
+    // 現在のパス+クエリ＋ハッシュを集約
+    const p = window.location.pathname + window.location.search + window.location.hash;
+    // index.html が置いてあるベースパスに合わせる（末尾にスラッシュ必須）
+    const base = '/EvaluationSystem/';
+    // ハッシュ付き URL に転送
+    window.location.replace(base + 'index.html#' + p);
+  </script>
+</head>
+<body>
+  <p>ページが見つかりません。移動しています…</p>
+</body>
 </html>
