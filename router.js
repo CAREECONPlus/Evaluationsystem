@@ -17,6 +17,7 @@ class Router {
       "/developer": "DeveloperPage",
       "/register": "RegisterPage",
       "/register-admin": "RegisterAdminPage",
+      "/report": "EvaluationReportPage",
     };
   }
 
