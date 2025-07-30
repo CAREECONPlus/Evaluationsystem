@@ -1,6 +1,6 @@
 /**
- * Router Service (Hash-based with parameter support)
- * ルーターサービス（ハッシュベース、パラメータ対応）
+ * Router Service (Hybrid Path/Hash-based with parameter support)
+ * ルーターサービス（ハイブリッド型：パス優先、ハッシュ対応、パラメータ対応）
  */
 class Router {
   constructor(app) {
@@ -26,32 +26,37 @@ class Router {
   }
 
   /**
-   * Initializes the router. Listens for hash changes.
-   * ルーターを初期化し、ハッシュの変更を監視します。
+   * Initializes the router. Listens for hash changes and handles initial load.
+   * ルーターを初期化し、ハッシュの変更を監視し、初期ロードを処理します。
    */
   init() {
-    window.addEventListener('hashchange', () => this.handleLocation());
+    window.addEventListener('popstate', () => this.handleLocation());
     this.handleLocation(); // Handle initial page load
   }
 
   /**
-   * Handles the current URL hash to load the correct page.
-   * 現在のURLハッシュを処理して、正しいページを読み込みます。
+   * Handles the current URL to load the correct page.
+   * 現在のURLを処理して、正しいページを読み込みます。
    */
   handleLocation() {
-    const hash = window.location.hash || '#/login';
-    const pathWithQuery = hash.substring(1); // Remove the '#'
+    let pathWithQuery = window.location.pathname;
+    
+    // FirebaseのrewriteでURLが書き換えられた場合、パス名にルート以外のパスが入る。
+    // アプリ内のナビゲーションはハッシュで行うため、ハッシュも確認する。
+    if (pathWithQuery === '/' || pathWithQuery === '/index.html') {
+      pathWithQuery = (window.location.hash || '#/login').substring(1);
+    }
     
     const [path, queryString] = pathWithQuery.split('?');
     const params = new URLSearchParams(queryString);
-    
+
     if (path === '' || path === '/') {
         const targetPath = this.app.isAuthenticated() ? '/dashboard' : '/login';
         this.navigate(targetPath);
         return;
     }
 
-    const pageClassName = this.routes[path]; // クラス名（文字列）を取得
+    const pageClassName = this.routes[path];
     
     if (pageClassName) {
       this.loadPage(path, pageClassName, params);
@@ -74,7 +79,6 @@ class Router {
       this.navigate("/login");
       return;
     }
-    // ログイン済みでログインページ等にアクセスした場合のガード
     if (!requiresAuth && this.app.isAuthenticated()) {
       this.navigate("/dashboard");
       return;
@@ -87,10 +91,10 @@ class Router {
         requiresAuth ? window.SidebarComponent.show() : window.SidebarComponent.hide();
     }
 
-    const PageClass = window[pageClassName]; // 文字列から実際のクラスを取得
+    const PageClass = window[pageClassName];
     if (!PageClass) {
         console.error(`Page class "${pageClassName}" not found. Make sure the script is loaded in index.html.`);
-        this.navigate('/dashboard'); // Fallback if class is not found
+        this.navigate('/dashboard');
         return;
     }
 
@@ -101,20 +105,24 @@ class Router {
     contentContainer.innerHTML = await pageInstance.render(params);
 
     if (typeof pageInstance.init === 'function') {
-      await pageInstance.init(params); // Pass params to init method
+      await pageInstance.init(params);
     }
   }
 
   /**
-   * Navigates to a new path within the application.
+   * Navigates to a new path within the application using hash-based routing.
    * @param {string} pathWithQuery - The path to navigate to (e.g., "/dashboard" or "/users?id=1").
    */
   navigate(pathWithQuery) {
-    if (`#${pathWithQuery}` === window.location.hash) {
-      // 同じページへの再読み込みを防ぐ
-      return;
+    const newHash = `#${pathWithQuery}`;
+    if (newHash === window.location.hash) {
+      return; // Avoid reloading the same page
     }
-    window.location.hash = pathWithQuery;
+    // We use history.pushState to change the URL without a full page reload,
+    // but we will primarily use hash changes for navigation to trigger our listener.
+    // For SPA with rewrites, we should ideally manipulate the pathname.
+    // However, to maintain the current hash-based logic for in-app navigation, we stick to hashes.
+    window.location.hash = newHash;
   }
 }
 
