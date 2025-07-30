@@ -7,15 +7,17 @@ class HeaderComponent {
     this.isVisible = false;
     this.currentUser = null;
     this.bootstrap = window.bootstrap; // Bootstrap JS 参照
+    this.app = null; // app.js からインスタンスがセットされる
   }
 
   /**
    * ヘッダーを表示
    */
-  show(user) {
+  show() {
     try {
-      console.log("Showing header for user:", user?.name);
-      this.currentUser = user;
+      // 引数からではなく、appインスタンスから直接ユーザー情報を取得する
+      this.currentUser = this.app?.currentUser;
+      console.log("Showing header for user:", this.currentUser?.name);
       this.render();
       this.isVisible = true;
     } catch (error) {
@@ -43,8 +45,9 @@ class HeaderComponent {
   /**
    * ヘッダーを更新
    */
-  update(user) {
-    this.currentUser = user;
+  update() {
+    // updateメソッドもappインスタンスから取得するように統一
+    this.currentUser = this.app?.currentUser;
     if (this.isVisible) {
       this.render();
     }
@@ -78,7 +81,6 @@ class HeaderComponent {
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
               <ul class="navbar-nav me-auto">
-                <!-- ダッシュボード -->
                 <li class="nav-item">
                   <a class="nav-link" href="#" onclick="window.app.navigate('/dashboard')">
                     <i class="fas fa-tachometer-alt me-1"></i>
@@ -86,7 +88,6 @@ class HeaderComponent {
                   </a>
                 </li>
 
-                <!-- ユーザー管理（管理者のみ） -->
                 ${userRole === "admin" ? `
                 <li class="nav-item">
                   <a class="nav-link" href="#" onclick="window.app.navigate('/users')">
@@ -95,7 +96,6 @@ class HeaderComponent {
                   </a>
                 </li>` : ""}
 
-                <!-- 評価一覧 -->
                 <li class="nav-item">
                   <a class="nav-link" href="#" onclick="window.app.navigate('/evaluations')">
                     <i class="fas fa-clipboard-list me-1"></i>
@@ -103,7 +103,6 @@ class HeaderComponent {
                   </a>
                 </li>
 
-                <!-- 目標承認（管理者のみ） -->
                 ${userRole === "admin" ? `
                 <li class="nav-item">
                   <a class="nav-link" href="#" onclick="window.app.navigate('/goal-approvals')">
@@ -112,7 +111,6 @@ class HeaderComponent {
                   </a>
                 </li>` : ""}
 
-                <!-- 目標設定 -->
                 <li class="nav-item">
                   <a class="nav-link" href="#" onclick="window.app.navigate('/goal-setting')">
                     <i class="fas fa-bullseye me-1"></i>
@@ -122,7 +120,6 @@ class HeaderComponent {
               </ul>
 
               <ul class="navbar-nav">
-                <!-- 言語切替 -->
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                      aria-expanded="false">
@@ -148,7 +145,6 @@ class HeaderComponent {
                   </ul>
                 </li>
 
-                <!-- プロフィール・ログアウト -->
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button"
                      data-bs-toggle="dropdown" aria-expanded="false">
@@ -214,7 +210,12 @@ class HeaderComponent {
       console.log("Changing language to:", langCode);
       if (this.app?.i18n) {
         await this.app.i18n.setLanguage(langCode);
-        this.render();
+        this.render(); // renderを呼び出す前にcurrentUserを更新
+        if (this.app.currentPage?.init) {
+            // 現在のページを再初期化して言語変更を反映
+            const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+            await this.app.currentPage.init(urlParams);
+        }
       }
     } catch (error) {
       console.error("Error changing language:", error);
