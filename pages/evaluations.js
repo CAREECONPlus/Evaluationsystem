@@ -265,7 +265,7 @@ class EvaluationsPage {
             labels: Object.keys(this.selectedEvaluation.data),
             datasets: [{
                 label: `${this.selectedEvaluation.employeeName} (${this.selectedEvaluation.period})`,
-                data: Object.values(this.selectedEvaluation.data), // APIからのスコアは100点満点と仮定
+                data: Object.values(this.selectedEvaluation.data),
                 backgroundColor: 'rgba(54, 162, 235, 0.2)',
                 borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1
@@ -293,10 +293,11 @@ class EvaluationsPage {
   }
 
   /**
-   * 評価詳細を表示（今回は未実装）
+   * ★★★ 修正点: 評価詳細ページへ遷移 ★★★
    */
   viewEvaluationDetails(evalId) {
-    this.app.showInfo(`評価詳細 (ID: ${evalId}) は現在実装中です。`);
+    // IDをパラメータとして評価フォームページに遷移する
+    this.app.navigate(`/evaluation-form?id=${evalId}`);
   }
 }
 
