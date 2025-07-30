@@ -47,6 +47,7 @@ class EvaluationsPage {
           </li>
         </ul>
         ` : ''}
+
         <div class="card">
           <div class="card-body p-0">
             <div class="table-responsive" id="evaluationsTableContainer">
@@ -201,6 +202,7 @@ class EvaluationsPage {
         <td>
           <div class="btn-group btn-group-sm">
             <button class="btn btn-outline-secondary" onclick="window.app.currentPage.viewEvaluationReport('${evaluation.id}')" title="${this.app.i18n.t('common.details')}"><i class="fas fa-eye"></i></button>
+            
             ${isAdmin && isPendingApproval ? `
               <button class="btn btn-outline-success" onclick="window.app.currentPage.approveEvaluation('${evaluation.id}')" title="${this.app.i18n.t('goals.approve')}"><i class="fas fa-check"></i></button>
               <button class="btn btn-outline-danger" onclick="window.app.currentPage.rejectEvaluation('${evaluation.id}')" title="${this.app.i18n.t('goals.reject')}"><i class="fas fa-undo"></i></button>
