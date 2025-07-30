@@ -19,9 +19,11 @@ class SidebarComponent {
   hide() {
     this.isVisible = false;
     const sidebarContainer = document.getElementById("sidebar-container");
-    if (sidebarContainer) sidebarContainer.innerHTML = "";
+    if (sidebarContainer) {
+      sidebarContainer.innerHTML = "";
+    }
     const main = document.getElementById("content");
-    if (main) main.classList.add("sidebar-hidden");
+    if (main) main.style.marginLeft = "0";
   }
 
   update() {
@@ -30,12 +32,12 @@ class SidebarComponent {
 
   render() {
     const sidebarContainer = document.getElementById("sidebar-container");
-    if (!sidebarContainer) return;
+    if (!sidebarContainer || !this.app.currentUser) return;
 
     const role = this.app.currentUser.role;
 
     sidebarContainer.innerHTML = `
-      <div class="sidebar bg-dark text-white" style="width: 250px; flex-shrink: 0;">
+      <div class="sidebar bg-dark text-white d-flex flex-column" style="width: 250px; flex-shrink: 0; height: 100vh; position: fixed;">
         <div class="p-2" style="flex-grow: 1; overflow-y: auto;">
             <nav class="nav flex-column">
                 ${this._menuItem("/dashboard","fas fa-tachometer-alt","dashboard")}
@@ -65,10 +67,11 @@ class SidebarComponent {
 
   _menuItem(path, icon, key) {
     const isActive = window.location.pathname === path;
+    // ★★★ タイプミスを修正: i1p8n -> i18n ★★★
     return `
       <a href="${path}" class="nav-link text-white mb-1 ${isActive ? 'active bg-primary' : ''}" data-link>
         <i class="${icon} me-2 fa-fw"></i>
-        <span>${this.app.i1p8n.t('nav.'+key)}</span>
+        <span>${this.app.i18n.t('nav.'+key)}</span>
       </a>
     `;
   }
