@@ -22,7 +22,7 @@ class App {
     this.i18n = new window.I18n();
     this.api = new window.API();
     this.auth = new window.Auth(this);
-    this.router = new window.Router(this); // basePathはrouter.jsで定義
+    this.router = new window.Router(this);
   }
 
   /**
@@ -37,6 +37,7 @@ class App {
       this.api.app = this;
       this.api.init();
       await this.auth.init();
+      this.currentUser = this.auth.getCurrentUser();
 
       // グローバルコンポーネントにappインスタンスを渡す
       if (window.HeaderComponent) window.HeaderComponent.app = this;
@@ -75,7 +76,7 @@ class App {
       return true;
     } catch (err) {
       console.error("Login failed:", err);
-      this.showError(err.message); // Authサービスからのエラーメッセージをそのまま表示
+      this.showError(err.message);
     }
   }
 
@@ -179,6 +180,13 @@ class App {
     return statusClasses[status] || "bg-light text-dark";
   }
 
+  /**
+   * ★★★ 追加: 役割バッジのクラスを返す関数 ★★★
+   */
+  getRoleBadgeClass(role) {
+    return { admin: "bg-danger", evaluator: "bg-info", worker: "bg-secondary" }[role] || "bg-light text-dark";
+  }
+
   formatDate(dateString) {
     if (!dateString) return "-";
     try {
@@ -211,7 +219,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     window.app = new App();
     
-    // ★★★ 修正: グローバルエラーハンドラを先に設定 ★★★
+    // グローバルエラーハンドラを先に設定
     window.addEventListener("error", (e) => {
       e.preventDefault();
       window.app?.handleError(e.error);
