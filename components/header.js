@@ -9,6 +9,15 @@ class HeaderComponent {
     this.bootstrap = window.bootstrap;
     this.app = null;
   }
+  
+  // ▼▼▼ 追加: サイドバーの表示/非表示を切り替えるメソッド ▼▼▼
+  toggleSidebar() {
+      const sidebar = document.getElementById('sidebar-container');
+      if (sidebar) {
+          sidebar.classList.toggle('show');
+      }
+  }
+  // ▲▲▲ 追加 ▲▲▲
 
   show() {
     try {
@@ -55,6 +64,9 @@ class HeaderComponent {
       headerContainer.innerHTML = `
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
           <div class="container-fluid">
+            <button class="navbar-toggler me-2 d-lg-none" type="button" onclick="window.headerComponent.toggleSidebar()">
+              <span class="navbar-toggler-icon"></span>
+            </button>
             <a class="navbar-brand d-flex align-items-center" href="/dashboard" data-link>
               <i class="fas fa-hard-hat me-2"></i>
               <span class="fw-bold" data-i18n="app.system_name">評価管理システム</span>
