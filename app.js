@@ -6,17 +6,6 @@ class App {
   constructor() {
     this.currentUser = null;
     this.currentPage = null;
-    this.isInitialized = false;
-
-    // Firebase configuration (デモ用)
-    this.firebaseConfig = {
-      apiKey: "demo-api-key",
-      authDomain: "demo-project.firebaseapp.com",
-      projectId: "demo-project",
-      storageBucket: "demo-project.appspot.com",
-      messagingSenderId: "123456789",
-      appId: "demo-app-id",
-    };
 
     // モジュールを初期化
     this.i18n = new window.I18n();
@@ -25,38 +14,59 @@ class App {
     this.router = new window.Router(this);
   }
 
-  /**
-   * Initialize application
-   * アプリケーションを初期化
-   */
   async init() {
     try {
       console.log("Starting application initialization...");
-
+      // 1. 各モジュールの非同期初期化を待つ
       await this.i18n.init();
-      this.api.app = this;
-      this.api.init();
       await this.auth.init();
+      
+      // 2. ログイン中のユーザー情報を設定
       this.currentUser = this.auth.getCurrentUser();
-
-      // グローバルコンポーネントにappインスタンスを渡す
+      
+      // 3. APIとグローバルコンポーネントにAppインスタンスを渡す
+      this.api.app = this;
       if (window.HeaderComponent) window.HeaderComponent.app = this;
       if (window.SidebarComponent) window.SidebarComponent.app = this;
-      
-      this.router.init();
 
-      this.isInitialized = true;
-      console.log("Application initialized successfully");
+      // 4. イベントリスナーを設定
+      this.setupEventListeners();
+
+      // 5. 初期ページのルーティングを実行
+      await this.router.route();
+
+      // 6. アプリケーションの表示
       this.showApp();
+      console.log("Application initialized successfully");
+
     } catch (error) {
       console.error("Failed to initialize application:", error);
-      this.showError(this.i18n.t("errors.app_init_failed"));
+      this.showError("アプリケーションの起動に失敗しました。");
     }
   }
 
-  /**
-   * Show app and hide loading screen
-   */
+  setupEventListeners() {
+    // data-link属性を持つリンクのクリックを処理
+    document.body.addEventListener("click", e => {
+      const link = e.target.closest('[data-link]');
+      if (link) {
+        e.preventDefault();
+        this.navigate(link.getAttribute("href"));
+      }
+    });
+    // ブラウザの「戻る」「進む」を処理
+    window.addEventListener("popstate", () => this.router.route());
+  }
+
+  navigate(path) {
+    // 同じパスへの移動は無視
+    if (window.location.pathname === path) {
+        return;
+    }
+    history.pushState(null, null, path);
+    this.router.route();
+  }
+
   showApp() {
     const loadingScreen = document.getElementById("loading-screen");
     const appEl = document.getElementById("app");
@@ -64,53 +74,38 @@ class App {
     if (appEl) appEl.classList.remove("d-none");
   }
 
-  /**
-   * Login user
-   */
   async login(email, password) {
     try {
       const user = await this.auth.login(email, password);
       this.currentUser = user;
       this.showSuccess(this.i18n.t("messages.login_success", { userName: user.name }));
-      setTimeout(() => this.navigate("/dashboard"), 500);
+      setTimeout(() => this.navigate("/dashboard"), 300);
       return true;
     } catch (err) {
       console.error("Login failed:", err);
       this.showError(err.message);
+      return false;
     }
   }
 
-  /**
-   * Logout user
-   */
   async logout() {
     this.auth.logout();
     this.currentUser = null;
+    if (window.HeaderComponent) window.HeaderComponent.hide();
+    if (window.SidebarComponent) window.SidebarComponent.hide();
     this.navigate("/login");
     this.showSuccess(this.i18n.t("messages.logout_success"));
   }
 
-  /**
-   * Navigate to a specific route
-   */
-  navigate(path) {
-    if (this.router) {
-      this.router.navigate(path);
-    }
+  isAuthenticated() {
+    return !!this.currentUser;
   }
-
-  /**
-   * Check if user has specific role(s)
-   */
+  
   hasRole(role) { return this.currentUser?.role === role; }
   hasAnyRole(roles) { return this.currentUser && roles.includes(this.currentUser.role); }
-  isAuthenticated() { return !!this.currentUser; }
   
   // --- 共通ユーティリティメソッド ---
 
-  /**
-   * Show toast notification
-   */
   showToast(message, type = "info") {
     let container = document.getElementById("toast-container");
     if (!container) {
@@ -141,18 +136,7 @@ class App {
   showError(message) { this.showToast(message, "danger"); }
   showWarning(message) { this.showToast(message, "warning"); }
   showInfo(message) { this.showToast(message, "info"); }
-
-  /**
-   * ★★★ 追加: グローバルエラーハンドラ ★★★
-   */
-  handleError(error) {
-    console.error("Application error caught:", error);
-    this.showError(this.i18n.t("errors.system"));
-  }
-
-  /**
-   * ★★★ 追加: HTMLサニタイズ関数 ★★★
-   */
+  
   sanitizeHtml(str) {
     if (!str) return "";
     const temp = document.createElement('div');
@@ -160,9 +144,6 @@ class App {
     return temp.innerHTML;
   }
   
-  /**
-   * ★★★ 追加: ステータスバッジのクラスを返す関数 ★★★
-   */
   getStatusBadgeClass(status) {
     const statusClasses = {
       active: "bg-success",
@@ -180,9 +161,6 @@ class App {
     return statusClasses[status] || "bg-light text-dark";
   }
 
-  /**
-   * ★★★ 追加: 役割バッジのクラスを返す関数 ★★★
-   */
   getRoleBadgeClass(role) {
     return { admin: "bg-danger", evaluator: "bg-info", worker: "bg-secondary" }[role] || "bg-light text-dark";
   }
@@ -199,40 +177,10 @@ class App {
   generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   }
-
-  debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
-  }
 }
 
 // Initialize application
-document.addEventListener("DOMContentLoaded", async () => {
-  console.log("DOM loaded, initializing app...");
-  try {
-    window.app = new App();
-    
-    // グローバルエラーハンドラを先に設定
-    window.addEventListener("error", (e) => {
-      e.preventDefault();
-      window.app?.handleError(e.error);
-    });
-    window.addEventListener("unhandledrejection", (e) => {
-      e.preventDefault();
-      window.app?.handleError(e.reason);
-    });
-    
-    await window.app.init();
-    console.log("App initialization complete");
-  } catch (err) {
-    console.error("App initialization failed:", err);
-    document.getElementById("loading-screen").innerHTML = '<h1>Application failed to start.</h1>';
-  }
+document.addEventListener("DOMContentLoaded", () => {
+  window.app = new App();
+  window.app.init();
 });
