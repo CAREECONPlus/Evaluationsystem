@@ -18,7 +18,7 @@ class UserManagementPage {
    */
   async render() {
     return `
-            <div class="user-management-page">
+            <div class="user-management-page p-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1 data-i18n="users.title"></h1>
                     <div class="user-actions">
@@ -180,10 +180,6 @@ class UserManagementPage {
                 </td>
             </tr>
         `).join("");
-  }
-
-  getRoleBadgeClass(role) {
-    return { admin: "bg-danger", evaluator: "bg-info", worker: "bg-secondary" }[role] || "bg-light text-dark";
   }
   
   handleSearch(query) {
