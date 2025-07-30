@@ -28,7 +28,7 @@ class EvaluationFormPage {
     const canSelectUser = (this.app.hasAnyRole(['admin', 'evaluator']));
 
     return `
-      <div class="evaluation-form-page p-4">
+      <div class="evaluation-form-page p-4 mx-auto" style="max-width: 960px;">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h1 data-i18n="evaluation.title"></h1>
           <div class="evaluation-actions">
@@ -38,9 +38,9 @@ class EvaluationFormPage {
         </div>
 
         <div class="progress-indicator mb-4">
-            <div class="progress-step active" data-step="quantitative"><div class="step-number">1</div><div class="step-label" data-i18n="evaluation.quantitative"></div></div>
-            <div class="progress-step" data-step="qualitative"><div class="step-number">2</div><div class="step-label" data-i18n="evaluation.qualitative"></div></div>
-            <div class="progress-step" data-step="goals"><div class="step-number">3</div><div class="step-label" data-i18n="evaluation.goal_achievement"></div></div>
+            <div class="progress-step active" data-step="quantitative" onclick="window.app.currentPage.switchStep('quantitative')"><div class="step-number">1</div><div class="step-label" data-i18n="evaluation.quantitative"></div></div>
+            <div class="progress-step" data-step="qualitative" onclick="window.app.currentPage.switchStep('qualitative')"><div class="step-number">2</div><div class="step-label" data-i18n="evaluation.qualitative"></div></div>
+            <div class="progress-step" data-step="goals" onclick="window.app.currentPage.switchStep('goals')"><div class="step-number">3</div><div class="step-label" data-i18n="evaluation.goal_achievement"></div></div>
         </div>
 
         <div class="card mb-4">
@@ -188,6 +188,7 @@ class EvaluationFormPage {
 
     if (items.length === 0) {
       container.innerHTML = `<div class="card-body text-center text-muted p-5" data-i18n="evaluation.no_${type}_items"></div>`;
+      this.app.i18n.updateUI(container); // 翻訳を適用
       return;
     }
     
@@ -203,9 +204,9 @@ class EvaluationFormPage {
    * 個別の評価項目を描画
    */
   renderItem(item, type) {
-    // ▼▼▼ 修正箇所: item.text と item.name の両方に対応 ▼▼▼
+    // ▼▼▼ 修正箇所: item.text と item.name の両方を安全に処理 ▼▼▼
     const itemNameOrText = item.text || item.name || '';
-    const itemId = item.id || itemNameOrText.slice(0, 10);
+    const itemId = item.id || itemNameOrText;
     // ▲▲▲ 修正箇所 ▲▲▲
     const isGoal = type === 'goals';
     
@@ -287,6 +288,9 @@ class EvaluationFormPage {
     
     if (!this.targetUser || !this.selectedPeriod) {
         nextBtn.style.display = 'none';
+        document.getElementById('submitBtn').disabled = true;
+    } else {
+        document.getElementById('submitBtn').disabled = false;
     }
   }
 
