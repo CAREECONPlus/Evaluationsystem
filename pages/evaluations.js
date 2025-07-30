@@ -265,7 +265,7 @@ class EvaluationsPage {
             labels: Object.keys(this.selectedEvaluation.data),
             datasets: [{
                 label: `${this.selectedEvaluation.employeeName} (${this.selectedEvaluation.period})`,
-                data: Object.values(this.selectedEvaluation.data),
+                data: Object.values(this.selectedEvaluation.data).map(v => v * 20), // 5段階評価を100点満点に
                 backgroundColor: 'rgba(54, 162, 235, 0.2)',
                 borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1
