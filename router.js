@@ -1,6 +1,6 @@
 /**
- * Router Service (Path-based with parameter support for SPA)
- * ルーターサービス（SPA向けパスベース、パラメータ対応）
+ * Router Service (Path-based for SPA)
+ * ルーターサービス（SPA向けパスベース）
  */
 class Router {
   constructor(app) {
@@ -18,107 +18,65 @@ class Router {
       "/register": "RegisterPage",
       "/register-admin": "RegisterAdminPage",
     };
-    this.currentPath = null;
   }
 
-  /**
-   * Initializes the router. Listens for URL changes.
-   * ルーターを初期化し、URLの変更を監視します。
-   */
-  init() {
-    // <a>タグのクリックをインターセプトして、ページリロードを防ぐ
-    document.body.addEventListener('click', e => {
-      if (e.target.matches('[data-link]')) {
-        e.preventDefault();
-        this.navigate(e.target.getAttribute('href'));
-      }
-    });
-
-    // ブラウザの「戻る」「進む」ボタンを処理
-    window.addEventListener('popstate', () => this.handleLocation());
-    
-    // 初期ロード時のルートを処理
-    this.handleLocation();
-  }
-
-  /**
-   * Handles the current URL to load the correct page.
-   * 現在のURLを処理して、正しいページを読み込みます。
-   */
-  async handleLocation() {
+  async route() {
     let path = window.location.pathname;
-    if (path === '/' || path === '/index.html') {
-      path = this.app.isAuthenticated() ? '/dashboard' : '/login';
+
+    // ルートパス "/" の場合、認証状態でリダイレクト先を決定
+    if (path === "/" || path === "/index.html") {
+      const targetPath = this.app.isAuthenticated() ? "/dashboard" : "/login";
+      this.app.navigate(targetPath);
+      return;
     }
-
-    const queryString = window.location.search;
-    const params = new URLSearchParams(queryString);
-
+    
     const pageClassName = this.routes[path];
-
+    
     if (pageClassName) {
-      await this.loadPage(path, pageClassName, params);
+      await this.loadPage(path, pageClassName);
     } else {
-      console.warn(`No route found for path: ${path}. Redirecting to dashboard.`);
-      this.navigate('/dashboard');
+      console.warn(`No route found for path: ${path}. Redirecting.`);
+      this.app.navigate(this.app.isAuthenticated() ? "/dashboard" : "/login");
     }
   }
 
-  /**
-   * Navigates to a new path without a full page reload.
-   * @param {string} pathWithQuery - The path to navigate to (e.g., "/dashboard" or "/users?id=1").
-   */
-  navigate(pathWithQuery) {
-    if (this.currentPath === pathWithQuery) {
-      return; // 同じページへの移動は無視
-    }
-    this.currentPath = pathWithQuery;
-    history.pushState(null, '', pathWithQuery);
-    this.handleLocation();
-  }
-  
-  /**
-   * Loads and renders a page component.
-   * @param {string} path - The path of the page to load.
-   * @param {string} pageClassName - The class name of the page component.
-   * @param {URLSearchParams} params - The URL parameters.
-   */
-  async loadPage(path, pageClassName, params) {
+  async loadPage(path, pageClassName) {
+    // --- 認証ガード ---
     const requiresAuth = !["/login", "/register", "/register-admin"].includes(path);
-
     if (requiresAuth && !this.app.isAuthenticated()) {
-      this.navigate("/login");
+      this.app.navigate("/login");
       return;
     }
     if (!requiresAuth && this.app.isAuthenticated()) {
-      this.navigate("/dashboard");
+      this.app.navigate("/dashboard");
       return;
     }
-
-    if (window.HeaderComponent) {
-        requiresAuth ? window.HeaderComponent.show() : window.HeaderComponent.hide();
-    }
-    if (window.SidebarComponent) {
-        requiresAuth ? window.SidebarComponent.show() : window.SidebarComponent.show();
-    }
-
+    
+    // --- コンポーネントの表示/非表示 ---
+    if (window.HeaderComponent) requiresAuth ? window.HeaderComponent.show() : window.HeaderComponent.hide();
+    if (window.SidebarComponent) requiresAuth ? window.SidebarComponent.show() : window.SidebarComponent.hide();
+    
+    // --- ページの描画 ---
     const PageClass = window[pageClassName];
     if (!PageClass) {
-        console.error(`Page class "${pageClassName}" not found.`);
-        this.navigate('/dashboard');
-        return;
+      console.error(`Page class "${pageClassName}" not found.`);
+      this.app.navigate('/dashboard');
+      return;
     }
 
     const pageInstance = new PageClass(this.app);
     this.app.currentPage = pageInstance;
 
     const contentContainer = document.getElementById("content");
+    // ローディングスピナーを表示
+    contentContainer.innerHTML = `<div class="d-flex justify-content-center align-items-center" style="height: 80vh;"><div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
+    
+    const params = new URLSearchParams(window.location.search);
     contentContainer.innerHTML = await pageInstance.render(params);
 
-    if (typeof pageInstance.init === 'function') {
+    if (typeof pageInstance.init === "function") {
       await pageInstance.init(params);
     }
   }
 }
-
 window.Router = Router;
