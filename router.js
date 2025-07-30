@@ -1,85 +1,109 @@
-// router.js
-
 /**
- * シンプルな SPA ルーター（History API ベース）
- * App インスタンスと、URL → ページクラスのマッピングを受け取って動作します。
+ * Router Service (Hash-based with parameter support)
+ * ルーターサービス（ハッシュベース、パラメータ対応）
  */
 class Router {
-  /**
-   * @param {object} app - グローバル App インスタンス
-   * @param {string} basePath - index.html をホストしているベースパス（例: '/EvaluationSystem'）
-   */
-  constructor(app, basePath = '') {
+  constructor(app) {
     this.app = app;
-    this.basePath = basePath.replace(/\/$/, ''); // 末尾スラッシュを取り除く
-    // URL パス（basePath を除いたもの）とページクラスの対応表
     this.routes = {
-      '/': window.DashboardPage,
-      '/dashboard': window.DashboardPage,
-      '/login': window.LoginPage,
-      '/register': window.RegisterPage,
-      '/register-admin': window.RegisterAdminPage,
-      '/users': window.UserManagementPage,
-      '/settings': window.SettingsPage,
-      '/goal-setting': window.GoalSettingPage,
-      '/goal-approvals': window.GoalApprovalsPage,
-      '/evaluation-form': window.EvaluationFormPage,
-      '/evaluations': window.EvaluationsPage,
-      '/developer': window.DeveloperPage
+      "/login": window.LoginPage,
+      "/dashboard": window.DashboardPage,
+      "/users": window.UserManagementPage,
+      "/evaluations": window.EvaluationsPage,
+      "/goal-approvals": window.GoalApprovalsPage,
+      "/goal-setting": window.GoalSettingPage,
+      "/evaluation-form": window.EvaluationFormPage,
+      "/settings": window.SettingsPage,
+      "/developer": window.DeveloperPage,
+      // NOTE: Add other page classes here
     };
-
-    // ブラウザの「戻る／進む」ボタンに反応
-    window.addEventListener('popstate', () => {
-      this.loadPage(location.pathname);
-    });
-  }
-
-  /** ルーターを開始します（App.init() 内から呼び出してください） */
-  async init() {
-    // 初回ロード時に現在の URL を読み込み
-    await this.loadPage(location.pathname);
+    this.currentPath = null;
   }
 
   /**
-   * 指定パスのページを読み込んで描画します。
-   * @param {string} fullPath - 例 '/EvaluationSystem/dashboard' など
+   * Initializes the router. Listens for hash changes.
+   * ルーターを初期化し、ハッシュの変更を監視します。
    */
-  async loadPage(fullPath) {
-    // basePath を取り除いた部分をキーに使う
-    let path = fullPath.replace(this.basePath, '') || '/';
+  init() {
+    window.addEventListener('hashchange', () => this.handleLocation());
+    this.handleLocation(); // Handle initial page load
+  }
 
-    // クエリやハッシュを取り除く
-    path = path.replace(/\?.*$/, '').replace(/#.*$/, '');
+  /**
+   * Handles the current URL hash to load the correct page.
+   * 現在のURLハッシュを処理して、正しいページを読み込みます。
+   */
+  handleLocation() {
+    const hash = window.location.hash || '#/login';
+    const pathWithQuery = hash.substring(1); // Remove the '#'
+    
+    const [path, queryString] = pathWithQuery.split('?');
+    const params = new URLSearchParams(queryString);
+    
+    // Redirect root to dashboard if logged in, otherwise to login
+    if (path === '' || path === '/') {
+        const targetPath = this.app.isAuthenticated() ? '/dashboard' : '/login';
+        this.navigate(targetPath);
+        return;
+    }
 
     const PageClass = this.routes[path];
-    if (!PageClass) {
-      // ルート未定義の場合はダッシュボードへリダイレクト
-      return this.navigate('/dashboard');
-    }
-
-    // ページコンポーネント生成 → render() → init()
-    this.app.currentPage = new PageClass(this.app);
-    const html = await this.app.currentPage.render();
-    document.getElementById('content').innerHTML = html;
-    await this.app.currentPage.init();
-
-    // i18n があれば翻訳更新
-    if (this.app.i18n) {
-      this.app.i18n.updateUI(document.getElementById('content'));
+    
+    if (PageClass) {
+      this.loadPage(path, PageClass, params);
+    } else {
+      console.warn(`No route found for path: ${path}`);
+      this.navigate('/dashboard'); // Fallback to dashboard
     }
   }
 
   /**
-   * アプリからプログラム的にルート遷移するために使います。
-   * history.pushState ＋ loadPage を同時に行います。
-   * @param {string} path - basePath を除いたパス（例 '/dashboard'）
+   * Loads and renders a page component.
+   * @param {string} path - The path of the page to load.
+   * @param {class} PageClass - The class of the page component.
+   * @param {URLSearchParams} params - The URL parameters.
    */
-  navigate(path) {
-    const full = this.basePath + path;
-    history.pushState({}, '', full);
-    return this.loadPage(full);
+  async loadPage(path, PageClass, params) {
+    const requiresAuth = !["/login", "/register", "/register-admin"].includes(path);
+
+    if (requiresAuth && !this.app.isAuthenticated()) {
+      this.navigate("/login");
+      return;
+    }
+    if (!requiresAuth && this.app.isAuthenticated()) {
+      this.navigate("/dashboard");
+      return;
+    }
+
+    if (window.HeaderComponent) {
+        requiresAuth ? window.HeaderComponent.show() : window.HeaderComponent.hide();
+    }
+    if (window.SidebarComponent) {
+        requiresAuth ? window.SidebarComponent.show() : window.SidebarComponent.hide();
+    }
+
+    const pageInstance = new PageClass(this.app);
+    this.app.currentPage = pageInstance;
+
+    const contentContainer = document.getElementById("content");
+    contentContainer.innerHTML = await pageInstance.render(params);
+
+    if (typeof pageInstance.init === 'function') {
+      await pageInstance.init(params); // Pass params to init method
+    }
+  }
+
+  /**
+   * Navigates to a new path within the application.
+   * @param {string} pathWithQuery - The path to navigate to (e.g., "/dashboard" or "/users?id=1").
+   */
+  navigate(pathWithQuery) {
+    // Avoid reloading the same page
+    if (`#${pathWithQuery}` === window.location.hash) {
+      return;
+    }
+    window.location.hash = pathWithQuery;
   }
 }
 
-// グローバルで使えるように
 window.Router = Router;
