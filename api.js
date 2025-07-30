@@ -8,111 +8,117 @@ class API {
     this.baseURL = "/api"
     this.isInitialized = false
 
-    // Mock data storage (for frontend simulation)
+    // Mock data storage
     this._mockUsers = [
-        { id: "1", name: "管理者", email: "admin@example.com", role: "admin", status: "active", department: "管理部", createdAt: "2024-01-01", lastLogin: "2024-01-20", tenantId: "tenant-001", jobType: "管理職" },
-        { id: "2", name: "マネージャー", email: "manager@example.com", role: "evaluator", status: "active", department: "建設部", createdAt: "2024-01-01", lastLogin: "2024-01-19", tenantId: "tenant-001", jobType: "現場監督" },
-        { id: "3", name: "従業員", email: "employee@example.com", role: "worker", status: "active", department: "建設部", createdAt: "2024-01-01", lastLogin: "2024-01-18", tenantId: "tenant-001", jobType: "建設作業員" },
+        { id: "1", name: "管理者", email: "admin@example.com", role: "admin", status: "active", createdAt: "2024-01-01", tenantId: "tenant-001", jobType: "管理職" },
+        { id: "2", name: "マネージャー", email: "manager@example.com", role: "evaluator", status: "active", createdAt: "2024-01-01", tenantId: "tenant-001", jobType: "現場監督" },
+        { id: "3", name: "従業員", email: "employee@example.com", role: "worker", status: "active", createdAt: "2024-01-01", tenantId: "tenant-001", jobType: "建設作業員" },
     ];
-
     this._mockEvaluations = [
-        { id: "eval-1", employeeName: "従業員", employeeId: "3", evaluatorName: "マネージャー", evaluatorId: "2", department: "建設部", period: "2024-q1", status: "completed", submittedAt: "2024-01-20", totalScore: 4.2, data: { "技術スキル": 4, "コミュニケーション": 5, "安全管理": 3.5 }, tenantId: "tenant-001" },
-        { id: "eval-2", employeeName: "従業員", employeeId: "3", evaluatorName: "マネージャー", evaluatorId: "2", department: "建設部", period: "2024-q2", status: "pending", submittedAt: null, totalScore: null, data: {}, tenantId: "tenant-001" },
-        { id: "eval-3", employeeName: "マネージャー", employeeId: "2", evaluatorName: "管理者", evaluatorId: "1", department: "建設部", period: "2024-q1", status: "completed", submittedAt: "2024-01-25", totalScore: 4.8, data: { "リーダーシップ": 5, "計画・実行": 4.5 }, tenantId: "tenant-001" },
+        { id: "eval-1", employeeName: "従業員", employeeId: "3", evaluatorName: "マネージャー", period: "2024-q1", status: "completed", submittedAt: "2024-01-20", totalScore: 4.2, data: { "技術スキル": 4, "コミュニケーション": 5, "安全管理": 3.5 }, tenantId: "tenant-001" },
+        { id: "eval-2", employeeName: "マネージャー", employeeId: "2", evaluatorName: "管理者", period: "2024-q1", status: "completed", submittedAt: "2024-01-25", totalScore: 4.8, data: { "リーダーシップ": 5, "計画・実行": 4.5 }, tenantId: "tenant-001" },
     ];
-
     this._mockQualitativeGoals = [
-      { id: "goal-1", userId: "3", userName: "従業員", period: "2024-q1", submittedAt: new Date("2024-07-01"), goals: [{ text: "安全手順を100%遵守する。", weight: 100 }], status: "approved", tenantId: "tenant-001" },
-      { id: "goal-2", userId: "2", userName: "マネージャー", period: "2024-q1", submittedAt: new Date("2024-06-25"), goals: [{ text: "チームの平均スコアを4.5以上にする。", weight: 100 }], status: "approved", tenantId: "tenant-001" },
+      { id: "goal-1", userId: "3", userName: "従業員", period: "2024-q1", submittedAt: new Date("2024-07-01"), goals: [{ text: "安全手順遵守", weight: 100 }], status: "approved", tenantId: "tenant-001" },
     ];
-
     this._mockJobTypes = [
-        { id: "construction-worker", name: "建設作業員", order: 1, tenantId: "tenant-001" },
-        { id: "site-supervisor", name: "現場監督", order: 2, tenantId: "tenant-001" },
+        { id: "construction-worker", name: "建設作業員", tenantId: "tenant-001" },
+        { id: "site-supervisor", name: "現場監督", tenantId: "tenant-001" },
     ];
-
     this._mockEvaluationPeriods = [
         { id: "2024-q1", name: "2024年 第1四半期", startDate: "2024-01-01", endDate: "2024-03-31", tenantId: "tenant-001" },
         { id: "2024-q2", name: "2024年 第2四半期", startDate: "2024-04-01", endDate: "2024-06-30", tenantId: "tenant-001" },
     ];
-    
     this._mockEvaluationStructures = {
-        "construction-worker": {
-            jobTypeId: "construction-worker",
-            categories: [
-              { id: "tech", name: "技術スキル", items: [ { id: "t1", name: "専門技術の習得度", type: "quantitative" } ] },
-              { id: "comm", name: "コミュニケーション", items: [ { id: "c1", name: "チームワーク", type: "qualitative" } ] },
-              { id: "safety", name: "安全管理", items: [ { id: "s1", name: "安全規則の遵守", type: "quantitative" } ] },
-            ],
-        },
-        "site-supervisor": {
-            jobTypeId: "site-supervisor",
-            categories: [
-              { id: "leadership", name: "リーダーシップ", items: [ { id: "l1", name: "部下への指導力", type: "qualitative" } ] },
-              { id: "planning", name: "計画・実行", items: [ { id: "p1", name: "工程計画立案能力", type: "quantitative" } ] },
-            ],
-        }
+        "construction-worker": { categories: [{ name: "技術スキル", items: [{ name: "専門技術", type: "quantitative" }] }] },
+        "site-supervisor": { categories: [{ name: "リーダーシップ", items: [{ name: "指導力", type: "qualitative" }] }] }
     };
   }
 
+  init() { this.isInitialized = true; }
+  async _simulateDelay(ms = 200) { return new Promise(r => setTimeout(r, ms)); }
   _filterByTenant(data) {
     const tenantId = this.app?.currentUser?.tenantId;
-    if (!tenantId) return [];
-    return data.filter(item => item.tenantId === tenantId);
-  }
-
-  async _simulateDelay(ms = 300) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  init() {
-    this.isInitialized = true;
-    console.log("API service initialized");
-  }
-
-  // ... (getDashboardStats, getRecentEvaluations, etc. remain the same) ...
-  
-  async getEvaluations(filters = {}) {
-    await this._simulateDelay();
-    // In a real app, you'd apply filters on the backend. Here we filter the mock data.
-    return this._filterByTenant(this._mockEvaluations);
+    return tenantId ? data.filter(item => item.tenantId === tenantId) : [];
   }
 
   /**
-   * ★★★ 追加: IDで単一の評価データを取得する ★★★
-   * @param {string} evaluationId - The ID of the evaluation to retrieve.
-   * @returns {Promise<Object|null>} The evaluation data or null if not found.
+   * ★★★ 追加: ダッシュボードの統計情報を取得する関数 ★★★
    */
+  async getDashboardStats() {
+    await this._simulateDelay();
+    const evaluations = this._filterByTenant(this._mockEvaluations);
+    return {
+      totalEmployees: this._filterByTenant(this._mockUsers).length,
+      pendingEvaluations: evaluations.filter(e => e.status === "pending").length,
+      completedEvaluations: evaluations.filter(e => e.status === "completed").length,
+      averageScore: 4.5, // Mock data
+    };
+  }
+
+  /**
+   * ★★★ 追加: ダッシュボードの最近の評価を取得する関数 ★★★
+   */
+  async getRecentEvaluations() {
+    await this._simulateDelay();
+    return this._filterByTenant(this._mockEvaluations).slice(0, 5);
+  }
+
+  /**
+   * ★★★ 追加: ダッシュボード用チャートデータを取得する関数 ★★★
+   */
+  async getEvaluationChartData() {
+    await this._simulateDelay();
+    const labels = ["技術力", "コミュニケーション", "リーダーシップ", "安全管理", "チームワーク"];
+    const generateData = () => labels.map(() => Math.random() * 80 + 20); // 20-100のランダムデータ
+    return {
+      radar: {
+        labels,
+        datasets: [{ label: "平均スコア", data: generateData(), backgroundColor: "rgba(54, 162, 235, 0.2)", borderColor: "rgb(54, 162, 235)" }]
+      },
+      bar: {
+        labels,
+        datasets: [{ label: "平均スコア", data: generateData(), backgroundColor: "rgba(75, 192, 192, 0.6)" }]
+      },
+      line: {
+        labels: ["1月", "2月", "3月", "4月", "5月", "6月"],
+        datasets: [{ label: "スコア推移", data: [65, 59, 80, 81, 56, 55], fill: false, borderColor: "rgb(255, 99, 132)" }]
+      }
+    };
+  }
+
+  async getEvaluations() {
+    await this._simulateDelay();
+    return this._filterByTenant(this._mockEvaluations);
+  }
+
   async getEvaluationById(evaluationId) {
     await this._simulateDelay();
-    const evaluation = this._mockEvaluations.find(e => e.id === evaluationId);
-    
-    // Ensure the user has permission to view this evaluation (tenant check)
-    if (evaluation && this.app?.currentUser?.tenantId === evaluation.tenantId) {
-      return JSON.parse(JSON.stringify(evaluation)); // Return a deep copy
-    }
-    
-    return null; // Not found or no permission
+    return this._filterByTenant(this._mockEvaluations).find(e => e.id === evaluationId) || null;
   }
 
   async getUsers() {
     await this._simulateDelay();
     return this._filterByTenant(this._mockUsers);
   }
-  
+
   async getEvaluationPeriods() {
     await this._simulateDelay();
     return this._filterByTenant(this._mockEvaluationPeriods);
   }
-
+  
   async getJobTypes() {
     await this._simulateDelay();
     return this._filterByTenant(this._mockJobTypes);
   }
 
-  async getQualitativeGoals(userId, periodId) {
+  async getQualitativeGoals(userId, periodId, status) {
     await this._simulateDelay();
-    return this._filterByTenant(this._mockQualitativeGoals).filter(g => g.userId === userId && g.period === periodId && g.status === 'approved');
+    let goals = this._filterByTenant(this._mockQualitativeGoals);
+    if (userId) goals = goals.filter(g => g.userId === userId);
+    if (periodId) goals = goals.filter(g => g.period === periodId);
+    if (status) goals = goals.filter(g => g.status === status);
+    return goals;
   }
 
   async getEvaluationStructure(jobTypeId) {
@@ -124,8 +130,6 @@ class API {
     await this._simulateDelay();
     return JSON.parse(JSON.stringify(this._mockEvaluationStructures));
   }
-
-  // ... (Other methods like saveSettings, etc.)
 }
 
 window.API = API;
