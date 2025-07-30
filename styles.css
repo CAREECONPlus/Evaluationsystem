@@ -7,7 +7,7 @@
 html, body {
   height: 100%;
   overflow-x: hidden;
-  background-color: #f8f9fa; /* 背景色を統一 */
+  background-color: #f8f9fa; /* Light grey background */
 }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -21,7 +21,7 @@ body {
 #sidebar-container { flex-shrink: 0; width: 250px; height: 100%; transition: transform 0.3s ease-in-out; z-index: 1020; }
 #content { flex-grow: 1; overflow-y: auto; padding: 1.5rem; }
 
-/* --- Enhanced Design --- */
+/* --- DESIGN ENHANCEMENT --- */
 
 /* Sidebar */
 .sidebar {
@@ -53,6 +53,7 @@ body {
 /* Buttons */
 .btn {
   border-radius: 0.3rem;
+  font-weight: 500;
   transition: all 0.2s ease-in-out;
 }
 .btn-primary {
@@ -62,54 +63,75 @@ body {
 .btn-primary:hover {
   background-color: #0b5ed7;
   border-color: #0a58ca;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
 }
 
 /* Cards */
 .card {
-  border: 1px solid #e9ecef;
+  border: none;
   border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   transition: box-shadow 0.3s ease;
 }
 .card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 .card-header {
-  background-color: #fff;
+  background-color: #ffffff;
   border-bottom: 1px solid #e9ecef;
   font-weight: 500;
 }
 
-/* Table */
+/* Tabs */
+.nav-tabs .nav-link {
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #6c757d;
+  transition: all 0.2s ease;
+}
+.nav-tabs .nav-link:hover {
+  color: #0d6efd;
+}
+.nav-tabs .nav-link.active {
+  border-bottom-color: #0d6efd;
+  color: #0d6efd;
+  background-color: transparent;
+}
+
+/* Tables */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 .table {
-  white-space: nowrap; /* テーブルの横スクロールを確実にする */
+  white-space: nowrap; /* テーブルセル内での不要な改行を防ぐ */
 }
 .table thead th {
   background-color: #f8f9fa;
   border-bottom-width: 1px;
+  font-weight: 600;
 }
 .table-hover tbody tr:hover {
   background-color: #f1f3f5;
 }
 
-/* Responsive */
+/* "No Data" Placeholder */
+.no-data-placeholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 150px;
+  color: #6c757d;
+  background-color: #f8f9fa;
+  border-radius: 0.5rem;
+  margin: 1rem;
+}
+
+/* --- Responsive Design --- */
 @media (max-width: 768px) {
   #sidebar-container { position: absolute; transform: translateX(-100%); background-color: #212529; }
   #sidebar-container.show { transform: translateX(0); }
   #content { width: 100%; padding: 1rem; }
-  .navbar-brand span { font-size: 1rem; }
-  .btn { font-size: 0.9rem; }
   h1, .h1 { font-size: 1.75rem; }
 }
-
-/* Progress Steps for Evaluation Form */
-.progress-indicator { display: flex; justify-content: space-around; }
-.progress-step { text-align: center; }
-.step-number {
-  width: 30px; height: 30px; line-height: 30px;
-  border-radius: 50%; background-color: #e9ecef; color: #6c757d;
-  margin: 0 auto 0.5rem;
-}
-.progress-step.active .step-number { background-color: #0d6efd; color: #fff; }
