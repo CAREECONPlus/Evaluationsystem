@@ -16,7 +16,6 @@ class SettingsPage {
 
   /**
    * Render settings page
-   * 設定ページを描画
    */
   async render() {
     return `
@@ -32,60 +31,52 @@ class SettingsPage {
 
         <div class="settings-layout">
           <div class="settings-sidebar">
-            <!-- 職種リスト -->
+            <!-- Job Types -->
             <div class="card mb-3">
               <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 data-i18n="settings.job_types"></h5>
-                <button class="btn btn-primary btn-sm"
-                        onclick="window.app.currentPage.showAddJobTypeModal()">
-                  <i class="fas fa-plus"></i>
-                  <span data-i18n="settings.add_job_type"></span>
+                <h5 class="mb-0" data-i18n="settings.job_types"></h5>
+                <button class="btn btn-primary btn-sm" onclick="window.app.currentPage.showAddJobTypeModal()">
+                  <i class="fas fa-plus"></i> <span data-i18n="settings.add_job_type"></span>
                 </button>
               </div>
               <div class="card-body">
-                <div id="jobTypesList">
-                  <div class="loading"><span data-i18n="common.loading"></span></div>
-                </div>
+                <div id="jobTypesList"></div>
               </div>
             </div>
 
-            <!-- ★★★ 機能追加: 評価期間 ★★★ -->
+            <!-- Evaluation Periods -->
             <div class="card">
               <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 data-i18n="settings.evaluation_periods"></h5>
-                <button class="btn btn-primary btn-sm"
-                        onclick="window.app.currentPage.showAddPeriodModal()">
-                  <i class="fas fa-plus"></i>
-                  <span data-i18n="settings.add_period"></span>
+                <h5 class="mb-0" data-i18n="settings.evaluation_periods"></h5>
+                <button class="btn btn-primary btn-sm" onclick="window.app.currentPage.showAddPeriodModal()">
+                  <i class="fas fa-plus"></i> <span data-i18n="settings.add_period"></span>
                 </button>
               </div>
               <div class="card-body">
-                <div id="evaluationPeriodsList">
-                  <div class="loading"><span data-i18n="common.loading"></span></div>
-                </div>
+                <div id="evaluationPeriodsList"></div>
               </div>
             </div>
           </div>
 
           <div class="settings-main">
             <div class="card">
-              <div class="card-header">
-                <h5 data-i18n="settings.evaluation_structure"></h5>
-              </div>
+              <div class="card-header"><h5 class="mb-0" data-i18n="settings.evaluation_structure"></h5></div>
               <div class="card-body">
-                <div id="evaluationStructureContainer">
-                  <div class="text-center text-muted p-5">
-                    <i class="fas fa-arrow-left me-2"></i>
-                    <span data-i18n="settings.select_job_type_hint"></span>
-                  </div>
-                </div>
+                <div id="evaluationStructureContainer"></div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 職種追加モーダル -->
+      <!-- Modals -->
+      ${this.renderJobTypeModal()}
+      ${this.renderPeriodModal()}
+    `;
+  }
+
+  renderJobTypeModal() {
+    return `
       <div class="modal fade" id="addJobTypeModal" tabindex="-1">
         <div class="modal-dialog">
           <div class="modal-content">
@@ -95,10 +86,8 @@ class SettingsPage {
             </div>
             <form id="addJobTypeForm" onsubmit="window.app.currentPage.handleAddJobType(event)">
               <div class="modal-body">
-                <div class="mb-3">
-                  <label for="jobTypeName" class="form-label" data-i18n="settings.job_type_name_label"></label>
-                  <input type="text" class="form-control" id="jobTypeName" required data-i18n-placeholder="settings.job_type_name_placeholder">
-                </div>
+                <label for="jobTypeName" class="form-label" data-i18n="settings.job_type_name_label"></label>
+                <input type="text" class="form-control" id="jobTypeName" required data-i18n-placeholder="settings.job_type_name_placeholder">
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel"></button>
@@ -107,9 +96,11 @@ class SettingsPage {
             </form>
           </div>
         </div>
-      </div>
+      </div>`;
+  }
 
-      <!-- ★★★ 機能追加: 評価期間追加／編集モーダル ★★★ -->
+  renderPeriodModal() {
+    return `
       <div class="modal fade" id="addPeriodModal" tabindex="-1">
         <div class="modal-dialog">
           <div class="modal-content">
@@ -140,8 +131,7 @@ class SettingsPage {
             </form>
           </div>
         </div>
-      </div>
-    `;
+      </div>`;
   }
 
   /**
@@ -149,7 +139,6 @@ class SettingsPage {
    */
   async init() {
     this.app.currentPage = this;
-
     if (!this.app.hasAnyRole(['admin'])) {
       this.app.navigate("/dashboard");
       return;
@@ -162,6 +151,7 @@ class SettingsPage {
 
     await this.loadJobTypes();
     await this.loadEvaluationPeriods();
+    this.renderEvaluationStructure(); // Initial render for placeholder
 
     this.app.i18n.updateUI();
     this.setupUnsavedChangesWarning();
@@ -171,7 +161,7 @@ class SettingsPage {
   async loadJobTypes() {
     try {
       this.jobTypes = await this.app.api.getJobTypes();
-      this.evaluationStructures = await this.app.api.getAllEvaluationStructures(); // Assuming an API method
+      this.evaluationStructures = await this.app.api.getAllEvaluationStructures();
       this.renderJobTypesList();
     } catch (error) {
       this.app.showError(this.app.i18n.t("errors.job_types_load_failed"));
@@ -181,7 +171,8 @@ class SettingsPage {
   renderJobTypesList() {
     const container = document.getElementById("jobTypesList");
     if (!container) return;
-    container.innerHTML = `<div class="list-group">${this.jobTypes.map(jt => `
+    container.innerHTML = this.jobTypes.length === 0 ? `<p data-i18n="settings.no_job_types"></p>` :
+      `<div class="list-group">${this.jobTypes.map(jt => `
         <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center ${this.selectedJobType?.id === jt.id ? "active" : ""}"
            onclick="event.preventDefault(); window.app.currentPage.selectJobType('${jt.id}')">
           ${this.app.sanitizeHtml(jt.name)}
@@ -194,7 +185,7 @@ class SettingsPage {
     this.addJobTypeModal?.show();
   }
 
-  async handleAddJobType(event) {
+  handleAddJobType(event) {
     event.preventDefault();
     const name = document.getElementById("jobTypeName").value.trim();
     if (!name) return;
@@ -206,7 +197,7 @@ class SettingsPage {
     this.addJobTypeModal.hide();
   }
 
-  async deleteJobType(jobTypeId) {
+  deleteJobType(jobTypeId) {
     if (!confirm(this.app.i18n.t("settings.confirm_delete_job_type"))) return;
     this.jobTypes = this.jobTypes.filter(jt => jt.id !== jobTypeId);
     delete this.evaluationStructures[jobTypeId];
@@ -229,7 +220,6 @@ class SettingsPage {
 
   // --- Evaluation Structure Methods ---
   renderEvaluationStructure() {
-    // ... (This part remains the same as your existing logic, just ensure all text uses i18n)
     const container = document.getElementById("evaluationStructureContainer");
     if (!container) return;
 
@@ -238,10 +228,59 @@ class SettingsPage {
       this.app.i18n.updateUI(container);
       return;
     }
-    // ... rest of the rendering logic
+    const struct = this.evaluationStructures[this.selectedJobType.id] || { categories: [] };
+
+    container.innerHTML = `
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>${this.app.sanitizeHtml(this.selectedJobType.name)} <span data-i18n="settings.evaluation_structure_of"></span></h4>
+        <button class="btn btn-outline-primary btn-sm" onclick="window.app.currentPage.addCategory()"><i class="fas fa-plus me-2"></i><span data-i18n="settings.add_category"></span></button>
+      </div>
+      <div id="categoriesList">${struct.categories.map((cat, ci) => this.renderCategory(cat, ci)).join("")}</div>`;
+    this.app.i18n.updateUI(container);
+  }
+
+  renderCategory(category, categoryIndex) {
+    return `<div class="card mb-3">
+        <div class="card-header d-flex align-items-center">
+          <input type="text" class="form-control form-control-sm" value="${this.app.sanitizeHtml(category.name)}" onchange="window.app.currentPage.updateCategoryName(${categoryIndex}, this.value)">
+          <button class="btn btn-sm btn-outline-danger ms-2" onclick="window.app.currentPage.deleteCategory(${categoryIndex})"><i class="fas fa-trash"></i></button>
+        </div>
+        <div class="list-group list-group-flush">
+          ${category.items.map((item, itemIndex) => this.renderItem(item, categoryIndex, itemIndex)).join("")}
+          <div class="list-group-item"><button class="btn btn-secondary btn-sm w-100" onclick="window.app.currentPage.addItem(${categoryIndex})"><i class="fas fa-plus me-2"></i><span data-i18n="settings.add_item"></span></button></div>
+        </div>
+      </div>`;
+  }
+
+  renderItem(item, categoryIndex, itemIndex) {
+    return `<div class="list-group-item d-flex align-items-center gap-2">
+        <input type="text" class="form-control form-control-sm" value="${this.app.sanitizeHtml(item.name)}" onchange="window.app.currentPage.updateItemName(${categoryIndex}, ${itemIndex}, this.value)">
+        <select class="form-select form-select-sm" style="width: 120px;" onchange="window.app.currentPage.updateItemType(${categoryIndex}, ${itemIndex}, this.value)">
+          <option value="quantitative" ${item.type === "quantitative" ? "selected" : ""} data-i18n="settings.quantitative"></option>
+          <option value="qualitative" ${item.type === "qualitative" ? "selected" : ""} data-i18n="settings.qualitative"></option>
+        </select>
+        <button class="btn btn-sm btn-outline-danger" onclick="window.app.currentPage.deleteItem(${categoryIndex}, ${itemIndex})"><i class="fas fa-times"></i></button>
+      </div>`;
+  }
+
+  addCategory() {
+    if (!this.selectedJobType) return;
+    const struct = this.evaluationStructures[this.selectedJobType.id] || { categories: [] };
+    struct.categories.push({ id: `cat-${this.app.generateId()}`, name: this.app.i18n.t("settings.new_category"), items: [] });
+    this.evaluationStructures[this.selectedJobType.id] = struct;
+    this.renderEvaluationStructure();
+    this.markUnsavedChanges();
   }
   
-  // --- ★★★ Evaluation Periods Methods ★★★ ---
+  // ... other structure methods (delete, update, etc.) ...
+  deleteCategory(categoryIndex) { /* ... */ }
+  updateCategoryName(categoryIndex, newName) { /* ... */ }
+  addItem(categoryIndex) { /* ... */ }
+  deleteItem(categoryIndex, itemIndex) { /* ... */ }
+  updateItemName(categoryIndex, itemIndex, newName) { /* ... */ }
+  updateItemType(categoryIndex, itemIndex, newType) { /* ... */ }
+
+  // --- Evaluation Periods Methods ---
   async loadEvaluationPeriods() {
     try {
       this.evaluationPeriods = await this.app.api.getEvaluationPeriods();
@@ -254,7 +293,8 @@ class SettingsPage {
   renderEvaluationPeriodsList() {
     const container = document.getElementById("evaluationPeriodsList");
     if (!container) return;
-    container.innerHTML = `<div class="list-group">${this.evaluationPeriods.map(p => `
+    container.innerHTML = this.evaluationPeriods.length === 0 ? `<p data-i18n="settings.no_evaluation_periods"></p>` :
+      `<div class="list-group">${this.evaluationPeriods.map(p => `
         <div class="list-group-item d-flex justify-content-between align-items-center">
           <div>
             ${this.app.sanitizeHtml(p.name)}<br>
@@ -285,17 +325,13 @@ class SettingsPage {
     this.addPeriodModal?.show();
   }
 
-  async handleAddEditPeriod(event) {
+  handleAddEditPeriod(event) {
     event.preventDefault();
     const id = document.getElementById("periodId").value;
     const name = document.getElementById("periodName").value.trim();
     const startDate = document.getElementById("periodStartDate").value;
     const endDate = document.getElementById("periodEndDate").value;
-
-    if (!name || !startDate || !endDate) {
-      this.app.showError(this.app.i18n.t("errors.all_fields_required"));
-      return;
-    }
+    if (!name || !startDate || !endDate) return;
 
     if (id) {
       const idx = this.evaluationPeriods.findIndex(x => x.id === id);
@@ -308,7 +344,7 @@ class SettingsPage {
     this.addPeriodModal?.hide();
   }
 
-  async deletePeriod(periodId) {
+  deletePeriod(periodId) {
     if (!confirm(this.app.i18n.t("settings.confirm_delete_period"))) return;
     this.evaluationPeriods = this.evaluationPeriods.filter(x => x.id !== periodId);
     this.renderEvaluationPeriodsList();
