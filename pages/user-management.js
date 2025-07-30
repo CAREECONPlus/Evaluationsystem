@@ -238,7 +238,6 @@ class UserManagementPage {
       status: document.getElementById("userStatus").value,
     };
     
-    // Mock API call
     if (userId) { // Update
       const userIndex = this.users.findIndex(u => u.id == userId);
       this.users[userIndex] = { ...this.users[userIndex], ...userData };
