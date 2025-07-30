@@ -15,8 +15,8 @@ class API {
         { id: "3", name: "従業員", email: "employee@example.com", role: "worker", status: "active", createdAt: "2024-01-01", tenantId: "tenant-001", jobType: "建設作業員" },
     ];
     this._mockEvaluations = [
-        { id: "eval-1", employeeName: "従業員", employeeId: "3", evaluatorName: "マネージャー", period: "2024-q1", status: "completed", submittedAt: "2024-01-20", totalScore: 4.2, data: { "技術スキル": 4, "コミュニケーション": 5, "安全管理": 3.5 }, tenantId: "tenant-001" },
-        { id: "eval-2", employeeName: "マネージャー", employeeId: "2", evaluatorName: "管理者", period: "2024-q1", status: "completed", submittedAt: "2024-01-25", totalScore: 4.8, data: { "リーダーシップ": 5, "計画・実行": 4.5 }, tenantId: "tenant-001" },
+        { id: "eval-1", employeeName: "従業員", employeeId: "3", evaluatorName: "マネージャー", period: "2024-q1", status: "completed", submittedAt: "2024-01-20", totalScore: 4.2, data: { "技術スキル": 85, "コミュニケーション": 78, "安全管理": 95 }, tenantId: "tenant-001" },
+        { id: "eval-2", employeeName: "マネージャー", employeeId: "2", evaluatorName: "管理者", period: "2024-q1", status: "completed", submittedAt: "2024-01-25", totalScore: 4.8, data: { "リーダーシップ": 92, "計画・実行": 88 }, tenantId: "tenant-001" },
     ];
     this._mockQualitativeGoals = [
       { id: "goal-1", userId: "3", userName: "従業員", period: "2024-q1", submittedAt: new Date("2024-07-01"), goals: [{ text: "安全手順遵守", weight: 100 }], status: "approved", tenantId: "tenant-001" },
