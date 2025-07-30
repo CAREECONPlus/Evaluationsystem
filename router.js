@@ -75,6 +75,7 @@ class Router {
       this.navigate("/login");
       return;
     }
+    // ログイン済みでログインページ等にアクセスした場合のガード
     if (!requiresAuth && this.app.isAuthenticated()) {
       this.navigate("/dashboard");
       return;
@@ -111,8 +112,7 @@ class Router {
    */
   navigate(pathWithQuery) {
     if (`#${pathWithQuery}` === window.location.hash) {
-      // 同じページへの再読み込みを防ぐが、強制的に再描画したい場合はこのチェックを外すことも可能
-      // this.handleLocation(); 
+      // 同じページへの再読み込みを防ぐ
       return;
     }
     window.location.hash = pathWithQuery;
