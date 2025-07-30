@@ -1,4 +1,4 @@
-/**
+　/**
  * Main Application Class
  * メインアプリケーションクラス
  */
@@ -146,22 +146,25 @@ class App {
     return temp.innerHTML;
   }
   
+  // ▼▼▼ 修正箇所 ▼▼▼
   getStatusBadgeClass(status) {
     const statusClasses = {
+      // 既存のステータス
       active: "bg-success",
-      pending_approval: "bg-warning",
-      developer_approval_pending: "bg-warning",
       inactive: "bg-secondary",
       draft: "bg-secondary",
       approved: "bg-success",
-      completed: "bg-primary",
-      self_assessed: "bg-info",
-      approved_by_evaluator: "bg-success",
       rejected: "bg-danger",
-      pending: "bg-warning",
+      
+      // 新しい評価ステータス
+      pending_submission: "bg-light text-dark", // 作業員提出待ち
+      pending_evaluation: "bg-info",          // 評価者評価待ち
+      pending_approval: "bg-warning",       // 管理者承認待ち
+      completed: "bg-primary",              // 完了
     };
     return statusClasses[status] || "bg-light text-dark";
   }
+  // ▲▲▲ 修正箇所 ▲▲▲
 
   getRoleBadgeClass(role) {
     return { admin: "bg-danger", evaluator: "bg-info", worker: "bg-secondary" }[role] || "bg-light text-dark";
