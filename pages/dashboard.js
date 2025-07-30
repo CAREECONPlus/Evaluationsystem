@@ -18,12 +18,14 @@ class DashboardPage {
   async render() {
     return `
       <div class="dashboard-page p-4">
-        <div class.="page-header mb-4">
+        <div class="page-header mb-4">
           <h1 class="page-title h2 mb-1" data-i18n="nav.dashboard"></h1>
           <p class="page-subtitle text-muted mb-0" data-i18n="dashboard.system_overview"></p>
         </div>
 
-        <div class="row mb-4" id="stats-cards-container"></div>
+        <div class="row mb-4" id="stats-cards-container">
+          <!-- Stats cards will be rendered here by renderStatsCards -->
+        </div>
 
         <div class="row">
           <div class="col-lg-8 mb-4">
@@ -46,7 +48,9 @@ class DashboardPage {
           <div class="col-lg-4 mb-4">
             <div class="card shadow-sm h-100">
               <div class="card-header bg-white"><h5 class="card-title mb-0" data-i18n="dashboard.recent_evaluations"></h5></div>
-              <div class="card-body" id="recent-evaluations-container"></div>
+              <div class="card-body" id="recent-evaluations-container">
+                <!-- Recent evaluations will be rendered here -->
+              </div>
             </div>
           </div>
         </div>
@@ -147,7 +151,6 @@ class DashboardPage {
     if (this.chart) {
       this.chart.destroy();
     }
-    // Chart.js v3+では、グローバルなインスタンスも破棄できる
     const existingChart = Chart.getChart(canvas);
     if (existingChart) {
         existingChart.destroy();
