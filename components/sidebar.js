@@ -22,8 +22,6 @@ class SidebarComponent {
     if (sidebarContainer) {
       sidebarContainer.innerHTML = "";
     }
-    const main = document.getElementById("content");
-    if (main) main.style.marginLeft = "0";
   }
 
   update() {
@@ -37,8 +35,8 @@ class SidebarComponent {
     const role = this.app.currentUser.role;
 
     sidebarContainer.innerHTML = `
-      <div class="sidebar bg-dark text-white d-flex flex-column" style="width: 250px; flex-shrink: 0; height: 100vh; position: fixed;">
-        <div class="p-2" style="flex-grow: 1; overflow-y: auto;">
+      <div class="sidebar bg-dark text-white d-flex flex-column">
+        <div class="p-3" style="flex-grow: 1; overflow-y: auto;">
             <nav class="nav flex-column">
                 ${this._menuItem("/dashboard", "fas fa-tachometer-alt", "dashboard")}
                 ${role === "admin" ? this._menuItem("/users", "fas fa-users", "users") : ""}
@@ -59,15 +57,16 @@ class SidebarComponent {
       </div>
     `;
 
-    const main = document.getElementById("content");
-    if (main) main.style.marginLeft = "250px";
+    // ▼▼▼ 修正: 不要なmarginLeftの設定を削除 ▼▼▼
+    // const main = document.getElementById("content");
+    // if (main) main.style.marginLeft = "250px";
+    // ▲▲▲ 修正 ▲▲▲
     
     this.app.i18n.updateUI(sidebarContainer);
   }
 
   _menuItem(path, icon, key) {
     const isActive = window.location.pathname === path;
-    // ★★★ タイプミスを修正: i1p8n -> i18n ★★★
     return `
       <a href="${path}" class="nav-link text-white mb-1 ${isActive ? 'active bg-primary' : ''}" data-link>
         <i class="${icon} me-2 fa-fw"></i>
