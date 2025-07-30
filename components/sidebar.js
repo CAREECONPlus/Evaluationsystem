@@ -40,16 +40,16 @@ class SidebarComponent {
       <div class="sidebar bg-dark text-white d-flex flex-column" style="width: 250px; flex-shrink: 0; height: 100vh; position: fixed;">
         <div class="p-2" style="flex-grow: 1; overflow-y: auto;">
             <nav class="nav flex-column">
-                ${this._menuItem("/dashboard","fas fa-tachometer-alt","dashboard")}
-                ${role === "admin" ? this._menuItem("/users","fas fa-users","users") : ""}
-                ${this._menuItem("/evaluations","fas fa-clipboard-list","evaluations")}
-                ${role === "admin" ? this._menuItem("/goal-approvals","fas fa-check-circle","goal_approvals") : ""}
+                ${this._menuItem("/dashboard", "fas fa-tachometer-alt", "dashboard")}
+                ${role === "admin" ? this._menuItem("/users", "fas fa-users", "users") : ""}
+                ${this._menuItem("/evaluations", "fas fa-clipboard-list", "evaluations")}
+                ${role === "admin" ? this._menuItem("/goal-approvals", "fas fa-check-circle", "goal_approvals") : ""}
                 <hr class="border-secondary my-2">
-                ${this._menuItem("/goal-setting","fas fa-bullseye","goals")}
-                ${this._menuItem("/evaluation-form","fas fa-edit","evaluation")}
+                ${this._menuItem("/goal-setting", "fas fa-bullseye", "goals")}
+                ${this._menuItem("/evaluation-form", "fas fa-edit", "evaluation")}
                 <hr class="border-secondary my-2">
-                ${(role === "admin" || role === "developer") ? this._menuItem("/settings","fas fa-cog","settings") : ""}
-                ${role === "developer" ? this._menuItem("/developer","fas fa-code","developer") : ""}
+                ${(role === "admin" || role === "developer") ? this._menuItem("/settings", "fas fa-cog", "settings") : ""}
+                ${role === "developer" ? this._menuItem("/developer", "fas fa-code", "developer") : ""}
             </nav>
         </div>
         <div class="p-3 border-top border-secondary">
@@ -71,7 +71,7 @@ class SidebarComponent {
     return `
       <a href="${path}" class="nav-link text-white mb-1 ${isActive ? 'active bg-primary' : ''}" data-link>
         <i class="${icon} me-2 fa-fw"></i>
-        <span>${this.app.i18n.t('nav.'+key)}</span>
+        <span>${this.app.i18n.t('nav.' + key)}</span>
       </a>
     `;
   }
