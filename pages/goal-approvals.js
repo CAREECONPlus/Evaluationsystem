@@ -1,6 +1,6 @@
 /**
  * Goal Approvals Page Component
- * 目標承認ページコンポーネント
+ * 目標承認ページコンポー_component
  */
 class GoalApprovalsPage {
   constructor(app) {
@@ -12,23 +12,23 @@ class GoalApprovalsPage {
 
   async render() {
     return `
-      <div class="goal-approvals-page p-4">
-        <h1 data-i18n="nav.goal_approvals"></h1>
+      <div class="goal-approvals-page p-4 mx-auto" style="max-width: 960px;">
+        <h1 data-i18n="nav.goal_approvals" class="mb-4"></h1>
         
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <div class="card text-center">
+        <div class="row mb-4">
+          <div class="col-md-6 mb-3 mb-md-0">
+            <div class="card text-center h-100">
               <div class="card-body">
-                <h5 class="card-title" data-i18n="goals.pending_goals"></h5>
-                <p class="card-text display-4" id="pendingCount">0</p>
+                <h5 class="card-title text-muted" data-i18n="goals.pending_goals"></h5>
+                <p class="card-text display-4 fw-bold" id="pendingCount">0</p>
               </div>
             </div>
           </div>
           <div class="col-md-6">
-            <div class="card text-center">
+            <div class="card text-center h-100">
               <div class="card-body">
-                <h5 class="card-title" data-i18n="goals.approved_goals"></h5>
-                <p class="card-text display-4" id="approvedCount">0</p>
+                <h5 class="card-title text-muted" data-i18n="goals.approved_goals"></h5>
+                <p class="card-text display-4 fw-bold" id="approvedCount">0</p>
               </div>
             </div>
           </div>
@@ -51,29 +51,18 @@ class GoalApprovalsPage {
 
   async init() {
     this.app.currentPage = this;
-
     if (!this.app.hasRole("admin")) {
       this.app.navigate("/dashboard");
       return;
     }
-
     await this.loadGoals();
-    
-    if (this.app.i18n) {
-        this.app.i18n.updateUI();
-    }
+    this.app.i18n.updateUI();
   }
 
   async loadGoals() {
-    const pendingContent = document.getElementById("pendingTabContent");
-    const approvedContent = document.getElementById("approvedTabContent");
-    if(pendingContent) pendingContent.innerHTML = `<div class="card"><div class="card-body text-center p-5"><div class="spinner-border text-primary"></div></div></div>`;
-    if(approvedContent) approvedContent.innerHTML = `<div class="card"><div class="card-body text-center p-5"><div class="spinner-border text-primary"></div></div></div>`;
-
     try {
       this.pendingGoals = await this.app.api.getQualitativeGoals(null, null, 'pending_approval');
       this.approvedGoals = await this.app.api.getQualitativeGoals(null, null, 'approved');
-      
       this.renderAllTables();
       this.updateStatistics();
     } catch (error) {
@@ -83,10 +72,8 @@ class GoalApprovalsPage {
   }
 
   updateStatistics() {
-    const pendingCountEl = document.getElementById("pendingCount");
-    const approvedCountEl = document.getElementById("approvedCount");
-    if (pendingCountEl) pendingCountEl.textContent = this.pendingGoals.length;
-    if (approvedCountEl) approvedCountEl.textContent = this.approvedGoals.length;
+    document.getElementById("pendingCount").textContent = this.pendingGoals.length;
+    document.getElementById("approvedCount").textContent = this.approvedGoals.length;
   }
 
   renderAllTables() {
@@ -95,41 +82,35 @@ class GoalApprovalsPage {
   }
 
   renderGoalsTable(data, type) {
-    const targetElementId = type === 'pending' ? 'pendingTabContent' : 'approvedTabContent';
-    const container = document.getElementById(targetElementId);
+    const container = document.getElementById(type === 'pending' ? 'pendingTabContent' : 'approvedTabContent');
     if (!container) return;
 
     if (data.length === 0) {
-      container.innerHTML = `<div class="card"><div class="card-body text-center text-muted" data-i18n="common.no_data"></div></div>`;
+      container.innerHTML = `<div class="no-data-placeholder" data-i18n="common.no_data"></div>`;
       this.app.i18n.updateUI(container);
       return;
     }
 
-    container.innerHTML = `
-      <div class="card">
+    container.innerHTML = data.map(goalSet => `
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <h5>${this.app.sanitizeHtml(goalSet.userName)}</h5>
+            <small class="text-muted">${this.app.sanitizeHtml(goalSet.period)} / 申請日: ${this.app.formatDate(goalSet.submittedAt)}</small>
+          </div>
+          ${type === 'pending' ? `
+          <div class="approval-actions">
+            <button class="btn btn-success btn-sm me-2" onclick="window.app.currentPage.approveGoals('${goalSet.id}')" data-i18n="goals.approve"></button>
+            <button class="btn btn-danger btn-sm" onclick="window.app.currentPage.rejectGoals('${goalSet.id}')" data-i18n="goals.reject"></button>
+          </div>` : `<span class="badge bg-success" data-i18n="status.approved"></span>`}
+        </div>
         <div class="card-body">
-          ${data.map(goalSet => `
-            <div class="goal-approval-card card mb-3">
-              <div class="card-header d-flex justify-content-between align-items-center">
-                <div>
-                  <h5>${this.app.sanitizeHtml(goalSet.userName)}</h5>
-                  <small class="text-muted">${this.app.sanitizeHtml(goalSet.period)} / <span data-i18n="${type === 'pending' ? 'goals.submitted_at' : 'goals.approved_at'}"></span>: ${this.app.formatDate(type === 'pending' ? goalSet.submittedAt : goalSet.approvedAt)}</small>
-                </div>
-                ${type === 'pending' ? `
-                <div class="approval-actions">
-                  <button class="btn btn-success btn-sm me-2" onclick="window.app.currentPage.approveGoals('${goalSet.id}')" data-i18n="goals.approve"></button>
-                  <button class="btn btn-danger btn-sm" onclick="window.app.currentPage.rejectGoals('${goalSet.id}')" data-i18n="goals.reject"></button>
-                </div>` : `<span class="badge bg-success" data-i18n="status.approved"></span>`
-                }
-              </div>
-              <div class="card-body">
-                ${goalSet.goals.map(g => `<div class="goal-item p-2 border-bottom"><strong>${this.app.sanitizeHtml(g.weight)}%:</strong> ${this.app.sanitizeHtml(g.text)}</div>`).join('')}
-              </div>
-            </div>
-          `).join('')}
+          <ul class="list-group list-group-flush">
+            ${goalSet.goals.map(g => `<li class="list-group-item"><strong>${this.app.sanitizeHtml(g.weight)}%:</strong> ${this.app.sanitizeHtml(g.text)}</li>`).join('')}
+          </ul>
         </div>
       </div>
-    `;
+    `).join('');
     this.app.i18n.updateUI(container);
   }
 
@@ -143,41 +124,23 @@ class GoalApprovalsPage {
 
   async approveGoals(id) {
     if (!confirm(this.app.i18n.t('goals.confirm_approve'))) return;
-    
-    try {
-        const goalIndex = this.pendingGoals.findIndex(g => g.id === id);
-        if (goalIndex > -1) {
-            const [approvedGoal] = this.pendingGoals.splice(goalIndex, 1);
-            approvedGoal.status = 'approved';
-            approvedGoal.approvedAt = new Date().toISOString();
-            this.approvedGoals.push(approvedGoal);
-            
-            this.renderAllTables();
-            this.updateStatistics();
-            this.app.showSuccess(this.app.i18n.t('messages.approval_success'));
-        }
-    } catch (error) {
-        this.app.showError(this.app.i18n.t('errors.approval_failed'));
+    const goalIndex = this.pendingGoals.findIndex(g => g.id === id);
+    if (goalIndex > -1) {
+      const [approvedGoal] = this.pendingGoals.splice(goalIndex, 1);
+      approvedGoal.status = 'approved';
+      this.approvedGoals.push(approvedGoal);
+      this.renderAllTables();
+      this.updateStatistics();
+      this.app.showSuccess(this.app.i18n.t('messages.approval_success'));
     }
   }
 
   async rejectGoals(id) {
     if (!confirm(this.app.i18n.t('goals.confirm_reject'))) return;
-
-    try {
-        const goalIndex = this.pendingGoals.findIndex(g => g.id === id);
-        if (goalIndex > -1) {
-            this.pendingGoals.splice(goalIndex, 1);
-            // In a real app, this would set the status to 'rejected'
-            
-            this.renderAllTables();
-            this.updateStatistics();
-            this.app.showSuccess(this.app.i18n.t('messages.rejection_success'));
-        }
-    } catch (error) {
-        this.app.showError(this.app.i18n.t('errors.rejection_failed'));
-    }
+    this.pendingGoals = this.pendingGoals.filter(g => g.id !== id);
+    this.renderAllTables();
+    this.updateStatistics();
+    this.app.showSuccess(this.app.i18n.t('messages.rejection_success'));
   }
 }
-
 window.GoalApprovalsPage = GoalApprovalsPage;
