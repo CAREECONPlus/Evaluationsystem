@@ -18,7 +18,7 @@ class EvaluationsPage {
    */
   async render() {
     return `
-      <div class="evaluations-page">
+      <div class="evaluations-page p-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h1 data-i18n="nav.evaluations"></h1>
           <div class="d-flex align-items-center">
@@ -27,7 +27,7 @@ class EvaluationsPage {
               <span data-i18n="evaluations.new_evaluation"></span>
             </button>
             <div class="view-controls btn-group">
-              <button class="btn btn-primary" id="listViewBtn" onclick="window.app.currentPage.switchView('list')" data-i18n="evaluations.list_view"></button>
+              <button class="btn btn-primary active" id="listViewBtn" onclick="window.app.currentPage.switchView('list')" data-i18n="evaluations.list_view"></button>
               <button class="btn btn-outline-primary" id="chartViewBtn" onclick="window.app.currentPage.switchView('chart')" data-i18n="evaluations.chart_view"></button>
             </div>
           </div>
@@ -226,6 +226,7 @@ class EvaluationsPage {
    */
   renderChartView() {
     const selector = document.getElementById('evaluationSelector');
+    if (!selector) return;
     const completedEvals = this.filteredEvaluations.filter(e => e.status === 'completed');
     if (completedEvals.length === 0) {
       selector.innerHTML = `<p class="text-muted text-center" data-i18n="evaluations.no_completed_evals"></p>`;
@@ -246,7 +247,6 @@ class EvaluationsPage {
     this.selectedEvaluation = this.evaluations.find(e => e.id === evalId);
     if (!this.selectedEvaluation) return;
 
-    // アクティブな項目をハイライト
     document.querySelectorAll('#evaluationSelector .list-group-item').forEach(item => {
       item.classList.toggle('active', item.dataset.id === evalId);
     });
@@ -265,7 +265,7 @@ class EvaluationsPage {
             labels: Object.keys(this.selectedEvaluation.data),
             datasets: [{
                 label: `${this.selectedEvaluation.employeeName} (${this.selectedEvaluation.period})`,
-                data: Object.values(this.selectedEvaluation.data).map(v => v * 20), // 5段階評価を100点満点に
+                data: Object.values(this.selectedEvaluation.data), // APIからのスコアは100点満点と仮定
                 backgroundColor: 'rgba(54, 162, 235, 0.2)',
                 borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1
@@ -296,9 +296,7 @@ class EvaluationsPage {
    * 評価詳細を表示（今回は未実装）
    */
   viewEvaluationDetails(evalId) {
-    this.app.showInfo(`評価詳細の表示 (ID: ${evalId}) は現在実装中です。`);
-    // ここでモーダルを開くか、評価フォームページに遷移するロジックを実装
-    // window.app.navigate(`/evaluation-form?id=${evalId}`);
+    this.app.showInfo(`評価詳細 (ID: ${evalId}) は現在実装中です。`);
   }
 }
 
