@@ -5,17 +5,23 @@
 class Router {
   constructor(app) {
     this.app = app;
+    /**
+     * ★★★ 修正点 ★★★
+     * ルートの定義を、クラスそのものではなく、クラス名の「文字列」に変更します。
+     * これにより、Routerの初期化タイミングでページクラスが未定義でもエラーにならなくなります。
+     */
     this.routes = {
-      "/login": window.LoginPage,
-      "/dashboard": window.DashboardPage,
-      "/users": window.UserManagementPage,
-      "/evaluations": window.EvaluationsPage,
-      "/goal-approvals": window.GoalApprovalsPage,
-      "/goal-setting": window.GoalSettingPage,
-      "/evaluation-form": window.EvaluationFormPage,
-      "/settings": window.SettingsPage,
-      "/developer": window.DeveloperPage,
-      // NOTE: Add other page classes here
+      "/login": "LoginPage",
+      "/dashboard": "DashboardPage",
+      "/users": "UserManagementPage",
+      "/evaluations": "EvaluationsPage",
+      "/goal-approvals": "GoalApprovalsPage",
+      "/goal-setting": "GoalSettingPage",
+      "/evaluation-form": "EvaluationFormPage",
+      "/settings": "SettingsPage",
+      "/developer": "DeveloperPage",
+      "/register": "RegisterPage",
+      "/register-admin": "RegisterAdminPage",
     };
     this.currentPath = null;
   }
@@ -40,17 +46,16 @@ class Router {
     const [path, queryString] = pathWithQuery.split('?');
     const params = new URLSearchParams(queryString);
     
-    // Redirect root to dashboard if logged in, otherwise to login
     if (path === '' || path === '/') {
         const targetPath = this.app.isAuthenticated() ? '/dashboard' : '/login';
         this.navigate(targetPath);
         return;
     }
 
-    const PageClass = this.routes[path];
+    const pageClassName = this.routes[path]; // クラス名（文字列）を取得
     
-    if (PageClass) {
-      this.loadPage(path, PageClass, params);
+    if (pageClassName) {
+      this.loadPage(path, pageClassName, params);
     } else {
       console.warn(`No route found for path: ${path}`);
       this.navigate('/dashboard'); // Fallback to dashboard
@@ -60,10 +65,10 @@ class Router {
   /**
    * Loads and renders a page component.
    * @param {string} path - The path of the page to load.
-   * @param {class} PageClass - The class of the page component.
+   * @param {string} pageClassName - The class name of the page component.
    * @param {URLSearchParams} params - The URL parameters.
    */
-  async loadPage(path, PageClass, params) {
+  async loadPage(path, pageClassName, params) {
     const requiresAuth = !["/login", "/register", "/register-admin"].includes(path);
 
     if (requiresAuth && !this.app.isAuthenticated()) {
@@ -82,6 +87,13 @@ class Router {
         requiresAuth ? window.SidebarComponent.show() : window.SidebarComponent.hide();
     }
 
+    const PageClass = window[pageClassName]; // 文字列から実際のクラスを取得
+    if (!PageClass) {
+        console.error(`Page class "${pageClassName}" not found. Make sure the script is loaded in index.html.`);
+        this.navigate('/dashboard'); // Fallback if class is not found
+        return;
+    }
+
     const pageInstance = new PageClass(this.app);
     this.app.currentPage = pageInstance;
 
@@ -98,8 +110,9 @@ class Router {
    * @param {string} pathWithQuery - The path to navigate to (e.g., "/dashboard" or "/users?id=1").
    */
   navigate(pathWithQuery) {
-    // Avoid reloading the same page
     if (`#${pathWithQuery}` === window.location.hash) {
+      // 同じページへの再読み込みを防ぐが、強制的に再描画したい場合はこのチェックを外すことも可能
+      // this.handleLocation(); 
       return;
     }
     window.location.hash = pathWithQuery;
