@@ -153,16 +153,18 @@
   },
   "status": {
     "active": "アクティブ",
-    "pending_approval": "承認待ち",
     "developer_approval_pending": "開発者承認待ち",
     "inactive": "無効",
     "draft": "下書き",
     "approved": "承認済み",
-    "completed": "完了",
+    "rejected": "差し戻し",
     "self_assessed": "自己評価完了",
     "approved_by_evaluator": "評価者承認済み",
-    "rejected": "差し戻し",
-    "pending": "未完了"
+    "pending": "未完了",
+    "pending_submission": "作業員提出待ち",
+    "pending_evaluation": "評価者評価待ち",
+    "pending_approval": "管理者承認待ち",
+    "completed": "完了"
   },
   "evaluation": {
     "title": "評価入力",
@@ -239,6 +241,7 @@
     "approved_at": "承認日",
     "confirm_approve": "この目標を承認しますか？",
     "confirm_reject": "この目標を差し戻しますか？",
+    "rejection_reason_prompt": "差し戻しの理由を入力してください。",
     "goal_setting_form": "目標設定フォーム",
     "goal_number": "目標 {{number}}",
     "goal_content_placeholder": "具体的で測定可能な目標を記入してください",
@@ -274,7 +277,8 @@
     "evaluation_structure_of": "の評価構造",
     "no_structure_for_job_type": "この職種には評価構造が設定されていません。",
     "new_category": "新しいカテゴリ",
-    "confirm_delete_category": "このカテゴリを削除しますか？カテゴリ内の項目もすべて削除されます。",    "new_item": "新しい項目",
+    "confirm_delete_category": "このカテゴリを削除しますか？カテゴリ内の項目もすべて削除されます。",
+    "new_item": "新しい項目",
     "confirm_delete_item": "この項目を削除しますか？",
     "item_name_placeholder": "例: 品質遵守度",
     "category_name_placeholder": "例: 技術スキル",
@@ -332,6 +336,14 @@
     "approval_success": "承認しました",
     "rejection_success": "差し戻しました",
     "invitation_sent": "招待を送信しました",
-    "password_reset_sent": "パスワードリセットメールを送信しました"
+    "password_reset_sent": "パスワードリセットメールを送信しました",
+    "login_success": "ようこそ、{{userName}}さん",
+    "logout_success": "ログアウトしました。"
+  },
+  "errors": {
+    "loading_failed": "データの読み込みに失敗しました。",
+    "email_password_required": "メールアドレスとパスワードを入力してください。",
+    "invalid_email_password": "メールアドレスまたはパスワードが正しくありません。",
+    "account_inactive": "このアカウントは現在無効です。"
   }
 }
