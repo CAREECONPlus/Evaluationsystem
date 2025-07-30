@@ -17,25 +17,18 @@ class App {
   async init() {
     try {
       console.log("Starting application initialization...");
-      // 1. 各モジュールの非同期初期化を待つ
       await this.i18n.init();
       await this.auth.init();
       
-      // 2. ログイン中のユーザー情報を設定
       this.currentUser = this.auth.getCurrentUser();
       
-      // 3. APIとグローバルコンポーネントにAppインスタンスを渡す
       this.api.app = this;
       if (window.HeaderComponent) window.HeaderComponent.app = this;
       if (window.SidebarComponent) window.SidebarComponent.app = this;
 
-      // 4. イベントリスナーを設定
       this.setupEventListeners();
-
-      // 5. 初期ページのルーティングを実行
       await this.router.route();
 
-      // 6. アプリケーションの表示
       this.showApp();
       console.log("Application initialized successfully");
 
@@ -46,7 +39,6 @@ class App {
   }
 
   setupEventListeners() {
-    // data-link属性を持つリンクのクリックを処理
     document.body.addEventListener("click", e => {
       const link = e.target.closest('[data-link]');
       if (link) {
@@ -54,12 +46,10 @@ class App {
         this.navigate(link.getAttribute("href"));
       }
     });
-    // ブラウザの「戻る」「進む」を処理
     window.addEventListener("popstate", () => this.router.route());
   }
 
   navigate(path) {
-    // 同じパスへの移動は無視
     if (window.location.pathname === path) {
         return;
     }
@@ -105,6 +95,18 @@ class App {
   hasAnyRole(roles) { return this.currentUser && roles.includes(this.currentUser.role); }
   
   // --- 共通ユーティリティメソッド ---
+
+  debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
 
   showToast(message, type = "info") {
     let container = document.getElementById("toast-container");
@@ -179,7 +181,6 @@ class App {
   }
 }
 
-// Initialize application
 document.addEventListener("DOMContentLoaded", () => {
   window.app = new App();
   window.app.init();
