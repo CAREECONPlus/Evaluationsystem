@@ -24,9 +24,7 @@ class EvaluationFormPage {
    * ページ全体のHTMLをレンダリング
    */
   async render() {
-    // ログイン中のユーザー情報
     const currentUser = this.app.currentUser;
-    // 管理者または評価者の場合、ユーザー選択が可能
     const canSelectUser = (this.app.hasAnyRole(['admin', 'evaluator']));
 
     return `
@@ -84,9 +82,6 @@ class EvaluationFormPage {
     `;
   }
 
-  /**
-   * ページの初期化処理
-   */
   async init(params) {
     this.app.currentPage = this;
     if (!this.app.isAuthenticated()) {
@@ -97,50 +92,34 @@ class EvaluationFormPage {
     this.updateUI();
   }
   
-  /**
-   * 評価フォームに必要な初期データを読み込む
-   */
   async loadInitialData() {
     try {
       const currentUser = this.app.currentUser;
       const allUsers = await this.app.api.getUsers();
-      
       this.evaluationPeriods = await this.app.api.getEvaluationPeriods();
       
-      // 役割に応じて評価可能なユーザーを決定
       if (this.app.hasAnyRole(['admin', 'evaluator'])) {
         this.usersForEvaluation = allUsers.filter(u => u.evaluatorId === currentUser.id);
       }
-      
-      // 作業員の場合は自分自身が評価対象
       if (this.app.hasRole('worker')) {
         this.targetUser = currentUser;
       }
-      // 評価者も自分自身を評価可能
       if (this.app.hasRole('evaluator')) {
-         this.usersForEvaluation.unshift(currentUser); // リストの先頭に自分を追加
+         this.usersForEvaluation.unshift(currentUser);
       }
-
     } catch (e) {
       this.app.showError("初期データの読み込みに失敗しました。");
       console.error(e);
     }
   }
 
-  /**
-   * 評価項目と目標を読み込む
-   */
   async loadStructureAndGoals() {
-    this.clearForms(); // フォームをクリア
+    this.clearForms();
     if (!this.targetUser || !this.selectedPeriod) return;
 
     try {
-      // 評価構造（定量的・定性的項目）を取得
       this.evaluationStructure = await this.app.api.getEvaluationStructure(this.targetUser.jobType);
-      
-      // 承認済みの目標を取得
       this.qualitativeGoals = await this.app.api.getQualitativeGoals(this.targetUser.id, this.selectedPeriod.id, 'approved');
-      
       this.renderAllForms();
       this.updateUI();
     } catch(e) {
@@ -149,9 +128,6 @@ class EvaluationFormPage {
     }
   }
 
-  /**
-   * UI全体を更新
-   */
   updateUI() {
     this.populateDropdowns();
     this.updateTargetDisplay();
@@ -160,9 +136,6 @@ class EvaluationFormPage {
     this.app.i18n.updateUI();
   }
   
-  /**
-   * ドロップダウンに選択肢を設定
-   */
   populateDropdowns() {
     const userSelect = document.getElementById('targetUserSelect');
     if (userSelect) {
@@ -179,36 +152,24 @@ class EvaluationFormPage {
     }
   }
 
-  /**
-   * 選択された対象者情報を表示
-   */
   updateTargetDisplay() {
     document.getElementById('displayTargetUserName').textContent = this.targetUser?.name || 'N/A';
     document.getElementById('displayTargetJobType').textContent = this.targetUser?.jobType || 'N/A';
     document.getElementById('displayEvaluationPeriod').textContent = this.selectedPeriod?.name || 'N/A';
   }
   
-  /**
-   * 全ての評価フォームステップを描画
-   */
   renderAllForms() {
     this.renderFormContent('quantitative');
     this.renderFormContent('qualitative');
     this.renderFormContent('goals');
   }
 
-  /**
-   * フォームをクリア
-   */
   clearForms() {
     document.getElementById('quantitativeStep').innerHTML = '';
     document.getElementById('qualitativeStep').innerHTML = '';
     document.getElementById('goalsStep').innerHTML = '';
   }
 
-  /**
-   * 指定されたタイプのフォームコンテンツを描画
-   */
   renderFormContent(type) {
     const container = document.getElementById(`${type}Step`);
     if (!container) return;
@@ -242,7 +203,10 @@ class EvaluationFormPage {
    * 個別の評価項目を描画
    */
   renderItem(item, type) {
-    const itemId = item.id || item.text.slice(0, 10); // IDがない場合はテキストから生成
+    // ▼▼▼ 修正箇所: item.text と item.name の両方に対応 ▼▼▼
+    const itemNameOrText = item.text || item.name || '';
+    const itemId = item.id || itemNameOrText.slice(0, 10);
+    // ▲▲▲ 修正箇所 ▲▲▲
     const isGoal = type === 'goals';
     
     return `
@@ -260,8 +224,6 @@ class EvaluationFormPage {
     `;
   }
   
-  // --- イベントハンドラ ---
-  
   onTargetUserChange(userId) {
     const allUsers = this.usersForEvaluation.concat(this.app.hasRole('worker') ? [this.app.currentUser] : []);
     this.targetUser = allUsers.find(u => u.id === userId);
@@ -270,7 +232,6 @@ class EvaluationFormPage {
   
   onPeriodChange(periodId) {
     this.selectedPeriod = this.evaluationPeriods.find(p => p.id === periodId);
-    // 期間が変更されたら、ユーザーも選択されている場合のみデータ再読み込み
     if(this.targetUser) {
         this.loadStructureAndGoals();
     }
@@ -282,8 +243,6 @@ class EvaluationFormPage {
       }
       this.evaluationData[type][itemId][field] = value;
   }
-
-  // --- ステップナビゲーション ---
 
   switchStep(step) {
     this.currentStep = step;
@@ -326,13 +285,10 @@ class EvaluationFormPage {
     prevBtn.style.display = this.currentStep === 'quantitative' ? 'none' : 'inline-block';
     nextBtn.style.display = this.currentStep === 'goals' ? 'none' : 'inline-block';
     
-    // 全てが選択されるまで「次へ」ボタンは非表示
     if (!this.targetUser || !this.selectedPeriod) {
         nextBtn.style.display = 'none';
     }
   }
-
-  // --- 保存・提出 ---
 
   saveDraft() {
     const draftData = {
@@ -347,10 +303,6 @@ class EvaluationFormPage {
   submitEvaluation() {
     if (confirm(this.app.i18n.t('evaluation.confirm_submit'))) {
       console.log('Submitting evaluation:', this.evaluationData);
-      
-      // ここでAPIを呼び出してデータを保存
-      // API.submitEvaluation(this.evaluationData, this.targetUser.id, this.selectedPeriod.id);
-      
       this.app.showSuccess('評価を提出しました。');
       this.app.navigate('/evaluations');
     }
