@@ -60,6 +60,9 @@
             #content {
                 width: 100%;
             }
+            .navbar-toggler {
+                display: block !important;
+            }
         }
     </style>
 </head>
@@ -115,26 +118,38 @@
         // --- Inlined Translation Data ---
         const translationsData = {
             ja: {
-                "nav": { "dashboard": "ダッシュボード", "users": "ユーザー管理", "evaluations": "評価一覧", "logout": "ログアウト" },
-                "auth": { "login": "ログイン", "email": "メールアドレス", "password": "パスワード" },
-                "errors": { "invalid_email_password": "メールアドレスまたはパスワードが正しくありません。" }
-                // ... Add all other Japanese translations here
+                "common": { "save": "保存", "cancel": "キャンセル", "delete": "削除", "edit": "編集", "add": "追加", "search": "検索", "loading": "読み込み中...", "error": "エラー", "success": "成功", "confirm": "確認", "yes": "はい", "no": "いいえ", "close": "閉じる", "submit": "送信", "reset": "リセット", "back": "戻る", "next": "次へ", "previous": "前へ", "select": "選択してください", "clear": "クリア", "toggle_navigation": "ナビゲーション切り替え", "language": "言語", "no_data": "データがありません", "details": "詳細", "all": "全て" },
+                "nav": { "dashboard": "ダッシュボード", "users": "ユーザー管理", "settings": "設定", "evaluations": "評価一覧", "goals": "目標設定", "goal_approvals": "目標承認", "reports": "レポート", "developer": "開発者管理", "logout": "ログアウト", "profile": "プロフィール", "evaluation": "評価入力" },
+                "auth": { "login": "ログイン", "logout": "ログアウト", "email": "メールアドレス", "password": "パスワード", "name": "氏名", "company": "企業名", "register": "登録", "login_failed": "ログインに失敗しました", "register_success": "登録が完了しました", "forgot_password": "パスワードを忘れた方", "reset_password": "パスワードリセット", "confirm_password": "パスワード確認" },
+                "users": { "title": "ユーザー管理", "invite": "新規ユーザー追加", "role": "役割", "status": "ステータス", "created_at": "登録日", "actions": "操作", "pending_approvals": "承認待ちユーザー", "active_users": "ユーザー一覧" },
+                "roles": { "developer": "開発者", "admin": "管理者", "evaluator": "評価者", "worker": "作業員" },
+                "status": { "active": "アクティブ", "developer_approval_pending": "開発者承認待ち", "pending_approval": "承認待ち", "inactive": "無効", "completed": "完了" },
+                "messages": { "login_success": "ようこそ、{{userName}}さん", "logout_success": "ログアウトしました。" },
+                "errors": { "invalid_email_password": "メールアドレスまたはパスワードが正しくありません。", "email_already_in_use": "このメールアドレスは既に使用されています。", "weak_password": "パスワードは6文字以上である必要があります。", "account_inactive": "このアカウントは無効です。", "invalid_email": "無効なメールアドレス形式です。" }
             },
             en: {
-                "nav": { "dashboard": "Dashboard", "users": "User Management", "evaluations": "Evaluations", "logout": "Logout" },
-                "auth": { "login": "Login", "email": "Email Address", "password": "Password" },
-                "errors": { "invalid_email_password": "Incorrect email or password." }
-                // ... Add all other English translations here
+                "common": { "save": "Save", "cancel": "Cancel", "delete": "Delete", "edit": "Edit", "add": "Add", "search": "Search", "loading": "Loading...", "error": "Error", "success": "Success", "confirm": "Confirm", "yes": "Yes", "no": "No", "close": "Close", "submit": "Submit", "reset": "Reset", "back": "Back", "next": "Next", "previous": "Previous", "select": "Select", "clear": "Clear", "toggle_navigation": "Toggle navigation", "language": "Language", "no_data": "No data available", "details": "Details", "all": "All" },
+                "nav": { "dashboard": "Dashboard", "users": "User Management", "settings": "Settings", "evaluations": "Evaluations", "goals": "Goal Setting", "goal_approvals": "Goal Approvals", "reports": "Reports", "developer": "Developer", "logout": "Logout", "profile": "Profile", "evaluation": "Evaluation Input" },
+                "auth": { "login": "Login", "logout": "Logout", "email": "Email Address", "password": "Password", "name": "Name", "company": "Company", "register": "Register", "login_failed": "Login failed", "register_success": "Registration successful", "forgot_password": "Forgot password?", "reset_password": "Reset Password", "confirm_password": "Confirm Password" },
+                "users": { "title": "User Management", "invite": "Invite User", "role": "Role", "status": "Status", "created_at": "Created Date", "actions": "Actions", "pending_approvals": "Pending Users", "active_users": "Active Users" },
+                "roles": { "developer": "Developer", "admin": "Administrator", "evaluator": "Evaluator", "worker": "Worker" },
+                "status": { "active": "Active", "developer_approval_pending": "Developer Approval Pending", "pending_approval": "Pending Approval", "inactive": "Inactive", "completed": "Completed" },
+                "messages": { "login_success": "Welcome, {{userName}}", "logout_success": "You have been logged out." },
+                "errors": { "invalid_email_password": "Incorrect email or password.", "email_already_in_use": "This email address is already in use.", "weak_password": "Password must be at least 6 characters.", "account_inactive": "This account is inactive.", "invalid_email": "Invalid email format." }
             },
             vi: {
-                "nav": { "dashboard": "Bảng điều khiển", "users": "Quản lý người dùng", "evaluations": "Đánh giá", "logout": "Đăng xuất" },
-                "auth": { "login": "Đăng nhập", "email": "Địa chỉ email", "password": "Mật khẩu" },
-                "errors": { "invalid_email_password": "Sai email hoặc mật khẩu." }
-                // ... Add all other Vietnamese translations here
+                "common": { "save": "Lưu", "cancel": "Hủy", "delete": "Xóa", "edit": "Chỉnh sửa", "add": "Thêm", "search": "Tìm kiếm", "loading": "Đang tải...", "error": "Lỗi", "success": "Thành công", "confirm": "Xác nhận", "yes": "Có", "no": "Không", "close": "Đóng", "submit": "Gửi", "reset": "Đặt lại", "back": "Quay lại", "next": "Tiếp theo", "previous": "Trước", "select": "Chọn", "clear": "Xóa", "toggle_navigation": "Chuyển đổi điều hướng", "language": "Ngôn ngữ", "no_data": "Không có dữ liệu", "details": "Chi tiết", "all": "Tất cả" },
+                "nav": { "dashboard": "Bảng điều khiển", "users": "Quản lý người dùng", "settings": "Cài đặt", "evaluations": "Đánh giá", "goals": "Thiết lập mục tiêu", "goal_approvals": "Phê duyệt mục tiêu", "reports": "Báo cáo", "developer": "Nhà phát triển", "logout": "Đăng xuất", "profile": "Hồ sơ", "evaluation": "Nhập đánh giá" },
+                "auth": { "login": "Đăng nhập", "logout": "Đăng xuất", "email": "Địa chỉ email", "password": "Mật khẩu", "name": "Họ tên", "company": "Công ty", "register": "Đăng ký", "login_failed": "Đăng nhập thất bại", "register_success": "Đăng ký thành công", "forgot_password": "Quên mật khẩu?", "reset_password": "Đặt lại mật khẩu", "confirm_password": "Xác nhận mật khẩu" },
+                "users": { "title": "Quản lý người dùng", "invite": "Mời người dùng", "role": "Vai trò", "status": "Trạng thái", "created_at": "Ngày tạo", "actions": "Hành động", "pending_approvals": "Người dùng chờ phê duyệt", "active_users": "Người dùng hoạt động" },
+                "roles": { "developer": "Nhà phát triển", "admin": "Quản trị viên", "evaluator": "Người đánh giá", "worker": "Công nhân" },
+                "status": { "active": "Hoạt động", "developer_approval_pending": "Chờ phê duyệt nhà phát triển", "pending_approval": "Chờ phê duyệt", "inactive": "Không hoạt động", "completed": "Hoàn thành" },
+                "messages": { "login_success": "Chào mừng, {{userName}}", "logout_success": "Bạn đã đăng xuất." },
+                "errors": { "invalid_email_password": "Sai email hoặc mật khẩu.", "email_already_in_use": "Địa chỉ email này đã được sử dụng.", "weak_password": "Mật khẩu phải có ít nhất 6 ký tự.", "account_inactive": "Tài khoản này không hoạt động.", "invalid_email": "Định dạng email không hợp lệ." }
             }
         };
 
-        // --- I18n Service (Modified) ---
+        // --- I18n Service ---
         class I18n {
             constructor() { this.lang = "ja"; this.translations = {}; this.supportedLanguages = ["ja", "en", "vi"]; }
             async init() { await this.setLanguage(localStorage.getItem("lang") || this.lang); }
@@ -147,16 +162,29 @@
         // --- Auth Service ---
         class Auth {
             constructor(app) { this.app = app; this.auth = window.firebase.auth; this.db = window.firebase.db; }
-            init() { return new Promise((resolve) => { onAuthStateChanged(this.auth, async (user) => { if (user) { try { const userProfile = await this.getUserProfile(user.uid); this.app.currentUser = userProfile ? { ...user, ...userProfile } : user; } catch (error) { console.error("Error fetching user profile:", error); this.app.currentUser = null; await this.logout(); } } else { this.app.currentUser = null; } resolve(); }); }); }
+            init() { return new Promise((resolve) => { onAuthStateChanged(this.auth, async (user) => { if (user) { try { const userProfile = await this.getUserProfile(user.uid); this.app.currentUser = userProfile ? { uid: user.uid, ...userProfile } : user; } catch (error) { console.error("Error fetching user profile:", error); this.app.currentUser = null; await this.logout(); } } else { this.app.currentUser = null; } resolve(); }); }); }
             async getUserProfile(uid) { const userDocRef = doc(this.db, "users", uid); const userDocSnap = await getDoc(userDocRef); return userDocSnap.exists() ? userDocSnap.data() : null; }
             async login(email, password) { await signInWithEmailAndPassword(this.auth, email, password); }
             async logout() { await firebaseSignOut(this.auth); }
+            getFirebaseAuthErrorMessage(error) {
+                switch (error.code) {
+                    case 'auth/invalid-email': return this.app.i18n.t('errors.invalid_email');
+                    case 'auth/user-disabled': return this.app.i18n.t('errors.account_inactive');
+                    case 'auth/user-not-found': case 'auth/wrong-password': return this.app.i18n.t('errors.invalid_email_password');
+                    case 'auth/email-already-in-use': return this.app.i18n.t('errors.email_already_in_use');
+                    case 'auth/weak-password': return this.app.i18n.t('errors.weak_password');
+                    default: return error.message;
+                }
+            }
         }
 
         // --- API Service ---
         class API {
             constructor(app) { this.app = app; this.db = window.firebase.db; }
-            async getUsers() { if (!this.app.currentUser?.tenantId) return []; const q = query(collection(this.db, "users"), where("tenantId", "==", this.app.currentUser.tenantId)); const querySnapshot = await getDocs(q); return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() })); }
+            async getUsers(status = 'active') { if (!this.app.currentUser?.tenantId) return []; const q = query(collection(this.db, "users"), where("tenantId", "==", this.app.currentUser.tenantId), where("status", "==", status)); const querySnapshot = await getDocs(q); return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() })); }
+            async updateUserStatus(userId, status) { const userDocRef = doc(this.db, "users", userId); await updateDoc(userDocRef, { status: status }); }
+            async getEvaluationById(id) { const docRef = doc(this.db, "evaluations", id); const docSnap = await getDoc(docRef); if (docSnap.exists() && docSnap.data().tenantId === this.app.currentUser.tenantId) { return { id: docSnap.id, ...docSnap.data() }; } return null; }
+            async getPastEvaluationsForUser(userId, currentEvalId) { if (!this.app.currentUser?.tenantId) return []; const q = query(collection(this.db, "evaluations"), where("tenantId", "==", this.app.currentUser.tenantId), where("targetUserId", "==", userId), where("status", "==", "completed")); const querySnapshot = await getDocs(q); return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() })).filter(e => e.id !== currentEvalId); }
         }
 
         // --- Component Classes ---
@@ -167,16 +195,16 @@
                 if (!this.app.isAuthenticated()) { container.innerHTML = ''; return; }
                 container.innerHTML = `<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
                     <div class="container-fluid">
-                        <a class="navbar-brand" href="#/dashboard" data-link>評価システム</a>
+                        <button class="navbar-toggler d-lg-none" type="button" onclick="window.app.sidebar.toggle()"><span class="navbar-toggler-icon"></span></button>
+                        <a class="navbar-brand" href="#/dashboard">評価システム</a>
                         <div class="collapse navbar-collapse">
-                            <ul class="navbar-nav me-auto">
-                                <li class="nav-item"><a class="nav-link" href="#/dashboard" data-link>ダッシュボード</a></li>
-                                <li class="nav-item"><a class="nav-link" href="#/users" data-link>ユーザー管理</a></li>
+                            <ul class="navbar-nav ms-auto">
+                                <li class="nav-item"><a class="nav-link" href="#" onclick="event.preventDefault(); window.app.logout();">${this.app.i18n.t('nav.logout')}</a></li>
                             </ul>
-                            <ul class="navbar-nav"><li class="nav-item"><a class="nav-link" href="#" onclick="event.preventDefault(); window.app.logout();">ログアウト</a></li></ul>
                         </div>
                     </div>
                 </nav>`;
+                this.app.i18n.updateUI(container);
             }
         }
         class SidebarComponent {
@@ -184,23 +212,36 @@
             update() {
                 const container = document.getElementById('sidebar-container');
                 if (!this.app.isAuthenticated()) { container.innerHTML = ''; return; }
+                const role = this.app.currentUser.role;
+                const activePath = window.location.hash;
+
+                const menuItems = [
+                    { path: '#/dashboard', icon: 'fa-tachometer-alt', labelKey: 'nav.dashboard', roles: ['admin', 'evaluator', 'worker'] },
+                    { path: '#/evaluations', icon: 'fa-clipboard-list', labelKey: 'nav.evaluations', roles: ['admin', 'evaluator', 'worker'] },
+                    { path: '#/users', icon: 'fa-users', labelKey: 'nav.users', roles: ['admin'] },
+                ];
+                
                 container.innerHTML = `<div class="sidebar bg-dark text-white p-3 d-flex flex-column">
                     <nav class="nav flex-column">
-                        <a class="nav-link text-white" href="#/dashboard" data-link>ダッシュボード</a>
-                        <a class="nav-link text-white" href="#/evaluations" data-link>評価一覧</a>
+                        ${menuItems.filter(item => item.roles.includes(role)).map(item => `
+                            <a class="nav-link text-white ${activePath === item.path ? 'active' : ''}" href="${item.path}">
+                                <i class="fas ${item.icon} fa-fw me-2"></i><span data-i18n="${item.labelKey}"></span>
+                            </a>
+                        `).join('')}
                     </nav>
                 </div>`;
+                this.app.i18n.updateUI(container);
             }
+            toggle() { document.getElementById('sidebar-container').classList.toggle('show'); }
         }
 
         // --- Page Classes (Placeholders for now) ---
-        class LoginPage { constructor(app) {this.app = app;} async render() { return `<div class="d-flex align-items-center justify-content-center vh-100"><div class="card p-4" style="width: 400px;"><h3>ログイン</h3><form id="loginForm"><div class="mb-3"><label>Email</label><input type="email" id="email" class="form-control" required></div><div class="mb-3"><label>Password</label><input type="password" id="password" class="form-control" required></div><button type="submit" class="btn btn-primary w-100">ログイン</button></form></div></div>`; } async init() { document.getElementById('loginForm').addEventListener('submit', async (e) => { e.preventDefault(); const email = document.getElementById('email').value; const password = document.getElementById('password').value; await this.app.login(email, password); }); } }
-        class DashboardPage { constructor(app) {this.app = app;} async render() { return `<h1>ダッシュボード</h1><p>ようこそ、${this.app.currentUser.name || this.app.currentUser.email}さん</p>`; } }
-        class UserManagementPage { constructor(app) {this.app = app;} async render() { return `<h1>ユーザー管理</h1>`; } }
-        class EvaluationsPage { constructor(app) {this.app = app;} async render() { return `<h1>評価一覧</h1>`; } }
-        // ... other page classes would be defined here fully
+        class LoginPage { constructor(app) {this.app = app;} async render() { return `<div class="d-flex align-items-center justify-content-center vh-100"><div class="card p-4" style="width: 400px;"><h3 data-i18n="auth.login"></h3><form id="loginForm"><div class="mb-3"><label data-i18n="auth.email"></label><input type="email" id="email" class="form-control" required></div><div class="mb-3"><label data-i18n="auth.password"></label><input type="password" id="password" class="form-control" required></div><button type="submit" class="btn btn-primary w-100" data-i18n="auth.login"></button></form></div></div>`; } async init() { this.app.i18n.updateUI(); document.getElementById('loginForm').addEventListener('submit', async (e) => { e.preventDefault(); const email = document.getElementById('email').value; const password = document.getElementById('password').value; try { await this.app.login(email, password); } catch(err) { alert(this.app.auth.getFirebaseAuthErrorMessage(err)); } }); } }
+        class DashboardPage { constructor(app) {this.app = app;} async render() { return `<h1>ダッシュボード</h1><p>ようこそ、${this.app.currentUser.name || this.app.currentUser.email}さん</p>`; } async init() {} }
+        class UserManagementPage { constructor(app) {this.app = app;} async render() { return `<h1>ユーザー管理</h1>`; } async init() {} }
+        class EvaluationsPage { constructor(app) {this.app = app;} async render() { return `<h1>評価一覧</h1>`; } async init() {} }
         
-        // --- Router Service (Modified for Hash Routing) ---
+        // --- Router Service ---
         class Router {
             constructor(app) {
               this.app = app;
@@ -208,8 +249,8 @@
             }
             async route() {
                 const path = window.location.hash.substring(1) || "/";
-                const PageClass = this.routes[path] || LoginPage; // Default to LoginPage
-                const requiresAuth = !["/", "/login", "/register"].includes(path);
+                const PageClass = this.routes[path] || LoginPage;
+                const requiresAuth = !["/", "/login"].includes(path);
 
                 if (requiresAuth && !this.app.isAuthenticated()) { window.location.hash = "/login"; return; }
                 if (!requiresAuth && this.app.isAuthenticated()) { window.location.hash = "/dashboard"; return; }
@@ -218,14 +259,13 @@
                 this.app.sidebar.update();
 
                 const pageInstance = new PageClass(this.app);
-                this.app.currentPage = pageInstance;
                 const contentContainer = document.getElementById("content");
                 contentContainer.innerHTML = await pageInstance.render();
                 if (typeof pageInstance.init === "function") await pageInstance.init();
             }
         }
 
-        // --- Main App Class (Modified for Hash Routing) ---
+        // --- Main App Class ---
         class App {
             constructor() {
                 this.currentUser = null;
@@ -238,6 +278,7 @@
             }
             async init() {
                 try {
+                    await this.i18n.init();
                     await this.auth.init();
                     this.setupEventListeners();
                     await this.router.route();
@@ -249,10 +290,9 @@
             setupEventListeners() {
                 window.addEventListener("hashchange", () => this.router.route());
             }
-            navigate(path) { window.location.hash = path; }
             showApp() { document.getElementById("loading-screen").style.display = "none"; document.getElementById("app").classList.remove("d-none"); }
             isAuthenticated() { return !!this.currentUser; }
-            async login(email, password) { try { await this.auth.login(email, password); } catch (e) { console.error(e); throw e; } }
+            async login(email, password) { await this.auth.login(email, password); }
             async logout() { await this.auth.logout(); }
         }
 
