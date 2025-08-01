@@ -1,37 +1,48 @@
-// ▼▼▼ 追加: NPMでインストールしたライブラリのCSSをインポート ▼▼▼
-import 'bootstrap/dist/css/bootstrap.min.css';
-import '@fortawesome/fontawesome-free/css/all.min.css';
-// ▲▲▲ 追加 ▲▲▲
+// Import core services
+import { I18n } from './i18n.js';
+import { API } from './api.js';
+import { Auth } from './auth.js';
+import { Router } from './router.js';
+
+// Import components
+import { HeaderComponent } from './components/header.js';
+import { SidebarComponent } from './components/sidebar.js';
 
 /**
  * Main Application Class
- * メインアプリケーションクラス
+ * アプリケーションのメインクラス
  */
 class App {
   constructor() {
-    this.currentUser = null;
+    this.currentUser = null; // Firestoreからのプロファイル情報を含む認証ユーザー
     this.currentPage = null;
 
-    // モジュールを初期化
-    this.i18n = new window.I18n();
-    this.api = new window.API();
-    this.auth = new window.Auth(this);
-    this.router = new window.Router(this);
+    // Initialize modules
+    this.i18n = new I18n();
+    this.auth = new Auth(this);
+    this.api = new API(this);
+    this.router = new Router(this);
+    this.header = new HeaderComponent(this);
+    this.sidebar = new SidebarComponent(this);
   }
 
+  /**
+   * Initializes the application
+   * アプリケーションを初期化する
+   */
   async init() {
     try {
       console.log("Starting application initialization...");
       await this.i18n.init();
+      
+      // Set up an authentication state listener and wait for the initial state
+      // 認証状態のリスナーをセットアップし、初期状態が確定するのを待つ
       await this.auth.init();
       
-      this.currentUser = this.auth.getCurrentUser();
-      
-      this.api.app = this;
-      if (window.HeaderComponent) window.HeaderComponent.app = this;
-      if (window.SidebarComponent) window.SidebarComponent.app = this;
-
       this.setupEventListeners();
+      
+      // Perform the initial routing
+      // 初回のルーティングを実行
       await this.router.route();
 
       this.showApp();
@@ -43,7 +54,13 @@ class App {
     }
   }
 
+  /**
+   * Sets up global event listeners
+   * グローバルイベントリスナーをセットアップする
+   */
   setupEventListeners() {
+    // Handle navigation for elements with data-link attribute
+    // data-link属性を持つ要素のナビゲーションを処理する
     document.body.addEventListener("click", e => {
       const link = e.target.closest('[data-link]');
       if (link) {
@@ -51,17 +68,27 @@ class App {
         this.navigate(link.getAttribute("href"));
       }
     });
+    // Handle browser back/forward buttons
+    // ブラウザの戻る/進むボタンを処理する
     window.addEventListener("popstate", () => this.router.route());
   }
 
+  /**
+   * Navigates to a new path using hash-based routing
+   * ハッシュベースのルーティングを使用して新しいパスに移動する
+   * @param {string} path - The path to navigate to (e.g., '#/dashboard')
+   */
   navigate(path) {
-    if (window.location.pathname === path && !path.includes('?')) {
-        return;
+    if (window.location.hash === path) {
+        return; // Avoid re-routing to the same page
     }
-    history.pushState(null, null, path);
-    this.router.route();
+    window.location.hash = path;
   }
 
+  /**
+   * Hides the loading screen and shows the main app content
+   * ローディング画面を非表示にし、メインアプリのコンテンツを表示する
+   */
   showApp() {
     const loadingScreen = document.getElementById("loading-screen");
     const appEl = document.getElementById("app");
@@ -69,61 +96,65 @@ class App {
     if (appEl) appEl.classList.remove("d-none");
   }
 
+  /**
+   * Logs in the user and navigates to the dashboard
+   * ユーザーをログインさせ、ダッシュボードに移動する
+   * @param {string} email 
+   * @param {string} password 
+   */
   async login(email, password) {
-    try {
-      const user = await this.auth.login(email, password);
-      this.currentUser = user;
-      this.showSuccess(this.i18n.t("messages.login_success", { userName: user.name }));
-      setTimeout(() => this.navigate("/dashboard"), 300);
-      return true;
-    } catch (err) {
-      console.error("Login failed:", err);
-      this.showError(err.message);
-      return false;
-    }
+    await this.auth.login(email, password);
+    // The onAuthStateChanged listener in Auth.js will handle updating currentUser and routing
   }
 
+  /**
+   * Logs out the user and navigates to the login page
+   * ユーザーをログアウトさせ、ログインページに移動する
+   */
   async logout() {
-    this.auth.logout();
-    this.currentUser = null;
-    if (window.HeaderComponent) window.HeaderComponent.hide();
-    if (window.SidebarComponent) window.SidebarComponent.hide();
-    this.navigate("/login");
+    await this.auth.logout();
     this.showSuccess(this.i18n.t("messages.logout_success"));
+    this.navigate("#/login");
   }
 
+  /**
+   * Checks if a user is currently authenticated
+   * ユーザーが現在認証されているか確認する
+   * @returns {boolean}
+   */
   isAuthenticated() {
     return !!this.currentUser;
   }
   
+  /**
+   * Checks if the current user has a specific role
+   * 現在のユーザーが特定の役割を持っているか確認する
+   * @param {string} role 
+   * @returns {boolean}
+   */
   hasRole(role) { return this.currentUser?.role === role; }
+  
+  /**
+   * Checks if the current user has any of the specified roles
+   * 現在のユーザーが指定された役割のいずれかを持っているか確認する
+   * @param {string[]} roles 
+   * @returns {boolean}
+   */
   hasAnyRole(roles) { return this.currentUser && roles.includes(this.currentUser.role); }
   
-  // --- 共通ユーティリティメソッド ---
+  // --- Common Utility Methods ---
 
-  debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
-  }
-
+  /**
+   * Shows a toast notification
+   * トースト通知を表示する
+   * @param {string} message - The message to display
+   * @param {string} type - 'success', 'danger', 'warning', 'info'
+   */
   showToast(message, type = "info") {
-    let container = document.getElementById("toast-container");
-    if (!container) {
-      container = document.createElement("div");
-      container.id = "toast-container";
-      container.className = "position-fixed top-0 end-0 p-3";
-      container.style.zIndex = "1055";
-      document.body.appendChild(container);
-    }
+    const container = document.getElementById("toast-container");
+    if (!container) return;
 
-    const toastId = `toast-${this.generateId()}`;
+    const toastId = `toast-${Date.now()}`;
     const toastHtml = `
       <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="d-flex">
@@ -134,7 +165,6 @@ class App {
     `;
     container.insertAdjacentHTML('beforeend', toastHtml);
     const toastElement = document.getElementById(toastId);
-    // BootstrapのToastを動的に生成
     const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
     toast.show();
     toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
@@ -146,54 +176,39 @@ class App {
   showInfo(message) { this.showToast(message, "info"); }
   
   sanitizeHtml(str) {
-    if (!str) return "";
+    if (str === null || typeof str === 'undefined') return "";
     const temp = document.createElement('div');
-    temp.textContent = str;
+    temp.textContent = String(str);
     return temp.innerHTML;
   }
   
   getStatusBadgeClass(status) {
     const statusClasses = {
       active: "bg-success",
-      developer_approval_pending: "bg-warning",
+      developer_approval_pending: "bg-info text-dark",
+      pending_approval: "bg-warning text-dark",
       inactive: "bg-secondary",
       draft: "bg-secondary",
       approved: "bg-success",
       rejected: "bg-danger",
-      self_assessed: "bg-info",
-      approved_by_evaluator: "bg-success",
-      pending: "bg-warning",
-      pending_submission: "bg-light text-dark",
-      pending_evaluation: "bg-info",
-      pending_approval: "bg-warning",
+      self_assessed: "bg-info text-dark",
+      approved_by_evaluator: "bg-primary",
       completed: "bg-primary",
     };
     return statusClasses[status] || "bg-light text-dark";
   }
 
   getRoleBadgeClass(role) {
-    return { admin: "bg-danger", evaluator: "bg-info", worker: "bg-secondary" }[role] || "bg-light text-dark";
+    return { developer: "bg-dark", admin: "bg-danger", evaluator: "bg-info", worker: "bg-secondary" }[role] || "bg-light text-dark";
   }
 
-  formatDate(dateString) {
-    if (!dateString) return "-";
-    try {
-      return new Date(dateString).toLocaleDateString('ja-JP');
-    } catch {
-      return dateString;
-    }
-  }
-
-  generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  formatDate(timestamp) {
+    if (!timestamp) return "-";
+    // Handle both Firebase Timestamps and JS Date objects/strings
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    if (isNaN(date)) return "-";
+    return date.toLocaleDateString('ja-JP');
   }
 }
 
-// ▼▼▼ 修正: BootstrapのJavaScript機能を有効にするための処理を追加 ▼▼▼
-// DOMが読み込まれたらすぐにAppを初期化
-document.addEventListener("DOMContentLoaded", () => {
-  // BootstrapのJavaScriptコンポーネント（モーダルやドロップダウンなど）を有効化
-  window.bootstrap = require('bootstrap');
-  window.app = new App();
-  window.app.init();
-});
+export default App;
