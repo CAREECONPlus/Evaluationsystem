@@ -128,10 +128,33 @@ body {
   margin: 1rem;
 }
 
+/* Settings Page Layout */
+.settings-layout { 
+    display: grid; 
+    grid-template-columns: 300px 1fr; 
+    gap: 1.5rem; 
+}
+
+
 /* --- Responsive Design --- */
+@media (max-width: 991.98px) { /* 要件定義書の992pxに合わせる */
+    #sidebar-container {
+        position: fixed;
+        transform: translateX(-100%);
+    }
+    #sidebar-container.show {
+        transform: translateX(0);
+    }
+    .settings-layout { 
+        grid-template-columns: 1fr; 
+    }
+}
+
 @media (max-width: 768px) {
-  #sidebar-container { position: absolute; transform: translateX(-100%); background-color: #212529; }
-  #sidebar-container.show { transform: translateX(0); }
-  #content { width: 100%; padding: 1rem; }
-  h1, .h1 { font-size: 1.75rem; }
+  #content { 
+    padding: 1rem; 
+  }
+  h1, .h1 { 
+    font-size: 1.75rem; 
+  }
 }
