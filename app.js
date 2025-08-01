@@ -1,3 +1,8 @@
+// ▼▼▼ 追加: NPMでインストールしたライブラリのCSSをインポート ▼▼▼
+import 'bootstrap/dist/css/bootstrap.min.css';
+import '@fortawesome/fontawesome-free/css/all.min.css';
+// ▲▲▲ 追加 ▲▲▲
+
 /**
  * Main Application Class
  * メインアプリケーションクラス
@@ -129,7 +134,8 @@ class App {
     `;
     container.insertAdjacentHTML('beforeend', toastHtml);
     const toastElement = document.getElementById(toastId);
-    const toast = new window.bootstrap.Toast(toastElement, { delay: 5000 });
+    // BootstrapのToastを動的に生成
+    const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
     toast.show();
     toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
   }
@@ -157,8 +163,6 @@ class App {
       self_assessed: "bg-info",
       approved_by_evaluator: "bg-success",
       pending: "bg-warning",
-      
-      // 新しい評価ステータス
       pending_submission: "bg-light text-dark",
       pending_evaluation: "bg-info",
       pending_approval: "bg-warning",
@@ -185,7 +189,11 @@ class App {
   }
 }
 
+// ▼▼▼ 修正: BootstrapのJavaScript機能を有効にするための処理を追加 ▼▼▼
+// DOMが読み込まれたらすぐにAppを初期化
 document.addEventListener("DOMContentLoaded", () => {
+  // BootstrapのJavaScriptコンポーネント（モーダルやドロップダウンなど）を有効化
+  window.bootstrap = require('bootstrap');
   window.app = new App();
   window.app.init();
 });
