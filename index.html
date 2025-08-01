@@ -235,8 +235,55 @@
             toggle() { document.getElementById('sidebar-container').classList.toggle('show'); }
         }
 
-        // --- Page Classes (Placeholders for now) ---
-        class LoginPage { constructor(app) {this.app = app;} async render() { return `<div class="d-flex align-items-center justify-content-center vh-100"><div class="card p-4" style="width: 400px;"><h3 data-i18n="auth.login"></h3><form id="loginForm"><div class="mb-3"><label data-i18n="auth.email"></label><input type="email" id="email" class="form-control" required></div><div class="mb-3"><label data-i18n="auth.password"></label><input type="password" id="password" class="form-control" required></div><button type="submit" class="btn btn-primary w-100" data-i18n="auth.login"></button></form></div></div>`; } async init() { this.app.i18n.updateUI(); document.getElementById('loginForm').addEventListener('submit', async (e) => { e.preventDefault(); const email = document.getElementById('email').value; const password = document.getElementById('password').value; try { await this.app.login(email, password); } catch(err) { alert(this.app.auth.getFirebaseAuthErrorMessage(err)); } }); } }
+        // --- Page Classes (Implementing LoginPage) ---
+        class LoginPage {
+            constructor(app) { this.app = app; }
+            async render() {
+                return `
+                    <div class="d-flex align-items-center justify-content-center vh-100">
+                        <div class="card p-4 shadow" style="width: 100%; max-width: 400px;">
+                            <h3 class="text-center mb-4" data-i18n="auth.login"></h3>
+                            <form id="loginForm">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label" data-i18n="auth.email"></label>
+                                    <input type="email" id="email" class="form-control" required autocomplete="email">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="password" class="form-label" data-i18n="auth.password"></label>
+                                    <input type="password" id="password" class="form-control" required autocomplete="current-password">
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                    <span data-i18n="auth.login"></span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>`;
+            }
+            async init() {
+                this.app.i18n.updateUI();
+                const form = document.getElementById('loginForm');
+                const submitButton = form.querySelector('button[type="submit"]');
+                const spinner = submitButton.querySelector('.spinner-border');
+
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    spinner.classList.remove('d-none');
+                    submitButton.disabled = true;
+
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    try {
+                        await this.app.login(email, password);
+                        // Successful login is handled by the onAuthStateChanged listener
+                    } catch (err) {
+                        alert(this.app.auth.getFirebaseAuthErrorMessage(err));
+                        spinner.classList.add('d-none');
+                        submitButton.disabled = false;
+                    }
+                });
+            }
+        }
         class DashboardPage { constructor(app) {this.app = app;} async render() { return `<h1>ダッシュボード</h1><p>ようこそ、${this.app.currentUser.name || this.app.currentUser.email}さん</p>`; } async init() {} }
         class UserManagementPage { constructor(app) {this.app = app;} async render() { return `<h1>ユーザー管理</h1>`; } async init() {} }
         class EvaluationsPage { constructor(app) {this.app = app;} async render() { return `<h1>評価一覧</h1>`; } async init() {} }
@@ -279,10 +326,12 @@
             async init() {
                 try {
                     await this.i18n.init();
-                    await this.auth.init();
-                    this.setupEventListeners();
-                    await this.router.route();
-                    this.showApp();
+                    // onAuthStateChanged will trigger the first route change
+                    this.auth.init().then(() => {
+                        this.setupEventListeners();
+                        this.router.route(); // Initial route call
+                        this.showApp();
+                    });
                 } catch (error) {
                     console.error("App Init Failed:", error);
                 }
