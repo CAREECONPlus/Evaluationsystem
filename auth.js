@@ -1,163 +1,150 @@
+import {
+    onAuthStateChanged,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    signOut,
+    sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
+import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+
 /**
- * Authentication Service
- * 認証サービス
+ * Authentication Service (Firebase Integrated)
+ * 認証サービス (Firebase連携版)
  */
-class Auth {
-  constructor(app) {
-    this.app = app;
-    this.currentUser = null;
-    this.isInitialized = false;
+export class Auth {
+    constructor(app) {
+        this.app = app;
+        this.auth = window.firebase.auth;
+        this.db = window.firebase.db;
+    }
 
-    // --- ▼▼▼ 修正: 評価階層のデモデータ ▼▼▼ ---
-    this.demoUsers = [
-      {
-        id: "1",
-        email: "admin@example.com",
-        password: "password",
-        name: "管理者",
-        role: "admin",
-        status: "active",
-        createdAt: new Date("2024-01-01"),
-        lastLogin: null,
-        tenantId: "tenant-001",
-        jobType: "管理職",
-        evaluatorId: null, // 管理者は評価されない
-      },
-      {
-        id: "2",
-        email: "manager@example.com",
-        password: "password",
-        name: "マネージャー",
-        role: "evaluator",
-        status: "active",
-        createdAt: new Date("2024-01-01"),
-        lastLogin: null,
-        tenantId: "tenant-001",
-        jobType: "現場監督",
-        evaluatorId: "1", // マネージャーは管理者に評価される
-      },
-      {
-        id: "3",
-        email: "employee@example.com",
-        password: "password",
-        name: "従業員",
-        role: "worker",
-        status: "active",
-        createdAt: new Date("2024-01-01"),
-        lastLogin: null,
-        tenantId: "tenant-001",
-        jobType: "建設作業員",
-        evaluatorId: "2", // 従業員はマネージャーに評価される
-      },
-      {
-        id: "4",
-        email: "admin2@example.com",
-        password: "password",
-        name: "管理者2",
-        role: "admin",
-        status: "active",
-        createdAt: new Date("2024-01-05"),
-        lastLogin: null,
-        tenantId: "tenant-002",
-        jobType: "管理職",
-        evaluatorId: null,
-      },
-    ];
-    // --- ▲▲▲ 修正 ▲▲▲ ---
-  }
+    /**
+     * Initializes the authentication service and sets up an auth state listener.
+     * 認証サービスを初期化し、認証状態リスナーをセットアップします。
+     * @returns {Promise<void>} A promise that resolves when the initial auth state is determined.
+     */
+    init() {
+        return new Promise((resolve) => {
+            onAuthStateChanged(this.auth, async (user) => {
+                if (user) {
+                    console.log("Auth state changed: User is signed in.", user.uid);
+                    try {
+                        const userProfile = await this.getUserProfile(user.uid);
+                        if (userProfile) {
+                            // Combine auth data (like uid, email) with Firestore profile data
+                            this.app.currentUser = { ...user, ...userProfile };
+                            console.log("User profile loaded:", this.app.currentUser.email);
+                        } else {
+                            // This case might happen during registration before the profile is created
+                            this.app.currentUser = user;
+                            console.warn("User profile not found in Firestore for UID:", user.uid);
+                        }
+                    } catch (error) {
+                        console.error("Error fetching user profile:", error);
+                        this.app.currentUser = null;
+                        await this.logout(); // Force logout on profile error
+                    }
+                } else {
+                    console.log("Auth state changed: User is signed out.");
+                    this.app.currentUser = null;
+                }
+                // Resolve the promise once the initial user state is known
+                resolve(); 
+            });
+        });
+    }
 
-  /**
-   * Initialize authentication service
-   */
-  async init() {
-    try {
-      console.log("Initializing Auth service...");
-      const savedUser = localStorage.getItem("currentUser");
-      if (savedUser) {
-        try {
-          const parsedUser = JSON.parse(savedUser);
-          const userFromDemo = this.demoUsers.find(u => u.id === parsedUser.id);
-          if (userFromDemo) {
-            this.currentUser = { ...userFromDemo };
-            delete this.currentUser.password;
-            this.app.currentUser = this.currentUser;
-            console.log("Restored user session:", this.currentUser.email);
-          } else {
-            localStorage.removeItem("currentUser");
-          }
-        } catch (error) {
-          console.warn("Failed to restore user session:", error);
-          localStorage.removeItem("currentUser");
+    /**
+     * Fetches a user's profile data from the 'users' collection in Firestore.
+     * Firestoreの'users'コレクションからユーザープロファイルデータを取得します。
+     * @param {string} uid - The user's unique ID.
+     * @returns {Promise<object|null>} The user profile data or null if not found.
+     */
+    async getUserProfile(uid) {
+        const userDocRef = doc(this.db, "users", uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+            return userDocSnap.data();
+        } else {
+            return null;
         }
-      }
-      this.isInitialized = true;
-      console.log("Auth service initialized");
-    } catch (error) {
-      console.error("Failed to initialize Auth service:", error);
-      throw error;
     }
-  }
 
-  /**
-   * Login user
-   */
-  async login(email, password) {
-    try {
-      if (!email || !password) {
-        throw new Error(this.app.i18n.t("errors.email_password_required"));
-      }
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      const user = this.demoUsers.find((u) => u.email === email && u.password === password);
-      if (!user) {
-        throw new Error(this.app.i18n.t("errors.invalid_email_password"));
-      }
-      if (user.status !== "active") {
-        throw new Error(this.app.i18n.t("errors.account_inactive"));
-      }
-      user.lastLogin = new Date();
-      this.currentUser = { ...user };
-      delete this.currentUser.password;
-      localStorage.setItem("currentUser", JSON.stringify({ id: this.currentUser.id }));
-      console.log("Login successful:", this.currentUser);
-      return this.currentUser;
-    } catch (error) {
-      console.error("Auth login failed:", error);
-      throw error;
+    /**
+     * Signs in a user with their email and password.
+     * メールアドレスとパスワードでユーザーをサインインさせます。
+     * @param {string} email 
+     * @param {string} password 
+     */
+    async login(email, password) {
+        await signInWithEmailAndPassword(this.auth, email, password);
     }
-  }
 
-  /**
-   * Logout user
-   */
-  logout() {
-    this.currentUser = null;
-    this.app.currentUser = null;
-    localStorage.removeItem("currentUser");
-    console.log("Logout successful");
-  }
+    /**
+     * Signs out the current user.
+     * 現在のユーザーをサインアウトさせます。
+     */
+    async logout() {
+        await signOut(this.auth);
+    }
 
-  /**
-   * Get current user
-   */
-  getCurrentUser() {
-    return this.currentUser;
-  }
+    /**
+     * Registers a new user with email and password, then creates their profile.
+     * メールアドレスとパスワードで新規ユーザーを登録し、プロファイルを作成します。
+     * @param {object} userData - User data including email, password, name, etc.
+     * @param {string} role - The role of the new user.
+     * @param {string} status - The initial status of the new user.
+     * @returns {object} The created user credential.
+     */
+    async registerAndCreateProfile(userData, role, status) {
+        const userCredential = await createUserWithEmailAndPassword(this.auth, userData.email, userData.password);
+        const user = userCredential.user;
 
-  /**
-   * Check if user is authenticated
-   */
-  isAuthenticated() {
-    return !!this.currentUser;
-  }
-  
-  hasRole(role) {
-    return this.currentUser && this.currentUser.role === role;
-  }
+        const userProfile = {
+            name: userData.name,
+            email: userData.email,
+            companyName: userData.companyName || null,
+            role: role,
+            status: status,
+            tenantId: userData.tenantId || null, // tenantId might be set later for admins
+            createdAt: serverTimestamp(),
+        };
 
-  hasAnyRole(roles) {
-    return this.currentUser && roles.includes(this.currentUser.role);
-  }
+        await setDoc(doc(this.db, "users", user.uid), userProfile);
+        return userCredential;
+    }
+
+    /**
+     * Sends a password reset email to the specified address.
+     * 指定されたアドレスにパスワードリセットメールを送信します。
+     * @param {string} email 
+     */
+    async sendPasswordReset(email) {
+        await sendPasswordResetEmail(this.auth, email);
+    }
+
+    /**
+     * Translates Firebase Auth error codes into user-friendly Japanese messages.
+     * Firebase Authのエラーコードを分かりやすい日本語のメッセージに変換します。
+     * @param {Error} error - The error object from Firebase Auth.
+     * @returns {string} A user-friendly error message.
+     */
+    getFirebaseAuthErrorMessage(error) {
+        switch (error.code) {
+            case 'auth/invalid-email':
+                return this.app.i18n.t('errors.invalid_email');
+            case 'auth/user-disabled':
+                return this.app.i18n.t('errors.account_inactive');
+            case 'auth/user-not-found':
+            case 'auth/wrong-password':
+                return this.app.i18n.t('errors.invalid_email_password');
+            case 'auth/email-already-in-use':
+                return this.app.i18n.t('errors.email_already_in_use');
+            case 'auth/weak-password':
+                return this.app.i18n.t('errors.weak_password');
+            default:
+                console.error("Unhandled Firebase Auth Error:", error);
+                return error.message;
+        }
+    }
 }
-
-// Make Auth globally available
-window.Auth = Auth;
