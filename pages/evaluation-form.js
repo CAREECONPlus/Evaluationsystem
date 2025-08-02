@@ -1,316 +1,355 @@
 /**
- * Evaluation Form Page Component
- * 評価フォームページコンポーネント
+ * Settings Page Component (Firebase Integrated)
+ * 設定ページコンポーネント（Firebase連携版）
  */
-class EvaluationFormPage {
+export class SettingsPage {
   constructor(app) {
     this.app = app;
-    this.evaluationStructure = null; // 評価項目（定量的・定性的）
-    this.qualitativeGoals = [];      // 評価対象の目標
-    this.evaluationData = { quantitative: {}, qualitative: {}, goals: {} }; // 入力データ
-    this.currentStep = "quantitative"; // 現在の評価ステップ
-    
-    this.isViewMode = false;      // 表示専用モードか
-    this.evaluationId = null;     // 表示モードで読み込む評価ID
-    this.isSubmitted = false;     // 提出済みか
-
-    this.targetUser = null;       // 評価対象者
-    this.selectedPeriod = null;   // 選択された評価期間
-    this.evaluationPeriods = [];  // 全ての評価期間
-    this.usersForEvaluation = []; // 評価可能なユーザーリスト
+    this.settings = {
+      jobTypes: [],
+      periods: [],
+      structures: {}
+    };
+    this.selectedJobTypeId = null;
+    this.hasUnsavedChanges = false;
+    this.periodModal = null;
   }
 
-  /**
-   * ページ全体のHTMLをレンダリング
-   */
   async render() {
-    const currentUser = this.app.currentUser;
-    const canSelectUser = (this.app.hasAnyRole(['admin', 'evaluator']));
-
     return `
-      <div class="evaluation-form-page p-4 mx-auto" style="max-width: 960px;">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h1 data-i18n="evaluation.title"></h1>
-          <div class="evaluation-actions">
-            <button class="btn btn-secondary" onclick="window.app.currentPage.saveDraft()" id="saveDraftBtn"><i class="fas fa-save me-2"></i><span data-i18n="common.save_draft"></span></button>
-            <button class="btn btn-success" onclick="window.app.currentPage.submitEvaluation()" id="submitBtn" disabled><i class="fas fa-paper-plane me-2"></i><span data-i18n="evaluation.submit"></span></button>
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 data-i18n="settings.title"></h1>
+        <button id="save-settings-btn" class="btn btn-success" disabled>
+          <i class="fas fa-save me-2"></i><span data-i18n="settings.save_changes"></span>
+        </button>
+      </div>
+      <div class="settings-layout">
+        <div class="settings-sidebar">
+          <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0" data-i18n="settings.job_types"></h5>
+              <button class="btn btn-sm btn-primary" id="add-job-type-btn" title="職種を追加"><i class="fas fa-plus"></i></button>
+            </div>
+            <div class="list-group list-group-flush" id="job-types-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0" data-i18n="settings.evaluation_periods"></h5>
+              <button class="btn btn-sm btn-primary" id="add-period-btn" title="期間を追加"><i class="fas fa-plus"></i></button>
+            </div>
+            <div class="list-group list-group-flush" id="periods-list"></div>
           </div>
         </div>
-
-        <div class="progress-indicator mb-4">
-            <div class="progress-step active" data-step="quantitative" onclick="window.app.currentPage.switchStep('quantitative')"><div class="step-number">1</div><div class="step-label" data-i18n="evaluation.quantitative"></div></div>
-            <div class="progress-step" data-step="qualitative" onclick="window.app.currentPage.switchStep('qualitative')"><div class="step-number">2</div><div class="step-label" data-i18n="evaluation.qualitative"></div></div>
-            <div class="progress-step" data-step="goals" onclick="window.app.currentPage.switchStep('goals')"><div class="step-number">3</div><div class="step-label" data-i18n="evaluation.goal_achievement"></div></div>
-        </div>
-
-        <div class="card mb-4">
-          <div class="card-header"><h5 class="mb-0" data-i18n="evaluation.target_info"></h5></div>
-          <div class="card-body">
-            <div class="row">
-              ${canSelectUser ? `
-              <div class="col-md-6 mb-3">
-                <label for="targetUserSelect" class="form-label" data-i18n="evaluation.select_target_user"></label>
-                <select id="targetUserSelect" class="form-select" onchange="window.app.currentPage.onTargetUserChange(this.value)"></select>
-              </div>` : ''}
-              <div class="col-md-6 mb-3">
-                <label for="evaluationPeriodSelect" class="form-label" data-i18n="evaluation.select_period"></label>
-                <select id="evaluationPeriodSelect" class="form-select" onchange="window.app.currentPage.onPeriodChange(this.value)"></select>
-              </div>
-            </div>
-            <div class="target-info mt-2 border-top pt-3">
-              <div class="row">
-                <div class="col-md-6"><strong><span data-i18n="evaluation.target_user"></span>:</strong> <span id="displayTargetUserName">N/A</span></div>
-                <div class="col-md-6"><strong><span data-i18n="evaluation.job_type"></span>:</strong> <span id="displayTargetJobType">N/A</span></div>
-                <div class="col-md-6"><strong><span data-i18n="evaluation.period_info"></span>:</strong> <span id="displayEvaluationPeriod">N/A</span></div>
-                <div class="col-md-6"><strong><span data-i18n="evaluation.evaluator_name"></span>:</strong> <span>${this.app.sanitizeHtml(currentUser?.name || '')}</span></div>
-              </div>
-            </div>
+        <div class="settings-main card">
+          <div class="card-body" id="structure-editor">
+            <div class="text-center p-5 text-muted" data-i18n="settings.select_job_type_hint"></div>
           </div>
         </div>
+      </div>
 
-        <div class="evaluation-steps card">
-          <div class="step-content active" id="quantitativeStep"></div>
-          <div class="step-content" id="qualitativeStep" style="display: none;"></div>
-          <div class="step-content" id="goalsStep" style="display: none;"></div>
-        </div>
-        
-        <div class="step-navigation mt-4 d-flex justify-content-between">
-          <button class="btn btn-secondary" onclick="window.app.currentPage.previousStep()" id="prevBtn" style="display: none;"><i class="fas fa-arrow-left me-2"></i><span data-i18n="common.previous"></span></button>
-          <button class="btn btn-primary" onclick="window.app.currentPage.nextStep()" id="nextBtn"><span data-i18n="common.next"></span><i class="fas fa-arrow-right ms-2"></i></button>
+      <!-- Period Modal -->
+      <div class="modal fade" id="periodModal" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="periodModalTitle"></h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="periodForm">
+              <div class="modal-body">
+                  <input type="hidden" id="periodId">
+                  <div class="mb-3">
+                      <label for="periodName" class="form-label" data-i18n="settings.period_name_label"></label>
+                      <input type="text" id="periodName" class="form-control" required>
+                  </div>
+                  <div class="mb-3">
+                      <label for="periodStartDate" class="form-label" data-i18n="settings.start_date_label"></label>
+                      <input type="date" id="periodStartDate" class="form-control" required>
+                  </div>
+                  <div class="mb-3">
+                      <label for="periodEndDate" class="form-label" data-i18n="settings.end_date_label"></label>
+                      <input type="date" id="periodEndDate" class="form-control" required>
+                  </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel"></button>
+                <button type="submit" class="btn btn-primary" data-i18n="common.save"></button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     `;
   }
 
-  async init(params) {
+  async init() {
+    if (this.app.currentUser.role !== 'admin') {
+      this.app.navigate('#/dashboard');
+      return;
+    }
     this.app.currentPage = this;
-    if (!this.app.isAuthenticated()) {
-      this.app.navigate("/login");
-      return;
-    }
-    await this.loadInitialData();
-    this.updateUI();
-  }
-  
-  async loadInitialData() {
-    try {
-      const currentUser = this.app.currentUser;
-      const allUsers = await this.app.api.getUsers();
-      this.evaluationPeriods = await this.app.api.getEvaluationPeriods();
-      
-      if (this.app.hasAnyRole(['admin', 'evaluator'])) {
-        this.usersForEvaluation = allUsers.filter(u => u.evaluatorId === currentUser.id);
-      }
-      if (this.app.hasRole('worker')) {
-        this.targetUser = currentUser;
-      }
-      if (this.app.hasRole('evaluator')) {
-         this.usersForEvaluation.unshift(currentUser);
-      }
-    } catch (e) {
-      this.app.showError("初期データの読み込みに失敗しました。");
-      console.error(e);
-    }
+    
+    this.periodModal = new bootstrap.Modal(document.getElementById('periodModal'));
+
+    document.getElementById('save-settings-btn').addEventListener('click', () => this.saveSettings());
+    document.getElementById('add-job-type-btn').addEventListener('click', () => this.addJobType());
+    document.getElementById('add-period-btn').addEventListener('click', () => this.showPeriodModal());
+    document.getElementById('periodForm').addEventListener('submit', (e) => this.handlePeriodFormSubmit(e));
+
+    await this.loadData();
+    
+    window.onbeforeunload = (e) => {
+        if (this.hasUnsavedChanges) {
+            e.preventDefault();
+            return e.returnValue = this.app.i18n.t('settings.unsaved_warning');
+        }
+    };
   }
 
-  async loadStructureAndGoals() {
-    this.clearForms();
-    if (!this.targetUser || !this.selectedPeriod) return;
-
+  async loadData() {
     try {
-      this.evaluationStructure = await this.app.api.getEvaluationStructure(this.targetUser.jobType);
-      this.qualitativeGoals = await this.app.api.getQualitativeGoals(this.targetUser.id, this.selectedPeriod.id, 'approved');
-      this.renderAllForms();
-      this.updateUI();
+        this.settings = await this.app.api.getSettings();
+        this.renderSidebars();
+        this.app.i18n.updateUI();
     } catch(e) {
-      this.app.showError("評価項目の読み込みに失敗しました。");
-      console.error(e);
+        this.app.showError("設定データの読み込みに失敗しました。");
+        console.error(e);
     }
   }
 
-  updateUI() {
-    this.populateDropdowns();
-    this.updateTargetDisplay();
-    this.updateProgressIndicator();
-    this.updateNavigationButtons();
-    this.app.i18n.updateUI();
+  renderSidebars() {
+    this.renderJobTypesList();
+    this.renderPeriodsList();
   }
-  
-  populateDropdowns() {
-    const userSelect = document.getElementById('targetUserSelect');
-    if (userSelect) {
-      const selfStr = this.app.i18n.t("evaluation.self_assessment");
-      userSelect.innerHTML = `<option value="">${this.app.i18n.t('common.select')}</option>` +
-        this.usersForEvaluation
-          .map(u => `<option value="${u.id}">${this.app.sanitizeHtml(u.name)} ${u.id === this.app.currentUser.id ? `(${selfStr})` : ''}</option>`).join('');
-    }
+
+  renderJobTypesList() {
+    const list = document.getElementById('job-types-list');
+    list.innerHTML = this.settings.jobTypes.map(jt => `
+        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center ${this.selectedJobTypeId === jt.id ? 'active' : ''}" data-id="${jt.id}">
+            ${this.app.sanitizeHtml(jt.name)}
+            <button class="btn btn-sm btn-outline-danger border-0" data-delete-id="${jt.id}" title="削除"><i class="fas fa-trash"></i></button>
+        </a>`).join('');
     
-    const periodSelect = document.getElementById('evaluationPeriodSelect');
-    if (periodSelect) {
-      periodSelect.innerHTML = `<option value="">${this.app.i18n.t('common.select')}</option>` +
-        this.evaluationPeriods.map(p => `<option value="${p.id}">${this.app.sanitizeHtml(p.name)}</option>`).join('');
-    }
-  }
-
-  updateTargetDisplay() {
-    document.getElementById('displayTargetUserName').textContent = this.targetUser?.name || 'N/A';
-    document.getElementById('displayTargetJobType').textContent = this.targetUser?.jobType || 'N/A';
-    document.getElementById('displayEvaluationPeriod').textContent = this.selectedPeriod?.name || 'N/A';
-  }
-  
-  renderAllForms() {
-    this.renderFormContent('quantitative');
-    this.renderFormContent('qualitative');
-    this.renderFormContent('goals');
-  }
-
-  clearForms() {
-    document.getElementById('quantitativeStep').innerHTML = '';
-    document.getElementById('qualitativeStep').innerHTML = '';
-    document.getElementById('goalsStep').innerHTML = '';
-  }
-
-  renderFormContent(type) {
-    const container = document.getElementById(`${type}Step`);
-    if (!container) return;
-    
-    let items = [];
-    let titleKey = '';
-
-    if (type === 'quantitative' || type === 'qualitative') {
-        items = this.evaluationStructure?.categories
-            .flatMap(cat => cat.items.filter(item => item.type === type).map(item => ({...item, categoryName: cat.name}))) || [];
-        titleKey = `evaluation.${type}`;
-    } else if (type === 'goals') {
-        items = this.qualitativeGoals[0]?.goals || [];
-        titleKey = 'evaluation.goal_achievement';
-    }
-
-    if (items.length === 0) {
-      container.innerHTML = `<div class="card-body text-center text-muted p-5" data-i18n="evaluation.no_${type}_items"></div>`;
-      this.app.i18n.updateUI(container); // 翻訳を適用
-      return;
-    }
-    
-    container.innerHTML = `
-      <div class="card-body">
-        <h4 class="card-title mb-4" data-i18n="${titleKey}"></h4>
-        ${items.map(item => this.renderItem(item, type)).join('')}
-      </div>
-    `;
-  }
-
-  /**
-   * 個別の評価項目を描画
-   */
-  renderItem(item, type) {
-    // ▼▼▼ 修正箇所: item.text と item.name の両方を安全に処理 ▼▼▼
-    const itemNameOrText = item.text || item.name || '';
-    const itemId = item.id || itemNameOrText;
-    // ▲▲▲ 修正箇所 ▲▲▲
-    const isGoal = type === 'goals';
-    
-    return `
-      <div class="evaluation-item mb-4">
-        <label class="form-label fw-bold">${isGoal ? `${this.app.sanitizeHtml(item.text)} (<span data-i18n="evaluation.weight_display" data-i18n-params='{"weight": ${item.weight}}'></span>)` : `${this.app.sanitizeHtml(item.categoryName)} - ${this.app.sanitizeHtml(item.name)}`}</label>
-        <div class="row g-2 align-items-center">
-          <div class="col-md-4">
-            <input type="number" class="form-control" min="1" max="5" placeholder="${this.app.i18n.t('evaluation.score_hint')}" onchange="window.app.currentPage.updateEvaluationData('${type}', '${itemId}', 'score', this.value)">
-          </div>
-          <div class="col-md-8">
-             <input type="text" class="form-control" placeholder="${this.app.i18n.t('evaluation.comment_placeholder')}" onchange="window.app.currentPage.updateEvaluationData('${type}', '${itemId}', 'comment', this.value)">
-          </div>
-        </div>
-      </div>
-    `;
-  }
-  
-  onTargetUserChange(userId) {
-    const allUsers = this.usersForEvaluation.concat(this.app.hasRole('worker') ? [this.app.currentUser] : []);
-    this.targetUser = allUsers.find(u => u.id === userId);
-    this.loadStructureAndGoals();
-  }
-  
-  onPeriodChange(periodId) {
-    this.selectedPeriod = this.evaluationPeriods.find(p => p.id === periodId);
-    if(this.targetUser) {
-        this.loadStructureAndGoals();
-    }
-  }
-
-  updateEvaluationData(type, itemId, field, value) {
-      if (!this.evaluationData[type][itemId]) {
-          this.evaluationData[type][itemId] = {};
-      }
-      this.evaluationData[type][itemId][field] = value;
-  }
-
-  switchStep(step) {
-    this.currentStep = step;
-    document.querySelectorAll('.step-content').forEach(el => el.style.display = 'none');
-    document.getElementById(`${step}Step`).style.display = 'block';
-    this.updateProgressIndicator();
-    this.updateNavigationButtons();
-  }
-
-  nextStep() {
-    const steps = ['quantitative', 'qualitative', 'goals'];
-    const currentIndex = steps.indexOf(this.currentStep);
-    if (currentIndex < steps.length - 1) {
-      this.switchStep(steps[currentIndex + 1]);
-    }
-  }
-
-  previousStep() {
-    const steps = ['quantitative', 'qualitative', 'goals'];
-    const currentIndex = steps.indexOf(this.currentStep);
-    if (currentIndex > 0) {
-      this.switchStep(steps[currentIndex - 1]);
-    }
-  }
-
-  updateProgressIndicator() {
-    document.querySelectorAll('.progress-step').forEach(el => {
-      el.classList.remove('active');
-      if (el.dataset.step === this.currentStep) {
-        el.classList.add('active');
-      }
+    list.querySelectorAll('a').forEach(a => {
+        a.addEventListener('click', (e) => {
+            e.preventDefault();
+            const deleteButton = e.target.closest('button');
+            if (deleteButton) {
+                e.stopPropagation();
+                this.deleteJobType(deleteButton.dataset.deleteId);
+            } else {
+                this.selectJobType(a.dataset.id);
+            }
+        });
     });
   }
 
-  updateNavigationButtons() {
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    if (!prevBtn || !nextBtn) return;
+  renderPeriodsList() {
+    const list = document.getElementById('periods-list');
+    list.innerHTML = this.settings.periods.map(p => `
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <div>${this.app.sanitizeHtml(p.name)}</div>
+                <small class="text-muted">${this.app.formatDate(p.startDate)} - ${this.app.formatDate(p.endDate)}</small>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-primary border-0" title="編集" onclick="window.app.currentPage.showPeriodModal('${p.id}')"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-outline-danger border-0" title="削除" onclick="window.app.currentPage.deletePeriod('${p.id}')"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>`).join('');
+  }
+
+  selectJobType(id) {
+    if (this.hasUnsavedChanges && !confirm(this.app.i18n.t('settings.unsaved_warning'))) {
+        return;
+    }
+    this.selectedJobTypeId = id;
+    this.renderStructureEditor();
+    this.renderJobTypesList();
+  }
+
+  renderStructureEditor() {
+    const editor = document.getElementById('structure-editor');
+    if (!this.selectedJobTypeId) {
+      editor.innerHTML = `<div class="text-center p-5 text-muted" data-i18n="settings.select_job_type_hint"></div>`;
+      this.app.i18n.updateUI(editor);
+      return;
+    }
     
-    prevBtn.style.display = this.currentStep === 'quantitative' ? 'none' : 'inline-block';
-    nextBtn.style.display = this.currentStep === 'goals' ? 'none' : 'inline-block';
-    
-    if (!this.targetUser || !this.selectedPeriod) {
-        nextBtn.style.display = 'none';
-        document.getElementById('submitBtn').disabled = true;
-    } else {
-        document.getElementById('submitBtn').disabled = false;
+    const jobType = this.settings.jobTypes.find(jt => jt.id === this.selectedJobTypeId);
+    const structure = this.settings.structures[this.selectedJobTypeId] || { id: this.selectedJobTypeId, categories: [] };
+
+    editor.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4>${this.app.sanitizeHtml(jobType.name)} <span data-i18n="settings.evaluation_structure_of"></span></h4>
+            <button class="btn btn-outline-primary btn-sm" id="add-category-btn"><i class="fas fa-plus me-2"></i><span data-i18n="settings.add_category"></span></button>
+        </div>
+        <div id="categories-container">
+            ${structure.categories.map((cat, catIndex) => this.renderCategory(cat, catIndex)).join('')}
+        </div>`;
+        
+    document.getElementById('add-category-btn').addEventListener('click', () => this.addCategory());
+    this.app.i18n.updateUI(editor);
+  }
+
+  renderCategory(category, catIndex) {
+    return `
+        <div class="card mb-3 bg-light">
+            <div class="card-header d-flex align-items-center">
+                <input type="text" class="form-control fw-bold" value="${this.app.sanitizeHtml(category.name)}" onchange="window.app.currentPage.updateCategoryName(${catIndex}, this.value)">
+                <button class="btn btn-sm btn-outline-danger border-0 ms-2" onclick="window.app.currentPage.deleteCategory(${catIndex})"><i class="fas fa-trash"></i></button>
+            </div>
+            <div class="list-group list-group-flush">
+                ${category.items.map((item, itemIndex) => this.renderItem(item, catIndex, itemIndex)).join('')}
+                <div class="list-group-item">
+                    <button class="btn btn-secondary btn-sm w-100" onclick="window.app.currentPage.addItem(${catIndex})"><i class="fas fa-plus me-2"></i><span data-i18n="settings.add_item"></span></button>
+                </div>
+            </div>
+        </div>`;
+  }
+
+  renderItem(item, catIndex, itemIndex) {
+      return `
+        <div class="list-group-item d-flex align-items-center gap-2">
+            <input type="text" class="form-control form-control-sm" value="${this.app.sanitizeHtml(item.name)}" onchange="window.app.currentPage.updateItem(${catIndex}, ${itemIndex}, 'name', this.value)">
+            <select class="form-select form-select-sm" style="width: 150px;" onchange="window.app.currentPage.updateItem(${catIndex}, ${itemIndex}, 'type', this.value)">
+                <option value="quantitative" ${item.type === 'quantitative' ? 'selected' : ''} data-i18n="settings.quantitative"></option>
+                <option value="qualitative" ${item.type === 'qualitative' ? 'selected' : ''} data-i18n="settings.qualitative"></option>
+            </select>
+            <button class="btn btn-sm btn-outline-danger border-0" onclick="window.app.currentPage.deleteItem(${catIndex}, ${itemIndex})"><i class="fas fa-times"></i></button>
+        </div>`;
+  }
+  
+  addJobType() {
+    const name = prompt(this.app.i18n.t('settings.job_type_name'));
+    if (name && name.trim()) {
+      const newId = `jt_${Date.now()}`;
+      this.settings.jobTypes.push({ id: newId, name: name.trim() });
+      this.settings.structures[newId] = { id: newId, categories: [] };
+      this.markUnsaved();
+      this.renderJobTypesList();
     }
   }
 
-  saveDraft() {
-    const draftData = {
-      targetUserId: this.targetUser?.id,
-      periodId: this.selectedPeriod?.id,
-      evaluationData: this.evaluationData,
-    };
-    localStorage.setItem(`evaluation-draft-${this.app.currentUser.id}`, JSON.stringify(draftData));
-    this.app.showSuccess('下書きを保存しました。');
+  deleteJobType(id) {
+    if (confirm(this.app.i18n.t('settings.confirm_delete_job_type'))) {
+        this.settings.jobTypes = this.settings.jobTypes.filter(jt => jt.id !== id);
+        delete this.settings.structures[id];
+        if (this.selectedJobTypeId === id) {
+            this.selectedJobTypeId = null;
+            this.renderStructureEditor();
+        }
+        this.markUnsaved();
+        this.renderJobTypesList();
+    }
   }
 
-  submitEvaluation() {
-    if (confirm(this.app.i18n.t('evaluation.confirm_submit'))) {
-      console.log('Submitting evaluation:', this.evaluationData);
-      this.app.showSuccess('評価を提出しました。');
-      this.app.navigate('/evaluations');
+  showPeriodModal(id = null) {
+    const form = document.getElementById('periodForm');
+    form.reset();
+    const title = document.getElementById('periodModalTitle');
+    if (id) {
+        const period = this.settings.periods.find(p => p.id === id);
+        title.textContent = this.app.i18n.t('settings.edit_period');
+        document.getElementById('periodId').value = period.id;
+        document.getElementById('periodName').value = period.name;
+        document.getElementById('periodStartDate').value = period.startDate;
+        document.getElementById('periodEndDate').value = period.endDate;
+    } else {
+        title.textContent = this.app.i18n.t('settings.add_period');
+    }
+    this.periodModal.show();
+  }
+
+  handlePeriodFormSubmit(e) {
+    e.preventDefault();
+    const id = document.getElementById('periodId').value;
+    const name = document.getElementById('periodName').value;
+    const startDate = document.getElementById('periodStartDate').value;
+    const endDate = document.getElementById('periodEndDate').value;
+
+    if (id) { // Edit
+        const index = this.settings.periods.findIndex(p => p.id === id);
+        this.settings.periods[index] = { id, name, startDate, endDate };
+    } else { // Add
+        this.settings.periods.push({ id: `p_${Date.now()}`, name, startDate, endDate });
+    }
+    this.markUnsaved();
+    this.renderPeriodsList();
+    this.periodModal.hide();
+  }
+
+  deletePeriod(id) {
+      if (confirm(this.app.i18n.t('settings.confirm_delete_period'))) {
+          this.settings.periods = this.settings.periods.filter(p => p.id !== id);
+          this.markUnsaved();
+          this.renderPeriodsList();
+      }
+  }
+
+  addCategory() {
+    const name = prompt(this.app.i18n.t('settings.category_name_placeholder'));
+    if (name && name.trim()) {
+        this.settings.structures[this.selectedJobTypeId].categories.push({ name: name.trim(), items: [] });
+        this.markUnsaved();
+        this.renderStructureEditor();
+    }
+  }
+
+  deleteCategory(catIndex) {
+      if (confirm(this.app.i18n.t('settings.confirm_delete_category'))) {
+          this.settings.structures[this.selectedJobTypeId].categories.splice(catIndex, 1);
+          this.markUnsaved();
+          this.renderStructureEditor();
+      }
+  }
+
+  updateCategoryName(catIndex, name) {
+      this.settings.structures[this.selectedJobTypeId].categories[catIndex].name = name;
+      this.markUnsaved();
+  }
+
+  addItem(catIndex) {
+      const name = prompt(this.app.i18n.t('settings.item_name_placeholder'));
+      if (name && name.trim()) {
+          this.settings.structures[this.selectedJobTypeId].categories[catIndex].items.push({ name: name.trim(), type: 'quantitative' });
+          this.markUnsaved();
+          this.renderStructureEditor();
+      }
+  }
+
+  deleteItem(catIndex, itemIndex) {
+      if (confirm(this.app.i18n.t('settings.confirm_delete_item'))) {
+          this.settings.structures[this.selectedJobTypeId].categories[catIndex].items.splice(itemIndex, 1);
+          this.markUnsaved();
+          this.renderStructureEditor();
+      }
+  }
+  
+  updateItem(catIndex, itemIndex, key, value) {
+      this.settings.structures[this.selectedJobTypeId].categories[catIndex].items[itemIndex][key] = value;
+      this.markUnsaved();
+  }
+
+  markUnsaved() {
+    this.hasUnsavedChanges = true;
+    document.getElementById('save-settings-btn').disabled = false;
+  }
+
+  async saveSettings() {
+    const btn = document.getElementById('save-settings-btn');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${this.app.i18n.t('common.loading')}`;
+    try {
+      await this.app.api.saveSettings(this.settings);
+      this.hasUnsavedChanges = false;
+      this.app.showSuccess(this.app.i18n.t('messages.save_success'));
+    } catch (e) {
+      this.app.showError(e.message);
+    } finally {
+        btn.disabled = true; // Keep it disabled after save
+        btn.innerHTML = `<i class="fas fa-save me-2"></i><span data-i18n="settings.save_changes"></span>`;
+        this.app.i18n.updateUI(btn);
     }
   }
 }
-
-window.EvaluationFormPage = EvaluationFormPage;
