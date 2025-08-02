@@ -347,3 +347,25 @@
     "account_inactive": "Tài khoản này hiện không hoạt động."
   }
 }
+{
+  "users": {
+    "title": "Quản lý người dùng",
+    "invite": "Thêm người dùng mới",
+    "role": "Vai trò",
+    "status": "Trạng thái",
+    "created_at": "Ngày đăng ký",
+    "actions": "Hành động",
+    "search_users": "Tìm kiếm người dùng...",
+    "pending_approvals": "Người dùng chờ duyệt",
+    "active_users": "Danh sách người dùng",
+    "invite_title": "Mời người dùng mới",
+    "send_invitation": "Gửi lời mời",
+    "invite_link_created": "Đã tạo liên kết mời",
+    "invite_link_instructions": "Vui lòng sao chép liên kết bên dưới và chia sẻ cho người dùng bạn muốn mời. Liên kết có hiệu lực trong 7 ngày.",
+    "copy_success": "Đã sao chép liên kết!",
+    "confirm_approve": "Bạn có chắc chắn muốn phê duyệt người dùng này không?",
+    "approve_success": "Phê duyệt người dùng thành công.",
+    "confirm_reject": "Bạn có chắc chắn muốn từ chối (xóa) người dùng này không?",
+    "reject_success": "Từ chối người dùng thành công."
+  }
+}
