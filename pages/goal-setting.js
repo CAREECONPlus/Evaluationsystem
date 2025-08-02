@@ -1,274 +1,202 @@
 /**
- * Goal Setting Page Component
- * 目標設定ページコンポーネント
+ * Goal Setting Page Component (Firebase Integrated)
+ * 目標設定ページコンポーネント（Firebase連携版）
  */
-class GoalSettingPage {
+export class GoalSettingPage {
   constructor(app) {
     this.app = app;
     this.goals = [];
+    this.periods = [];
+    this.selectedPeriodId = null;
+    this.existingGoalDoc = null; // To store the loaded goal document from Firestore
     this.totalWeight = 0;
     this.maxGoals = 5;
-    this.isSubmitted = false;
-    this.evaluationPeriods = []; // 評価期間データ
   }
 
-  /**
-   * Render goal setting page
-   */
   async render() {
     return `
       <div class="goal-setting-page p-4">
-        <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex justify-content-between align-items-center mb-4">
           <h1 data-i18n="goals.title"></h1>
           <div class="goal-actions">
-            <button class="btn btn-secondary" onclick="window.app.currentPage.loadDraft()" id="loadDraftBtn"><span data-i18n="common.load_draft"></span></button>
-            <button class="btn btn-primary" onclick="window.app.currentPage.saveDraft()" id="saveDraftBtn"><span data-i18n="common.save_draft"></span></button>
-            <button class="btn btn-success" onclick="window.app.currentPage.submitGoals()" id="submitBtn" disabled><span data-i18n="goals.apply"></span></button>
+            <button class="btn btn-primary" id="submit-goals-btn" disabled>
+                <i class="fas fa-paper-plane me-2"></i><span data-i18n="goals.apply"></span>
+            </button>
           </div>
         </div>
 
         <div class="alert alert-info">
-          <h4 data-i18n="goals.about_goal_setting"></h4>
+          <h4 class="alert-heading" data-i18n="goals.about_goal_setting"></h4>
           <ul>
-            <li data-i18n="goals.max_goals_info" data-i18n-params='{"maxGoals": ${this.maxGoals}}'></li>
-            <li data-i18n="goals.set_weights_info"></li>
+            <li data-i18n="goals.max_goals_info" data-i18n-params='{"maxGoals": 5}'></li>
             <li data-i18n="goals.total_weight_100_info"></li>
             <li data-i18n="goals.admin_approval_info"></li>
           </ul>
         </div>
 
-        <div class="card mb-2" id="currentStatusCard" style="display: none;">
-          <div class="card-header"><h3 data-i18n="common.current_status"></h3></div>
-          <div class="card-body" id="currentStatusContent"></div>
-        </div>
-
         <div class="card">
-          <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-              <h3 data-i18n="goals.goal_setting_form"></h3>
-              <div class="weight-indicator">
-                <span data-i18n="goals.total_weight"></span>: 
-                <span id="totalWeight" class="weight-value">0</span>%
-                <span class="weight-status" id="weightStatus"></span>
-              </div>
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <label for="period-select" class="form-label mb-0" data-i18n="evaluations.select_period"></label>
+                <select id="period-select" class="form-select d-inline-block w-auto ms-2"></select>
+            </div>
+            <div class="weight-indicator fw-bold">
+              <span data-i18n="goals.total_weight"></span>: 
+              <span id="total-weight" class="ms-2">0%</span>
             </div>
           </div>
           <div class="card-body">
-            <div id="goalsContainer"></div>
-            <button class="btn btn-primary" onclick="window.app.currentPage.addGoal()" id="addGoalBtn"><span data-i18n="goals.add_goal"></span></button>
-          </div>
-        </div>
-
-        <div class="card mt-2">
-          <div class="card-header"><h3 data-i18n="evaluation.period"></h3></div>
-          <div class="card-body">
-            <div class="form-group">
-              <label for="evaluationPeriod" class="form-label" data-i18n="goals.select_evaluation_period"></label>
-              <select id="evaluationPeriod" class="form-select" onchange="window.app.currentPage.onPeriodChange()"></select>
+            <div id="goals-container">
+                <p class="text-muted text-center" data-i18n="goals.select_evaluation_period"></p>
             </div>
+            <button id="add-goal-btn" class="btn btn-secondary mt-3" disabled>
+                <i class="fas fa-plus me-2"></i><span data-i18n="goals.add_goal"></span>
+            </button>
           </div>
         </div>
       </div>
     `;
   }
 
-  /**
-   * Initialize goal setting page
-   */
   async init() {
     this.app.currentPage = this;
-
-    if (!this.app.hasAnyRole(["evaluator", "worker"])) {
-      this.app.navigate("/dashboard");
-      return;
+    if (!this.app.hasAnyRole(['evaluator', 'worker'])) {
+        this.app.navigate('#/dashboard');
+        return;
     }
 
-    await this.loadEvaluationPeriods();
-    await this.loadExistingGoals();
+    document.getElementById('period-select').addEventListener('change', (e) => this.loadGoalsForPeriod(e.target.value));
+    document.getElementById('add-goal-btn').addEventListener('click', () => this.addGoal());
+    document.getElementById('submit-goals-btn').addEventListener('click', () => this.submitGoals());
 
-    if (this.goals.length === 0) {
-      this.addGoal();
-    }
-
-    this.renderGoals();
-    this.updateUI();
-
-    if (this.app.i18n) {
-      this.app.i18n.updateUI();
-    }
+    await this.loadPeriods();
   }
 
-  updateUI() {
-    this.updateWeightIndicator();
-    this.updateAddGoalButton();
-    this.updateSubmitButton();
-  }
-  
-  async loadEvaluationPeriods() {
+  async loadPeriods() {
       try {
-          this.evaluationPeriods = await this.app.api.getEvaluationPeriods();
-          const periodSelect = document.getElementById("evaluationPeriod");
-          if (periodSelect) {
-              periodSelect.innerHTML = `<option value="" data-i18n="common.select"></option>` +
-                                       this.evaluationPeriods.map(p => `<option value="${p.id}">${this.app.sanitizeHtml(p.name)}</option>`).join('');
-          }
-      } catch (error) {
-          this.app.showError(this.app.i18n.t("errors.evaluation_periods_load_failed"));
+          const settings = await this.app.api.getSettings();
+          this.periods = settings.periods;
+          const select = document.getElementById('period-select');
+          select.innerHTML = `<option value="">${this.app.i18n.t('common.select')}</option>` + 
+              this.periods.map(p => `<option value="${p.id}">${this.app.sanitizeHtml(p.name)}</option>`).join('');
+          this.app.i18n.updateUI();
+      } catch(e) {
+          this.app.showError("評価期間の読み込みに失敗しました。");
+          console.error(e);
       }
   }
 
-  async loadExistingGoals() {
+  async loadGoalsForPeriod(periodId) {
+    this.selectedPeriodId = periodId;
+    const container = document.getElementById('goals-container');
+    const addBtn = document.getElementById('add-goal-btn');
+    
+    if (!periodId) {
+        container.innerHTML = `<p class="text-muted text-center" data-i18n="goals.select_evaluation_period"></p>`;
+        addBtn.disabled = true;
+        this.app.i18n.updateUI(container);
+        this.updateTotalWeight();
+        return;
+    }
+
     try {
-      const existingGoals = await this.app.api.getQualitativeGoals(this.app.currentUser.id);
-      const latestGoalSet = existingGoals.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt))[0];
-      
-      if (latestGoalSet) {
-        this.goals = latestGoalSet.goals || [];
-        this.isSubmitted = (latestGoalSet.status !== "draft" && latestGoalSet.status !== "rejected");
-        
-        const periodSelect = document.getElementById("evaluationPeriod");
-        if (periodSelect) periodSelect.value = latestGoalSet.period;
-        
-        this.showCurrentStatus(latestGoalSet.status);
-        if (this.isSubmitted) this.disableForm();
-      }
-    } catch (error) {
-      this.app.showError(this.app.i18n.t("errors.goals_load_failed"));
+        this.existingGoalDoc = await this.app.api.getGoals(this.app.currentUser.uid, periodId);
+        this.goals = this.existingGoalDoc ? this.existingGoalDoc.goals : [{ text: '', weight: 0 }];
+        addBtn.disabled = false;
+        this.renderGoals();
+    } catch(e) {
+        this.app.showError("目標データの読み込みに失敗しました。");
+        console.error(e);
     }
-  }
-
-  showCurrentStatus(status) {
-    const card = document.getElementById("currentStatusCard");
-    const content = document.getElementById("currentStatusContent");
-    if(!card || !content) return;
-
-    card.style.display = "block";
-    content.innerHTML = `<div class="alert alert-info"><strong><span data-i18n="common.status"></span>:</strong> <span data-i18n="status.${status}"></span></div>`;
-    this.app.i18n.updateUI(content);
-  }
-
-  addGoal() {
-    if (this.isSubmitted) return;
-    if (this.goals.length >= this.maxGoals) {
-      this.app.showError(this.app.i18n.t("errors.max_goals_reached", { maxGoals: this.maxGoals }));
-      return;
-    }
-    this.goals.push({ id: `goal-${this.app.generateId()}`, text: "", weight: 0 });
-    this.renderGoals();
-    this.updateUI();
-  }
-
-  removeGoal(goalId) {
-    if (this.isSubmitted) return;
-    if (this.goals.length <= 1) return;
-    this.goals = this.goals.filter((goal) => goal.id !== goalId);
-    this.renderGoals();
-    this.updateUI();
-  }
-
-  updateGoalText(goalId, text) {
-    const goal = this.goals.find((g) => g.id === goalId);
-    if (goal) goal.text = text;
-    this.updateSubmitButton();
-  }
-
-  updateGoalWeight(goalId, weight) {
-    const goal = this.goals.find((g) => g.id === goalId);
-    if (goal) goal.weight = Number.parseInt(weight) || 0;
-    this.updateWeightIndicator();
-    this.updateSubmitButton();
   }
 
   renderGoals() {
-    const container = document.getElementById("goalsContainer");
-    if (!container) return;
+    const container = document.getElementById('goals-container');
+    const isEditable = !this.existingGoalDoc || this.existingGoalDoc.status === 'draft' || this.existingGoalDoc.status === 'rejected';
+
     container.innerHTML = this.goals.map((goal, index) => `
-      <div class="goal-item" data-goal-id="${goal.id}">
-        <div class="goal-header">
-          <h4><span data-i18n="goals.goal_number" data-i18n-params='{"number": ${index + 1}}'></span></h4>
-          <button class="btn btn-danger btn-sm" onclick="window.app.currentPage.removeGoal('${goal.id}')" ${this.goals.length <= 1 || this.isSubmitted ? "disabled" : ""}>
-            <span data-i18n="goals.remove_goal"></span>
-          </button>
+        <div class="row g-2 mb-2 align-items-center">
+            <div class="col">
+                <textarea class="form-control" rows="2" placeholder="目標内容" ${!isEditable ? 'readonly' : ''} oninput="window.app.currentPage.updateGoal(${index}, 'text', this.value)">${this.app.sanitizeHtml(goal.text)}</textarea>
+            </div>
+            <div class="col-auto">
+                <input type="number" class="form-control" placeholder="ウェイト(%)" style="width: 120px;" min="0" max="100" ${!isEditable ? 'readonly' : ''} oninput="window.app.currentPage.updateGoal(${index}, 'weight', this.value)" value="${goal.weight || ''}">
+            </div>
+            <div class="col-auto">
+                ${isEditable ? `<button class="btn btn-sm btn-outline-danger" onclick="window.app.currentPage.removeGoal(${index})"><i class="fas fa-trash"></i></button>` : ''}
+            </div>
         </div>
-        <div class="goal-content">
-          <div class="form-group">
-            <label for="goalText-${goal.id}" class="form-label" data-i18n="goals.goal_text"></label>
-            <textarea id="goalText-${goal.id}" class="form-control" rows="3" data-i18n-placeholder="goals.goal_content_placeholder" oninput="window.app.currentPage.updateGoalText('${goal.id}', this.value)" ${this.isSubmitted ? "readonly" : ""}>${this.app.sanitizeHtml(goal.text)}</textarea>
-          </div>
-          <div class="form-group">
-            <label for="goalWeight-${goal.id}" class="form-label" data-i18n="goals.weight_percent"></label>
-            <input type="number" id="goalWeight-${goal.id}" class="form-control" min="0" max="100" value="${goal.weight}" oninput="window.app.currentPage.updateGoalWeight('${goal.id}', this.value)" ${this.isSubmitted ? "readonly" : ""}>
-          </div>
-        </div>
-      </div>`).join("");
-    this.app.i18n.updateUI(container);
+    `).join('');
+
+    document.getElementById('add-goal-btn').disabled = !isEditable || this.goals.length >= this.maxGoals;
+    this.updateTotalWeight();
   }
 
-  updateWeightIndicator() {
-    this.totalWeight = this.goals.reduce((sum, goal) => sum + (goal.weight || 0), 0);
-    const totalWeightEl = document.getElementById("totalWeight");
-    const weightStatusEl = document.getElementById("weightStatus");
-    if (totalWeightEl) totalWeightEl.textContent = this.totalWeight;
-    if (weightStatusEl) {
-      if (this.totalWeight === 100) {
-        weightStatusEl.textContent = this.app.i18n.t("common.valid_status");
-        weightStatusEl.className = "weight-status text-success";
-      } else {
-        weightStatusEl.textContent = this.totalWeight > 100 ? this.app.i18n.t("common.over_limit_status") : this.app.i18n.t("common.insufficient_status");
-        weightStatusEl.className = "weight-status text-danger";
-      }
-    }
+  updateGoal(index, key, value) {
+    this.goals[index][key] = (key === 'weight') ? Number(value) : value;
+    this.updateTotalWeight();
   }
 
-  updateAddGoalButton() {
-    const addBtn = document.getElementById("addGoalBtn");
-    if (addBtn) addBtn.disabled = this.goals.length >= this.maxGoals || this.isSubmitted;
-  }
-
-  updateSubmitButton() {
-    const submitBtn = document.getElementById("submitBtn");
-    if (submitBtn) {
-      const period = document.getElementById("evaluationPeriod")?.value;
-      submitBtn.disabled = !(this.totalWeight === 100 && this.goals.length > 0 && this.goals.every(g => g.text.trim()) && period && !this.isSubmitted);
-    }
-  }
-
-  async saveDraft() {
-    const userId = this.app.currentUser.id;
-    localStorage.setItem(`goals-draft-${userId}`, JSON.stringify({ goals: this.goals, period: document.getElementById("evaluationPeriod").value }));
-    this.app.showSuccess(this.app.i18n.t("messages.save_success"));
-  }
-
-  async loadDraft() {
-    const userId = this.app.currentUser.id;
-    const draftData = localStorage.getItem(`goals-draft-${userId}`);
-    if (draftData) {
-      const draft = JSON.parse(draftData);
-      this.goals = draft.goals || [];
-      document.getElementById("evaluationPeriod").value = draft.period || "";
+  addGoal() {
+    if (this.goals.length < this.maxGoals) {
+      this.goals.push({ text: '', weight: 0 });
       this.renderGoals();
-      this.updateUI();
-      this.app.showInfo(this.app.i18n.t("messages.draft_loaded"));
-    } else {
-      this.app.showWarning(this.app.i18n.t("errors.no_draft_found"));
     }
+  }
+
+  removeGoal(index) {
+      if (this.goals.length > 1) {
+          this.goals.splice(index, 1);
+          this.renderGoals();
+      }
+  }
+
+  updateTotalWeight() {
+    const total = this.goals.reduce((sum, goal) => sum + (goal.weight || 0), 0);
+    this.totalWeight = total;
+    
+    const totalEl = document.getElementById('total-weight');
+    totalEl.textContent = `${total}%`;
+    totalEl.classList.toggle('text-success', total === 100);
+    totalEl.classList.toggle('text-danger', total !== 100);
+
+    const isEditable = !this.existingGoalDoc || this.existingGoalDoc.status === 'draft' || this.existingGoalDoc.status === 'rejected';
+    document.getElementById('submit-goals-btn').disabled = total !== 100 || !isEditable;
   }
 
   async submitGoals() {
-    if (!confirm(this.app.i18n.t("goals.confirm_submit"))) return;
-    this.isSubmitted = true;
-    this.disableForm();
-    this.app.showSuccess(this.app.i18n.t("messages.goals_submitted"));
-    // API call logic here
-  }
+    if (this.totalWeight !== 100) {
+        this.app.showError("合計ウェイトは100%にしてください。");
+        return;
+    }
+    if (!confirm(this.app.i18n.t('goals.confirm_apply'))) return;
 
-  disableForm() {
-    document.querySelectorAll('.goal-setting-page input, .goal-setting-page textarea, .goal-setting-page select, .goal-setting-page button').forEach(el => el.disabled = true);
-  }
+    const period = this.periods.find(p => p.id === this.selectedPeriodId);
+    const data = {
+        id: this.existingGoalDoc?.id, // Pass ID for updates
+        userId: this.app.currentUser.uid,
+        userName: this.app.currentUser.name,
+        periodId: this.selectedPeriodId,
+        periodName: period.name,
+        goals: this.goals,
+        status: 'pending_approval',
+        tenantId: this.app.currentUser.tenantId,
+        submittedAt: serverTimestamp()
+    };
 
-  onPeriodChange() {
-    this.updateSubmitButton();
+    const btn = document.getElementById('submit-goals-btn');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${this.app.i18n.t('common.loading')}`;
+
+    try {
+        await this.app.api.saveGoals(data);
+        this.app.showSuccess(this.app.i18n.t('messages.save_success'));
+        this.app.navigate('#/dashboard');
+    } catch (e) {
+        this.app.showError(e.message);
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fas fa-paper-plane me-2"></i><span data-i18n="goals.apply"></span>`;
+        this.app.i18n.updateUI(btn);
+    }
   }
 }
-
-window.GoalSettingPage = GoalSettingPage;
