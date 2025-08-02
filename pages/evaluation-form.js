@@ -5,7 +5,7 @@
 export class EvaluationFormPage {
   constructor(app) {
     this.app = app;
-    this.evaluationData = {}; // { itemId: { selfScore, selfComment, evalScore, evalComment } }
+    this.evaluationData = {}; // { itemId: { itemName, selfScore, selfComment, evalScore, evalComment } }
     this.targetUser = null;
     this.selectedPeriod = null;
     this.evaluationStructure = null;
@@ -70,6 +70,8 @@ export class EvaluationFormPage {
             this.usersForEvaluation = [currentUser];
             userSelect.innerHTML = `<option value="${currentUser.uid}" selected>${this.app.sanitizeHtml(currentUser.name)}</option>`;
             userSelect.disabled = true;
+            // Automatically trigger selection change if worker has only one option
+            this.onSelectionChange();
         } else { // admin or evaluator
             this.usersForEvaluation = await this.app.api.getSubordinates();
             // Also add self for self-evaluation
@@ -108,15 +110,14 @@ export class EvaluationFormPage {
     this.selectedPeriod = this.periods.find(p => p.id === periodId);
     
     try {
-        // Fetch all necessary data in parallel
         const [structure, goals, existingEval] = await Promise.all([
             this.app.api.getEvaluationStructure(this.targetUser.jobTypeId),
-            this.app.api.getGoals(this.targetUser.id, this.selectedPeriod.id, 'approved'),
+            this.app.api.getGoals(this.targetUser.id, this.selectedPeriod.id),
             this.app.api.getEvaluation(this.targetUser.id, this.selectedPeriod.id)
         ]);
 
         this.evaluationStructure = structure;
-        this.qualitativeGoals = goals ? goals.goals : [];
+        this.qualitativeGoals = (goals && goals.status === 'approved') ? goals.goals : [];
         this.existingEvaluation = existingEval;
         this.evaluationData = existingEval ? existingEval.ratings : {};
         
@@ -133,9 +134,8 @@ export class EvaluationFormPage {
     const currentUser = this.app.currentUser;
     const isSelfEvaluation = currentUser.uid === this.targetUser.id;
     
-    // Determine who can edit which column
-    const canEditSelf = isSelfEvaluation;
-    const canEditEval = !isSelfEvaluation && this.app.hasAnyRole(['admin', 'evaluator']);
+    const canEditSelf = isSelfEvaluation && (!this.existingEvaluation || this.existingEvaluation.status === 'pending_submission');
+    const canEditEval = !isSelfEvaluation && this.app.hasAnyRole(['admin', 'evaluator']) && this.existingEvaluation && this.existingEvaluation.status === 'self_assessed';
 
     container.innerHTML = `
         <div class="col-lg-6">
@@ -157,15 +157,13 @@ export class EvaluationFormPage {
     let html = '';
     if (!this.evaluationStructure) return `<p class="text-muted" data-i18n="settings.no_structure_for_job_type"></p>`;
 
-    // Render items from structure
     this.evaluationStructure.categories.forEach(cat => {
-        html += `<h6>${this.app.sanitizeHtml(cat.name)}</h6>`;
+        html += `<h6 class="mt-3">${this.app.sanitizeHtml(cat.name)}</h6>`;
         cat.items.forEach(item => {
             html += this.renderSingleItem(item, type, canEdit, false);
         });
     });
 
-    // Render items from goals
     html += `<h6 class="mt-4" data-i18n="evaluation.goal_achievement"></h6>`;
     if (this.qualitativeGoals.length > 0) {
         this.qualitativeGoals.forEach(goal => {
@@ -187,8 +185,8 @@ export class EvaluationFormPage {
       return `
           <div class="mb-3">
               <label class="form-label fw-bold">${this.app.sanitizeHtml(isGoal ? item.text : item.name)} ${isGoal ? `<span class="fw-normal text-muted">(${item.weight}%)</span>` : ''}</label>
-              <input type="number" class="form-control mb-1" placeholder="${this.app.i18n.t('evaluation.score')}" min="1" max="5" ${canEdit ? '' : 'readonly'} value="${score}" oninput="window.app.currentPage.updateData('${itemId}', '${isGoal ? item.name : ''}', '${type}Score', this.value)">
-              <textarea class="form-control" rows="2" placeholder="${this.app.i18n.t('evaluation.comment')}" ${canEdit ? '' : 'readonly'} oninput="window.app.currentPage.updateData('${itemId}', '${isGoal ? item.name : ''}', '${type}Comment', this.value)">${this.app.sanitizeHtml(comment)}</textarea>
+              <input type="number" class="form-control mb-1" placeholder="${this.app.i18n.t('evaluation.score')}" min="1" max="5" ${canEdit ? '' : 'readonly'} value="${score}" oninput="window.app.currentPage.updateData('${itemId}', '${isGoal ? item.text : item.name}', '${type}Score', this.value)">
+              <textarea class="form-control" rows="2" placeholder="${this.app.i18n.t('evaluation.comment')}" ${canEdit ? '' : 'readonly'} oninput="window.app.currentPage.updateData('${itemId}', '${isGoal ? item.text : item.name}', '${type}Comment', this.value)">${this.app.sanitizeHtml(comment)}</textarea>
           </div>
       `;
   }
@@ -208,8 +206,7 @@ export class EvaluationFormPage {
     if (isSelfEvaluation) {
         status = 'self_assessed';
     } else if (this.app.hasAnyRole(['admin', 'evaluator'])) {
-        // Assuming self-assessment is done, evaluator completes it.
-        status = 'completed'; // Or 'approved_by_evaluator' if there's another step
+        status = 'pending_approval'; // Now goes to admin for final approval
     }
 
     const data = {
@@ -217,10 +214,11 @@ export class EvaluationFormPage {
         tenantId: currentUser.tenantId,
         targetUserId: this.targetUser.id,
         targetUserName: this.targetUser.name,
+        jobTypeId: this.targetUser.jobTypeId,
         periodId: this.selectedPeriod.id,
         periodName: this.selectedPeriod.name,
         evaluatorId: this.targetUser.evaluatorId || null,
-        evaluatorName: isSelfEvaluation ? this.targetUser.evaluatorName : currentUser.name,
+        evaluatorName: isSelfEvaluation ? this.usersForEvaluation.find(u => u.id === this.targetUser.evaluatorId)?.name : currentUser.name,
         ratings: this.evaluationData,
         status: status,
         submittedAt: serverTimestamp()
