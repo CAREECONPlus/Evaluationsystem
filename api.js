@@ -18,8 +18,6 @@ import { httpsCallable } from "https://www.gstatic.com/firebasejs/9.19.1/firebas
 /**
  * API Service (Firestore Integrated)
  * APIサービス (Firestore連携版)
- * This class handles all communication with the Firestore database.
- * このクラスはFirestoreデータベースとのすべての通信を処理します。
  */
 export class API {
     constructor(app) {
@@ -29,11 +27,7 @@ export class API {
     }
 
     // --- Dashboard ---
-    /**
-     * Fetches statistics for the dashboard.
-     * ダッシュボード用の統計データを取得します。
-     * @returns {Promise<object>} An object with stats.
-     */
+    // ... (existing getDashboardStats method remains unchanged)
     async getDashboardStats() {
         if (!this.app.currentUser?.tenantId) return { totalUsers: 0, completedEvaluations: 0, pendingEvaluations: 0 };
         const tenantId = this.app.currentUser.tenantId;
@@ -56,12 +50,7 @@ export class API {
     }
 
     // --- User Management ---
-    /**
-     * Fetches users by their status for the current tenant.
-     * 現在のテナントのユーザーステータスに基づいてユーザーを取得します。
-     * @param {string} status - The user status ('active', 'pending_approval').
-     * @returns {Promise<Array>} An array of user objects.
-     */
+    // ... (existing user management methods remain unchanged)
     async getUsers(status) {
         if (!this.app.currentUser?.tenantId) return [];
         const q = query(collection(this.db, "users"), where("tenantId", "==", this.app.currentUser.tenantId), where("status", "==", status));
@@ -69,11 +58,6 @@ export class API {
         return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     }
 
-    /**
-     * Fetches subordinates for the current user (evaluator).
-     * 現在のユーザー（評価者）の部下を取得します。
-     * @returns {Promise<Array>} An array of subordinate user objects.
-     */
     async getSubordinates() {
         if (!this.app.currentUser?.tenantId) return [];
         const q = query(collection(this.db, "users"), where("tenantId", "==", this.app.currentUser.tenantId), where("evaluatorId", "==", this.app.currentUser.uid));
@@ -81,35 +65,47 @@ export class API {
         return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     }
 
-    /**
-     * Updates a user's status in Firestore.
-     * Firestoreでユーザーステータスを更新します。
-     * @param {string} userId - The ID of the user to update.
-     * @param {string} status - The new status.
-     */
     async updateUserStatus(userId, status) {
         const userDocRef = doc(this.db, "users", userId);
         await updateDoc(userDocRef, { status: status });
     }
 
-    /**
-     * Deletes a user document from Firestore.
-     * Firestoreからユーザードキュメントを削除します。
-     * @param {string} userId - The ID of the user to delete.
-     */
     async deleteUser(userId) {
-        // Note: This only deletes the Firestore record. The Auth user needs to be deleted separately via a Cloud Function for security reasons.
-        // 注意: これはFirestoreのレコードのみを削除します。Authユーザーはセキュリティ上の理由からCloud Function経由で別途削除する必要があります。
         const userDocRef = doc(this.db, "users", userId);
         await deleteDoc(userDocRef);
     }
+    
+    /**
+     * Creates a user invitation document in Firestore.
+     * Firestoreにユーザー招待ドキュメントを作成します。
+     * @param {object} invitationData - The data for the invitation.
+     * @returns {Promise<string>} The generated invitation token.
+     */
+    async createInvitation(invitationData) {
+        if (!this.app.hasRole('admin')) throw new Error("Permission denied.");
+
+        // Generate a secure random token
+        const token = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+        const now = new Date();
+        const expiresAt = new Date(now.setDate(now.getDate() + 7)); // Invitation expires in 7 days
+
+        const docData = {
+            ...invitationData,
+            tenantId: this.app.currentUser.tenantId,
+            companyName: this.app.currentUser.companyName,
+            token: token,
+            used: false,
+            createdAt: serverTimestamp(),
+            expiresAt: expiresAt,
+            type: 'user' // Differentiate from admin invitations if any
+        };
+
+        await addDoc(collection(this.db, "invitations"), docData);
+        return token;
+    }
 
     // --- Evaluations & Goals ---
-    /**
-     * Fetches all evaluations for the current tenant.
-     * 現在のテナントのすべての評価を取得します。
-     * @returns {Promise<Array>} An array of evaluation objects.
-     */
+    // ... (existing evaluation & goal methods remain unchanged)
     async getEvaluations() {
         if (!this.app.currentUser?.tenantId) return [];
         const q = query(collection(this.db, "evaluations"), where("tenantId", "==", this.app.currentUser.tenantId));
@@ -117,12 +113,6 @@ export class API {
         return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     }
 
-    /**
-     * Fetches a single evaluation by its ID.
-     * IDで単一の評価を取得します。
-     * @param {string} id - The evaluation document ID.
-     * @returns {Promise<object|null>} The evaluation object or null.
-     */
     async getEvaluationById(id) {
         const docRef = doc(this.db, "evaluations", id);
         const docSnap = await getDoc(docRef);
@@ -132,11 +122,6 @@ export class API {
         return null;
     }
     
-    /**
-     * Saves or updates an evaluation document.
-     * 評価ドキュメントを保存または更新します。
-     * @param {object} data - The evaluation data.
-     */
     async saveEvaluation(data) {
         if (data.id) {
             const docRef = doc(this.db, "evaluations", data.id);
@@ -146,11 +131,6 @@ export class API {
         }
     }
 
-    /**
-     * Fetches goals for a specific user and period.
-     * 特定のユーザーと期間の目標を取得します。
-     * @returns {Promise<object|null>} The goal document object or null.
-     */
     async getGoals(userId, periodId) {
         if (!this.app.currentUser?.tenantId) return null;
         const q = query(collection(this.db, "qualitativeGoals"), where("tenantId", "==", this.app.currentUser.tenantId), where("userId", "==", userId), where("periodId", "==", periodId));
@@ -160,11 +140,6 @@ export class API {
         return { id: doc.id, ...doc.data() };
     }
 
-    /**
-     * Fetches all goals pending approval for the current tenant.
-     * 現在のテナントで承認待ちのすべての目標を取得します。
-     * @returns {Promise<Array>} An array of goal objects.
-     */
     async getPendingGoals() {
         if (!this.app.currentUser?.tenantId) return [];
         const q = query(collection(this.db, "qualitativeGoals"), where("tenantId", "==", this.app.currentUser.tenantId), where("status", "==", "pending_approval"));
@@ -172,11 +147,6 @@ export class API {
         return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     }
 
-    /**
-     * Saves or updates a goal document.
-     * 目標ドキュメントを保存または更新します。
-     * @param {object} goalData - The goal data.
-     */
     async saveGoals(goalData) {
         if (goalData.id) {
             const docRef = doc(this.db, "qualitativeGoals", goalData.id);
@@ -186,23 +156,13 @@ export class API {
         }
     }
 
-    /**
-     * Updates the status of a goal document.
-     * 目標ドキュメントのステータスを更新します。
-     * @param {string} goalId - The ID of the goal document.
-     * @param {string} status - The new status.
-     */
     async updateGoalStatus(goalId, status) {
         const docRef = doc(this.db, "qualitativeGoals", goalId);
         await updateDoc(docRef, { status });
     }
 
     // --- Settings ---
-    /**
-     * Fetches all settings data for the current tenant.
-     * 現在のテナントのすべての設定データを取得します。
-     * @returns {Promise<object>} An object containing jobTypes, periods, and structures.
-     */
+    // ... (existing settings methods remain unchanged)
     async getSettings() {
         if (!this.app.currentUser?.tenantId) return { jobTypes: [], periods: [], structures: {} };
         const tenantId = this.app.currentUser.tenantId;
@@ -226,11 +186,6 @@ export class API {
         };
     }
 
-    /**
-     * Saves all settings changes in a single batch operation.
-     * すべての設定変更を単一のバッチ操作で保存します。
-     * @param {object} settings - The settings object to save.
-     */
     async saveSettings(settings) {
         const batch = writeBatch(this.db);
         const tenantId = this.app.currentUser.tenantId;
@@ -241,24 +196,28 @@ export class API {
         
         await batch.commit();
     }
+    
+    /**
+     * Fetches job types for the current tenant.
+     * 現在のテナントの職種を取得します。
+     * @returns {Promise<Array>} An array of job type objects.
+     */
+    async getJobTypes() {
+        if (!this.app.currentUser?.tenantId) return [];
+        const q = query(collection(this.db, "targetJobTypes"), where("tenantId", "==", this.app.currentUser.tenantId));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+
 
     // --- Developer & Registration ---
-    /**
-     * Fetches admin accounts pending developer approval.
-     * 開発者の承認待ちの管理者アカウントを取得します。
-     * @returns {Promise<Array>} An array of pending admin user objects.
-     */
+    // ... (existing developer & registration methods remain unchanged)
     async getPendingAdmins() {
         const q = query(collection(this.db, "users"), where("status", "==", "developer_approval_pending"));
         const querySnapshot = await getDocs(q);
         return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     }
 
-    /**
-     * Approves an admin account (requires a Cloud Function).
-     * 管理者アカウントを承認します（Cloud Functionが必要です）。
-     * @param {string} userId - The ID of the user to approve.
-     */
     async approveAdmin(userId) {
         const approveAdminFunction = httpsCallable(this.functions, 'approveAdmin');
         await approveAdminFunction({ userId });
