@@ -2,77 +2,56 @@
  * Sidebar Component
  * サイドバーコンポーネント
  */
-class SidebarComponent {
-  constructor() {
-    this.isVisible = false;
-    this.currentUser = null;
-    this.app = null;
-  }
-
-  show() {
-    if (!this.app || !this.app.currentUser) return this.hide();
-    this.currentUser = this.app.currentUser;
-    this.isVisible = true;
-    this.render();
-  }
-
-  hide() {
-    this.isVisible = false;
-    const sidebarContainer = document.getElementById("sidebar-container");
-    if (sidebarContainer) {
-      sidebarContainer.innerHTML = "";
+export class SidebarComponent {
+    constructor(app) {
+        this.app = app;
     }
-  }
 
-  update() {
-    if (this.isVisible) this.render();
-  }
+    /**
+     * Renders or hides the sidebar based on authentication status and user role.
+     * 認証状態とユーザーの役割に基づいてサイドバーを描画または非表示にします。
+     */
+    update() {
+        const container = document.getElementById('sidebar-container');
+        if (!this.app.isAuthenticated()) {
+            container.innerHTML = '';
+            return;
+        }
 
-  render() {
-    const sidebarContainer = document.getElementById("sidebar-container");
-    if (!sidebarContainer || !this.app.currentUser) return;
+        const role = this.app.currentUser.role;
+        const activePath = window.location.hash;
 
-    const role = this.app.currentUser.role;
+        const menuItems = [
+            { path: '#/dashboard', icon: 'fa-tachometer-alt', labelKey: 'nav.dashboard', roles: ['admin', 'evaluator', 'worker', 'developer'] },
+            { path: '#/evaluations', icon: 'fa-clipboard-list', labelKey: 'nav.evaluations', roles: ['admin', 'evaluator', 'worker'] },
+            { path: '#/evaluation-form', icon: 'fa-edit', labelKey: 'nav.evaluation', roles: ['admin', 'evaluator', 'worker'] },
+            { path: '#/goal-setting', icon: 'fa-bullseye', labelKey: 'nav.goals', roles: ['evaluator', 'worker'] },
+            { path: '#/goal-approvals', icon: 'fa-check-circle', labelKey: 'nav.goal_approvals', roles: ['admin'] },
+            { path: '#/users', icon: 'fa-users', labelKey: 'nav.users', roles: ['admin'] },
+            { path: '#/settings', icon: 'fa-cog', labelKey: 'nav.settings', roles: ['admin'] },
+            { path: '#/developer', icon: 'fa-code', labelKey: 'nav.developer', roles: ['developer'] },
+        ];
+        
+        container.innerHTML = `
+            <div class="sidebar bg-dark text-white p-3 d-flex flex-column">
+                <nav class="nav flex-column">
+                    ${menuItems
+                        .filter(item => item.roles.includes(role))
+                        .map(item => `
+                        <a class="nav-link text-white ${activePath.startsWith(item.path) ? 'active' : ''}" href="${item.path}" data-link>
+                            <i class="fas ${item.icon} fa-fw me-2"></i><span data-i18n="${item.labelKey}"></span>
+                        </a>
+                    `).join('')}
+                </nav>
+            </div>`;
+        this.app.i18n.updateUI(container);
+    }
 
-    sidebarContainer.innerHTML = `
-      <div class="sidebar bg-dark text-white d-flex flex-column">
-        <div class="p-3" style="flex-grow: 1; overflow-y: auto;">
-            <nav class="nav flex-column">
-                ${this._menuItem("/dashboard", "fas fa-tachometer-alt", "dashboard")}
-                ${role === "admin" ? this._menuItem("/users", "fas fa-users", "users") : ""}
-                ${this._menuItem("/evaluations", "fas fa-clipboard-list", "evaluations")}
-                ${role === "admin" ? this._menuItem("/goal-approvals", "fas fa-check-circle", "goal_approvals") : ""}
-                <hr class="border-secondary my-2">
-                ${this._menuItem("/goal-setting", "fas fa-bullseye", "goals")}
-                ${this._menuItem("/evaluation-form", "fas fa-edit", "evaluation")}
-                <hr class="border-secondary my-2">
-                ${(role === "admin" || role === "developer") ? this._menuItem("/settings", "fas fa-cog", "settings") : ""}
-                ${role === "developer" ? this._menuItem("/developer", "fas fa-code", "developer") : ""}
-            </nav>
-        </div>
-        <div class="p-3 border-top border-secondary">
-            <div>${this.app.sanitizeHtml(this.currentUser.name)}</div>
-            <small class="text-white-50">${this.app.i18n.t('roles.' + role)}</small>
-        </div>
-      </div>
-    `;
-
-    // ▼▼▼ 修正: 不要なmarginLeftの設定を削除 ▼▼▼
-    // const main = document.getElementById("content");
-    // if (main) main.style.marginLeft = "250px";
-    // ▲▲▲ 修正 ▲▲▲
-    
-    this.app.i18n.updateUI(sidebarContainer);
-  }
-
-  _menuItem(path, icon, key) {
-    const isActive = window.location.pathname === path;
-    return `
-      <a href="${path}" class="nav-link text-white mb-1 ${isActive ? 'active bg-primary' : ''}" data-link>
-        <i class="${icon} me-2 fa-fw"></i>
-        <span>${this.app.i18n.t('nav.' + key)}</span>
-      </a>
-    `;
-  }
+    /**
+     * Toggles the visibility of the sidebar on smaller screens.
+     * 小さい画面でサイドバーの表示/非表示を切り替えます。
+     */
+    toggle() {
+        document.getElementById('sidebar-container')?.classList.toggle('show');
+    }
 }
-window.SidebarComponent = new SidebarComponent();
