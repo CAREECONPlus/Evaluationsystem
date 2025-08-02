@@ -1,493 +1,202 @@
 /**
- * Developer Page Component
- * 開発者ページコンポーネント
+ * Developer Page Component (Firebase Integrated & Enhanced)
+ * 開発者ページコンポーネント（Firebase連携・機能改善版）
  */
-class DeveloperPage {
+export class DeveloperPage {
   constructor(app) {
-    this.app = app
+    this.app = app;
+    this.pendingAdmins = [];
+    this.activeTenants = []; // For the new Tenant Management tab
+    this.selectedTab = 'approvals'; // 'approvals' or 'tenants'
   }
 
-  /**
-   * Render developer page
-   * 開発者ページを描画
-   */
   async render() {
     return `
-            <div class="app-layout">
-                <div class="main-content" id="mainContent">
-                    <div class="content-wrapper">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h1>開発者ツール</h1>
-                            <div class="developer-actions">
-                                <button class="btn btn-outline-danger" onclick="DeveloperPage.clearAllData()">
-                                    <i class="fas fa-trash me-2"></i>全データクリア
-                                </button>
-                            </div>
-                        </div>
+      <div class="developer-page p-4">
+        <h1 data-i18n="nav.developer"></h1>
+        
+        <ul class="nav nav-tabs mt-4">
+          <li class="nav-item">
+            <button class="nav-link active" id="approvals-tab-btn" data-i18n="developer.admin_approvals"></button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" id="tenants-tab-btn" data-i18n="developer.tenant_management"></button>
+          </li>
+        </ul>
 
-                        <!-- System Information -->
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">システム情報</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <table class="table table-sm">
-                                            <tr>
-                                                <td><strong>アプリケーション名:</strong></td>
-                                                <td>建設業従業員評価管理システム</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>バージョン:</strong></td>
-                                                <td>1.0.0</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>ビルド日:</strong></td>
-                                                <td>${new Date().toLocaleDateString("ja-JP")}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>現在のユーザー:</strong></td>
-                                                <td>${this.app.currentUser?.name || "N/A"}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>ユーザー役割:</strong></td>
-                                                <td>${this.app.currentUser?.role || "N/A"}</td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <table class="table table-sm">
-                                            <tr>
-                                                <td><strong>ブラウザ:</strong></td>
-                                                <td>${navigator.userAgent.split(" ")[0]}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>言語:</strong></td>
-                                                <td>${this.app.i18n?.getCurrentLanguage() || "ja"}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>画面サイズ:</strong></td>
-                                                <td>${window.innerWidth} x ${window.innerHeight}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>ローカルストレージ使用量:</strong></td>
-                                                <td id="storageUsage">計算中...</td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Local Storage Data -->
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">ローカルストレージデータ</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-sm">
-                                        <thead>
-                                            <tr>
-                                                <th>キー</th>
-                                                <th>値</th>
-                                                <th>サイズ</th>
-                                                <th>操作</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="localStorageTable">
-                                            <tr>
-                                                <td colspan="4" class="text-center">読み込み中...</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- API Test Tools -->
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">APIテストツール</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="apiEndpoint" class="form-label">エンドポイント</label>
-                                            <input type="text" class="form-control" id="apiEndpoint" 
-                                                   placeholder="/api/users" value="/api/users">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="apiMethod" class="form-label">メソッド</label>
-                                            <select class="form-select" id="apiMethod">
-                                                <option value="GET">GET</option>
-                                                <option value="POST">POST</option>
-                                                <option value="PUT">PUT</option>
-                                                <option value="DELETE">DELETE</option>
-                                            </select>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="apiData" class="form-label">リクエストデータ (JSON)</label>
-                                            <textarea class="form-control" id="apiData" rows="4" 
-                                                      placeholder='{"key": "value"}'></textarea>
-                                        </div>
-                                        <button class="btn btn-primary" onclick="DeveloperPage.testAPI()">
-                                            <i class="fas fa-play me-2"></i>APIテスト実行
-                                        </button>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">レスポンス</label>
-                                        <pre id="apiResponse" class="bg-light p-3 border rounded" style="height: 200px; overflow-y: auto;">
-レスポンスがここに表示されます
-                                        </pre>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Mock Data Generator -->
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">モックデータ生成</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <button class="btn btn-outline-primary w-100 mb-2" 
-                                                onclick="DeveloperPage.generateMockUsers()">
-                                            <i class="fas fa-users me-2"></i>ユーザーデータ
-                                        </button>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <button class="btn btn-outline-primary w-100 mb-2" 
-                                                onclick="DeveloperPage.generateMockGoals()">
-                                            <i class="fas fa-bullseye me-2"></i>目標データ
-                                        </button>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <button class="btn btn-outline-primary w-100 mb-2" 
-                                                onclick="DeveloperPage.generateMockEvaluations()">
-                                            <i class="fas fa-chart-bar me-2"></i>評価データ
-                                        </button>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <button class="btn btn-outline-primary w-100 mb-2" 
-                                                onclick="DeveloperPage.generateAllMockData()">
-                                            <i class="fas fa-database me-2"></i>全データ
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Console Logs -->
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0">コンソールログ</h5>
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="DeveloperPage.clearLogs()">
-                                        <i class="fas fa-trash me-1"></i>クリア
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <pre id="consoleLogs" class="bg-dark text-light p-3 rounded" style="height: 300px; overflow-y: auto;">
-コンソールログがここに表示されます
-                                </pre>
-                            </div>
-                        </div>
+        <div class="tab-content">
+            <div id="approvals-view">
+                <div class="card rounded-0 rounded-bottom">
+                    <div class="card-body">
+                        <input type="search" id="pending-search" class="form-control mb-3" data-i18n-placeholder="common.search">
+                        <div id="pending-admins-list"></div>
                     </div>
                 </div>
             </div>
-        `
+            <div id="tenants-view" class="d-none">
+                <div class="card rounded-0 rounded-bottom">
+                     <div class="card-body">
+                        <input type="search" id="tenants-search" class="form-control mb-3" data-i18n-placeholder="common.search">
+                        <div id="active-tenants-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+    `;
   }
 
-  /**
-   * Initialize developer page
-   * 開発者ページを初期化
-   */
   async init() {
-    // Check permissions
-    if (!this.app.hasRole("admin")) {
-      this.app.navigate("/dashboard")
-      return
+    this.app.currentPage = this;
+    // Role guard: Only developers can access this page
+    if (!this.app.hasRole('developer')) {
+      this.app.navigate('#/dashboard');
+      return;
     }
 
-    // Update header and sidebar
-    if (window.HeaderComponent) {
-      window.HeaderComponent.update(this.app.currentUser)
-    }
-    if (window.SidebarComponent) {
-      window.SidebarComponent.update(this.app.currentUser)
-    }
+    document.getElementById('approvals-tab-btn').addEventListener('click', () => this.switchTab('approvals'));
+    document.getElementById('tenants-tab-btn').addEventListener('click', () => this.switchTab('tenants'));
 
-    // Load developer data
-    this.loadLocalStorageData()
-    this.calculateStorageUsage()
-    this.setupConsoleCapture()
+    await this.loadData();
+  }
 
-    // Update UI with current language
-    if (this.app.i18n) {
-      this.app.i18n.updateUI()
+  async loadData() {
+    const pendingContainer = document.getElementById('pending-admins-list');
+    pendingContainer.innerHTML = `<div class="text-center p-3">${this.app.i18n.t('common.loading')}</div>`;
+    
+    try {
+      // Fetch both pending admins and active tenants in parallel
+      [this.pendingAdmins, this.activeTenants] = await Promise.all([
+        this.app.api.getPendingAdmins(),
+        this.app.api.getActiveTenants() // Assumes this new method exists in api.js
+      ]);
+      this.renderLists();
+      this.app.i18n.updateUI();
+    } catch (e) {
+      console.error("Failed to load developer data:", e);
+      this.app.showError(this.app.i18n.t('errors.loading_failed'));
     }
   }
 
-  /**
-   * Load local storage data
-   * ローカルストレージデータを読み込み
-   */
-  loadLocalStorageData() {
-    const table = document.getElementById("localStorageTable")
-    if (!table) return
-
-    const rows = []
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      const value = localStorage.getItem(key)
-      const size = new Blob([value]).size
-
-      rows.push(`
-                <tr>
-                    <td><code>${this.app.sanitizeHtml(key)}</code></td>
-                    <td class="text-truncate" style="max-width: 200px;" title="${this.app.sanitizeHtml(value)}">
-                        ${this.app.sanitizeHtml(value.substring(0, 50))}${value.length > 50 ? "..." : ""}
-                    </td>
-                    <td>${size} bytes</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-danger" 
-                                onclick="DeveloperPage.removeStorageItem('${key}')">
-                            削除
-                        </button>
-                    </td>
-                </tr>
-            `)
-    }
-
-    table.innerHTML =
-      rows.length > 0
-        ? rows.join("")
-        : '<tr><td colspan="4" class="text-center text-muted">データがありません</td></tr>'
+  renderLists() {
+    this.renderPendingList();
+    this.renderTenantList();
   }
 
-  /**
-   * Calculate storage usage
-   * ストレージ使用量を計算
-   */
-  calculateStorageUsage() {
-    let totalSize = 0
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      const value = localStorage.getItem(key)
-      totalSize += new Blob([key + value]).size
+  renderPendingList() {
+    const container = document.getElementById('pending-admins-list');
+    if (this.pendingAdmins.length === 0) {
+      container.innerHTML = `<div class="text-center p-3" data-i18n="common.no_data"></div>`;
+      return;
     }
-
-    const usageElement = document.getElementById("storageUsage")
-    if (usageElement) {
-      usageElement.textContent = `${(totalSize / 1024).toFixed(2)} KB`
-    }
+    container.innerHTML = this.createTable(this.pendingAdmins, true);
   }
 
-  /**
-   * Setup console capture
-   * コンソールキャプチャを設定
-   */
-  setupConsoleCapture() {
-    const logsElement = document.getElementById("consoleLogs")
-    if (!logsElement) return
-
-    const originalLog = console.log
-    const originalError = console.error
-    const originalWarn = console.warn
-
-    console.log = (...args) => {
-      originalLog.apply(console, args)
-      this.addLogEntry("LOG", args.join(" "))
+  renderTenantList() {
+    const container = document.getElementById('active-tenants-list');
+     if (this.activeTenants.length === 0) {
+      container.innerHTML = `<div class="text-center p-3" data-i18n="common.no_data"></div>`;
+      return;
     }
-
-    console.error = (...args) => {
-      originalError.apply(console, args)
-      this.addLogEntry("ERROR", args.join(" "))
-    }
-
-    console.warn = (...args) => {
-      originalWarn.apply(console, args)
-      this.addLogEntry("WARN", args.join(" "))
-    }
+    container.innerHTML = this.createTable(this.activeTenants, false);
   }
 
-  /**
-   * Add log entry
-   * ログエントリを追加
-   */
-  addLogEntry(level, message) {
-    const logsElement = document.getElementById("consoleLogs")
-    if (!logsElement) return
+  createTable(data, isPending) {
+    const headers = isPending 
+        ? ['auth.name', 'auth.email', 'auth.company', 'users.actions']
+        : ['auth.company', 'auth.name', 'auth.email', 'users.status', 'users.actions'];
 
-    const timestamp = new Date().toLocaleTimeString("ja-JP")
-    const logEntry = `[${timestamp}] ${level}: ${message}\n`
-
-    logsElement.textContent += logEntry
-    logsElement.scrollTop = logsElement.scrollHeight
+    return `
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              ${headers.map(h => `<th data-i18n="${h}"></th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map(item => isPending ? this.renderPendingRow(item) : this.renderTenantRow(item)).join('')}
+          </tbody>
+        </table>
+      </div>`;
   }
 
-  /**
-   * Test API endpoint
-   * APIエンドポイントをテスト
-   */
-  static async testAPI() {
-    const endpoint = document.getElementById("apiEndpoint").value
-    const method = document.getElementById("apiMethod").value
-    const dataText = document.getElementById("apiData").value
-    const responseElement = document.getElementById("apiResponse")
+  renderPendingRow(admin) {
+    return `
+      <tr>
+        <td>${this.app.sanitizeHtml(admin.name)}</td>
+        <td>${this.app.sanitizeHtml(admin.email)}</td>
+        <td>${this.app.sanitizeHtml(admin.companyName)}</td>
+        <td>
+          <button class="btn btn-sm btn-success" onclick="window.app.currentPage.approve('${admin.id}')">
+            <i class="fas fa-check me-1"></i><span data-i18n="developer.approve"></span>
+          </button>
+        </td>
+      </tr>`;
+  }
+
+  renderTenantRow(tenant) {
+    return `
+        <tr>
+            <td>${this.app.sanitizeHtml(tenant.companyName)}</td>
+            <td>${this.app.sanitizeHtml(tenant.adminName)}</td>
+            <td>${this.app.sanitizeHtml(tenant.adminEmail)}</td>
+            <td><span class="badge ${tenant.status === 'active' ? 'bg-success' : 'bg-danger'}">${tenant.status}</span></td>
+            <td>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary" onclick="window.app.currentPage.sendPasswordReset('${tenant.adminEmail}')" title="パスワードリセット"><i class="fas fa-key"></i></button>
+                    <button class="btn btn-outline-danger" onclick="window.app.currentPage.toggleTenantStatus('${tenant.id}', '${tenant.status}')" title="利用停止/再開"><i class="fas fa-power-off"></i></button>
+                </div>
+            </td>
+        </tr>
+    `;
+  }
+
+  switchTab(tab) {
+    this.selectedTab = tab;
+    document.getElementById('approvals-view').classList.toggle('d-none', tab !== 'approvals');
+    document.getElementById('tenants-view').classList.toggle('d-none', tab !== 'tenants');
+    document.getElementById('approvals-tab-btn').classList.toggle('active', tab === 'approvals');
+    document.getElementById('tenants-tab-btn').classList.toggle('active', tab === 'tenants');
+  }
+
+  async approve(userId) {
+    if (!confirm(this.app.i18n.t('developer.confirm_approve'))) return;
+
+    const button = event.target.closest('button');
+    button.disabled = true;
+    button.innerHTML = `<span class="spinner-border spinner-border-sm"></span>`;
 
     try {
-      let data = null
-      if (dataText.trim()) {
-        data = JSON.parse(dataText)
+      await this.app.api.approveAdmin(userId);
+      this.app.showSuccess(this.app.i18n.t('developer.approve_success'));
+      await this.loadData(); // Refresh both lists
+    } catch (e) {
+      this.app.showError(e.message);
+      button.disabled = false;
+      this.app.i18n.updateUI(button.parentElement);
+    }
+  }
+
+  async sendPasswordReset(email) {
+      if (!confirm(`${email} にパスワードリセットメールを送信しますか？`)) return;
+      try {
+          await this.app.auth.sendPasswordReset(email);
+          this.app.showSuccess("パスワードリセットメールを送信しました。");
+      } catch (e) {
+          this.app.showError(e.message);
       }
+  }
 
-      const options = { method }
-      if (data && (method === "POST" || method === "PUT")) {
-        options.body = JSON.stringify(data)
-        options.headers = { "Content-Type": "application/json" }
+  async toggleTenantStatus(tenantId, currentStatus) {
+      const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+      if (!confirm(`このテナントを「${newStatus}」状態に変更しますか？`)) return;
+      try {
+          await this.app.api.updateTenantStatus(tenantId, newStatus);
+          this.app.showSuccess("テナントの状態を更新しました。");
+          await this.loadData();
+      } catch (e) {
+          this.app.showError(e.message);
       }
-
-      // Mock API response
-      const mockResponse = {
-        status: 200,
-        message: "Mock API response",
-        data: { id: 1, name: "Test Data" },
-        timestamp: new Date().toISOString(),
-      }
-
-      responseElement.textContent = JSON.stringify(mockResponse, null, 2)
-      window.app.showSuccess("APIテストが完了しました。")
-    } catch (error) {
-      responseElement.textContent = `Error: ${error.message}`
-      window.app.showError("APIテストでエラーが発生しました。")
-    }
-  }
-
-  /**
-   * Generate mock users
-   * モックユーザーを生成
-   */
-  static generateMockUsers() {
-    const mockUsers = [
-      { id: 1, name: "田中太郎", email: "tanaka@example.com", role: "worker" },
-      { id: 2, name: "佐藤花子", email: "sato@example.com", role: "worker" },
-      { id: 3, name: "山田次郎", email: "yamada@example.com", role: "manager" },
-    ]
-
-    localStorage.setItem("mockUsers", JSON.stringify(mockUsers))
-    window.app.showSuccess("モックユーザーデータを生成しました。")
-
-    const page = window.app.currentPage
-    if (page && page.loadLocalStorageData) {
-      page.loadLocalStorageData()
-      page.calculateStorageUsage()
-    }
-  }
-
-  /**
-   * Generate mock goals
-   * モック目標を生成
-   */
-  static generateMockGoals() {
-    const mockGoals = [
-      { id: 1, userId: 1, text: "品質向上を図る", weight: 40, status: "pending" },
-      { id: 2, userId: 2, text: "効率化を推進する", weight: 35, status: "approved" },
-      { id: 3, userId: 3, text: "安全管理を強化する", weight: 25, status: "pending" },
-    ]
-
-    localStorage.setItem("mockGoals", JSON.stringify(mockGoals))
-    window.app.showSuccess("モック目標データを生成しました。")
-
-    const page = window.app.currentPage
-    if (page && page.loadLocalStorageData) {
-      page.loadLocalStorageData()
-      page.calculateStorageUsage()
-    }
-  }
-
-  /**
-   * Generate mock evaluations
-   * モック評価を生成
-   */
-  static generateMockEvaluations() {
-    const mockEvaluations = [
-      { id: 1, evaluatorId: 3, targetId: 1, period: "2024-q1", status: "completed", score: 4.2 },
-      { id: 2, evaluatorId: 3, targetId: 2, period: "2024-q1", status: "in-progress", score: null },
-    ]
-
-    localStorage.setItem("mockEvaluations", JSON.stringify(mockEvaluations))
-    window.app.showSuccess("モック評価データを生成しました。")
-
-    const page = window.app.currentPage
-    if (page && page.loadLocalStorageData) {
-      page.loadLocalStorageData()
-      page.calculateStorageUsage()
-    }
-  }
-
-  /**
-   * Generate all mock data
-   * 全モックデータを生成
-   */
-  static generateAllMockData() {
-    DeveloperPage.generateMockUsers()
-    DeveloperPage.generateMockGoals()
-    DeveloperPage.generateMockEvaluations()
-    window.app.showSuccess("全モックデータを生成しました。")
-  }
-
-  /**
-   * Remove storage item
-   * ストレージアイテムを削除
-   */
-  static removeStorageItem(key) {
-    if (confirm(`"${key}" を削除しますか？`)) {
-      localStorage.removeItem(key)
-      window.app.showSuccess("データを削除しました。")
-
-      const page = window.app.currentPage
-      if (page && page.loadLocalStorageData) {
-        page.loadLocalStorageData()
-        page.calculateStorageUsage()
-      }
-    }
-  }
-
-  /**
-   * Clear all data
-   * 全データをクリア
-   */
-  static clearAllData() {
-    if (confirm("全てのローカルデータを削除しますか？この操作は取り消せません。")) {
-      localStorage.clear()
-      window.app.showSuccess("全データを削除しました。")
-
-      const page = window.app.currentPage
-      if (page && page.loadLocalStorageData) {
-        page.loadLocalStorageData()
-        page.calculateStorageUsage()
-      }
-    }
-  }
-
-  /**
-   * Clear console logs
-   * コンソールログをクリア
-   */
-  static clearLogs() {
-    const logsElement = document.getElementById("consoleLogs")
-    if (logsElement) {
-      logsElement.textContent = "コンソールログがここに表示されます\n"
-    }
   }
 }
-
-// Make DeveloperPage globally available
-window.DeveloperPage = DeveloperPage
