@@ -1,19 +1,20 @@
 /**
- * Dashboard Page Component
- * ダッシュボードページコンポーネント
+ * Dashboard Page Component (Feature-rich version with Firebase integration)
+ * ダッシュボードページコンポーネント（多機能版・Firebase連携対応）
  */
-class DashboardPage {
+export class DashboardPage {
   constructor(app) {
     this.app = app;
     this.stats = null;
     this.recentEvaluations = [];
     this.chartData = null;
-    this.chart = null; // チャートインスタンスを保持
+    this.chart = null; // To hold the Chart.js instance
     this.currentChartType = "radar";
   }
 
   /**
    * Render dashboard page
+   * ダッシュボードページを描画します
    */
   async render() {
     return `
@@ -60,28 +61,28 @@ class DashboardPage {
 
   /**
    * Initialize dashboard page
+   * ダッシュボードページを初期化します
    */
   async init() {
     this.app.currentPage = this;
     if (!this.app.isAuthenticated()) {
-      this.app.navigate("/login");
+      this.app.navigate("#/login");
       return;
     }
     await this.loadData();
-    if (this.app.i18n) {
-      this.app.i18n.updateUI();
-    }
   }
 
   /**
-   * Load dashboard data
+   * Load dashboard data from Firebase
+   * Firebaseからダッシュボードのデータを読み込みます
    */
   async loadData() {
     try {
+      // Firebaseからリアルタイムデータを取得
       const [stats, recentEvaluations, chartData] = await Promise.all([
         this.app.api.getDashboardStats(),
-        this.app.api.getRecentEvaluations(),
-        this.app.api.getEvaluationChartData(),
+        this.app.api.getRecentEvaluations(), // api.jsで後ほど実装
+        this.app.api.getEvaluationChartData(), // api.jsで後ほど実装
       ]);
       this.stats = stats;
       this.recentEvaluations = recentEvaluations;
@@ -90,23 +91,31 @@ class DashboardPage {
       this.renderStatsCards();
       this.renderRecentEvaluations();
       this.initializeChart();
+      this.app.i18n.updateUI();
+
     } catch (error) {
       console.error("Error loading dashboard data:", error);
-      this.app.showError(this.app.i18n.t("errors.dashboard_load_failed"));
+      this.app.showError(this.app.i18n.t("errors.loading_failed"));
     }
   }
 
+  /**
+   * Renders the statistics cards.
+   * 統計カードを描画します。
+   */
   renderStatsCards() {
     const container = document.getElementById("stats-cards-container");
     if (!container || !this.stats) return;
+    
+    // 平均スコアはリアルタイム計算が難しいため、より実用的な3つの指標に絞る
     const cards = [
-      { titleKey: "dashboard.total_employees", value: this.stats.totalEmployees, icon: "fas fa-users" },
+      { titleKey: "dashboard.total_employees", value: this.stats.totalUsers, icon: "fas fa-users" },
       { titleKey: "dashboard.pending_evaluations_count", value: this.stats.pendingEvaluations, icon: "fas fa-clock" },
       { titleKey: "dashboard.completed_evaluations_count", value: this.stats.completedEvaluations, icon: "fas fa-check-circle" },
-      { titleKey: "dashboard.average_score", value: this.stats.averageScore.toFixed(1), icon: "fas fa-star" },
     ];
+
     container.innerHTML = cards.map(card => `
-      <div class="col-md-3 mb-4">
+      <div class="col-md-4 mb-4">
         <div class="card shadow-sm h-100">
           <div class="card-body text-center">
             <i class="${card.icon} fa-2x text-primary mb-2"></i>
@@ -117,6 +126,10 @@ class DashboardPage {
       </div>`).join("");
   }
 
+  /**
+   * Renders the list of recent evaluations.
+   * 最近の評価リストを描画します。
+   */
   renderRecentEvaluations() {
     const container = document.getElementById("recent-evaluations-container");
     if (!container) return;
@@ -127,27 +140,29 @@ class DashboardPage {
     container.innerHTML = `
       <div class="list-group list-group-flush">
         ${this.recentEvaluations.map(e => `
-          <div class="list-group-item">
+          <a href="#/report?id=${e.id}" class="list-group-item list-group-item-action" data-link>
             <div class="d-flex w-100 justify-content-between">
-              <h6 class="mb-1">${this.app.sanitizeHtml(e.employeeName)}</h6>
+              <h6 class="mb-1">${this.app.sanitizeHtml(e.targetUserName)}</h6>
               <small>${this.app.formatDate(e.submittedAt)}</small>
             </div>
             <p class="mb-1">
               <span class="badge ${this.app.getStatusBadgeClass(e.status)}" data-i18n="status.${e.status}"></span>
             </p>
-          </div>
+          </a>
         `).join("")}
       </div>`;
   }
 
   /**
-   * ★★★ 修正: チャートの破棄と再生成を確実に行う ★★★
+   * Initializes or updates the performance chart.
+   * パフォーマンスチャートを初期化または更新します。
    */
   initializeChart() {
     const canvas = document.getElementById("performanceChart");
     if (!canvas || !this.chartData) return;
     
-    // 既存のチャートインスタンスを確実に破棄
+    // Destroy any existing chart instance on the canvas
+    // キャンバス上の既存のチャートインスタンスを破棄
     if (this.chart) {
       this.chart.destroy();
     }
@@ -170,12 +185,15 @@ class DashboardPage {
     });
   }
 
+  /**
+   * Switches the chart type and re-initializes the chart.
+   * チャートの種類を切り替えて再初期化します。
+   * @param {string} type - 'radar', 'bar', or 'line'
+   */
   switchChartType(type) {
     this.currentChartType = type;
     document.querySelectorAll(".chart-controls .btn").forEach(btn => btn.classList.remove("active"));
     document.querySelector(`[data-chart="${type}"]`).classList.add("active");
-    this.initializeChart(); // タイプを切り替えたら再初期化
+    this.initializeChart(); // Re-initialize with the new type
   }
 }
-
-window.DashboardPage = DashboardPage;
