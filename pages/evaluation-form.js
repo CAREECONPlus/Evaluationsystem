@@ -70,8 +70,6 @@ export class EvaluationFormPage {
             this.usersForEvaluation = [currentUser];
             userSelect.innerHTML = `<option value="${currentUser.uid}" selected>${this.app.sanitizeHtml(currentUser.name)}</option>`;
             userSelect.disabled = true;
-            // Automatically trigger selection change if worker has only one option
-            this.onSelectionChange();
         } else { // admin or evaluator
             this.usersForEvaluation = await this.app.api.getSubordinates();
             // Also add self for self-evaluation
@@ -87,6 +85,11 @@ export class EvaluationFormPage {
             + this.periods.map(p => `<option value="${p.id}">${this.app.sanitizeHtml(p.name)}</option>`).join('');
         
         this.app.i18n.updateUI();
+
+        // If worker, automatically trigger selection change
+        if (this.app.hasRole('worker')) {
+            this.onSelectionChange();
+        }
     } catch(e) {
         this.app.showError("初期データの読み込みに失敗しました。");
         console.error(e);
@@ -134,7 +137,7 @@ export class EvaluationFormPage {
     const currentUser = this.app.currentUser;
     const isSelfEvaluation = currentUser.uid === this.targetUser.id;
     
-    const canEditSelf = isSelfEvaluation && (!this.existingEvaluation || this.existingEvaluation.status === 'pending_submission');
+    const canEditSelf = isSelfEvaluation && (!this.existingEvaluation || this.existingEvaluation.status === 'pending_submission' || this.existingEvaluation.status === 'draft');
     const canEditEval = !isSelfEvaluation && this.app.hasAnyRole(['admin', 'evaluator']) && this.existingEvaluation && this.existingEvaluation.status === 'self_assessed';
 
     container.innerHTML = `
