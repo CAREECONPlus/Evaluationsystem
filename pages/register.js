@@ -1,289 +1,191 @@
 /**
- * Register Page Component (with invitation token)
- * 登録ページコンポーネント（招待トークン付き）
+ * Register Page Component (for invited users)
+ * ユーザー登録ページコンポーネント（招待者向け）
  */
-class RegisterPage {
+export class RegisterPage {
   constructor(app) {
-    this.app = app
-    this.invitation = null
+    this.app = app;
+    this.invitation = null;
+    this.token = null;
   }
 
-  /**
-   * Render register page
-   * 登録ページを描画
-   */
   async render() {
-    // Get token from URL
-    const urlParams = new URLSearchParams(window.location.search)
-    const token = urlParams.get("token")
-
-    if (!token) {
-      return `
-                <div class="form-container text-center p-4">
-                    <div class="alert alert-danger">
-                        <h3><span data-i18n="errors.invalid_access_title">無効なアクセス</span></h3>
-                        <p><span data-i18n="errors.invalid_invitation_link">招待リンクが無効です。管理者にお問い合わせください。</span></p>
-                        <a href="#/login" class="btn btn-primary mt-3" onclick="event.preventDefault(); window.app.navigate('/login')">
-                            <span data-i18n="common.back_to_login"></span>
-                        </a>
-                    </div>
-                </div>
-            `
-    }
-
-    try {
-      // Mock API call to get invitation details
-      // In real app: this.invitation = await this.app.api.getInvitation(token);
-      this.invitation = {
-          id: 'mock-inv-123',
-          token: token,
-          role: 'worker', // example role
-          company: 'モック建設株式会社', // example company
-          email: 'invited-user@example.com', // example email
-          used: false,
-          expiresAt: Date.now() + 3600000 // 1 hour from now
-      };
-
-      if (!this.invitation || this.invitation.used || this.invitation.expiresAt < Date.now()) {
-          let errorMessageKey = "errors.invalid_invitation_link";
-          if (this.invitation?.used) errorMessageKey = "errors.used_invitation";
-          else if (this.invitation?.expiresAt < Date.now()) errorMessageKey = "errors.expired_invitation";
-
-          return `
-                <div class="form-container text-center p-4">
-                    <div class="alert alert-danger">
-                        <h3><span data-i18n="errors.invitation_link_error_title">招待リンクエラー</span></h3>
-                        <p data-i18n="${errorMessageKey}"></p>
-                        <a href="#/login" class="btn btn-primary mt-3" onclick="event.preventDefault(); window.app.navigate('/login')">
-                            <span data-i18n="common.back_to_login"></span>
-                        </a>
-                    </div>
-                </div>
-            `;
-      }
-      
-    } catch (error) {
-      return `
-                <div class="form-container text-center p-4">
-                    <div class="alert alert-danger">
-                        <h3><span data-i18n="errors.invitation_link_error_title">招待リンクエラー</span></h3>
-                        <p>${this.app.sanitizeHtml(error.message)}</p>
-                        <a href="#/login" class="btn btn-primary mt-3" onclick="event.preventDefault(); window.app.navigate('/login')">
-                            <span data-i18n="common.back_to_login"></span>
-                        </a>
-                    </div>
-                </div>
-            `
-    }
-
+    // The initial render will be a loading state, 
+    // the actual form will be rendered in init() after token validation.
     return `
-            <div class="form-container p-4">
-                <h2 class="text-center mb-4" data-i18n="registration.user_registration_title"></h2>
-                <div class="alert alert-info">
-                    <p><strong><span data-i18n="registration.invitation_info_title"></span></strong></p>
-                    <p><span data-i18n="registration.invited_role"></span>: ${this.getRoleDisplayName(this.invitation.role)}</p>
-                    ${this.invitation.company ? `<p><span data-i18n="auth.company_name_label"></span>: ${this.app.sanitizeHtml(this.invitation.company)}</p>` : ""}
-                    ${this.invitation.email ? `<p><span data-i18n="auth.email_address_label"></span>: ${this.app.sanitizeHtml(this.invitation.email)}</p>` : ""}
-                </div>
-                
-                <form id="registerForm">
-                    <input type="hidden" name="token" value="${this.app.sanitizeHtml(token)}">
-                    
-                    <div class="mb-3">
-                        <label for="name" class="form-label" data-i18n="auth.full_name_label"></label>
-                        <input type="text" id="name" name="name" class="form-control" required 
-                               data-i18n-placeholder="auth.full_name_placeholder"
-                               value="${this.app.sanitizeHtml(this.invitation.name || '')}">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="email" class="form-label" data-i18n="auth.email_label"></label>
-                        <input type="email" id="email" name="email" class="form-control" required 
-                               data-i18n-placeholder="auth.email_placeholder"
-                               value="${this.app.sanitizeHtml(this.invitation.email || '')}" ${this.invitation.email ? 'readonly' : ''}>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="password" class="form-label" data-i18n="auth.password_label"></label>
-                        <input type="password" id="password" name="password" class="form-control" required 
-                               minlength="6" data-i18n-placeholder="auth.password_min_hint">
-                        <small class="text-muted" data-i18n="auth.password_min_length_hint_long"></small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="confirmPassword" class="form-label" data-i18n="auth.confirm_password_label"></label>
-                        <input type="password" id="confirmPassword" name="confirmPassword" class="form-control" required 
-                               data-i18n-placeholder="auth.re_enter_password">
-                        <div id="passwordMatch" class="mt-1"></div>
-                    </div>
-                    
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg" id="registerBtn">
-                            <span data-i18n="registration.register_application"></span>
-                        </button>
-                    </div>
-                </form>
-                
-                <div class="mt-3 text-center">
-                    <a href="#/login" onclick="event.preventDefault(); window.app.navigate('/login')">
-                        <span data-i18n="common.back_to_login"></span>
-                    </a>
-                </div>
-                
-                <div class="alert alert-warning mt-3">
-                    <h4><span data-i18n="registration.about_registration_title"></span></h4>
-                    <ul>
-                        <li data-i18n="registration.approval_required_after_reg"></li>
-                        <li data-i18n="registration.approval_completion_info"></li>
-                        <li data-i18n="registration.contact_admin_for_status"></li>
-                    </ul>
-                </div>
-            </div>
-        `
+      <div id="register-page-container" class="d-flex align-items-center justify-content-center py-5 bg-light vh-100">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    `;
   }
 
-  /**
-   * Initialize register page
-   * 登録ページを初期化
-   */
   async init() {
-    // Update UI with current language
-    if (this.app.i18n) {
-      this.app.i18n.updateUI();
-    }
-
-    // Add password confirmation validation
-    this.setupPasswordValidation();
-
-    // フォーム送信ハンドラをインスタンスメソッドにバインド
-    const form = document.getElementById("registerForm");
-    if (form) {
-        form.addEventListener("submit", (e) => this.handleSubmit(e));
-    }
+    this.app.currentPage = this;
+    const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    this.token = params.get('token');
+    
+    await this.validateInvitation();
   }
 
-  /**
-   * Setup password confirmation validation
-   * パスワード確認バリデーションを設定
-   */
-  setupPasswordValidation() {
-    const password = document.getElementById("password")
-    const confirmPassword = document.getElementById("confirmPassword")
-    const passwordMatchDiv = document.getElementById("passwordMatch")
+  async validateInvitation() {
+    const container = document.getElementById('register-page-container');
 
-
-    if (!password || !confirmPassword || !passwordMatchDiv) return
-
-    const validatePasswords = () => {
-      if (confirmPassword.value.length === 0) {
-          passwordMatchDiv.innerHTML = "";
-          confirmPassword.setCustomValidity("");
-          return;
-      }
-
-      if (password.value !== confirmPassword.value) {
-        confirmPassword.setCustomValidity(this.app.i18n.t("forms.passwords_not_match"));
-        passwordMatchDiv.innerHTML = `<small class="text-danger"><i class="fas fa-times"></i> ${this.app.i18n.t("forms.passwords_not_match")}</small>`;
-      } else {
-        confirmPassword.setCustomValidity("");
-        passwordMatchDiv.innerHTML = `<small class="text-success"><i class="fas fa-check"></i> ${this.app.i18n.t("forms.password_match_success")}</small>`;
-      }
-      this.app.i18n.updateUI(passwordMatchDiv); // 翻訳を適用
-    }
-
-    password.addEventListener("input", validatePasswords);
-    confirmPassword.addEventListener("input", validatePasswords);
-  }
-
-  /**
-   * Get role display name
-   * ロール表示名を取得
-   */
-  getRoleDisplayName(role) {
-    if (this.app && this.app.i18n) {
-      return this.app.i18n.t('roles.' + role);
-    }
-    const roleNames = {
-      admin: "管理者",
-      evaluator: "評価者",
-      worker: "作業員",
-    }
-    return roleNames[role] || role
-  }
-
-  /**
-   * Handle register form submission
-   * 登録フォーム送信を処理
-   */
-  async handleSubmit(event) {
-    event.preventDefault()
-
-    const form = event.target
-    const formData = new FormData(form)
-
-    const userData = {
-      name: formData.get("name"),
-      email: formData.get("email"),
-      password: formData.get("password"),
-      role: this.invitation?.role, // 招待からロールを取得
-      company: this.invitation?.company, // 招待から企業名を取得
-    }
-
-    const token = formData.get("token")
-
-    // Validate password confirmation
-    const password = formData.get("password")
-    const confirmPassword = formData.get("confirmPassword")
-
-    if (password !== confirmPassword) {
-      this.app.showError(this.app.i18n.t("forms.passwords_not_match_error")); // 翻訳キー
+    if (!this.token) {
+      container.innerHTML = this.renderError("招待トークンが見つかりません。");
+      this.app.i18n.updateUI(container);
       return;
     }
 
-    const registerBtn = document.getElementById("registerBtn")
-    const originalText = registerBtn.innerHTML;
+    try {
+      this.invitation = await this.app.api.getInvitation(this.token);
+      if (!this.invitation || this.invitation.used) {
+        container.innerHTML = this.renderError("この招待リンクは無効か、既に使用されています。");
+        this.app.i18n.updateUI(container);
+        return;
+      }
+      // Optional: Check for expiration if you add an expiry date to invitations
+      
+      container.innerHTML = this.renderForm();
+      this.setupEventListeners();
+      this.app.i18n.updateUI();
+
+    } catch (error) {
+      console.error("Invitation validation error:", error);
+      container.innerHTML = this.renderError("招待情報の検証中にエラーが発生しました。");
+      this.app.i18n.updateUI(container);
+    }
+  }
+
+  renderForm() {
+    return `
+        <div class="card p-4 shadow-sm" style="width: 100%; max-width: 500px;">
+            <h3 class="text-center mb-4" data-i18n="auth.register_user"></h3>
+            <div class="alert alert-info">
+                <p class="mb-1"><strong>${this.app.sanitizeHtml(this.invitation.companyName)}</strong>の一員として招待されています。</p>
+                <p class="mb-0">役割: <span class="fw-bold" data-i18n="roles.${this.invitation.role}"></span></p>
+            </div>
+            <form id="registerForm" novalidate>
+                <div class="mb-3">
+                    <label for="name" class="form-label" data-i18n="auth.name"></label>
+                    <input type="text" id="name" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label" data-i18n="auth.email"></label>
+                    <input type="email" id="email" class="form-control" value="${this.app.sanitizeHtml(this.invitation.email)}" readonly>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="password" class="form-label" data-i18n="auth.password"></label>
+                        <input type="password" id="password" class="form-control" required minlength="6">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="confirmPassword" class="form-label" data-i18n="auth.confirm_password"></label>
+                        <input type="password" id="confirmPassword" class="form-control" required>
+                        <div id="passwordMatch" class="mt-1 small"></div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100 btn-lg">
+                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    <span data-i18n="auth.register"></span>
+                </button>
+                <div class="text-center mt-3">
+                    <a href="#/login" data-link data-i18n="common.back_to_login"></a>
+                </div>
+            </form>
+        </div>
+    `;
+  }
+
+  renderError(message) {
+      return `
+        <div class="card p-4 text-center">
+            <h4 class="text-danger" data-i18n="common.error"></h4>
+            <p>${this.app.sanitizeHtml(message)}</p>
+            <a href="#/login" class="btn btn-primary mt-3" data-link data-i18n="common.back_to_login"></a>
+        </div>
+      `;
+  }
+
+  setupEventListeners() {
+    const form = document.getElementById('registerForm');
+    if (!form) return;
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirmPassword');
+
+    form.addEventListener('submit', (e) => this.handleSubmit(e));
+    password.addEventListener('input', () => this.checkPasswordMatch());
+    confirmPassword.addEventListener('input', () => this.checkPasswordMatch());
+  }
+
+  checkPasswordMatch() {
+    const password = document.getElementById("password").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
+    const matchDiv = document.getElementById("passwordMatch");
+    
+    if (confirmPassword.length === 0) {
+        matchDiv.innerHTML = "";
+        return;
+    }
+
+    if (password === confirmPassword) {
+        matchDiv.innerHTML = `<span class="text-success"><i class="fas fa-check"></i> ${this.app.i18n.t('errors.passwords_match') || 'パスワードが一致しました'}</span>`;
+    } else {
+        matchDiv.innerHTML = `<span class="text-danger"><i class="fas fa-times"></i> ${this.app.i18n.t('errors.passwords_not_match')}</span>`;
+    }
+  }
+
+  async handleSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const submitButton = form.querySelector('button[type="submit"]');
+    const spinner = submitButton.querySelector('.spinner-border');
+
+    const password = document.getElementById('password').value;
+    if (password !== document.getElementById('confirmPassword').value) {
+        this.app.showError(this.app.i18n.t('errors.passwords_not_match'));
+        return;
+    }
+
+    spinner.classList.remove('d-none');
+    submitButton.disabled = true;
+
+    const userData = {
+        email: this.invitation.email,
+        password: password,
+        name: document.getElementById('name').value,
+        tenantId: this.invitation.tenantId,
+        evaluatorId: this.invitation.evaluatorId,
+        jobTypeId: this.invitation.jobTypeId,
+    };
 
     try {
-      // Show loading state
-      if(registerBtn) {
-          registerBtn.disabled = true;
-          registerBtn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i><span data-i18n="common.registering"></span>`;
-          this.app.i18n.updateUI(registerBtn);
-      }
-      
-      // Register with invitation (mock)
-      // await this.app.api.registerWithInvitation(token, userData);
-      console.log("Registering with invitation (mock):", userData, "Token:", token);
-      
-      // Simulate user creation and invitation update
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      // In real app, update invitation status to used and create user with pending_approval status
+        const userCredential = await this.app.auth.registerWithEmail(userData.email, userData.password);
+        
+        const profileData = {
+            name: userData.name,
+            email: userData.email,
+            role: this.invitation.role,
+            status: 'pending_approval',
+            tenantId: userData.tenantId,
+            evaluatorId: userData.evaluatorId,
+            jobTypeId: userData.jobTypeId,
+            createdAt: serverTimestamp(),
+        };
 
-      // Show success message
-      this.app.showSuccess(this.app.i18n.t("messages.registration_submitted")); // 翻訳キー
+        await this.app.api.createUserProfile(userCredential.user.uid, profileData);
+        await this.app.api.markInvitationAsUsed(this.invitation.id, userCredential.user.uid);
 
-      // Navigate to login page
-      setTimeout(() => {
-        window.app.navigate("/login");
-      }, 2000);
-    } catch (error) {
-      console.error("Register error:", error);
+        this.app.showSuccess(this.app.i18n.t('messages.register_user_success'));
+        this.app.navigate('#/login');
 
-      let errorMessage = this.app.i18n.t("errors.registration_failed");
-      // Firebase Authenticationエラーコードに応じたメッセージ表示はAuthサービスで行う
-      // 例: if (error.code === "auth/email-already-in-use") errorMessage = this.app.i18n.t("errors.email_already_in_use");
-      
-      this.app.showError(`${errorMessage}: ${this.app.sanitizeHtml(error.message)}`);
-
-      // Reset button
-      if(registerBtn) {
-          registerBtn.disabled = false;
-          registerBtn.innerHTML = originalText;
-          this.app.i18n.updateUI(registerBtn);
-      }
+    } catch (err) {
+        this.app.showError(this.app.auth.getFirebaseAuthErrorMessage(err));
+    } finally {
+        spinner.classList.add('d-none');
+        submitButton.disabled = false;
     }
   }
 }
-
-// Make RegisterPage globally available
-window.RegisterPage = RegisterPage;
