@@ -347,3 +347,25 @@
     "account_inactive": "このアカウントは現在無効です。"
   }
 }
+{
+  "users": {
+    "title": "ユーザー管理",
+    "invite": "新規ユーザー追加",
+    "role": "役割",
+    "status": "ステータス",
+    "created_at": "登録日",
+    "actions": "操作",
+    "search_users": "ユーザーを検索...",
+    "pending_approvals": "承認待ちユーザー",
+    "active_users": "ユーザー一覧",
+    "invite_title": "新規ユーザーを招待",
+    "send_invitation": "招待を送信",
+    "invite_link_created": "招待リンクが作成されました",
+    "invite_link_instructions": "以下のリンクをコピーして、招待したいユーザーに共有してください。リンクは7日間有効です。",
+    "copy_success": "リンクをコピーしました！",
+    "confirm_approve": "このユーザーを承認しますか？",
+    "approve_success": "ユーザーを承認しました。",
+    "confirm_reject": "このユーザーを否認（削除）しますか？",
+    "reject_success": "ユーザーを削除しました。"
+  }
+}
