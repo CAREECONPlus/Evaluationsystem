@@ -347,3 +347,25 @@
     "account_inactive": "This account is currently inactive."
   }
 }
+{
+  "users": {
+    "title": "User Management",
+    "invite": "Add New User",
+    "role": "Role",
+    "status": "Status",
+    "created_at": "Registration Date",
+    "actions": "Actions",
+    "search_users": "Search users...",
+    "pending_approvals": "Pending Users",
+    "active_users": "User List",
+    "invite_title": "Invite New User",
+    "send_invitation": "Send Invitation",
+    "invite_link_created": "Invitation link created",
+    "invite_link_instructions": "Please copy the link below and share it with the user you want to invite. The link is valid for 7 days.",
+    "copy_success": "Link copied to clipboard!",
+    "confirm_approve": "Are you sure you want to approve this user?",
+    "approve_success": "User approved successfully.",
+    "confirm_reject": "Are you sure you want to reject (delete) this user?",
+    "reject_success": "User rejected successfully."
+  }
+}
