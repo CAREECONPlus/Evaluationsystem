@@ -2,7 +2,7 @@
  * Login Page Component
  * ログインページコンポーネント
  */
-class LoginPage {
+export class LoginPage {
   constructor(app) {
     this.app = app;
     this.isLoading = false;
@@ -200,5 +200,3 @@ class LoginPage {
     }
   }
 }
-
-window.LoginPage = LoginPage;
