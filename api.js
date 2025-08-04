@@ -11,7 +11,9 @@ import {
     where,
     serverTimestamp,
     writeBatch,
-    getCountFromServer
+    getCountFromServer,
+    limit,
+    orderBy
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-functions.js";
 
@@ -27,7 +29,6 @@ export class API {
     }
 
     // --- Dashboard ---
-    // ... (existing getDashboardStats method remains unchanged)
     async getDashboardStats() {
         if (!this.app.currentUser?.tenantId) return { totalUsers: 0, completedEvaluations: 0, pendingEvaluations: 0 };
         const tenantId = this.app.currentUser.tenantId;
@@ -49,8 +50,44 @@ export class API {
         };
     }
 
+    // --- NEW: Added for Dashboard ---
+    async getRecentEvaluations() {
+        if (!this.app.currentUser?.tenantId) return [];
+        const q = query(collection(this.db, "evaluations"), 
+            where("tenantId", "==", this.app.currentUser.tenantId),
+            orderBy("submittedAt", "desc"),
+            limit(5)
+        );
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+
+    // --- NEW: Added for Dashboard ---
+    async getEvaluationChartData() {
+        // これはダミーデータです。実際のアプリケーションでは、
+        // 実際の評価データを集計してこのデータを生成します。
+        const dummyData = {
+            labels: ['技術力', '品質', '安全', '協調性', '勤怠'],
+            datasets: [{
+                label: 'あなたのスコア',
+                data: [4, 5, 3, 4, 5],
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgb(54, 162, 235)',
+            }, {
+                label: '部署平均',
+                data: [3.5, 4.2, 4.1, 3.8, 4.5],
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgb(255, 99, 132)',
+            }]
+        };
+        return {
+            radar: dummyData,
+            bar: dummyData,
+            line: dummyData
+        };
+    }
+
     // --- User Management ---
-    // ... (existing user management methods remain unchanged)
     async getUsers(status) {
         if (!this.app.currentUser?.tenantId) return [];
         const q = query(collection(this.db, "users"), where("tenantId", "==", this.app.currentUser.tenantId), where("status", "==", status));
@@ -60,6 +97,8 @@ export class API {
 
     async getSubordinates() {
         if (!this.app.currentUser?.tenantId) return [];
+        // このクエリは評価者が担当する部下を取得することを想定していますが、
+        // Firestoreのルールによってはインデックスが必要になる場合があります。
         const q = query(collection(this.db, "users"), where("tenantId", "==", this.app.currentUser.tenantId), where("evaluatorId", "==", this.app.currentUser.uid));
         const querySnapshot = await getDocs(q);
         return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -75,19 +114,11 @@ export class API {
         await deleteDoc(userDocRef);
     }
     
-    /**
-     * Creates a user invitation document in Firestore.
-     * Firestoreにユーザー招待ドキュメントを作成します。
-     * @param {object} invitationData - The data for the invitation.
-     * @returns {Promise<string>} The generated invitation token.
-     */
     async createInvitation(invitationData) {
         if (!this.app.hasRole('admin')) throw new Error("Permission denied.");
-
-        // Generate a secure random token
         const token = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
         const now = new Date();
-        const expiresAt = new Date(now.setDate(now.getDate() + 7)); // Invitation expires in 7 days
+        const expiresAt = new Date(now.setDate(now.getDate() + 7));
 
         const docData = {
             ...invitationData,
@@ -97,7 +128,7 @@ export class API {
             used: false,
             createdAt: serverTimestamp(),
             expiresAt: expiresAt,
-            type: 'user' // Differentiate from admin invitations if any
+            type: 'user'
         };
 
         await addDoc(collection(this.db, "invitations"), docData);
@@ -105,7 +136,6 @@ export class API {
     }
 
     // --- Evaluations & Goals ---
-    // ... (existing evaluation & goal methods remain unchanged)
     async getEvaluations() {
         if (!this.app.currentUser?.tenantId) return [];
         const q = query(collection(this.db, "evaluations"), where("tenantId", "==", this.app.currentUser.tenantId));
@@ -123,11 +153,13 @@ export class API {
     }
     
     async saveEvaluation(data) {
+        const dataToSave = { ...data };
         if (data.id) {
             const docRef = doc(this.db, "evaluations", data.id);
-            await updateDoc(docRef, data);
+            delete dataToSave.id;
+            await updateDoc(docRef, dataToSave);
         } else {
-            await addDoc(collection(this.db, "evaluations"), data);
+            await addDoc(collection(this.db, "evaluations"), dataToSave);
         }
     }
 
@@ -136,13 +168,13 @@ export class API {
         const q = query(collection(this.db, "qualitativeGoals"), where("tenantId", "==", this.app.currentUser.tenantId), where("userId", "==", userId), where("periodId", "==", periodId));
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) return null;
-        const doc = querySnapshot.docs[0];
-        return { id: doc.id, ...doc.data() };
+        const docSnap = querySnapshot.docs[0];
+        return { id: docSnap.id, ...docSnap.data() };
     }
 
-    async getPendingGoals() {
+    async getGoalsByStatus(status) {
         if (!this.app.currentUser?.tenantId) return [];
-        const q = query(collection(this.db, "qualitativeGoals"), where("tenantId", "==", this.app.currentUser.tenantId), where("status", "==", "pending_approval"));
+        const q = query(collection(this.db, "qualitativeGoals"), where("tenantId", "==", this.app.currentUser.tenantId), where("status", "==", status));
         const querySnapshot = await getDocs(q);
         return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     }
@@ -162,7 +194,6 @@ export class API {
     }
 
     // --- Settings ---
-    // ... (existing settings methods remain unchanged)
     async getSettings() {
         if (!this.app.currentUser?.tenantId) return { jobTypes: [], periods: [], structures: {} };
         const tenantId = this.app.currentUser.tenantId;
@@ -177,7 +208,7 @@ export class API {
         ]);
 
         const structures = {};
-        structuresSnap.forEach(doc => { structures[doc.id] = doc.data(); });
+        structuresSnap.forEach(docSnap => { structures[docSnap.id] = {id: docSnap.id, ...docSnap.data()}; });
 
         return {
             jobTypes: jobTypesSnap.docs.map(d => ({ id: d.id, ...d.data() })),
@@ -197,11 +228,6 @@ export class API {
         await batch.commit();
     }
     
-    /**
-     * Fetches job types for the current tenant.
-     * 現在のテナントの職種を取得します。
-     * @returns {Promise<Array>} An array of job type objects.
-     */
     async getJobTypes() {
         if (!this.app.currentUser?.tenantId) return [];
         const q = query(collection(this.db, "targetJobTypes"), where("tenantId", "==", this.app.currentUser.tenantId));
@@ -209,9 +235,7 @@ export class API {
         return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     }
 
-
     // --- Developer & Registration ---
-    // ... (existing developer & registration methods remain unchanged)
     async getPendingAdmins() {
         const q = query(collection(this.db, "users"), where("status", "==", "developer_approval_pending"));
         const querySnapshot = await getDocs(q);
