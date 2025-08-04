@@ -7,10 +7,6 @@ export class HeaderComponent {
         this.app = app;
     }
 
-    /**
-     * Renders or hides the header based on authentication status.
-     * 認証状態に基づいてヘッダーを描画または非表示にします。
-     */
     update() {
         const container = document.getElementById('header-container');
         if (!this.app.isAuthenticated()) {
@@ -31,7 +27,7 @@ export class HeaderComponent {
                     <div class="collapse navbar-collapse">
                         <ul class="navbar-nav ms-auto">
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                     <i class="fas fa-globe me-1"></i><span data-i18n="common.language"></span>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">
