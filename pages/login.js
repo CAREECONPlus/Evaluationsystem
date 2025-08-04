@@ -1,6 +1,6 @@
 /**
  * Login Page Component
- * ログインページコンポーネント
+ * ログインページコンポーネンﾄ
  */
 export class LoginPage {
   constructor(app) {
@@ -24,10 +24,6 @@ export class LoginPage {
     const passwordPlaceholder = this.app.i18n.t('auth.password_placeholder');
     const loginButtonText = this.app.i18n.t('auth.login');
     const loggingInText = this.app.i18n.t('auth.logging_in');
-    const orLoginDemo = this.app.i18n.t('login.or_login_demo');
-    const adminRole = this.app.i18n.t('roles.admin');
-    const evaluatorRole = this.app.i18n.t('roles.evaluator');
-    const workerRole = this.app.i18n.t('roles.worker');
 
     return `
       <div class="login-page">
@@ -64,14 +60,6 @@ export class LoginPage {
                         <span class="login-spinner d-none"><i class="fas fa-spinner fa-spin me-2"></i>${this.app.sanitizeHtml(loggingInText)}</span>
                       </button>
                     </form>
-
-                    <hr class="my-4">
-                    <h6 class="text-center text-muted mb-3">${this.app.sanitizeHtml(orLoginDemo)}</h6>
-                    <div class="d-grid gap-2">
-                      <button type="button" class="btn btn-outline-success demo-btn" id="demoAdminBtn">${this.app.sanitizeHtml(adminRole)} (admin@example.com)</button>
-                      <button type="button" class="btn btn-outline-info demo-btn" id="demoEvaluatorBtn">${this.app.sanitizeHtml(evaluatorRole)} (manager@example.com)</button>
-                      <button type="button" class="btn btn-outline-secondary demo-btn" id="demoWorkerBtn">${this.app.sanitizeHtml(workerRole)} (employee@example.com)</button>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -89,13 +77,9 @@ export class LoginPage {
   async init() {
     console.log("Initializing login page...");
 
-    // フォームとボタンへのイベントリスナーを設定
+    // フォームへのイベントリスナーを設定
     const form = document.getElementById("loginForm");
-    const demoAdminBtn = document.getElementById("demoAdminBtn");
-    const demoEvaluatorBtn = document.getElementById("demoEvaluatorBtn");
-    const demoWorkerBtn = document.getElementById("demoWorkerBtn");
 
-    // form要素が存在することを確認してからイベントリスナーを設定
     if (form) {
       form.addEventListener("submit", (e) => {
         e.preventDefault();
@@ -103,12 +87,6 @@ export class LoginPage {
       });
     }
 
-    // デモアカウントボタンのクリックイベント（同様にnullチェックを追加）
-    if (demoAdminBtn) demoAdminBtn.addEventListener("click", () => this.loginDemo("admin"));
-    if (demoEvaluatorBtn) demoEvaluatorBtn.addEventListener("click", () => this.loginDemo("evaluator"));
-    if (demoWorkerBtn) demoWorkerBtn.addEventListener("click", () => this.loginDemo("worker"));
-
-    // UI翻訳を適用 (レンダリング後にinitが呼ばれるため、ここでUIを更新)
     if (this.app.i18n) {
       this.app.i18n.updateUI();
     }
@@ -128,46 +106,11 @@ export class LoginPage {
     try {
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
-      // エラーメッセージはAppクラスのshowErrorでi18nから取得される
-      if (!email || !password) throw new Error(this.app.i18n.t("errors.email_password_required")); // 翻訳キーを使用
+      if (!email || !password) throw new Error(this.app.i18n.t("errors.email_password_required"));
       await this.app.login(email, password);
     } catch (error) {
       console.error("Login error:", error);
-      // loginメソッド内で既にエラーメッセージがi18n化されている場合があるので、直接表示
-      this.app.showError(error.message || this.app.i18n.t("errors.login_failed_generic")); // 翻訳キーを使用
-    } finally {
-      this.setLoadingState(false);
-    }
-  }
-
-  /**
-   * Handle demo login
-   * デモログインを処理
-   */
-  async loginDemo(role) {
-    if (this.isLoading) return;
-    
-    const accounts = {
-      admin: { email: "admin@example.com", password: "password" },
-      evaluator: { email: "manager@example.com", password: "password" },
-      worker: { email: "employee@example.com", password: "password" },
-    };
-
-    const account = accounts[role];
-    if (!account) return;
-
-    this.setLoadingState(true);
-    try {
-      // フォームの入力値を設定
-      const emailInput = document.getElementById("email");
-      const passwordInput = document.getElementById("password");
-      if (emailInput) emailInput.value = account.email;
-      if (passwordInput) passwordInput.value = account.password;
-
-      await this.app.login(account.email, account.password);
-    } catch (error) {
-      console.error("Demo login error:", error);
-      this.app.showError(error.message || this.app.i18n.t("errors.demo_login_failed")); // 翻訳キーを使用
+      this.app.showError(error.message || this.app.i18n.t("errors.login_failed_generic"));
     } finally {
       this.setLoadingState(false);
     }
@@ -182,10 +125,8 @@ export class LoginPage {
     const loginButton = document.getElementById("loginButton");
     const loginText = loginButton?.querySelector(".login-text");
     const loginSpinner = loginButton?.querySelector(".login-spinner");
-    const demoButtons = document.querySelectorAll('.demo-btn');
 
     if (loginButton) loginButton.disabled = loading;
-    demoButtons.forEach(btn => btn.disabled = loading);
 
     if (loading) {
       loginText?.classList.add("d-none");
@@ -194,7 +135,7 @@ export class LoginPage {
       loginText?.classList.remove("d-none");
       loginSpinner?.classList.add("d-none");
     }
-    // ロード状態が変化したらUIを更新して翻訳を適用
+    
     if (this.app.i18n) {
       this.app.i18n.updateUI(document.querySelector('.login-form-container'));
     }
