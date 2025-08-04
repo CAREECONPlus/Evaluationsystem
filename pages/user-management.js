@@ -1,3 +1,5 @@
+// careeconplus/evaluationsystem/Evaluationsystem-main/pages/user-management.js
+
 /**
  * User Management Page Component (with invitation modal)
  * ユーザー管理ページコンポーネント（招待モーダル付き）
@@ -116,7 +118,6 @@ export class UserManagementPage {
     }
 
     async loadData() {
-        // ... (existing loadData logic)
         const activeUsersView = document.getElementById('active-users-view');
         const pendingUsersView = document.getElementById('pending-users-view');
 
@@ -149,7 +150,6 @@ export class UserManagementPage {
     }
 
     createTable(users, isPendingTable) {
-        // ... (existing createTable logic remains unchanged)
         if (users.length === 0) {
             return `<div class="card card-body text-center" data-i18n="common.no_data"></div>`;
         }
@@ -189,8 +189,12 @@ export class UserManagementPage {
             </div>`;
     }
 
+    renderTables() {
+        document.getElementById('active-users-view').innerHTML = this.createTable(this.activeUsers, false);
+        document.getElementById('pending-users-view').innerHTML = this.createTable(this.pendingUsers, true);
+    }
+
     switchTab(tabName) {
-        // ... (existing switchTab logic remains unchanged)
         this.selectedTab = tabName;
         document.getElementById('active-users-view').classList.toggle('d-none', tabName !== 'active');
         document.getElementById('pending-users-view').classList.toggle('d-none', tabName !== 'pending');
@@ -200,7 +204,6 @@ export class UserManagementPage {
     }
 
     async approveUser(userId) {
-        // ... (existing approveUser logic remains unchanged)
         if (confirm(this.app.i18n.t('users.confirm_approve'))) {
             try {
                 await this.app.api.updateUserStatus(userId, 'active');
@@ -213,7 +216,6 @@ export class UserManagementPage {
     }
 
     async rejectUser(userId) {
-        // ... (existing rejectUser logic remains unchanged)
         if (confirm(this.app.i18n.t('users.confirm_reject'))) {
             try {
                 await this.app.api.deleteUser(userId);
