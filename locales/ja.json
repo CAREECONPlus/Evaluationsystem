@@ -283,3 +283,35 @@
     "passwords_match": "パスワードが一致しました。"
   }
 }
+// careeconplus/evaluationsystem/Evaluationsystem-main/locales/ja.json
+{
+  // ... (existing translations)
+  "settings": {
+    // ... (existing translations)
+    "unsaved_warning": "保存されていない変更があります。ページを離れてもよろしいですか？"
+  },
+  "developer": {
+    "title": "開発者管理",
+    "admin_approvals": "管理者アカウントの承認",
+    "tenant_management": "テナント管理",
+    "approve": "承認",
+    "confirm_approve": "この管理者を承認し、新しいテナントを作成しますか？",
+    "approve_success": "管理者を承認しました。",
+    "confirm_password_reset": "{{email}} にパスワードリセットメールを送信しますか？",
+    "confirm_suspend": "このテナントを利用停止にしますか？管理者はログインできなくなります。",
+    "confirm_reactivate": "このテナントを再度有効化しますか？",
+    "status_update_success": "テナントのステータスを更新しました。"
+  },
+  "report": {
+    "summary": "サマリー",
+    "comparison": "比較",
+    "history": "履歴",
+    "overall_evaluation": "総合評価",
+    "detailed_scores": "項目別スコア詳細",
+    "self_comment": "本人コメント",
+    "evaluator_comment": "評価者コメント",
+    "score_comparison": "評価スコア比較（項目別）",
+    "process_history": "評価プロセス履歴"
+  },
+  // ... (rest of the translations)
+}
