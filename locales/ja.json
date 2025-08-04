@@ -140,9 +140,15 @@
     "search_users": "ユーザーを検索...",
     "pending_approvals": "承認待ちユーザー",
     "active_users": "ユーザー一覧",
-    "invite_instructions": "招待手順",
+    "invite_title": "新規ユーザーを招待",
+    "send_invitation": "招待を送信",
     "invite_link_created": "招待リンクが作成されました",
-    "copy_link": "リンクをコピー"
+    "invite_link_instructions": "以下のリンクをコピーして、招待したいユーザーに共有してください。リンクは7日間有効です。",
+    "copy_success": "リンクをコピーしました！",
+    "confirm_approve": "このユーザーを承認しますか？",
+    "approve_success": "ユーザーを承認しました。",
+    "confirm_reject": "このユーザーを否認（削除）しますか？",
+    "reject_success": "ユーザーを削除しました。"
   },
   "roles": {
     "developer": "開発者",
@@ -325,7 +331,6 @@
     "total_employees": "総従業員数",
     "pending_evaluations_count": "未完了評価",
     "completed_evaluations_count": "完了評価",
-    "average_score": "平均スコア",
     "personal_score": "個人のスコア",
     "average_score_trend": "平均スコア推移",
     "personal_score_trend": "個人のスコア推移"
@@ -345,27 +350,5 @@
     "email_password_required": "メールアドレスとパスワードを入力してください。",
     "invalid_email_password": "メールアドレスまたはパスワードが正しくありません。",
     "account_inactive": "このアカウントは現在無効です。"
-  }
-}
-{
-  "users": {
-    "title": "ユーザー管理",
-    "invite": "新規ユーザー追加",
-    "role": "役割",
-    "status": "ステータス",
-    "created_at": "登録日",
-    "actions": "操作",
-    "search_users": "ユーザーを検索...",
-    "pending_approvals": "承認待ちユーザー",
-    "active_users": "ユーザー一覧",
-    "invite_title": "新規ユーザーを招待",
-    "send_invitation": "招待を送信",
-    "invite_link_created": "招待リンクが作成されました",
-    "invite_link_instructions": "以下のリンクをコピーして、招待したいユーザーに共有してください。リンクは7日間有効です。",
-    "copy_success": "リンクをコピーしました！",
-    "confirm_approve": "このユーザーを承認しますか？",
-    "approve_success": "ユーザーを承認しました。",
-    "confirm_reject": "このユーザーを否認（削除）しますか？",
-    "reject_success": "ユーザーを削除しました。"
   }
 }
