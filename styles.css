@@ -105,7 +105,7 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 .table {
-  white-space: nowrap; /* テーブルセル内での不要な改行を防ぐ */
+  white-space: nowrap;
 }
 .table thead th {
   background-color: #f8f9fa;
@@ -116,18 +116,6 @@ body {
   background-color: #f1f3f5;
 }
 
-/* "No Data" Placeholder */
-.no-data-placeholder {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 150px;
-  color: #6c757d;
-  background-color: #f8f9fa;
-  border-radius: 0.5rem;
-  margin: 1rem;
-}
-
 /* Settings Page Layout */
 .settings-layout { 
     display: grid; 
@@ -135,12 +123,29 @@ body {
     gap: 1.5rem; 
 }
 
+.sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1010;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+.sidebar-backdrop.show {
+    opacity: 1;
+    visibility: visible;
+}
 
 /* --- Responsive Design --- */
-@media (max-width: 991.98px) { /* 要件定義書の992pxに合わせる */
+@media (max-width: 991.98px) {
     #sidebar-container {
         position: fixed;
         transform: translateX(-100%);
+        box-shadow: 2px 0 15px rgba(0,0,0,0.2);
     }
     #sidebar-container.show {
         transform: translateX(0);
