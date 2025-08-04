@@ -71,17 +71,37 @@ export class API {
     }
 
     async getEvaluationChartData() {
+        // ★★★ 修正点: ラベルを翻訳キーに置き換え ★★★
+        const chartLabels = [
+            this.app.i18n.t('chart_items.technical_skill'),
+            this.app.i18n.t('chart_items.quality'),
+            this.app.i18n.t('chart_items.safety'),
+            this.app.i18n.t('chart_items.cooperation'),
+            this.app.i18n.t('chart_items.diligence')
+        ];
+        
         const dummyData = {
-            labels: ['技術力', '品質', '安全', '協調性', '勤怠'],
+            labels: chartLabels,
             datasets: [
-                { label: 'あなたのスコア', data: [4, 5, 3, 4, 5], backgroundColor: 'rgba(54, 162, 235, 0.2)', borderColor: 'rgb(54, 162, 235)' },
-                { label: '部署平均', data: [3.5, 4.2, 4.1, 3.8, 4.5], backgroundColor: 'rgba(255, 99, 132, 0.2)', borderColor: 'rgb(255, 99, 132)' }
+                { 
+                    label: this.app.i18n.t('dashboard.personal_score'), 
+                    data: [80, 90, 65, 75, 95], 
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)', 
+                    borderColor: 'rgb(54, 162, 235)' 
+                },
+                { 
+                    label: this.app.i18n.t('dashboard.department_average'), 
+                    data: [70, 82, 81, 78, 85], 
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)', 
+                    borderColor: 'rgb(255, 99, 132)' 
+                }
             ]
         };
         return { radar: dummyData, bar: dummyData, line: dummyData };
     }
 
     // --- User Management ---
+    // ... (rest of the file is unchanged)
     async getUsers(status) {
         if (!this.app.currentUser?.tenantId) return [];
         const q = query(collection(this.db, "users"), where("tenantId", "==", this.app.currentUser.tenantId), where("status", "==", status));
