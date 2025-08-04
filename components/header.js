@@ -21,7 +21,7 @@ export class HeaderComponent {
         container.innerHTML = `
             <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
                 <div class="container-fluid">
-                    <button class="navbar-toggler d-lg-none" type="button" onclick="window.app.sidebar.toggle()">
+                    <button id="sidebarToggler" class="navbar-toggler d-lg-none" type="button">
                         <span class="navbar-toggler-icon"></span>
                     </button>
                     <a class="navbar-brand d-flex align-items-center" href="#/dashboard" data-link>
@@ -35,13 +35,13 @@ export class HeaderComponent {
                                     <i class="fas fa-globe me-1"></i><span data-i18n="common.language"></span>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item" href="#" onclick="window.app.i18n.setLanguage('ja')">日本語</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="window.app.i18n.setLanguage('en')">English</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="window.app.i18n.setLanguage('vi')">Tiếng Việt</a></li>
+                                    <li><a class="dropdown-item" href="#" id="lang-ja">日本語</a></li>
+                                    <li><a class="dropdown-item" href="#" id="lang-en">English</a></li>
+                                    <li><a class="dropdown-item" href="#" id="lang-vi">Tiếng Việt</a></li>
                                 </ul>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="#" onclick="event.preventDefault(); window.app.logout();">
+                                <a class="nav-link" href="#" id="logout-btn">
                                     <i class="fas fa-sign-out-alt me-2"></i><span data-i18n="nav.logout"></span>
                                 </a>
                             </li>
@@ -49,14 +49,35 @@ export class HeaderComponent {
                     </div>
                 </div>
             </nav>`;
+        
+        this.addEventListeners();
         this.app.i18n.updateUI(container);
     }
     
     /**
-     * Toggles the visibility of the sidebar on smaller screens.
-     * 小さい画面でサイドバーの表示/非表示を切り替えます。
+     * Adds event listeners for header elements.
+     * ヘッダー要素にイベントリスナーを追加します。
      */
-    toggleSidebar() {
-        document.getElementById('sidebar-container')?.classList.toggle('show');
+    addEventListeners() {
+        // ★★★ ハンバーガーメニューのクリックイベントをここで設定 ★★★
+        const toggler = document.getElementById('sidebarToggler');
+        if (toggler) {
+            toggler.addEventListener('click', () => {
+                this.app.sidebar.toggle();
+            });
+        }
+        
+        // 他のイベントリスナーも同様に設定
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.app.logout();
+            });
+        }
+        
+        document.getElementById('lang-ja')?.addEventListener('click', (e) => { e.preventDefault(); this.app.i18n.setLanguage('ja'); });
+        document.getElementById('lang-en')?.addEventListener('click', (e) => { e.preventDefault(); this.app.i18n.setLanguage('en'); });
+        document.getElementById('lang-vi')?.addEventListener('click', (e) => { e.preventDefault(); this.app.i18n.setLanguage('vi'); });
     }
 }
