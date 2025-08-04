@@ -1,3 +1,5 @@
+// careeconplus/evaluationsystem/Evaluationsystem-main/pages/goal-approvals.js
+
 /**
  * Goal Approvals Page Component (Firebase Integrated)
  * 目標承認ページコンポーネント（Firebase連携版）
