@@ -2,7 +2,7 @@
  * Evaluation Report Page Component
  * 評価レポートページコンポーネント
  */
-class EvaluationReportPage {
+export class EvaluationReportPage {
   constructor(app) {
     this.app = app;
     this.evaluation = null;
@@ -21,7 +21,6 @@ class EvaluationReportPage {
 
     return `
       <div class="evaluation-report-page p-4">
-        <!-- ヘッダー情報 -->
         <div class="report-header d-flex justify-content-between align-items-center mb-4">
           <div>
             <h1 class="h3">${this.app.sanitizeHtml(period)} ${this.app.i18n.t('nav.reports')}</h1>
@@ -34,7 +33,6 @@ class EvaluationReportPage {
           </button>
         </div>
 
-        <!-- タブナビゲーション -->
         <ul class="nav nav-tabs mb-3">
           <li class="nav-item">
             <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#summary-tab">サマリー</button>
@@ -47,7 +45,6 @@ class EvaluationReportPage {
           </li>
         </ul>
 
-        <!-- タブコンテンツ -->
         <div class="tab-content">
           ${this.renderSummaryTab()}
           ${this.renderComparisonTab()}
@@ -94,7 +91,6 @@ class EvaluationReportPage {
                   </tr>
                 </thead>
                 <tbody>
-                  <!-- ダミーデータ行 -->
                   <tr>
                     <td>クロス工事 (新規) / 下地処理</td>
                     <td class="text-center">4</td>
@@ -231,6 +227,3 @@ class EvaluationReportPage {
     }
   }
 }
-
-// グローバルスコープで利用可能にする
-window.EvaluationReportPage = EvaluationReportPage;
