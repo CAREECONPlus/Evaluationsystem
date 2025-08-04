@@ -1,3 +1,5 @@
+// careeconplus/evaluationsystem/Evaluationsystem-main/api.js
+
 import {
     collection,
     doc,
@@ -177,7 +179,7 @@ export class API {
         const [jobTypesSnap, periodsSnap, structuresSnap] = await Promise.all([
             getDocs(jobTypesQuery),
             getDocs(periodsQuery),
-            getDocs(structuresSnap)
+            getDocs(structuresQuery) // ★★★ 修正点: structuresSnap -> structuresQuery
         ]);
         const structures = {};
         structuresSnap.forEach(docSnap => { structures[docSnap.id] = {id: docSnap.id, ...docSnap.data()}; });
