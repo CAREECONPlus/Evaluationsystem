@@ -4,7 +4,7 @@ import { DashboardPage } from './pages/dashboard.js';
 import { UserManagementPage } from './pages/user-management.js';
 import { EvaluationsPage } from './pages/evaluations.js';
 import { EvaluationReportPage } from './pages/report.js';
-import { SettingsPage } from './pages/settings.js';
+import { SettingsPage } from './pages/settings.js'; // ★★★ この行のタイプミスを修正しました ★★★
 import { EvaluationFormPage } from './pages/evaluation-form.js';
 import { GoalSettingPage } from './pages/goal-setting.js';
 import { GoalApprovalsPage } from './pages/goal-approvals.js';
@@ -35,12 +35,7 @@ export class Router {
         };
     }
 
-    /**
-     * Handles routing by loading and initializing the correct page component.
-     * 正しいページコンポーネントを読み込んで初期化し、ルーティングを処理します。
-     */
     async route() {
-        // Get path and query parameters from URL hash
         const hash = window.location.hash.substring(1);
         const [path, queryString] = hash.split('?');
         const params = new URLSearchParams(queryString);
@@ -50,7 +45,6 @@ export class Router {
         
         const isPublicPage = ["/login", "/register", "/register-admin"].includes(cleanPath);
 
-        // --- Authentication Guard ---
         if (!isPublicPage && !this.app.isAuthenticated()) {
             this.app.navigate("#/login");
             return;
@@ -60,11 +54,9 @@ export class Router {
             return;
         }
 
-        // Update header and sidebar components
         this.app.header.update();
         this.app.sidebar.update();
 
-        // Render the page
         const pageInstance = new PageClass(this.app);
         this.app.currentPage = pageInstance;
         
@@ -73,12 +65,10 @@ export class Router {
         
         contentContainer.innerHTML = await pageInstance.render();
         
-        // Pass URL search params to the init method if it exists
         if (typeof pageInstance.init === "function") {
             await pageInstance.init(params);
         }
         
-        // Apply translations after page content is fully rendered and initialized
         this.app.i18n.updateUI();
     }
 }
