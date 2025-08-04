@@ -1,3 +1,5 @@
+// careeconplus/evaluationsystem/Evaluationsystem-main/pages/settings.js
+
 /**
  * Settings Page Component (Firebase Integrated)
  * 設定ページコンポーネント（Firebase連携版）
