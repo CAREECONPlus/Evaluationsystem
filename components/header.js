@@ -35,13 +35,13 @@ export class HeaderComponent {
                                     <i class="fas fa-globe me-1"></i><span data-i18n="common.language"></span>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item" href="#" id="lang-ja">日本語</a></li>
-                                    <li><a class="dropdown-item" href="#" id="lang-en">English</a></li>
-                                    <li><a class="dropdown-item" href="#" id="lang-vi">Tiếng Việt</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="window.app.i18n.setLanguage('ja')">日本語</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="window.app.i18n.setLanguage('en')">English</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="window.app.i18n.setLanguage('vi')">Tiếng Việt</a></li>
                                 </ul>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="#" id="logout-btn">
+                                <a class="nav-link" href="#" onclick="event.preventDefault(); window.app.logout();">
                                     <i class="fas fa-sign-out-alt me-2"></i><span data-i18n="nav.logout"></span>
                                 </a>
                             </li>
@@ -49,35 +49,6 @@ export class HeaderComponent {
                     </div>
                 </div>
             </nav>`;
-        
-        this.addEventListeners();
         this.app.i18n.updateUI(container);
-    }
-    
-    /**
-     * Adds event listeners for header elements.
-     * ヘッダー要素にイベントリスナーを追加します。
-     */
-    addEventListeners() {
-        // ★★★ ハンバーガーメニューのクリックイベントをここで設定 ★★★
-        const toggler = document.getElementById('sidebarToggler');
-        if (toggler) {
-            toggler.addEventListener('click', () => {
-                this.app.sidebar.toggle();
-            });
-        }
-        
-        // 他のイベントリスナーも同様に設定
-        const logoutBtn = document.getElementById('logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.app.logout();
-            });
-        }
-        
-        document.getElementById('lang-ja')?.addEventListener('click', (e) => { e.preventDefault(); this.app.i18n.setLanguage('ja'); });
-        document.getElementById('lang-en')?.addEventListener('click', (e) => { e.preventDefault(); this.app.i18n.setLanguage('en'); });
-        document.getElementById('lang-vi')?.addEventListener('click', (e) => { e.preventDefault(); this.app.i18n.setLanguage('vi'); });
     }
 }
