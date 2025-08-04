@@ -1,3 +1,5 @@
+// careeconplus/evaluationsystem/Evaluationsystem-main/firestore.indexes.json
+
 {
   "indexes": [
     {
@@ -81,12 +83,8 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "period",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
+          "fieldPath": "submittedAt",
+          "order": "DESCENDING"
         }
       ]
     },
