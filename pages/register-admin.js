@@ -1,6 +1,6 @@
 /**
- * Register Admin Page Component (Firebase Integrated)
- * 管理者登録ページコンポーネント（Firebase連携版）
+ * Register Admin Page Component (Firebase Integrated & UX Improved)
+ * 管理者登録ページコンポーネント（Firebase連携・UX改善版）
  */
 export class RegisterAdminPage {
   constructor(app) {
@@ -114,7 +114,7 @@ export class RegisterAdminPage {
     try {
         await this.app.auth.registerAndCreateProfile(userData, 'admin', 'developer_approval_pending');
         
-        // ★★★ 修正点：申請成功後のメッセージ表示 ★★★
+        // ★★★ 修正点：申請成功後にメッセージ画面に切り替える ★★★
         const container = document.getElementById('register-admin-container');
         container.innerHTML = `
             <div class="text-center">
