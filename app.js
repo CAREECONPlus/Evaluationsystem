@@ -8,16 +8,11 @@ import { Router } from './router.js';
 import { HeaderComponent } from './components/header.js';
 import { SidebarComponent } from './components/sidebar.js';
 
-/**
- * Main Application Class
- * アプリケーションのメインクラス
- */
 class App {
   constructor() {
-    this.currentUser = null; // Firestoreからのプロファイル情報を含む認証ユーザー
+    this.currentUser = null;
     this.currentPage = null;
 
-    // Initialize modules
     this.i18n = new I18n();
     this.auth = new Auth(this);
     this.api = new API(this);
@@ -26,23 +21,14 @@ class App {
     this.sidebar = new SidebarComponent(this);
   }
 
-  /**
-   * Initializes the application
-   * アプリケーションを初期化する
-   */
   async init() {
     try {
       console.log("Starting application initialization...");
       await this.i18n.init();
-      
-      // Set up an authentication state listener and wait for the initial state
-      // 認証状態のリスナーをセットアップし、初期状態が確定するのを待つ
       await this.auth.init();
       
       this.setupEventListeners();
       
-      // Perform the initial routing
-      // 初回のルーティングを実行
       await this.router.route();
 
       this.showApp();
@@ -54,21 +40,14 @@ class App {
     }
   }
 
-  /**
-   * Sets up global event listeners
-   * グローバルイベントリスナーをセットアップする
-   */
   setupEventListeners() {
     document.body.addEventListener("click", e => {
-      // ★★★ ハンバーガーメニューのクリック処理をここに集約 ★★★
       const sidebarToggler = e.target.closest('#sidebarToggler');
       if (sidebarToggler) {
           this.sidebar.toggle();
-          return; // 他の処理と競合しないようにここで終了
+          return; 
       }
       
-      // Handle navigation for elements with data-link attribute
-      // data-link属性を持つ要素のナビゲーションを処理する
       const link = e.target.closest('[data-link]');
       if (link) {
         e.preventDefault();
@@ -76,88 +55,35 @@ class App {
       }
     });
 
-    // Handle browser back/forward buttons
-    // ブラウザの戻る/進むボタンを処理する
     window.addEventListener("popstate", () => this.router.route());
   }
 
-  /**
-   * Navigates to a new path using hash-based routing
-   * ハッシュベースのルーティングを使用して新しいパスに移動する
-   * @param {string} path - The path to navigate to (e.g., '#/dashboard')
-   */
+  // ... (rest of the file is unchanged)
   navigate(path) {
     if (window.location.hash === path) {
-        return; // Avoid re-routing to the same page
+        return; 
     }
     window.location.hash = path;
   }
-
-  /**
-   * Hides the loading screen and shows the main app content
-   * ローディング画面を非表示にし、メインアプリのコンテンツを表示する
-   */
   showApp() {
     const loadingScreen = document.getElementById("loading-screen");
     const appEl = document.getElementById("app");
     if (loadingScreen) loadingScreen.style.display = "none";
     if (appEl) appEl.classList.remove("d-none");
   }
-
-  /**
-   * Logs in the user and navigates to the dashboard
-   * ユーザーをログインさせ、ダッシュボードに移動する
-   * @param {string} email 
-   * @param {string} password 
-   */
   async login(email, password) {
     await this.auth.login(email, password);
-    // The onAuthStateChanged listener in Auth.js will handle updating currentUser and routing
   }
-
-  /**
-   * Logs out the user and navigates to the login page
-   * ユーザーをログアウトさせ、ログインページに移動する
-   */
   async logout() {
     await this.auth.logout();
     this.showSuccess(this.i18n.t("messages.logout_success"));
     this.navigate("#/login");
   }
-
-  /**
-   * Checks if a user is currently authenticated
-   * ユーザーが現在認証されているか確認する
-   * @returns {boolean}
-   */
   isAuthenticated() {
     return !!this.currentUser;
   }
-  
-  /**
-   * Checks if the current user has a specific role
-   * 現在のユーザーが特定の役割を持っているか確認する
-   * @param {string} role 
-   * @returns {boolean}
-   */
   hasRole(role) { return this.currentUser?.role === role; }
-  
-  /**
-   * Checks if the current user has any of the specified roles
-   * 現在のユーザーが指定された役割のいずれかを持っているか確認する
-   * @param {string[]} roles 
-   * @returns {boolean}
-   */
   hasAnyRole(roles) { return this.currentUser && roles.includes(this.currentUser.role); }
-  
-  // --- Common Utility Methods ---
-
-  /**
-   * Shows a toast notification
-   * トースト通知を表示する
-   * @param {string} message - The message to display
-   * @param {string} type - 'success', 'danger', 'warning', 'info'
-   */
   showToast(message, type = "info") {
     const container = document.getElementById("toast-container");
     if (!container) return;
@@ -177,19 +103,16 @@ class App {
     toast.show();
     toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
   }
-
   showSuccess(message) { this.showToast(message, "success"); }
   showError(message) { this.showToast(message, "danger"); }
   showWarning(message) { this.showToast(message, "warning"); }
   showInfo(message) { this.showToast(message, "info"); }
-  
   sanitizeHtml(str) {
     if (str === null || typeof str === 'undefined') return "";
     const temp = document.createElement('div');
     temp.textContent = String(str);
     return temp.innerHTML;
   }
-  
   getStatusBadgeClass(status) {
     const statusClasses = {
       active: "bg-success",
@@ -206,11 +129,9 @@ class App {
     };
     return statusClasses[status] || "bg-light text-dark";
   }
-
   getRoleBadgeClass(role) {
     return { developer: "bg-dark", admin: "bg-danger", evaluator: "bg-info", worker: "bg-secondary" }[role] || "bg-light text-dark";
   }
-
   formatDate(timestamp, withTime = false) {
     if (!timestamp) return "-";
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
