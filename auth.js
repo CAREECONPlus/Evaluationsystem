@@ -5,7 +5,7 @@ import {
     signOut,
     sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
-import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
 /**
  * Authentication Service (Firebase Integrated)
@@ -16,6 +16,7 @@ export class Auth {
         this.app = app;
         this.auth = window.firebase.auth;
         this.db = window.firebase.db;
+        this.authStateInitialized = false; // 初期化が完了したかどうかのフラグ
     }
 
     /**
@@ -26,30 +27,45 @@ export class Auth {
     init() {
         return new Promise((resolve) => {
             onAuthStateChanged(this.auth, async (user) => {
+                const wasLoggedIn = !!this.app.currentUser;
+
                 if (user) {
-                    console.log("Auth state changed: User is signed in.", user.uid);
                     try {
                         const userProfile = await this.getUserProfile(user.uid);
-                        if (userProfile) {
-                            // Combine auth data (like uid, email) with Firestore profile data
+                        if (userProfile && userProfile.status === 'active') {
                             this.app.currentUser = { ...user, ...userProfile };
-                            console.log("User profile loaded:", this.app.currentUser.email);
+                            console.log("Auth state changed: User is signed in and active.", this.app.currentUser.email);
                         } else {
-                            // This case might happen during registration before the profile is created
-                            this.app.currentUser = user;
-                            console.warn("User profile not found in Firestore for UID:", user.uid);
+                            // プロファイルがない、またはアクティブでない場合はログアウトさせる
+                            this.app.currentUser = null;
+                            if (userProfile) {
+                                console.warn("User is not active. Status:", userProfile.status);
+                                this.app.showError(this.app.i18n.t('errors.account_inactive'));
+                            }
+                            await signOut(this.auth);
                         }
                     } catch (error) {
                         console.error("Error fetching user profile:", error);
                         this.app.currentUser = null;
-                        await this.logout(); // Force logout on profile error
+                        await signOut(this.auth);
                     }
                 } else {
-                    console.log("Auth state changed: User is signed out.");
                     this.app.currentUser = null;
+                    console.log("Auth state changed: User is signed out.");
                 }
-                // Resolve the promise once the initial user state is known
-                resolve(); 
+
+                // ★★★ 修正点 ★★★
+                // ログイン状態が変化した場合にのみ、画面の再描画（ルーティング）を実行
+                const isLoggedIn = !!this.app.currentUser;
+                if (this.authStateInitialized && wasLoggedIn !== isLoggedIn) {
+                    this.app.router.route();
+                }
+
+                // 最初の認証状態チェックが完了したことを記録
+                if (!this.authStateInitialized) {
+                    this.authStateInitialized = true;
+                    resolve(); 
+                }
             });
         });
     }
@@ -63,21 +79,16 @@ export class Auth {
     async getUserProfile(uid) {
         const userDocRef = doc(this.db, "users", uid);
         const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
-            return userDocSnap.data();
-        } else {
-            return null;
-        }
+        return userDocSnap.exists() ? userDocSnap.data() : null;
     }
 
     /**
      * Signs in a user with their email and password.
      * メールアドレスとパスワードでユーザーをサインインさせます。
-     * @param {string} email 
-     * @param {string} password 
      */
     async login(email, password) {
         await signInWithEmailAndPassword(this.auth, email, password);
+        // この後の画面遷移はonAuthStateChangedリスナーが担当
     }
 
     /**
@@ -89,12 +100,8 @@ export class Auth {
     }
 
     /**
-     * Registers a new user with email and password, then creates their profile.
-     * メールアドレスとパスワードで新規ユーザーを登録し、プロファイルを作成します。
-     * @param {object} userData - User data including email, password, name, etc.
-     * @param {string} role - The role of the new user.
-     * @param {string} status - The initial status of the new user.
-     * @returns {object} The created user credential.
+     * Registers a new user and creates their profile.
+     * 新規ユーザーを登録し、プロファイルを作成します。
      */
     async registerAndCreateProfile(userData, role, status) {
         const userCredential = await createUserWithEmailAndPassword(this.auth, userData.email, userData.password);
@@ -106,45 +113,34 @@ export class Auth {
             companyName: userData.companyName || null,
             role: role,
             status: status,
-            tenantId: userData.tenantId || null, // tenantId might be set later for admins
+            tenantId: userData.tenantId || null,
             createdAt: serverTimestamp(),
         };
 
         await setDoc(doc(this.db, "users", user.uid), userProfile);
         return userCredential;
     }
-
+    
     /**
-     * Sends a password reset email to the specified address.
-     * 指定されたアドレスにパスワードリセットメールを送信します。
-     * @param {string} email 
-     */
-    async sendPasswordReset(email) {
-        await sendPasswordResetEmail(this.auth, email);
-    }
-
-    /**
-     * Translates Firebase Auth error codes into user-friendly Japanese messages.
-     * Firebase Authのエラーコードを分かりやすい日本語のメッセージに変換します。
-     * @param {Error} error - The error object from Firebase Auth.
-     * @returns {string} A user-friendly error message.
+     * Translates Firebase Auth error codes into user-friendly messages.
+     * Firebase Authのエラーコードを分かりやすいメッセージに変換します。
      */
     getFirebaseAuthErrorMessage(error) {
         switch (error.code) {
             case 'auth/invalid-email':
-                return this.app.i18n.t('errors.invalid_email');
+            case 'auth/wrong-password':
+            case 'auth/user-not-found':
+            case 'auth/invalid-credential': // v9以降の一般的な認証エラー
+                 return this.app.i18n.t('errors.invalid_email_password');
             case 'auth/user-disabled':
                 return this.app.i18n.t('errors.account_inactive');
-            case 'auth/user-not-found':
-            case 'auth/wrong-password':
-                return this.app.i18n.t('errors.invalid_email_password');
             case 'auth/email-already-in-use':
                 return this.app.i18n.t('errors.email_already_in_use');
             case 'auth/weak-password':
                 return this.app.i18n.t('errors.weak_password');
             default:
                 console.error("Unhandled Firebase Auth Error:", error);
-                return error.message;
+                return this.app.i18n.t('errors.login_failed_generic') || "ログイン中に予期せぬエラーが発生しました。";
         }
     }
 }
