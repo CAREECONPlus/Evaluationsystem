@@ -36,7 +36,10 @@ export class API {
         const tenantId = this.app.currentUser.tenantId;
         const usersQuery = query(collection(this.db, "users"), where("tenantId", "==", tenantId));
         const completedEvalsQuery = query(collection(this.db, "evaluations"), where("tenantId", "==", tenantId), where("status", "==", "completed"));
-        const pendingEvalsQuery = query(collection(this.db, "evaluations"), where("tenantId", "==", tenantId), where("status", "!=", "completed"));
+        
+        // ★★★ 修正点: '!=' 演算子を 'in' 演算子に変更 ★★★
+        const pendingStatuses = ['pending_submission', 'pending_evaluation', 'pending_approval', 'self_assessed', 'rejected', 'draft'];
+        const pendingEvalsQuery = query(collection(this.db, "evaluations"), where("tenantId", "==", tenantId), where("status", "in", pendingStatuses));
 
         const [usersSnapshot, completedEvalsSnapshot, pendingEvalsSnapshot] = await Promise.all([
             getCountFromServer(usersQuery),
@@ -179,7 +182,7 @@ export class API {
         const [jobTypesSnap, periodsSnap, structuresSnap] = await Promise.all([
             getDocs(jobTypesQuery),
             getDocs(periodsQuery),
-            getDocs(structuresQuery) // ★★★ 修正点: structuresSnap -> structuresQuery
+            getDocs(structuresQuery)
         ]);
         const structures = {};
         structuresSnap.forEach(docSnap => { structures[docSnap.id] = {id: docSnap.id, ...docSnap.data()}; });
