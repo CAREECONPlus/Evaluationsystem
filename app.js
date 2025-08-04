@@ -59,15 +59,23 @@ class App {
    * グローバルイベントリスナーをセットアップする
    */
   setupEventListeners() {
-    // Handle navigation for elements with data-link attribute
-    // data-link属性を持つ要素のナビゲーションを処理する
     document.body.addEventListener("click", e => {
+      // ★★★ ハンバーガーメニューのクリック処理をここに集約 ★★★
+      const sidebarToggler = e.target.closest('#sidebarToggler');
+      if (sidebarToggler) {
+          this.sidebar.toggle();
+          return; // 他の処理と競合しないようにここで終了
+      }
+      
+      // Handle navigation for elements with data-link attribute
+      // data-link属性を持つ要素のナビゲーションを処理する
       const link = e.target.closest('[data-link]');
       if (link) {
         e.preventDefault();
         this.navigate(link.getAttribute("href"));
       }
     });
+
     // Handle browser back/forward buttons
     // ブラウザの戻る/進むボタンを処理する
     window.addEventListener("popstate", () => this.router.route());
@@ -194,6 +202,7 @@ class App {
       self_assessed: "bg-info text-dark",
       approved_by_evaluator: "bg-primary",
       completed: "bg-primary",
+      suspended: "bg-secondary"
     };
     return statusClasses[status] || "bg-light text-dark";
   }
@@ -202,12 +211,22 @@ class App {
     return { developer: "bg-dark", admin: "bg-danger", evaluator: "bg-info", worker: "bg-secondary" }[role] || "bg-light text-dark";
   }
 
-  formatDate(timestamp) {
+  formatDate(timestamp, withTime = false) {
     if (!timestamp) return "-";
-    // Handle both Firebase Timestamps and JS Date objects/strings
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     if (isNaN(date)) return "-";
-    return date.toLocaleDateString('ja-JP');
+
+    const locale = this.i18n.lang === 'ja' ? 'ja-JP' :
+                   this.i18n.lang === 'vi' ? 'vi-VN' :
+                   'en-US';
+    
+    const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+    if (withTime) {
+        options.hour = '2-digit';
+        options.minute = '2-digit';
+    }
+    
+    return new Intl.DateTimeFormat(locale, options).format(date);
   }
 }
 
