@@ -1,54 +1,53 @@
+// careeconplus/evaluationsystem/Evaluationsystem-main/pages/report.js
+
 /**
- * Evaluation Report Page Component
- * 評価レポートページコンポーネント
+ * Evaluation Report Page Component (Fully Functional)
+ * 評価レポートページコンポーネント（完全機能版）
  */
 export class EvaluationReportPage {
   constructor(app) {
     this.app = app;
     this.evaluation = null;
-    this.chart = null; // 比較チャートのインスタンス
+    this.chart = null; 
+    this.processedScores = {}; // To store calculated scores
   }
 
   /**
    * ページ全体のHTMLをレンダリング
    */
   async render() {
-    if (!this.evaluation) {
-      return `<div class="p-5 text-center">${this.app.i18n.t('common.loading')}</div>`;
+    if (!this.evaluation || !this.processedScores) {
+      return `<div class="p-5 text-center" data-i18n="common.loading"></div>`;
     }
 
-    const { employeeName, jobType, evaluatorName, period, submittedAt } = this.evaluation;
+    const { targetUserName, jobTypeName, evaluatorName, periodName } = this.evaluation;
 
     return `
       <div class="evaluation-report-page p-4">
         <div class="report-header d-flex justify-content-between align-items-center mb-4">
           <div>
-            <h1 class="h3">${this.app.sanitizeHtml(period)} ${this.app.i18n.t('nav.reports')}</h1>
+            <h1 class="h3">${this.app.sanitizeHtml(periodName)} <span data-i18n="nav.reports"></span></h1>
             <p class="text-muted mb-0">
-              ${this.app.i18n.t('evaluation.target')}: ${this.app.sanitizeHtml(employeeName)} (${this.app.sanitizeHtml(jobType)})
+              <span data-i18n="evaluation.target">: ${this.app.sanitizeHtml(targetUserName)} (${this.app.sanitizeHtml(jobTypeName)})</span>
             </p>
           </div>
           <button class="btn btn-outline-secondary" onclick="window.history.back()">
-            <i class="fas fa-arrow-left me-2"></i>${this.app.i18n.t('common.back')}
+            <i class="fas fa-arrow-left me-2"></i><span data-i18n="common.back"></span>
           </button>
         </div>
 
-        <ul class="nav nav-tabs mb-3">
+        <ul class="nav nav-tabs mb-3" id="report-tabs">
           <li class="nav-item">
-            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#summary-tab">サマリー</button>
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#summary-tab" data-i18n="report.summary"></button>
           </li>
           <li class="nav-item">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#comparison-tab">比較</button>
-          </li>
-          <li class="nav-item">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#history-tab">履歴</button>
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#comparison-tab" data-i18n="report.comparison"></button>
           </li>
         </ul>
 
         <div class="tab-content">
           ${this.renderSummaryTab()}
           ${this.renderComparisonTab()}
-          ${this.renderHistoryTab()}
         </div>
       </div>
     `;
@@ -58,53 +57,53 @@ export class EvaluationReportPage {
    * サマリータブのコンテンツをレンダリング
    */
   renderSummaryTab() {
-    // ダミーデータを使用
-    const selfScore = 3.8;
-    const evaluatorScore = 4.0;
+    const { selfAverage, evaluatorAverage, categories } = this.processedScores;
 
     return `
       <div class="tab-pane fade show active" id="summary-tab">
-        <div class="card">
+        <div class="card mb-4">
           <div class="card-body">
-            <h4 class="card-title mb-4">総合評価</h4>
+            <h4 class="card-title mb-4" data-i18n="report.overall_evaluation"></h4>
             <div class="row text-center mb-5">
-              <div class="col-6">
-                <h5>自己評価</h5>
-                <p class="display-4">${selfScore.toFixed(1)}</p>
+              <div class="col-6 border-end">
+                <h5 data-i18n="evaluation.self_assessment"></h5>
+                <p class="display-4">${selfAverage.toFixed(1)}</p>
               </div>
               <div class="col-6">
-                <h5>評価者評価</h5>
-                <p class="display-4">${evaluatorScore.toFixed(1)}</p>
+                <h5 data-i18n="evaluation.evaluator_assessment"></h5>
+                <p class="display-4">${evaluatorAverage.toFixed(1)}</p>
               </div>
             </div>
-
-            <h4 class="card-title mb-3">定量的評価</h4>
+          </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+            <h4 class="card-title mb-3" data-i18n="report.detailed_scores"></h4>
             <div class="table-responsive">
               <table class="table table-bordered">
                 <thead class="table-light">
                   <tr>
-                    <th>評価項目</th>
-                    <th>自己評価</th>
-                    <th>評価者評価</th>
-                    <th>自己コメント</th>
-                    <th>評価者コメント</th>
+                    <th data-i18n="evaluation.category"></th>
+                    <th data-i18n="evaluation.item"></th>
+                    <th data-i18n="evaluation.self_assessment_score"></th>
+                    <th data-i18n="evaluation.evaluator_assessment_score"></th>
+                    <th data-i18n="report.self_comment"></th>
+                    <th data-i18n="report.evaluator_comment"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>クロス工事 (新規) / 下地処理</td>
-                    <td class="text-center">4</td>
-                    <td class="text-center">5</td>
-                    <td>定期的な訓練と実践により基準を満たしています。</td>
-                    <td>十分な技術レベルに達しており、さらなる向上が期待できます。</td>
-                  </tr>
-                  <tr>
-                    <td>安全管理 / 道具・機械の使用方法</td>
-                    <td class="text-center">4</td>
-                    <td class="text-center">4</td>
-                    <td>常に安全を意識して作業を行いました。</td>
-                    <td>安全手順を遵守しており、他の模範となっています。</td>
-                  </tr>
+                  ${Object.values(categories).map(cat => `
+                    ${cat.items.map((item, index) => `
+                      <tr>
+                        ${index === 0 ? `<td rowspan="${cat.items.length}" class="align-middle fw-bold">${this.app.sanitizeHtml(cat.name)}</td>` : ''}
+                        <td>${this.app.sanitizeHtml(item.name)}</td>
+                        <td class="text-center">${item.selfScore || '-'}</td>
+                        <td class="text-center">${item.evalScore || '-'}</td>
+                        <td>${this.app.sanitizeHtml(item.selfComment || '')}</td>
+                        <td>${this.app.sanitizeHtml(item.evalComment || '')}</td>
+                      </tr>
+                    `).join('')}
+                  `).join('')}
                 </tbody>
               </table>
             </div>
@@ -122,43 +121,14 @@ export class EvaluationReportPage {
       <div class="tab-pane fade" id="comparison-tab">
         <div class="card">
           <div class="card-body">
-             <h4 class="card-title mb-4">評価スコア推移</h4>
-             <div class="chart-container" style="height: 300px;">
+             <h4 class="card-title mb-4" data-i18n="report.score_comparison"></h4>
+             <div class="chart-container" style="height: 400px;">
                 <canvas id="comparisonChart"></canvas>
              </div>
           </div>
         </div>
       </div>
     `;
-  }
-
-  /**
-   * 履歴タブのコンテンツをレンダリング
-   */
-  renderHistoryTab() {
-      return `
-      <div class="tab-pane fade" id="history-tab">
-        <div class="card">
-          <div class="card-body">
-            <h4 class="card-title mb-4">評価プロセス履歴</h4>
-            <ul class="list-group">
-              <li class="list-group-item">
-                <strong>管理者承認・評価確定:</strong> 2023/10/15 14:10:33
-              </li>
-               <li class="list-group-item">
-                <strong>一次承認:</strong> 2023/10/12 09:21:07
-              </li>
-              <li class="list-group-item">
-                <strong>評価者評価入力:</strong> 2023/10/10 14:30:15
-              </li>
-              <li class="list-group-item">
-                <strong>自己評価提出:</strong> 2023/10/05 13:24:36
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-      `;
   }
 
   /**
@@ -177,19 +147,19 @@ export class EvaluationReportPage {
       this.evaluation = await this.app.api.getEvaluationById(evaluationId);
       if (!this.evaluation) throw new Error("Evaluation not found.");
       
-      // --- 権限チェック ---
-      const currentUser = this.app.currentUser;
       const canView = 
-        this.app.hasRole('admin') || // 管理者
-        this.evaluation.employeeId === currentUser.id || // 本人
-        this.evaluation.evaluatorId === currentUser.id;  // 評価者
+        this.app.hasRole('admin') || 
+        this.evaluation.targetUserId === this.app.currentUser.uid || 
+        this.evaluation.evaluatorId === this.app.currentUser.uid;
 
       if (!canView) {
-        this.app.showError("このレポートへのアクセス権がありません。");
+        this.app.showError(this.app.i18n.t('errors.access_denied'));
         this.app.navigate('/evaluations');
         return;
       }
 
+      await this.processEvaluationData();
+      
       const contentContainer = document.getElementById("content");
       contentContainer.innerHTML = await this.render();
       this.afterRender();
@@ -197,9 +167,54 @@ export class EvaluationReportPage {
 
     } catch (error) {
       console.error("Failed to load report:", error);
-      this.app.showError("レポートの読み込みに失敗しました。");
+      this.app.showError(this.app.i18n.t('errors.loading_failed'));
       this.app.navigate('/evaluations');
     }
+  }
+
+  /**
+   * 評価データをチャートやテーブルで使いやすいように処理する
+   */
+  async processEvaluationData() {
+      if (!this.evaluation?.ratings) {
+          this.processedScores = { selfAverage: 0, evaluatorAverage: 0, categories: {} };
+          return;
+      }
+      
+      const structure = await this.app.api.getEvaluationStructure(this.evaluation.jobTypeId);
+      if (!structure) {
+           this.processedScores = { selfAverage: 0, evaluatorAverage: 0, categories: {} };
+           return;
+      }
+
+      let selfTotal = 0, evalTotal = 0, selfCount = 0, evalCount = 0;
+      const categories = {};
+
+      structure.categories.forEach(cat => {
+          categories[cat.id] = { name: cat.name, items: [] };
+          cat.items.forEach(item => {
+              const rating = this.evaluation.ratings[item.id] || {};
+              const selfScore = Number(rating.selfScore) || null;
+              const evalScore = Number(rating.evalScore) || null;
+
+              if(selfScore) { selfTotal += selfScore; selfCount++; }
+              if(evalScore) { evalTotal += evalScore; evalCount++; }
+
+              categories[cat.id].items.push({
+                  name: item.name,
+                  selfScore: selfScore,
+                  evalScore: evalScore,
+                  selfComment: rating.selfComment,
+                  evalComment: rating.evalComment
+              });
+          });
+      });
+
+      this.processedScores = {
+          selfAverage: selfCount > 0 ? selfTotal / selfCount : 0,
+          evaluatorAverage: evalCount > 0 ? evalTotal / evalCount : 0,
+          categories: categories
+      };
   }
   
   /**
@@ -207,23 +222,41 @@ export class EvaluationReportPage {
    */
   afterRender() {
     const canvas = document.getElementById("comparisonChart");
-    if (canvas) {
-      this.chart = new Chart(canvas.getContext('2d'), {
-        type: 'line',
-        data: {
-          labels: ['2022年下期', '2023年上期', '2023年下期'],
-          datasets: [{
-            label: '総合評価スコア',
-            data: [3.5, 3.8, 4.1],
-            borderColor: 'rgb(75, 192, 192)',
-            tension: 0.1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false
-        }
-      });
-    }
+    if (!canvas) return;
+
+    const labels = Object.values(this.processedScores.categories).map(c => c.name);
+    const selfScores = Object.values(this.processedScores.categories).map(c => {
+        const catScores = c.items.map(i => i.selfScore).filter(s => s !== null);
+        return catScores.length > 0 ? catScores.reduce((a, b) => a + b, 0) / catScores.length : 0;
+    });
+    const evalScores = Object.values(this.processedScores.categories).map(c => {
+        const catScores = c.items.map(i => i.evalScore).filter(s => s !== null);
+        return catScores.length > 0 ? catScores.reduce((a, b) => a + b, 0) / catScores.length : 0;
+    });
+
+    this.chart = new Chart(canvas.getContext('2d'), {
+      type: 'radar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: this.app.i18n.t('evaluation.self_assessment'),
+          data: selfScores,
+          borderColor: 'rgb(54, 162, 235)',
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          borderWidth: 2
+        }, {
+          label: this.app.i18n.t('evaluation.evaluator_assessment'),
+          data: evalScores,
+          borderColor: 'rgb(255, 99, 132)',
+          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { r: { beginAtZero: true, max: 5, stepSize: 1 } }
+      }
+    });
   }
 }
