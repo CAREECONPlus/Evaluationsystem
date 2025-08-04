@@ -17,6 +17,10 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-functions.js";
 
+/**
+ * API Service (Firestore Integrated)
+ * APIサービス (Firestore連携版)
+ */
 export class API {
     constructor(app) {
         this.app = app;
@@ -58,23 +62,39 @@ export class API {
         return { radar: dummyData, bar: dummyData, line: dummyData };
     }
 
-    // --- Developer & User Management ---
+    // --- User Management ---
+    async getUsers(status) {
+        if (!this.app.currentUser?.tenantId) return [];
+        const q = query(collection(this.db, "users"), where("tenantId", "==", this.app.currentUser.tenantId), where("status", "==", status));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+
+    // --- Developer & Registration ---
     async getPendingAdmins() {
         const q = query(collection(this.db, "users"), where("status", "==", "developer_approval_pending"));
         const querySnapshot = await getDocs(q);
         return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     }
-
+    
+    // ★★★ 修正済みの関数 ★★★
     async getActiveTenants() {
         if (!this.app.hasRole('developer')) throw new Error("Permission denied.");
         const tenantsQuery = query(collection(this.db, "tenants"));
         const usersQuery = query(collection(this.db, "users"), where("role", "==", "admin"));
-        const [tenantsSnap, usersSnap] = await Promise.all([getDocs(tenantsQuery), getDocs(usersSnap)]);
-        const tenants = tenantsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const adminUsers = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        const [tenantsSnap, usersSnap] = await Promise.all([getDocs(tenantsQuery), getDocs(usersQuery)]);
+        
+        const tenants = tenantsSnap.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        const adminUsers = usersSnap.docs.map(doc => ({id: doc.id, ...doc.data()}));
+
         return tenants.map(tenant => {
             const admin = adminUsers.find(u => u.tenantId === tenant.id);
-            return { ...tenant, adminName: admin ? admin.name : 'N/A', adminEmail: admin ? admin.email : 'N/A' };
+            return {
+                ...tenant,
+                adminName: admin ? admin.name : 'N/A',
+                adminEmail: admin ? admin.email : 'N/A',
+            };
         });
     }
 
@@ -88,4 +108,6 @@ export class API {
         const tenantRef = doc(this.db, "tenants", tenantId);
         await updateDoc(tenantRef, { status: status });
     }
+
+    // (ここに他の全ての既存関数が続きます)
 }
