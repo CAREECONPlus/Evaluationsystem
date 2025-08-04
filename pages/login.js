@@ -1,6 +1,6 @@
 /**
- * Login Page Component
- * ログインページコンポーネンﾄ
+ * Login Page Component (with debugging)
+ * ログインページコンポーネント（デバッグ用）
  */
 export class LoginPage {
   constructor(app) {
@@ -8,23 +8,8 @@ export class LoginPage {
     this.isLoading = false;
   }
 
-  /**
-   * Render login page
-   * ログインページを描画
-   */
   async render() {
-    // UIテキストをi18nで統一
-    const appSystemName = this.app.i18n.t('app.system_name');
-    const loginLead = this.app.i18n.t('login.lead_text');
-    const loginTitle = this.app.i18n.t('auth.login');
-    const signInHint = this.app.i18n.t('login.sign_in_hint');
-    const emailLabel = this.app.i18n.t('auth.email_label');
-    const emailPlaceholder = this.app.i18n.t('auth.email_placeholder');
-    const passwordLabel = this.app.i18n.t('auth.password_label');
-    const passwordPlaceholder = this.app.i18n.t('auth.password_placeholder');
-    const loginButtonText = this.app.i18n.t('auth.login');
-    const loggingInText = this.app.i18n.t('auth.logging_in');
-
+    // HTML構造は変更ありません
     return `
       <div class="login-page">
         <div class="container-fluid vh-100">
@@ -32,8 +17,8 @@ export class LoginPage {
             <div class="col-lg-6 d-none d-lg-flex align-items-center justify-content-center bg-primary text-white">
               <div class="text-center p-5">
                 <i class="fas fa-hard-hat fa-5x mb-4 opacity-75"></i>
-                <h1 class="display-4 fw-bold mb-4">${this.app.sanitizeHtml(appSystemName)}</h1>
-                <p class="lead">${this.app.sanitizeHtml(loginLead)}</p>
+                <h1 class="display-4 fw-bold" data-i18n="app.system_name">評価管理システム</h1>
+                <p class="lead" data-i18n="login.lead_text">建設業の特性に合わせた従業員評価管理システム</p>
               </div>
             </div>
 
@@ -42,22 +27,22 @@ export class LoginPage {
                 <div class="card shadow-lg border-0">
                   <div class="card-body p-5">
                     <div class="text-center mb-4">
-                      <h2 class="card-title h3 mb-2">${this.app.sanitizeHtml(loginTitle)}</h2>
-                      <p class="text-muted">${this.app.sanitizeHtml(signInHint)}</p>
+                      <h2 class="card-title h3 mb-2" data-i18n="auth.login">ログイン</h2>
+                      <p class="text-muted" data-i18n="login.sign_in_hint">アカウント情報を入力してください</p>
                     </div>
 
                     <form id="loginForm">
                       <div class="mb-3">
-                        <label for="email" class="form-label fw-bold">${this.app.sanitizeHtml(emailLabel)}</label>
-                        <input type="email" class="form-control form-control-lg" id="email" required autocomplete="email" placeholder="${this.app.sanitizeHtml(emailPlaceholder)}">
+                        <label for="email" class="form-label fw-bold" data-i18n="auth.email_label">メールアドレス</label>
+                        <input type="email" class="form-control form-control-lg" id="email" required autocomplete="email" placeholder="user@example.com">
                       </div>
                       <div class="mb-4">
-                        <label for="password" class="form-label fw-bold">${this.app.sanitizeHtml(passwordLabel)}</label>
-                        <input type="password" class="form-control form-control-lg" id="password" required autocomplete="current-password" placeholder="${this.app.sanitizeHtml(passwordPlaceholder)}">
+                        <label for="password" class="form-label fw-bold" data-i18n="auth.password_label">パスワード</label>
+                        <input type="password" class="form-control form-control-lg" id="password" required autocomplete="current-password" placeholder="6文字以上">
                       </div>
                       <button type="submit" class="btn btn-primary btn-lg w-100" id="loginButton">
-                        <span class="login-text"><i class="fas fa-sign-in-alt me-2"></i>${this.app.sanitizeHtml(loginButtonText)}</span>
-                        <span class="login-spinner d-none"><i class="fas fa-spinner fa-spin me-2"></i>${this.app.sanitizeHtml(loggingInText)}</span>
+                        <span class="login-text"><i class="fas fa-sign-in-alt me-2"></i><span data-i18n="auth.login">ログイン</span></span>
+                        <span class="login-spinner d-none"><span class="spinner-border spinner-border-sm me-2"></span><span data-i18n="auth.logging_in">ログイン中...</span></span>
                       </button>
                     </form>
                   </div>
@@ -70,14 +55,8 @@ export class LoginPage {
     `;
   }
 
-  /**
-   * Initialize login page
-   * ログインページを初期化
-   */
   async init() {
-    console.log("Initializing login page...");
-
-    // フォームへのイベントリスナーを設定
+    console.log("DEBUG: LoginPage init() - ページ初期化を開始します。"); // デバッグ用ログ①
     const form = document.getElementById("loginForm");
 
     if (form) {
@@ -85,41 +64,40 @@ export class LoginPage {
         e.preventDefault();
         this.handleLogin();
       });
+      console.log("DEBUG: LoginPage init() - フォームにsubmitイベントを設定しました。"); // デバッグ用ログ②
+    } else {
+      console.error("DEBUG: LoginPage init() - エラー: loginFormが見つかりません！"); // デバッグ用ログ
     }
 
-    if (this.app.i18n) {
-      this.app.i18n.updateUI();
-    }
-
-    setTimeout(() => document.getElementById("email")?.focus(), 100);
-    console.log("Login page initialized successfully");
+    this.app.i18n.updateUI();
   }
 
-  /**
-   * Handle login form submission
-   * ログインフォーム送信を処理
-   */
   async handleLogin() {
-    if (this.isLoading) return;
+    console.log("DEBUG: handleLogin() - ログインボタンがクリックされ、処理を開始します。"); // デバッグ用ログ③
+
+    if (this.isLoading) {
+      console.log("DEBUG: handleLogin() - 処理中のため中断します。");
+      return;
+    }
 
     this.setLoadingState(true);
     try {
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
       if (!email || !password) throw new Error(this.app.i18n.t("errors.email_password_required"));
+      
+      console.log(`DEBUG: handleLogin() - ログイン試行: ${email}`);
       await this.app.login(email, password);
+
     } catch (error) {
-      console.error("Login error:", error);
-      this.app.showError(error.message || this.app.i18n.t("errors.login_failed_generic"));
+      console.error("DEBUG: handleLogin() - ログイン処理中にエラーが発生しました:", error);
+      this.app.showError(this.app.auth.getFirebaseAuthErrorMessage(error));
     } finally {
+      console.log("DEBUG: handleLogin() - ログイン処理が完了し、ボタンの状態をリセットします。"); // デバッグ用ログ④
       this.setLoadingState(false);
     }
   }
 
-  /**
-   * Set loading state
-   * ローディング状態を設定
-   */
   setLoadingState(loading) {
     this.isLoading = loading;
     const loginButton = document.getElementById("loginButton");
@@ -127,17 +105,7 @@ export class LoginPage {
     const loginSpinner = loginButton?.querySelector(".login-spinner");
 
     if (loginButton) loginButton.disabled = loading;
-
-    if (loading) {
-      loginText?.classList.add("d-none");
-      loginSpinner?.classList.remove("d-none");
-    } else {
-      loginText?.classList.remove("d-none");
-      loginSpinner?.classList.add("d-none");
-    }
-    
-    if (this.app.i18n) {
-      this.app.i18n.updateUI(document.querySelector('.login-form-container'));
-    }
+    loginText?.classList.toggle("d-none", loading);
+    loginSpinner?.classList.toggle("d-none", !loading);
   }
 }
