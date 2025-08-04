@@ -7,10 +7,6 @@ export class SidebarComponent {
         this.app = app;
     }
 
-    /**
-     * Renders or hides the sidebar based on authentication status and user role.
-     * 認証状態とユーザーの役割に基づいてサイドバーを描画または非表示にします。
-     */
     update() {
         const container = document.getElementById('sidebar-container');
         if (!this.app.isAuthenticated()) {
@@ -47,11 +43,13 @@ export class SidebarComponent {
         this.app.i18n.updateUI(container);
     }
 
-    /**
-     * Toggles the visibility of the sidebar on smaller screens.
-     * 小さい画面でサイドバーの表示/非表示を切り替えます。
-     */
     toggle() {
         document.getElementById('sidebar-container')?.classList.toggle('show');
+        document.getElementById('sidebar-backdrop')?.classList.toggle('show');
+    }
+    
+    close() {
+        document.getElementById('sidebar-container')?.classList.remove('show');
+        document.getElementById('sidebar-backdrop')?.classList.remove('show');
     }
 }
