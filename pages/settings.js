@@ -152,17 +152,37 @@ export class SettingsPage {
 
   renderCategory(category, catIndex) { /* ... UI for category ... */ return ''; }
   
-  addJobType() {
-    const name = prompt(this.app.i18n.t('settings.job_type_name'));
+  // ★★★ 修正点: addCategoryメソッドを追加 ★★★
+  addCategory() {
+    const name = prompt(this.app.i18n.t('settings.new_category'));
     if (name) {
-      this.settings.jobTypes.push({ id: `jt_${Date.now()}`, name });
+      if (!this.settings.structures[this.selectedJobTypeId]) {
+        this.settings.structures[this.selectedJobTypeId] = { id: this.selectedJobTypeId, categories: [] };
+      }
+      this.settings.structures[this.selectedJobTypeId].categories.push({
+        id: `cat_${Date.now()}`,
+        name: name,
+        items: []
+      });
+      this.markUnsaved();
+      this.renderStructureEditor();
+    }
+  }
+
+  addJobType() {
+    const name = prompt(this.app.i18n.t('settings.job_type_name_placeholder'));
+    if (name) {
+      const newJobType = { id: `jt_${Date.now()}`, name };
+      this.settings.jobTypes.push(newJobType);
+      // 新しい職種のための空の評価構造も作成
+      this.settings.structures[newJobType.id] = { id: newJobType.id, categories: [] };
       this.markUnsaved();
       this.renderJobTypesList();
     }
   }
 
   deleteJobType(id) {
-    if (confirm('この職種を削除しますか？')) {
+    if (confirm(this.app.i18n.t('settings.confirm_delete_job_type'))) {
         this.settings.jobTypes = this.settings.jobTypes.filter(jt => jt.id !== id);
         delete this.settings.structures[id];
         if (this.selectedJobTypeId === id) {
