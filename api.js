@@ -37,7 +37,6 @@ export class API {
         const usersQuery = query(collection(this.db, "users"), where("tenantId", "==", tenantId));
         const completedEvalsQuery = query(collection(this.db, "evaluations"), where("tenantId", "==", tenantId), where("status", "==", "completed"));
         
-        // ★★★ 修正点: '!=' 演算子を 'in' 演算子に変更 ★★★
         const pendingStatuses = ['pending_submission', 'pending_evaluation', 'pending_approval', 'self_assessed', 'rejected', 'draft'];
         const pendingEvalsQuery = query(collection(this.db, "evaluations"), where("tenantId", "==", tenantId), where("status", "in", pendingStatuses));
 
@@ -60,6 +59,16 @@ export class API {
         const querySnapshot = await getDocs(q);
         return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     }
+    
+    async getEvaluationHistory(evaluationId) {
+        // This is a placeholder for a more complex history/audit log feature.
+        // For now, it returns a static list.
+        return [
+            { status: 'completed', timestamp: new Date(2023, 9, 15, 14, 10, 33), actor: 'Admin' },
+            { status: 'pending_approval', timestamp: new Date(2023, 9, 12, 9, 21, 7), actor: 'Evaluator' },
+            { status: 'self_assessed', timestamp: new Date(2023, 9, 5, 13, 24, 36), actor: 'Worker' }
+        ];
+    }
 
     async getEvaluationChartData() {
         const dummyData = {
@@ -80,11 +89,27 @@ export class API {
         return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     }
 
+    async getUserById(userId) {
+        if (!this.app.currentUser?.tenantId) return null;
+        const userDocRef = doc(this.db, "users", userId);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists() && userDocSnap.data().tenantId === this.app.currentUser.tenantId) {
+            return { id: userDocSnap.id, ...userDocSnap.data() };
+        }
+        return null;
+    }
+
     async getSubordinates() {
         if (!this.app.currentUser?.tenantId || !this.app.currentUser.uid) return [];
         const q = query(collection(this.db, "users"), where("tenantId", "==", this.app.currentUser.tenantId), where("evaluatorId", "==", this.app.currentUser.uid));
         const querySnapshot = await getDocs(q);
         return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+
+    async updateUser(userId, data) {
+        if (!this.app.hasRole('admin')) throw new Error("Permission denied.");
+        const userDocRef = doc(this.db, "users", userId);
+        await updateDoc(userDocRef, data);
     }
 
     async updateUserStatus(userId, status) {
@@ -126,6 +151,16 @@ export class API {
 
     async getEvaluationById(id) {
         const docRef = doc(this.db, "evaluations", id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().tenantId === this.app.currentUser.tenantId) {
+            return { id: docSnap.id, ...docSnap.data() };
+        }
+        return null;
+    }
+    
+    async getEvaluationStructure(jobTypeId) {
+        if (!this.app.currentUser?.tenantId || !jobTypeId) return null;
+        const docRef = doc(this.db, "evaluationStructures", jobTypeId);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists() && docSnap.data().tenantId === this.app.currentUser.tenantId) {
             return { id: docSnap.id, ...docSnap.data() };
@@ -196,9 +231,26 @@ export class API {
     async saveSettings(settings) {
         const batch = writeBatch(this.db);
         const tenantId = this.app.currentUser.tenantId;
-        settings.jobTypes.forEach(jt => batch.set(doc(this.db, "targetJobTypes", jt.id), { ...jt, tenantId }));
-        settings.periods.forEach(p => batch.set(doc(this.db, "evaluationPeriods", p.id), { ...p, tenantId }));
-        Object.values(settings.structures).forEach(s => batch.set(doc(this.db, "evaluationStructures", s.id), { ...s, tenantId }));
+        
+        const jobTypesCollection = collection(this.db, "targetJobTypes");
+        settings.jobTypes.forEach(jt => {
+            const docRef = doc(jobTypesCollection, jt.id);
+            batch.set(docRef, { ...jt, tenantId });
+        });
+
+        const periodsCollection = collection(this.db, "evaluationPeriods");
+        settings.periods.forEach(p => {
+            const docRef = doc(periodsCollection, p.id);
+            batch.set(docRef, { ...p, tenantId });
+        });
+
+        const structuresCollection = collection(this.db, "evaluationStructures");
+        Object.values(settings.structures).forEach(s => {
+            if (s && s.id) {
+                const docRef = doc(structuresCollection, s.id);
+                batch.set(docRef, { ...s, tenantId });
+            }
+        });
         await batch.commit();
     }
     
@@ -227,6 +279,14 @@ export class API {
             const admin = adminUsers.find(u => u.tenantId === tenant.id);
             return { ...tenant, adminName: admin ? admin.name : 'N/A', adminEmail: admin ? admin.email : 'N/A' };
         });
+    }
+    
+    async getInvitation(token) {
+        const q = query(collection(this.db, "invitations"), where("token", "==", token));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) return null;
+        const doc = querySnapshot.docs[0];
+        return { id: doc.id, ...doc.data() };
     }
 
     async approveAdmin(userId) {
