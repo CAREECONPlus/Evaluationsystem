@@ -1,3 +1,5 @@
+// careeconplus/evaluationsystem/Evaluationsystem-main/auth.js
+
 import {
     onAuthStateChanged,
     signInWithEmailAndPassword,
@@ -33,12 +35,11 @@ export class Auth {
                     try {
                         const userProfile = await this.getUserProfile(user.uid);
                         if (userProfile && userProfile.status === 'active') {
-                            this.app.currentUser = { ...user, ...userProfile };
+                            this.app.currentUser = { uid: user.uid, ...userProfile };
                             console.log("Auth state changed: User is signed in and active.", this.app.currentUser.email);
                         } else {
-                            // プロファイルがない、またはアクティブでない場合はログアウトさせる
                             this.app.currentUser = null;
-                            if (userProfile) {
+                            if (userProfile && userProfile.status !== 'active') {
                                 console.warn("User is not active. Status:", userProfile.status);
                                 this.app.showError(this.app.i18n.t('errors.account_inactive'));
                             }
@@ -53,15 +54,12 @@ export class Auth {
                     this.app.currentUser = null;
                     console.log("Auth state changed: User is signed out.");
                 }
-
-                // ★★★ 修正点 ★★★
-                // ログイン状態が変化した場合にのみ、画面の再描画（ルーティング）を実行
+                
                 const isLoggedIn = !!this.app.currentUser;
                 if (this.authStateInitialized && wasLoggedIn !== isLoggedIn) {
                     this.app.router.route();
                 }
 
-                // 最初の認証状態チェックが完了したことを記録
                 if (!this.authStateInitialized) {
                     this.authStateInitialized = true;
                     resolve(); 
@@ -70,39 +68,24 @@ export class Auth {
         });
     }
 
-    /**
-     * Fetches a user's profile data from the 'users' collection in Firestore.
-     * Firestoreの'users'コレクションからユーザープロファイルデータを取得します。
-     * @param {string} uid - The user's unique ID.
-     * @returns {Promise<object|null>} The user profile data or null if not found.
-     */
     async getUserProfile(uid) {
         const userDocRef = doc(this.db, "users", uid);
         const userDocSnap = await getDoc(userDocRef);
         return userDocSnap.exists() ? userDocSnap.data() : null;
     }
 
-    /**
-     * Signs in a user with their email and password.
-     * メールアドレスとパスワードでユーザーをサインインさせます。
-     */
     async login(email, password) {
         await signInWithEmailAndPassword(this.auth, email, password);
-        // この後の画面遷移はonAuthStateChangedリスナーが担当
     }
 
-    /**
-     * Signs out the current user.
-     * 現在のユーザーをサインアウトさせます。
-     */
     async logout() {
         await signOut(this.auth);
     }
+    
+    async registerWithEmail(email, password) {
+        return await createUserWithEmailAndPassword(this.auth, email, password);
+    }
 
-    /**
-     * Registers a new user and creates their profile.
-     * 新規ユーザーを登録し、プロファイルを作成します。
-     */
     async registerAndCreateProfile(userData, role, status) {
         const userCredential = await createUserWithEmailAndPassword(this.auth, userData.email, userData.password);
         const user = userCredential.user;
@@ -121,16 +104,16 @@ export class Auth {
         return userCredential;
     }
     
-    /**
-     * Translates Firebase Auth error codes into user-friendly messages.
-     * Firebase Authのエラーコードを分かりやすいメッセージに変換します。
-     */
+    async sendPasswordReset(email) {
+        await sendPasswordResetEmail(this.auth, email);
+    }
+    
     getFirebaseAuthErrorMessage(error) {
         switch (error.code) {
             case 'auth/invalid-email':
             case 'auth/wrong-password':
             case 'auth/user-not-found':
-            case 'auth/invalid-credential': // v9以降の一般的な認証エラー
+            case 'auth/invalid-credential':
                  return this.app.i18n.t('errors.invalid_email_password');
             case 'auth/user-disabled':
                 return this.app.i18n.t('errors.account_inactive');
@@ -140,7 +123,7 @@ export class Auth {
                 return this.app.i18n.t('errors.weak_password');
             default:
                 console.error("Unhandled Firebase Auth Error:", error);
-                return this.app.i18n.t('errors.login_failed_generic') || "ログイン中に予期せぬエラーが発生しました。";
+                return this.app.i18n.t('errors.login_failed_generic');
         }
     }
 }
