@@ -1,6 +1,6 @@
 /**
- * Login Page Component (with debugging)
- * ログインページコンポーネント（デバッグ用）
+ * Login Page Component
+ * ログインページコンポーネント
  */
 export class LoginPage {
   constructor(app) {
@@ -9,7 +9,6 @@ export class LoginPage {
   }
 
   async render() {
-    // HTML構造は変更ありません
     return `
       <div class="login-page">
         <div class="container-fluid vh-100">
@@ -40,11 +39,18 @@ export class LoginPage {
                         <label for="password" class="form-label fw-bold" data-i18n="auth.password_label">パスワード</label>
                         <input type="password" class="form-control form-control-lg" id="password" required autocomplete="current-password" placeholder="6文字以上">
                       </div>
-                      <button type="submit" class="btn btn-primary btn-lg w-100" id="loginButton">
-                        <span class="login-text"><i class="fas fa-sign-in-alt me-2"></i><span data-i18n="auth.login">ログイン</span></span>
-                        <span class="login-spinner d-none"><span class="spinner-border spinner-border-sm me-2"></span><span data-i18n="auth.logging_in">ログイン中...</span></span>
-                      </button>
+                      <div class="d-grid">
+                          <button type="submit" class="btn btn-primary btn-lg" id="loginButton">
+                            <span class="login-text"><i class="fas fa-sign-in-alt me-2"></i><span data-i18n="auth.login">ログイン</span></span>
+                            <span class="login-spinner d-none"><span class="spinner-border spinner-border-sm me-2"></span><span data-i18n="auth.logging_in">ログイン中...</span></span>
+                          </button>
+                      </div>
                     </form>
+
+                    <div class="text-center mt-4">
+                        <a href="#/register-admin" data-link data-i18n="auth.register_admin_link">管理者アカウントの新規登録はこちら</a>
+                    </div>
+                    
                   </div>
                 </div>
               </div>
@@ -56,44 +62,27 @@ export class LoginPage {
   }
 
   async init() {
-    console.log("DEBUG: LoginPage init() - ページ初期化を開始します。"); // デバッグ用ログ①
     const form = document.getElementById("loginForm");
-
     if (form) {
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         this.handleLogin();
       });
-      console.log("DEBUG: LoginPage init() - フォームにsubmitイベントを設定しました。"); // デバッグ用ログ②
-    } else {
-      console.error("DEBUG: LoginPage init() - エラー: loginFormが見つかりません！"); // デバッグ用ログ
     }
-
     this.app.i18n.updateUI();
   }
 
   async handleLogin() {
-    console.log("DEBUG: handleLogin() - ログインボタンがクリックされ、処理を開始します。"); // デバッグ用ログ③
-
-    if (this.isLoading) {
-      console.log("DEBUG: handleLogin() - 処理中のため中断します。");
-      return;
-    }
-
+    if (this.isLoading) return;
     this.setLoadingState(true);
     try {
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
       if (!email || !password) throw new Error(this.app.i18n.t("errors.email_password_required"));
-      
-      console.log(`DEBUG: handleLogin() - ログイン試行: ${email}`);
       await this.app.login(email, password);
-
     } catch (error) {
-      console.error("DEBUG: handleLogin() - ログイン処理中にエラーが発生しました:", error);
       this.app.showError(this.app.auth.getFirebaseAuthErrorMessage(error));
     } finally {
-      console.log("DEBUG: handleLogin() - ログイン処理が完了し、ボタンの状態をリセットします。"); // デバッグ用ログ④
       this.setLoadingState(false);
     }
   }
