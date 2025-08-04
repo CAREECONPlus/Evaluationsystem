@@ -1,5 +1,3 @@
-// careeconplus/evaluationsystem/Evaluationsystem-main/locales/ja.json
-
 {
   "common": {
     "save": "保存",
@@ -191,82 +189,4 @@
     "period_name_label": "期間名",
     "period_name_placeholder": "例: 2025年 上半期",
     "start_date_label": "開始日",
-    "end_date_label": "終了日",
-    "select_job_type_hint": "左のリストから職種を選択して評価項目を設定してください。",
-    "no_categories_hint": "「カテゴリを追加」ボタンから評価カテゴリを作成してください。",
-    "category_name_placeholder": "カテゴリ名（例: 技術スキル）",
-    "item_name_placeholder": "評価項目名（例: 図面の読解力）",
-    "confirm_delete_job_type": "この職種を削除しますか？関連する評価構造も全て削除されます。",
-    "confirm_delete_period": "この評価期間を削除しますか？",
-    "confirm_delete_category": "このカテゴリを削除しますか？カテゴリ内の評価項目も全て削除されます。",
-    "confirm_delete_item": "この評価項目を削除しますか？",
-    "unsaved_warning": "保存されていない変更があります。ページを離れてもよろしいですか？"
-  },
-  "developer": {
-    "title": "開発者管理",
-    "admin_approvals": "管理者アカウントの承認",
-    "tenant_management": "テナント管理",
-    "approve": "承認",
-    "confirm_approve": "この管理者を承認し、新しいテナントを作成しますか？",
-    "approve_success": "管理者を承認しました。",
-    "confirm_password_reset": "{{email}} にパスワードリセットメールを送信しますか？",
-    "confirm_suspend": "このテナントを利用停止にしますか？管理者はログインできなくなります。",
-    "confirm_reactivate": "このテナントを再度有効化しますか？",
-    "status_update_success": "テナントのステータスを更新しました。"
-  },
-  "dashboard": {
-    "system_overview": "システム概要と最新の活動状況",
-    "performance_analysis": "パフォーマンス分析",
-    "recent_evaluations": "最近の評価",
-    "no_recent_evaluations": "最近の評価はありません",
-    "total_employees": "総従業員数",
-    "pending_evaluations_count": "処理中の評価",
-    "completed_evaluations_count": "完了した評価",
-    "personal_score": "あなたのスコア",
-    "department_average": "部署平均",
-    "radar": "レーダー",
-    "bar": "バー",
-    "line": "ライン"
-  },
-  "chart_items": {
-    "technical_skill": "技術力",
-    "quality": "品質",
-    "safety": "安全",
-    "cooperation": "協調性",
-    "diligence": "勤怠"
-  },
-  "report": {
-    "summary": "サマリー",
-    "comparison": "比較",
-    "history": "履歴",
-    "overall_evaluation": "総合評価",
-    "detailed_scores": "項目別スコア詳細",
-    "self_comment": "本人コメント",
-    "evaluator_comment": "評価者コメント",
-    "score_comparison": "評価スコア比較（項目別）",
-    "process_history": "評価プロセス履歴"
-  },
-  "messages": {
-    "save_success": "正常に保存されました",
-    "delete_success": "削除しました",
-    "approval_success": "承認しました",
-    "rejection_success": "差し戻しました",
-    "invitation_sent": "招待を送信しました",
-    "password_reset_sent": "パスワードリセットメールを送信しました",
-    "login_success": "ようこそ、{{userName}}さん",
-    "logout_success": "ログアウトしました。"
-  },
-  "errors": {
-    "loading_failed": "データの読み込みに失敗しました。",
-    "email_password_required": "メールアドレスとパスワードを入力してください。",
-    "invalid_email_password": "メールアドレスまたはパスワードが正しくありません。",
-    "account_inactive": "このアカウントは現在無効です。管理者に連絡してください。",
-    "all_fields_required": "すべての必須項目を入力してください。",
-    "access_denied": "このページにアクセスする権限がありません。",
-    "passwords_not_match": "パスワードが一致しません。",
-    "passwords_match": "パスワードが一致しました。",
-    "login_failed_generic": "ログイン中に予期せぬエラーが発生しました。",
-    "email_already_in_use": "このメールアドレスは既に使用されています。",
-    "weak_password": "パスワードは6文字以上で入力してください。"
-  }
-}
+    "end_date_label": "
