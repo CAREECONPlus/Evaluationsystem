@@ -41,12 +41,6 @@
     "current_status": "現在の状態",
     "load_draft": "下書きを読み込み",
     "save_draft": "下書き保存",
-    "valid_status": "✓",
-    "over_limit_status": "超過",
-    "insufficient_status": "不足",
-    "retry": "再試行",
-    "creating": "作成中...",
-    "creating_account": "アカウント作成中...",
     "back_to_login": "ログインページに戻る"
   },
   "nav": {
@@ -101,7 +95,8 @@
     "confirm_approve": "このユーザーを承認しますか？",
     "approve_success": "ユーザーを承認しました。",
     "confirm_reject": "このユーザーを否認（削除）しますか？",
-    "reject_success": "ユーザーを削除しました。"
+    "reject_success": "ユーザーを削除しました。",
+    "edit_user": "ユーザー情報の編集"
   },
   "roles": {
     "developer": "開発者",
@@ -112,6 +107,7 @@
   },
   "status": {
     "active": "アクティブ",
+    "suspended": "利用停止中",
     "developer_approval_pending": "開発者承認待ち",
     "inactive": "無効",
     "draft": "下書き",
@@ -143,18 +139,14 @@
     "select_period": "評価期間を選択してください",
     "goal_achievement": "目標達成度評価",
     "no_goals_set": "評価対象の目標が設定されていません。",
-    "confirm_submit": "評価を提出しますか？提出後は編集できません。"
+    "confirm_submit": "評価を提出しますか？提出後は編集できません。",
+    "self_assessment_score": "自己評価点",
+    "evaluator_assessment_score": "評価者評価点"
   },
   "evaluations": {
     "title": "評価一覧",
     "form_title": "評価入力フォーム",
     "new_evaluation": "新規評価",
-    "list_view": "一覧表示",
-    "chart_view": "チャート表示",
-    "select_eval": "評価を選択",
-    "chart_title": "評価チャート",
-    "no_completed_evals": "完了済みの評価がありません",
-    "select_to_view_chart": "チャートを表示する評価を選択してください",
     "total_score": "総合スコア",
     "target_user": "評価対象者"
   },
@@ -169,8 +161,6 @@
     "reject": "差し戻し",
     "goal_text": "目標内容",
     "weight_percent": "ウェイト（%）",
-    "remove_goal": "削除",
-    "weight_validation": "ウェイトの合計は100%である必要があります",
     "pending_goals": "承認待ち目標",
     "approved_goals": "承認済み目標",
     "about_goal_setting": "目標設定について",
@@ -178,16 +168,10 @@
     "total_weight_100_info": "ウェイトの合計は100%にする必要があります",
     "admin_approval_info": "申請後は管理者の承認が必要です",
     "submitted_at": "申請日",
-    "approved_at": "承認日",
     "confirm_approve": "この目標を承認しますか？",
     "confirm_reject": "この目標を差し戻しますか？",
     "rejection_reason_prompt": "差し戻しの理由を入力してください。",
-    "goal_setting_form": "目標設定フォーム",
-    "goal_number": "目標 {{number}}",
-    "goal_content_placeholder": "具体的で測定可能な目標を記入してください",
-    "select_evaluation_period": "評価期間を選択してください",
-    "admin_comment": "管理者からのコメント",
-    "improve_goal_specificity": "目標の具体性を向上させてください。"
+    "select_evaluation_period": "評価期間を選択してください"
   },
   "settings": {
     "title": "システム設定",
@@ -195,8 +179,6 @@
     "evaluation_periods": "評価期間",
     "evaluation_structure": "評価構造",
     "evaluation_structure_of": "の評価構造",
-    "categories": "カテゴリ",
-    "items": "評価項目",
     "add_job_type": "職種を追加",
     "add_category": "カテゴリを追加",
     "add_item": "項目を追加",
@@ -204,10 +186,8 @@
     "save_changes": "変更を保存",
     "job_type_name_placeholder": "例: 建設作業員",
     "edit_job_type_name_placeholder": "新しい職種名",
-    "no_job_types": "職種が登録されていません。",
     "add_period": "期間を追加",
     "edit_period": "期間を編集",
-    "no_evaluation_periods": "評価期間が登録されていません。",
     "period_name_label": "期間名",
     "period_name_placeholder": "例: 2025年 上半期",
     "start_date_label": "開始日",
@@ -226,42 +206,45 @@
     "title": "開発者管理",
     "admin_approvals": "管理者アカウントの承認",
     "tenant_management": "テナント管理",
-    "invite_admin": "管理者招待",
-    "reset_password": "パスワードリセット",
     "approve": "承認",
-    "pending_admins": "承認待ち管理者",
-    "active_tenants": "アクティブテナント",
-    "total_tenants": "総テナント数",
-    "invite_admin_account": "管理者アカウントを招待",
-    "send_invitation": "招待を送信"
+    "confirm_approve": "この管理者を承認し、新しいテナントを作成しますか？",
+    "approve_success": "管理者を承認しました。",
+    "confirm_password_reset": "{{email}} にパスワードリセットメールを送信しますか？",
+    "confirm_suspend": "このテナントを利用停止にしますか？管理者はログインできなくなります。",
+    "confirm_reactivate": "このテナントを再度有効化しますか？",
+    "status_update_success": "テナントのステータスを更新しました。"
   },
   "dashboard": {
-    "welcome": "ようこそ",
-    "quick_actions": "クイックアクション",
-    "recent_activity": "最近のアクティビティ",
-    "statistics": "統計情報",
-    "total_users": "総ユーザー数",
-    "active_users": "アクティブユーザー",
-    "pending_users": "承認待ちユーザー",
-    "completed_evaluations": "完了評価数",
-    "pending_evaluations": "未完了評価数",
-    "average_score": "平均評価スコア",
-    "set_goals": "目標設定",
-    "manage_users": "ユーザー管理",
-    "view_evaluations": "評価一覧",
     "system_overview": "システム概要と最新の活動状況",
     "performance_analysis": "パフォーマンス分析",
-    "overall_scope": "全体",
-    "personal_scope": "個人",
-    "radar": "レーダー",
-    "bar": "バー",
-    "line": "ライン",
     "recent_evaluations": "最近の評価",
     "no_recent_evaluations": "最近の評価はありません",
-    "chart_load_error": "チャートを読み込めませんでした",
     "total_employees": "総従業員数",
     "pending_evaluations_count": "処理中の評価",
-    "completed_evaluations_count": "完了した評価"
+    "completed_evaluations_count": "完了した評価",
+    "personal_score": "あなたのスコア",
+    "department_average": "部署平均",
+    "radar": "レーダー",
+    "bar": "バー",
+    "line": "ライン"
+  },
+  "chart_items": {
+    "technical_skill": "技術力",
+    "quality": "品質",
+    "safety": "安全",
+    "cooperation": "協調性",
+    "diligence": "勤怠"
+  },
+  "report": {
+    "summary": "サマリー",
+    "comparison": "比較",
+    "history": "履歴",
+    "overall_evaluation": "総合評価",
+    "detailed_scores": "項目別スコア詳細",
+    "self_comment": "本人コメント",
+    "evaluator_comment": "評価者コメント",
+    "score_comparison": "評価スコア比較（項目別）",
+    "process_history": "評価プロセス履歴"
   },
   "messages": {
     "save_success": "正常に保存されました",
@@ -277,41 +260,13 @@
     "loading_failed": "データの読み込みに失敗しました。",
     "email_password_required": "メールアドレスとパスワードを入力してください。",
     "invalid_email_password": "メールアドレスまたはパスワードが正しくありません。",
-    "account_inactive": "このアカウントは現在無効です。",
+    "account_inactive": "このアカウントは現在無効です。管理者に連絡してください。",
     "all_fields_required": "すべての必須項目を入力してください。",
+    "access_denied": "このページにアクセスする権限がありません。",
     "passwords_not_match": "パスワードが一致しません。",
-    "passwords_match": "パスワードが一致しました。"
+    "passwords_match": "パスワードが一致しました。",
+    "login_failed_generic": "ログイン中に予期せぬエラーが発生しました。",
+    "email_already_in_use": "このメールアドレスは既に使用されています。",
+    "weak_password": "パスワードは6文字以上で入力してください。"
   }
-}
-// careeconplus/evaluationsystem/Evaluationsystem-main/locales/ja.json
-{
-  // ... (existing translations)
-  "settings": {
-    // ... (existing translations)
-    "unsaved_warning": "保存されていない変更があります。ページを離れてもよろしいですか？"
-  },
-  "developer": {
-    "title": "開発者管理",
-    "admin_approvals": "管理者アカウントの承認",
-    "tenant_management": "テナント管理",
-    "approve": "承認",
-    "confirm_approve": "この管理者を承認し、新しいテナントを作成しますか？",
-    "approve_success": "管理者を承認しました。",
-    "confirm_password_reset": "{{email}} にパスワードリセットメールを送信しますか？",
-    "confirm_suspend": "このテナントを利用停止にしますか？管理者はログインできなくなります。",
-    "confirm_reactivate": "このテナントを再度有効化しますか？",
-    "status_update_success": "テナントのステータスを更新しました。"
-  },
-  "report": {
-    "summary": "サマリー",
-    "comparison": "比較",
-    "history": "履歴",
-    "overall_evaluation": "総合評価",
-    "detailed_scores": "項目別スコア詳細",
-    "self_comment": "本人コメント",
-    "evaluator_comment": "評価者コメント",
-    "score_comparison": "評価スコア比較（項目別）",
-    "process_history": "評価プロセス履歴"
-  },
-  // ... (rest of the translations)
 }
