@@ -1,3 +1,5 @@
+// careeconplus/evaluationsystem/Evaluationsystem-main/pages/evaluation-form.js
+
 /**
  * Evaluation Form Page Component (Revised for 2-column layout and Firebase Integration)
  * 評価フォームページコンポーネント（2カラムレイアウト改修・Firebase連携版）
@@ -91,8 +93,8 @@ export class EvaluationFormPage {
             this.onSelectionChange();
         }
     } catch(e) {
+        console.error("Failed to load initial data:", e);
         this.app.showError("初期データの読み込みに失敗しました。");
-        console.error(e);
     }
   }
 
@@ -116,7 +118,7 @@ export class EvaluationFormPage {
         const [structure, goals, existingEval] = await Promise.all([
             this.app.api.getEvaluationStructure(this.targetUser.jobTypeId),
             this.app.api.getGoals(this.targetUser.id, this.selectedPeriod.id),
-            this.app.api.getEvaluation(this.targetUser.id, this.selectedPeriod.id)
+            this.app.api.getEvaluationById(this.targetUser.id, this.selectedPeriod.id)
         ]);
 
         this.evaluationStructure = structure;
