@@ -53,8 +53,8 @@
             functions: getFunctions(firebaseApp)
         };
 
-        // ★★★ 修正点: モジュールの読み込みパスを絶対パスに変更 ★★★
-        import App from '/app.js';
+        // ★★★ 修正点: モジュールの読み込みパスを './' から始まる相対パスに統一します ★★★
+        import App from './app.js';
         window.app = new App();
         window.app.init();
     </script>
