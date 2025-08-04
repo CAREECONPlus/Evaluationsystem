@@ -25,7 +25,6 @@
         <div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index: 1055;"></div>
     </div>
 
-    <!-- ★★★ バックドロップ用の要素を追加 ★★★ -->
     <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -55,7 +54,8 @@
         };
 
         // Start the main application
-        import App from './app.js';
+        // ★★★ 修正点: モジュールの読み込みパスを絶対パスに変更 ★★★
+        import App from '/app.js';
         window.app = new App();
         window.app.init();
     </script>
