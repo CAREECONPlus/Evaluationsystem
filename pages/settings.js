@@ -1,8 +1,6 @@
-// careeconplus/evaluationsystem/Evaluationsystem-main/pages/settings.js
-
 /**
- * Settings Page Component (Firebase Integrated & Fully Functional)
- * 設定ページコンポーネント（Firebase連携・完全機能版）
+ * Settings Page Component (Firebase Integrated & Fully Functional with Modals)
+ * 設定ページコンポーネント（Firebase連携・モーダルによる完全機能版）
  */
 export class SettingsPage {
   constructor(app) {
@@ -14,6 +12,7 @@ export class SettingsPage {
     };
     this.selectedJobTypeId = null;
     this.hasUnsavedChanges = false;
+    this.editModal = null;
   }
 
   async render() {
@@ -49,7 +48,7 @@ export class SettingsPage {
           </div>
         </div>
       </div>
-      ${this.renderPeriodModal()}
+      ${this.renderEditModal()}
     `;
   }
 
@@ -59,6 +58,7 @@ export class SettingsPage {
       return;
     }
     this.app.currentPage = this;
+    this.editModal = new bootstrap.Modal(document.getElementById('editModal'));
     
     await this.loadData();
     this.setupEventListeners();
@@ -70,62 +70,44 @@ export class SettingsPage {
         }
     };
   }
+  
+  // ... (The rest of the file is heavily modified, so replace the whole file)
 
   setupEventListeners() {
       document.getElementById('save-settings-btn').addEventListener('click', () => this.saveSettings());
-      document.getElementById('add-job-type-btn').addEventListener('click', () => this.addJobType());
-      document.getElementById('add-period-btn').addEventListener('click', () => this.openPeriodModal());
-      
-      const periodModal = document.getElementById('periodModal');
-      periodModal.addEventListener('click', (e) => {
-          if (e.target.id === 'save-period-btn') {
-              this.savePeriod();
-          }
-      });
+      document.getElementById('add-job-type-btn').addEventListener('click', () => this.openEditModal('jobType'));
+      document.getElementById('add-period-btn').addEventListener('click', () => this.openEditModal('period'));
+      document.getElementById('save-modal-btn').addEventListener('click', () => this.saveFromModal());
   }
 
   async loadData() {
     try {
         this.settings = await this.app.api.getSettings();
-        this.renderSidebars();
-        this.app.i18n.updateUI();
+        this.renderAll();
     } catch(e) {
         this.app.showError(this.app.i18n.t('errors.loading_failed'));
         console.error(e);
     }
   }
 
-  renderSidebars() {
-    this.renderJobTypesList();
-    this.renderPeriodsList();
+  renderAll() {
+      this.renderJobTypesList();
+      this.renderPeriodsList();
+      this.renderStructureEditor();
+      this.app.i18n.updateUI();
   }
 
   renderJobTypesList() {
     const list = document.getElementById('job-types-list');
     list.innerHTML = this.settings.jobTypes.map(jt => `
         <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center ${this.selectedJobTypeId === jt.id ? 'active' : ''}" data-id="${jt.id}">
-            ${this.app.sanitizeHtml(jt.name)}
-            <span>
-                <button class="btn btn-sm btn-outline-primary border-0 me-1" data-edit-id="${jt.id}" title="編集"><i class="fas fa-pen"></i></button>
-                <button class="btn btn-sm btn-outline-danger border-0" data-delete-id="${jt.id}" title="削除"><i class="fas fa-trash"></i></button>
+            <span class="flex-grow-1">${this.app.sanitizeHtml(jt.name)}</span>
+            <span class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary border-0" onclick="event.stopPropagation(); window.app.currentPage.openEditModal('jobType', '${jt.id}')"><i class="fas fa-pen"></i></button>
+                <button class="btn btn-outline-danger border-0" onclick="event.stopPropagation(); window.app.currentPage.deleteJobType('${jt.id}')"><i class="fas fa-trash"></i></button>
             </span>
-        </a>`).join('');
-    
-    list.querySelectorAll('a').forEach(a => {
-        a.addEventListener('click', (e) => {
-            e.preventDefault();
-            const editBtn = e.target.closest('[data-edit-id]');
-            const deleteBtn = e.target.closest('[data-delete-id]');
-
-            if (editBtn) {
-                this.editJobType(editBtn.dataset.editId);
-            } else if (deleteBtn) {
-                this.deleteJobType(deleteBtn.dataset.deleteId);
-            } else {
-                this.selectJobType(a.dataset.id);
-            }
-        });
-    });
+        </a>`).join('') || `<li class="list-group-item text-muted" data-i18n="settings.no_job_types"></li>`;
+    list.querySelectorAll('a').forEach(a => a.addEventListener('click', e => { e.preventDefault(); this.selectJobType(a.dataset.id); }));
   }
 
   renderPeriodsList() {
@@ -136,29 +118,24 @@ export class SettingsPage {
                 <div>${this.app.sanitizeHtml(p.name)}</div>
                 <small class="text-muted">${this.app.formatDate(p.startDate)} - ${this.app.formatDate(p.endDate)}</small>
             </div>
-            <span>
-                <button class="btn btn-sm btn-outline-primary border-0 me-1" onclick="window.app.currentPage.openPeriodModal('${p.id}')" title="編集"><i class="fas fa-pen"></i></button>
-                <button class="btn btn-sm btn-outline-danger border-0" onclick="window.app.currentPage.deletePeriod('${p.id}')" title="削除"><i class="fas fa-trash"></i></button>
+            <span class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary border-0" onclick="window.app.currentPage.openEditModal('period', '${p.id}')"><i class="fas fa-pen"></i></button>
+                <button class="btn btn-outline-danger border-0" onclick="window.app.currentPage.deletePeriod('${p.id}')"><i class="fas fa-trash"></i></button>
             </span>
-        </div>`).join('');
+        </div>`).join('') || `<li class="list-group-item text-muted" data-i18n="settings.no_evaluation_periods"></li>`;
   }
 
   selectJobType(id) {
-    if (this.hasUnsavedChanges && !confirm(this.app.i18n.t('settings.unsaved_warning'))) {
-        return;
-    }
+    if (this.hasUnsavedChanges && !confirm(this.app.i18n.t('settings.unsaved_warning'))) return;
     this.selectedJobTypeId = id;
-    this.hasUnsavedChanges = false; // Reset on selection change
-    document.getElementById('save-settings-btn').disabled = true;
-    this.renderStructureEditor();
-    this.renderJobTypesList();
+    this.markAsSaved();
+    this.renderAll();
   }
 
   renderStructureEditor() {
     const editor = document.getElementById('structure-editor');
     if (!this.selectedJobTypeId) {
       editor.innerHTML = `<div class="text-center p-5 text-muted" data-i18n="settings.select_job_type_hint"></div>`;
-      this.app.i18n.updateUI(editor);
       return;
     }
     
@@ -168,254 +145,166 @@ export class SettingsPage {
     editor.innerHTML = `
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4>${this.app.sanitizeHtml(jobType.name)} <span data-i18n="settings.evaluation_structure_of"></span></h4>
-            <button class="btn btn-outline-primary" id="add-category-btn"><i class="fas fa-plus me-2"></i><span data-i18n="settings.add_category"></span></button>
+            <button class="btn btn-outline-primary" onclick="window.app.currentPage.openEditModal('category')"><i class="fas fa-plus me-2"></i><span data-i18n="settings.add_category"></span></button>
         </div>
         <div id="categories-container" class="accordion">
             ${structure.categories.map((cat, catIndex) => this.renderCategory(cat, catIndex)).join('') || `<p class="text-muted text-center p-3" data-i18n="settings.no_categories_hint"></p>`}
         </div>
     `;
-    this.app.i18n.updateUI(editor);
-    this.setupStructureEditorEventListeners();
-  }
-
-  setupStructureEditorEventListeners() {
-      document.getElementById('add-category-btn').addEventListener('click', () => this.addCategory());
-      
-      const container = document.getElementById('categories-container');
-      container.addEventListener('click', e => {
-          const target = e.target;
-          if(target.closest('[data-action="add-item"]')) {
-              const catIndex = target.closest('[data-action="add-item"]').dataset.catIndex;
-              this.addItem(catIndex);
-          }
-          if(target.closest('[data-action="delete-category"]')) {
-              const catIndex = target.closest('[data-action="delete-category"]').dataset.catIndex;
-              this.deleteCategory(catIndex);
-          }
-           if(target.closest('[data-action="delete-item"]')) {
-              const catIndex = target.closest('[data-action="delete-item"]').dataset.catIndex;
-              const itemIndex = target.closest('[data-action="delete-item"]').dataset.itemIndex;
-              this.deleteItem(catIndex, itemIndex);
-          }
-      });
-      container.addEventListener('input', e => {
-          const target = e.target;
-          const catIndex = target.dataset.catIndex;
-          const itemIndex = target.dataset.itemIndex;
-          if (target.matches('[data-role="category-name"]')) {
-              this.updateCategoryName(catIndex, target.value);
-          }
-          if (target.matches('[data-role="item-name"]')) {
-              this.updateItemName(catIndex, itemIndex, target.value);
-          }
-      });
   }
 
   renderCategory(category, catIndex) {
-      const isExpanded = true; 
       return `
-      <div class="accordion-item" id="category-${catIndex}">
-        <h2 class="accordion-header">
-          <button class="accordion-button ${isExpanded ? '' : 'collapsed'}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${catIndex}">
-            <input type="text" class="form-control form-control-sm border-0 fw-bold" value="${this.app.sanitizeHtml(category.name)}" data-role="category-name" data-cat-index="${catIndex}" placeholder="${this.app.i18n.t('settings.category_name_placeholder')}">
-          </button>
+      <div class="accordion-item">
+        <h2 class="accordion-header d-flex align-items-center">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${catIndex}">${this.app.sanitizeHtml(category.name)}</button>
+          <div class="btn-group btn-group-sm p-2">
+             <button class="btn btn-outline-primary border-0" onclick="window.app.currentPage.openEditModal('category', '${category.id}')"><i class="fas fa-pen"></i></button>
+             <button class="btn btn-outline-danger border-0" onclick="window.app.currentPage.deleteCategory('${category.id}')"><i class="fas fa-trash"></i></button>
+          </div>
         </h2>
-        <div id="collapse-${catIndex}" class="accordion-collapse collapse ${isExpanded ? 'show' : ''}">
+        <div id="collapse-${catIndex}" class="accordion-collapse collapse show">
           <div class="accordion-body">
             <ul class="list-group">
-                ${category.items.map((item, itemIndex) => this.renderItem(item, catIndex, itemIndex)).join('')}
+                ${category.items.map((item) => `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        ${this.app.sanitizeHtml(item.name)}
+                        <span class="btn-group btn-group-sm">
+                           <button class="btn btn-outline-primary border-0" onclick="window.app.currentPage.openEditModal('item', '${item.id}', '${category.id}')"><i class="fas fa-pen"></i></button>
+                           <button class="btn btn-outline-danger border-0" onclick="window.app.currentPage.deleteItem('${item.id}', '${category.id}')"><i class="fas fa-trash"></i></button>
+                        </span>
+                    </li>
+                `).join('')}
                 <li class="list-group-item d-grid">
-                    <button class="btn btn-sm btn-outline-secondary" data-action="add-item" data-cat-index="${catIndex}"><i class="fas fa-plus me-1"></i><span data-i18n="settings.add_item"></span></button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="window.app.currentPage.openEditModal('item', null, '${category.id}')"><i class="fas fa-plus me-1"></i><span data-i18n="settings.add_item"></span></button>
                 </li>
             </ul>
-            <div class="mt-3 text-end">
-                <button class="btn btn-sm btn-danger" data-action="delete-category" data-cat-index="${catIndex}"><i class="fas fa-trash me-1"></i><span data-i18n="settings.delete_category"></span></button>
-            </div>
           </div>
         </div>
-      </div>
-      `;
-  }
-  
-  renderItem(item, catIndex, itemIndex) {
-      return `
-      <li class="list-group-item d-flex align-items-center">
-          <input type="text" class="form-control form-control-sm border-0" value="${this.app.sanitizeHtml(item.name)}" data-role="item-name" data-cat-index="${catIndex}" data-item-index="${itemIndex}" placeholder="${this.app.i18n.t('settings.item_name_placeholder')}">
-          <button class="btn btn-sm btn-outline-danger border-0" data-action="delete-item" data-cat-index="${catIndex}" data-item-index="${itemIndex}" title="項目を削除"><i class="fas fa-times"></i></button>
-      </li>
-      `;
-  }
-  
-  addJobType() {
-    const name = prompt(this.app.i18n.t('settings.job_type_name_placeholder'));
-    if (name) {
-      const newJobType = { id: `jt_${Date.now()}`, name };
-      this.settings.jobTypes.push(newJobType);
-      this.settings.structures[newJobType.id] = { id: newJobType.id, name: name, categories: [] };
-      this.markUnsaved();
-      this.renderJobTypesList();
-    }
+      </div>`;
   }
 
-  editJobType(id) {
-    const jobType = this.settings.jobTypes.find(jt => jt.id === id);
-    const newName = prompt(this.app.i18n.t('settings.edit_job_type_name_placeholder'), jobType.name);
-    if (newName && newName !== jobType.name) {
-      jobType.name = newName;
+  renderEditModal() {
+      return `<div class="modal fade" id="editModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title" id="editModalLabel"></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body"><form id="editForm"></form></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel"></button>
+          <button type="button" class="btn btn-primary" id="save-modal-btn" data-i18n="common.save"></button>
+        </div>
+      </div></div></div>`;
+  }
+  
+  openEditModal(type, id = null, parentId = null) {
+      const form = document.getElementById('editForm');
+      const label = document.getElementById('editModalLabel');
+      form.innerHTML = '';
+      form.dataset.type = type;
+      form.dataset.id = id;
+      form.dataset.parentId = parentId;
+
+      let titleKey = `settings.add_${type}`;
+      let entity = {};
+
+      if (id) {
+          titleKey = `settings.edit_${type}`;
+          if (type === 'jobType') entity = this.settings.jobTypes.find(e => e.id === id);
+          if (type === 'period') entity = this.settings.periods.find(e => e.id === id);
+          if (type === 'category') entity = this.settings.structures[this.selectedJobTypeId].categories.find(e => e.id === id);
+          if (type === 'item') entity = this.settings.structures[this.selectedJobTypeId].categories.find(c => c.id === parentId).items.find(e => e.id === id);
+      }
+      
+      label.setAttribute('data-i18n', titleKey);
+
+      if (type === 'jobType' || type === 'category' || type === 'item') {
+          form.innerHTML = `<div class="mb-3"><label for="name" class="form-label" data-i18n="settings.name_label"></label><input type="text" id="name" class="form-control" value="${this.app.sanitizeHtml(entity.name || '')}" required></div>`;
+      } else if (type === 'period') {
+          form.innerHTML = `
+              <div class="mb-3"><label for="name" class="form-label" data-i18n="settings.period_name_label"></label><input type="text" id="name" class="form-control" value="${this.app.sanitizeHtml(entity.name || '')}" required></div>
+              <div class="mb-3"><label for="startDate" class="form-label" data-i18n="settings.start_date_label"></label><input type="date" id="startDate" class="form-control" value="${entity.startDate ? entity.startDate.split('T')[0] : ''}" required></div>
+              <div class="mb-3"><label for="endDate" class="form-label" data-i18n="settings.end_date_label"></label><input type="date" id="endDate" class="form-control" value="${entity.endDate ? entity.endDate.split('T')[0] : ''}" required></div>`;
+      }
+      
+      this.app.i18n.updateUI(form.parentElement.parentElement);
+      this.editModal.show();
+  }
+
+  saveFromModal() {
+      const form = document.getElementById('editForm');
+      const { type, id, parentId } = form.dataset;
+      const name = form.querySelector('#name')?.value;
+
+      if (type === 'jobType') {
+          if (!name) return;
+          if (id) this.settings.jobTypes.find(e => e.id === id).name = name;
+          else {
+              const newId = `jt_${Date.now()}`;
+              this.settings.jobTypes.push({ id: newId, name });
+              this.settings.structures[newId] = { id: newId, categories: [] };
+          }
+      } else if (type === 'period') {
+          const startDate = form.querySelector('#startDate').value;
+          const endDate = form.querySelector('#endDate').value;
+          if (!name || !startDate || !endDate) return;
+          if (id) Object.assign(this.settings.periods.find(e => e.id === id), { name, startDate, endDate });
+          else this.settings.periods.push({ id: `p_${Date.now()}`, name, startDate, endDate });
+      } else if (type === 'category') {
+          if (!name) return;
+          const structure = this.settings.structures[this.selectedJobTypeId];
+          if (id) structure.categories.find(e => e.id === id).name = name;
+          else structure.categories.push({ id: `cat_${Date.now()}`, name, items: [] });
+      } else if (type === 'item') {
+          if (!name) return;
+          const category = this.settings.structures[this.selectedJobTypeId].categories.find(c => c.id === parentId);
+          if (id) category.items.find(e => e.id === id).name = name;
+          else category.items.push({ id: `item_${Date.now()}`, name });
+      }
+
       this.markUnsaved();
-      this.renderJobTypesList();
-    }
+      this.renderAll();
+      this.editModal.hide();
   }
 
   deleteJobType(id) {
-    if (confirm(this.app.i18n.t('settings.confirm_delete_job_type'))) {
-        this.settings.jobTypes = this.settings.jobTypes.filter(jt => jt.id !== id);
-        delete this.settings.structures[id];
-        if (this.selectedJobTypeId === id) {
-            this.selectedJobTypeId = null;
-            this.renderStructureEditor();
-        }
-        this.markUnsaved();
-        this.renderJobTypesList();
-    }
-  }
-
-  addCategory() {
-      if (!this.selectedJobTypeId) return;
-      this.settings.structures[this.selectedJobTypeId].categories.push({ id: `cat_${Date.now()}`, name: '', items: [] });
+      if (!confirm(this.app.i18n.t('settings.confirm_delete_job_type'))) return;
+      this.settings.jobTypes = this.settings.jobTypes.filter(jt => jt.id !== id);
+      delete this.settings.structures[id];
+      if (this.selectedJobTypeId === id) this.selectedJobTypeId = null;
       this.markUnsaved();
-      this.renderStructureEditor();
-  }
-  
-  updateCategoryName(catIndex, name) {
-      this.settings.structures[this.selectedJobTypeId].categories[catIndex].name = name;
-      this.markUnsaved();
-  }
-
-  deleteCategory(catIndex) {
-      if(confirm(this.app.i18n.t('settings.confirm_delete_category'))) {
-          this.settings.structures[this.selectedJobTypeId].categories.splice(catIndex, 1);
-          this.markUnsaved();
-          this.renderStructureEditor();
-      }
-  }
-
-  addItem(catIndex) {
-      this.settings.structures[this.selectedJobTypeId].categories[catIndex].items.push({ id: `item_${Date.now()}`, name: '' });
-      this.markUnsaved();
-      this.renderStructureEditor();
-  }
-  
-  updateItemName(catIndex, itemIndex, name) {
-      this.settings.structures[this.selectedJobTypeId].categories[catIndex].items[itemIndex].name = name;
-      this.markUnsaved();
-  }
-
-  deleteItem(catIndex, itemIndex) {
-      if(confirm(this.app.i18n.t('settings.confirm_delete_item'))) {
-          this.settings.structures[this.selectedJobTypeId].categories[catIndex].items.splice(itemIndex, 1);
-          this.markUnsaved();
-          this.renderStructureEditor();
-      }
-  }
-  
-  renderPeriodModal() {
-      return `
-      <div class="modal fade" id="periodModal" tabindex="-1">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="periodModalLabel"></h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-              <form id="periodForm">
-                <input type="hidden" id="periodId">
-                <div class="mb-3">
-                  <label for="periodName" class="form-label" data-i18n="settings.period_name_label"></label>
-                  <input type="text" class="form-control" id="periodName" required>
-                </div>
-                <div class="mb-3">
-                  <label for="startDate" class="form-label" data-i18n="settings.start_date_label"></label>
-                  <input type="date" class="form-control" id="startDate" required>
-                </div>
-                <div class="mb-3">
-                  <label for="endDate" class="form-label" data-i18n="settings.end_date_label"></label>
-                  <input type="date" class="form-control" id="endDate" required>
-                </div>
-              </form>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel"></button>
-              <button type="button" class="btn btn-primary" id="save-period-btn" data-i18n="common.save"></button>
-            </div>
-          </div>
-        </div>
-      </div>
-      `;
-  }
-
-  openPeriodModal(id = null) {
-      const modalEl = document.getElementById('periodModal');
-      const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-      const form = document.getElementById('periodForm');
-      form.reset();
-      const modalLabel = document.getElementById('periodModalLabel');
-
-      if (id) {
-          modalLabel.textContent = this.app.i18n.t('settings.edit_period');
-          const period = this.settings.periods.find(p => p.id === id);
-          document.getElementById('periodId').value = period.id;
-          document.getElementById('periodName').value = period.name;
-          document.getElementById('startDate').value = period.startDate.split('T')[0]; // Format for date input
-          document.getElementById('endDate').value = period.endDate.split('T')[0];
-      } else {
-          modalLabel.textContent = this.app.i18n.t('settings.add_period');
-      }
-      this.app.i18n.updateUI(modalEl);
-      modal.show();
-  }
-
-  savePeriod() {
-      const id = document.getElementById('periodId').value;
-      const name = document.getElementById('periodName').value;
-      const startDate = document.getElementById('startDate').value;
-      const endDate = document.getElementById('endDate').value;
-
-      if (!name || !startDate || !endDate) {
-          this.app.showError(this.app.i18n.t('errors.all_fields_required'));
-          return;
-      }
-      
-      if (id) {
-          const period = this.settings.periods.find(p => p.id === id);
-          period.name = name;
-          period.startDate = startDate;
-          period.endDate = endDate;
-      } else {
-          this.settings.periods.push({
-              id: `p_${Date.now()}`,
-              name,
-              startDate,
-              endDate
-          });
-      }
-      this.markUnsaved();
-      this.renderPeriodsList();
-      bootstrap.Modal.getInstance(document.getElementById('periodModal')).hide();
+      this.renderAll();
   }
 
   deletePeriod(id) {
-      if(confirm(this.app.i18n.t('settings.confirm_delete_period'))) {
-          this.settings.periods = this.settings.periods.filter(p => p.id !== id);
-          this.markUnsaved();
-          this.renderPeriodsList();
-      }
+      if (!confirm(this.app.i18n.t('settings.confirm_delete_period'))) return;
+      this.settings.periods = this.settings.periods.filter(p => p.id !== id);
+      this.markUnsaved();
+      this.renderAll();
+  }
+
+  deleteCategory(id) {
+      if (!confirm(this.app.i18n.t('settings.confirm_delete_category'))) return;
+      const structure = this.settings.structures[this.selectedJobTypeId];
+      structure.categories = structure.categories.filter(c => c.id !== id);
+      this.markUnsaved();
+      this.renderAll();
+  }
+  
+  deleteItem(id, parentId) {
+      if (!confirm(this.app.i18n.t('settings.confirm_delete_item'))) return;
+      const category = this.settings.structures[this.selectedJobTypeId].categories.find(c => c.id === parentId);
+      category.items = category.items.filter(i => i.id !== id);
+      this.markUnsaved();
+      this.renderAll();
   }
 
   markUnsaved() {
     this.hasUnsavedChanges = true;
     document.getElementById('save-settings-btn').disabled = false;
+  }
+  
+  markAsSaved() {
+      this.hasUnsavedChanges = false;
+      document.getElementById('save-settings-btn').disabled = true;
   }
 
   async saveSettings() {
@@ -424,12 +313,12 @@ export class SettingsPage {
     btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${this.app.i18n.t('common.loading')}`;
     try {
       await this.app.api.saveSettings(this.settings);
-      this.hasUnsavedChanges = false;
+      this.markAsSaved();
       this.app.showSuccess(this.app.i18n.t('messages.save_success'));
     } catch (e) {
       this.app.showError(e.message);
+      btn.disabled = false;
     } finally {
-        btn.disabled = true; // Still disabled until next change
         btn.innerHTML = `<i class="fas fa-save me-2"></i><span data-i18n="settings.save_changes"></span>`;
         this.app.i18n.updateUI(btn);
     }
