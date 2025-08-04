@@ -1,3 +1,5 @@
+// careeconplus/evaluationsystem/Evaluationsystem-main/pages/evaluations.js
+
 /**
  * Evaluations Page Component (Revised for Admin View, Firebase Integrated)
  * 評価一覧ページコンポーネント（管理者向け改修版・Firebase連携対応）
@@ -19,7 +21,7 @@ export class EvaluationsPage {
     const showTabs = this.app.hasAnyRole(['admin', 'evaluator']);
     
     return `
-      <div class.="evaluations-page p-4">
+      <div class="evaluations-page p-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h1 data-i18n="evaluations.title"></h1>
           ${!this.app.hasRole('admin') ? `
@@ -49,8 +51,7 @@ export class EvaluationsPage {
         <div class="card">
           <div class="card-body p-0">
             <div class="table-responsive" id="evaluationsTableContainer">
-              <!-- Table will be rendered here -->
-            </div>
+              </div>
           </div>
         </div>
       </div>
