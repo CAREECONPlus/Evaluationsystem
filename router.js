@@ -4,7 +4,7 @@ import { DashboardPage } from './pages/dashboard.js';
 import { UserManagementPage } from './pages/user-management.js';
 import { EvaluationsPage } from './pages/evaluations.js';
 import { EvaluationReportPage } from './pages/report.js';
-import { SettingsPage } from './pages.js';
+import { SettingsPage } from './pages/settings.js';
 import { EvaluationFormPage } from './pages/evaluation-form.js';
 import { GoalSettingPage } from './pages/goal-setting.js';
 import { GoalApprovalsPage } from './pages/goal-approvals.js';
