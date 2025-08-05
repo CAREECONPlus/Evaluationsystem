@@ -20,29 +20,46 @@ class App {
   async init() {
     try {
       console.log("Starting application initialization...");
+      
+      // 段階的に初期化を行う
       await this.i18n.init();
+      console.log("I18n initialized");
+      
       await this.auth.init();
+      console.log("Auth initialized");
+      
       this.setupEventListeners();
-      await this.router.route();
+      console.log("Event listeners setup");
+      
+      // ルーティングの前にアプリを表示
       this.showApp();
+      
+      await this.router.route();
+      console.log("Router initialized");
+      
       console.log("Application initialized successfully");
     } catch (error) {
       console.error("Failed to initialize application:", error);
-      this.showError("アプリケーションの起動に失敗しました。");
+      this.showError("アプリケーションの起動に失敗しました: " + error.message);
+      // エラーが発生してもアプリは表示する
+      this.showApp();
     }
   }
 
   setupEventListeners() {
-    document.body.addEventListener("click", e => {
+    // ハンバーガーメニューのイベントリスナーを修正
+    document.addEventListener("click", e => {
       const sidebarToggler = e.target.closest('#sidebarToggler');
       const backdrop = e.target.closest('#sidebar-backdrop');
       
       if (sidebarToggler) {
+          e.preventDefault();
           this.sidebar.toggle();
           return; 
       }
       
       if (backdrop) {
+          e.preventDefault();
           this.sidebar.close();
           return;
       }
@@ -56,6 +73,13 @@ class App {
     });
 
     window.addEventListener("popstate", () => this.router.route());
+    
+    // ウィンドウリサイズ時のレスポンシブ対応
+    window.addEventListener('resize', () => {
+      if (window.innerWidth >= 992) {
+        this.sidebar.close();
+      }
+    });
   }
 
   navigate(path) {
@@ -66,8 +90,15 @@ class App {
   showApp() {
     const loadingScreen = document.getElementById("loading-screen");
     const appEl = document.getElementById("app");
-    if (loadingScreen) loadingScreen.style.display = "none";
-    if (appEl) appEl.classList.remove("d-none");
+    
+    if (loadingScreen) {
+      loadingScreen.style.display = "none";
+    }
+    if (appEl) {
+      appEl.classList.remove("d-none");
+    }
+    
+    console.log("App UI shown");
   }
 
   async login(email, password) {
@@ -84,13 +115,18 @@ class App {
     return !!this.currentUser;
   }
   
-  hasRole(role) { return this.currentUser?.role === role; }
+  hasRole(role) { 
+    return this.currentUser?.role === role; 
+  }
   
-  hasAnyRole(roles) { return this.currentUser && roles.includes(this.currentUser.role); }
+  hasAnyRole(roles) { 
+    return this.currentUser && roles.includes(this.currentUser.role); 
+  }
   
   showToast(message, type = "info") {
     const container = document.getElementById("toast-container");
     if (!container) return;
+    
     const toastId = `toast-${Date.now()}`;
     const toastHtml = `
       <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
@@ -100,15 +136,22 @@ class App {
         </div>
       </div>
     `;
+    
     container.insertAdjacentHTML('beforeend', toastHtml);
     const toastElement = document.getElementById(toastId);
     const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
     toast.show();
+    
     toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
   }
 
-  showSuccess(message) { this.showToast(message, "success"); }
-  showError(message) { this.showToast(message, "danger"); }
+  showSuccess(message) { 
+    this.showToast(message, "success"); 
+  }
+  
+  showError(message) { 
+    this.showToast(message, "danger"); 
+  }
   
   sanitizeHtml(str) {
     if (str === null || typeof str === 'undefined') return "";
@@ -126,24 +169,53 @@ class App {
       rejected: "bg-danger",
       self_assessed: "bg-info text-dark",
       completed: "bg-primary",
+      draft: "bg-secondary",
+      approved: "bg-success",
+      pending: "bg-warning text-dark",
+      pending_submission: "bg-warning text-dark",
+      pending_evaluation: "bg-info text-dark",
     };
     return statusClasses[status] || "bg-light text-dark";
   }
 
   getRoleBadgeClass(role) {
-    return { developer: "bg-dark", admin: "bg-danger", evaluator: "bg-info", worker: "bg-secondary" }[role] || "bg-light text-dark";
+    const roleClasses = {
+      developer: "bg-dark",
+      admin: "bg-danger",
+      evaluator: "bg-info",
+      worker: "bg-secondary"
+    };
+    return roleClasses[role] || "bg-light text-dark";
   }
 
   formatDate(timestamp, withTime = false) {
     if (!timestamp) return "-";
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    if (isNaN(date)) return "-";
-    const locale = this.i18n.lang === 'ja' ? 'ja-JP' : this.i18n.lang === 'vi' ? 'vi-VN' : 'en-US';
-    const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-    if (withTime) {
-        options.hour = '2-digit';
-        options.minute = '2-digit';
+    
+    let date;
+    if (timestamp.toDate) {
+      date = timestamp.toDate();
+    } else if (timestamp instanceof Date) {
+      date = timestamp;
+    } else {
+      date = new Date(timestamp);
     }
+    
+    if (isNaN(date)) return "-";
+    
+    const locale = this.i18n.lang === 'ja' ? 'ja-JP' : 
+                   this.i18n.lang === 'vi' ? 'vi-VN' : 'en-US';
+    
+    const options = { 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit' 
+    };
+    
+    if (withTime) {
+      options.hour = '2-digit';
+      options.minute = '2-digit';
+    }
+    
     return new Intl.DateTimeFormat(locale, options).format(date);
   }
 }
