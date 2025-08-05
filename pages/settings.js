@@ -1,6 +1,6 @@
 /**
- * Settings Page Component (Firebase Integrated & Modal Issues Fixed)
- * 設定ページコンポーネント（Firebase連携・モーダル問題修正版）
+ * Settings Page Component - 完全修正版（モーダル問題・Firebase連携対応）
+ * 設定ページコンポーネント
  */
 export class SettingsPage {
   constructor(app) {
@@ -14,6 +14,7 @@ export class SettingsPage {
     this.hasUnsavedChanges = false;
     this.editModal = null;
     this.isInitialized = false;
+    this.modalCleanupTimer = null;
   }
 
   async render() {
@@ -89,8 +90,8 @@ export class SettingsPage {
               </form>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">キャンセル</button>
-              <button type="button" class="btn btn-primary" id="save-modal-btn" data-i18n="common.save">保存</button>
+              <button type="button" class="btn btn-secondary" id="cancel-modal-btn">キャンセル</button>
+              <button type="button" class="btn btn-primary" id="save-modal-btn">保存</button>
             </div>
           </div>
         </div>
@@ -99,6 +100,8 @@ export class SettingsPage {
   }
 
   async init() {
+    console.log("Settings: Starting initialization...");
+    
     if (!this.app.hasRole('admin')) {
       this.app.navigate('#/dashboard');
       return;
@@ -107,22 +110,23 @@ export class SettingsPage {
     this.app.currentPage = this;
     
     try {
-      console.log("Settings: Initializing...");
+      // ★★★ 最初にモーダルの残骸をクリーンアップ ★★★
+      this.forceCleanupModals();
       
-      // モーダルの初期化（DOM要素が存在することを確認）
-      await this.initializeModal();
+      // 基本的なイベントリスナーを設定
+      this.setupBasicEventListeners();
       
-      // データの読み込み
+      // データを読み込み
       await this.loadData();
       
-      // イベントリスナーの設定
-      this.setupEventListeners();
+      // モーダルを初期化（データ読み込み後）
+      await this.initializeModal();
       
       // ページ離脱時の警告設定
       this.setupUnloadWarning();
       
       this.isInitialized = true;
-      console.log("Settings: Initialization completed");
+      console.log("Settings: Initialization completed successfully");
       
     } catch (error) {
       console.error("Settings: Initialization error:", error);
@@ -130,79 +134,180 @@ export class SettingsPage {
     }
   }
 
+  /**
+   * モーダルの残骸を強制クリーンアップ
+   */
+  forceCleanupModals() {
+    try {
+      console.log("Settings: Force cleanup modals...");
+      
+      // bodyからmodal-openクラスを削除
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+      
+      // 既存のモーダルバックドロップをすべて削除
+      const backdrops = document.querySelectorAll('.modal-backdrop');
+      backdrops.forEach(backdrop => {
+        backdrop.remove();
+      });
+      
+      // 既存のモーダルを非表示にする
+      const existingModals = document.querySelectorAll('.modal');
+      existingModals.forEach(modal => {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+        modal.removeAttribute('aria-modal');
+      });
+      
+      console.log("Settings: Modal cleanup completed");
+    } catch (error) {
+      console.error("Settings: Modal cleanup error:", error);
+    }
+  }
+
+  setupBasicEventListeners() {
+    try {
+      console.log("Settings: Setting up basic event listeners...");
+      
+      // メインボタンのイベントリスナー
+      document.addEventListener('click', (e) => {
+        if (e.target.closest('#save-settings-btn')) {
+          e.preventDefault();
+          this.saveSettings();
+        } else if (e.target.closest('#add-job-type-btn')) {
+          e.preventDefault();
+          this.openEditModal('jobType');
+        } else if (e.target.closest('#add-period-btn')) {
+          e.preventDefault();
+          this.openEditModal('period');
+        }
+      });
+      
+      console.log("Settings: Basic event listeners setup completed");
+    } catch (error) {
+      console.error("Settings: Error setting up basic event listeners:", error);
+    }
+  }
+
   async initializeModal() {
     return new Promise((resolve) => {
-      // DOMが完全に構築されるまで待機
-      const checkModal = () => {
+      console.log("Settings: Initializing modal...");
+      
+      const initModal = () => {
         const modalElement = document.getElementById('editModal');
         if (modalElement) {
           try {
+            // 既存のモーダルインスタンスを破棄
+            const existingModal = bootstrap.Modal.getInstance(modalElement);
+            if (existingModal) {
+              existingModal.dispose();
+            }
+            
             this.editModal = new bootstrap.Modal(modalElement, {
               backdrop: 'static',
               keyboard: false
             });
-            console.log("Settings: Modal initialized");
+            
+            // モーダルイベントリスナー
+            modalElement.addEventListener('hidden.bs.modal', () => {
+              this.onModalHidden();
+            });
+            
+            // モーダル内ボタンのイベントリスナー
+            document.getElementById('save-modal-btn')?.addEventListener('click', () => {
+              this.saveFromModal();
+            });
+            
+            document.getElementById('cancel-modal-btn')?.addEventListener('click', () => {
+              this.closeModal();
+            });
+            
+            console.log("Settings: Modal initialized successfully");
             resolve();
           } catch (error) {
             console.error("Settings: Modal initialization error:", error);
-            setTimeout(checkModal, 100);
+            setTimeout(initModal, 200);
           }
         } else {
-          setTimeout(checkModal, 100);
+          setTimeout(initModal, 100);
         }
       };
-      checkModal();
+      
+      initModal();
     });
   }
 
-  setupEventListeners() {
+  onModalHidden() {
     try {
-      // メインボタンのイベントリスナー
-      const saveBtn = document.getElementById('save-settings-btn');
-      const addJobTypeBtn = document.getElementById('add-job-type-btn');
-      const addPeriodBtn = document.getElementById('add-period-btn');
-      const saveModalBtn = document.getElementById('save-modal-btn');
-
-      if (saveBtn) {
-        saveBtn.addEventListener('click', () => this.saveSettings());
-      }
-      
-      if (addJobTypeBtn) {
-        addJobTypeBtn.addEventListener('click', () => this.openEditModal('jobType'));
-      }
-      
-      if (addPeriodBtn) {
-        addPeriodBtn.addEventListener('click', () => this.openEditModal('period'));
-      }
-      
-      if (saveModalBtn) {
-        saveModalBtn.addEventListener('click', () => this.saveFromModal());
-      }
-
-      console.log("Settings: Event listeners setup completed");
+      console.log("Settings: Modal hidden event");
+      // モーダルが閉じた後の追加クリーンアップ
+      this.forceCleanupModals();
     } catch (error) {
-      console.error("Settings: Error setting up event listeners:", error);
+      console.error("Settings: Modal hidden event error:", error);
     }
-  }
-
-  setupUnloadWarning() {
-    window.addEventListener('beforeunload', (e) => {
-      if (this.hasUnsavedChanges) {
-        e.preventDefault();
-        return e.returnValue = this.app.i18n.t('settings.unsaved_warning');
-      }
-    });
   }
 
   async loadData() {
     try {
-      console.log("Settings: Loading data...");
+      console.log("Settings: Loading data from Firebase...");
+      
+      // Firebase接続確認
+      if (!this.app.currentUser || !this.app.currentUser.tenantId) {
+        throw new Error("認証情報またはテナント情報が見つかりません");
+      }
+      
+      console.log("Settings: Current user tenantId:", this.app.currentUser.tenantId);
+      
       this.settings = await this.app.api.getSettings();
+      
+      console.log("Settings: Loaded data:", {
+        jobTypes: this.settings.jobTypes.length,
+        periods: this.settings.periods.length,
+        structures: Object.keys(this.settings.structures).length
+      });
+      
       this.renderAll();
-      console.log("Settings: Data loaded successfully");
+      console.log("Settings: Data loaded and rendered successfully");
+      
     } catch (error) {
       console.error("Settings: Error loading data:", error);
+      
+      // エラー時のダミーデータ表示
+      this.renderErrorState();
       this.app.showError("設定データの読み込みに失敗しました: " + error.message);
+    }
+  }
+
+  renderErrorState() {
+    const jobTypesList = document.getElementById('job-types-list');
+    const periodsList = document.getElementById('periods-list');
+    
+    if (jobTypesList) {
+      jobTypesList.innerHTML = `
+        <div class="list-group-item text-center text-danger">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          データの読み込みに失敗しました
+          <br>
+          <button class="btn btn-sm btn-outline-primary mt-2" onclick="window.location.reload()">
+            再読み込み
+          </button>
+        </div>
+      `;
+    }
+    
+    if (periodsList) {
+      periodsList.innerHTML = `
+        <div class="list-group-item text-center text-danger">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          データの読み込みに失敗しました
+          <br>
+          <button class="btn btn-sm btn-outline-primary mt-2" onclick="window.location.reload()">
+            再読み込み
+          </button>
+        </div>
+      `;
     }
   }
 
@@ -222,19 +327,26 @@ export class SettingsPage {
     if (!list) return;
     
     if (this.settings.jobTypes.length === 0) {
-      list.innerHTML = `<div class="list-group-item text-muted text-center">職種が登録されていません</div>`;
+      list.innerHTML = `
+        <div class="list-group-item text-muted text-center">
+          <i class="fas fa-info-circle me-2"></i>
+          職種が登録されていません
+          <br>
+          <small>右上の「+」ボタンから職種を追加してください</small>
+        </div>
+      `;
       return;
     }
 
     list.innerHTML = this.settings.jobTypes.map(jt => `
       <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center ${this.selectedJobTypeId === jt.id ? 'active' : ''}" 
-           data-id="${jt.id}">
-        <span class="flex-grow-1">${this.app.sanitizeHtml(jt.name)}</span>
+           data-job-type-id="${jt.id}">
+        <span class="flex-grow-1 job-type-name">${this.app.sanitizeHtml(jt.name)}</span>
         <div class="btn-group btn-group-sm">
-          <button class="btn btn-outline-primary btn-sm border-0 edit-job-type-btn" data-id="${jt.id}" title="編集">
+          <button class="btn btn-outline-primary btn-sm border-0 edit-job-type-btn" data-job-type-id="${jt.id}" title="編集">
             <i class="fas fa-pen"></i>
           </button>
-          <button class="btn btn-outline-danger btn-sm border-0 delete-job-type-btn" data-id="${jt.id}" title="削除">
+          <button class="btn btn-outline-danger btn-sm border-0 delete-job-type-btn" data-job-type-id="${jt.id}" title="削除">
             <i class="fas fa-trash"></i>
           </button>
         </div>
@@ -242,27 +354,37 @@ export class SettingsPage {
     `).join('');
 
     // イベントリスナーを追加
-    list.querySelectorAll('[data-id]').forEach(item => {
+    this.setupJobTypeEventListeners();
+  }
+
+  setupJobTypeEventListeners() {
+    const list = document.getElementById('job-types-list');
+    if (!list) return;
+    
+    // 職種選択のイベントリスナー
+    list.querySelectorAll('[data-job-type-id]').forEach(item => {
       if (!item.classList.contains('btn')) {
         item.addEventListener('click', (e) => {
           if (!e.target.closest('.btn')) {
-            this.selectJobType(item.dataset.id);
+            this.selectJobType(item.dataset.jobTypeId);
           }
         });
       }
     });
 
+    // 編集ボタンのイベントリスナー
     list.querySelectorAll('.edit-job-type-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.openEditModal('jobType', btn.dataset.id);
+        this.openEditModal('jobType', btn.dataset.jobTypeId);
       });
     });
 
+    // 削除ボタンのイベントリスナー
     list.querySelectorAll('.delete-job-type-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.deleteJobType(btn.dataset.id);
+        this.deleteJobType(btn.dataset.jobTypeId);
       });
     });
   }
@@ -272,7 +394,14 @@ export class SettingsPage {
     if (!list) return;
     
     if (this.settings.periods.length === 0) {
-      list.innerHTML = `<div class="list-group-item text-muted text-center">評価期間が登録されていません</div>`;
+      list.innerHTML = `
+        <div class="list-group-item text-muted text-center">
+          <i class="fas fa-info-circle me-2"></i>
+          評価期間が登録されていません
+          <br>
+          <small>右上の「+」ボタンから評価期間を追加してください</small>
+        </div>
+      `;
       return;
     }
 
@@ -285,10 +414,10 @@ export class SettingsPage {
           </small>
         </div>
         <div class="btn-group btn-group-sm">
-          <button class="btn btn-outline-primary btn-sm border-0 edit-period-btn" data-id="${p.id}" title="編集">
+          <button class="btn btn-outline-primary btn-sm border-0 edit-period-btn" data-period-id="${p.id}" title="編集">
             <i class="fas fa-pen"></i>
           </button>
-          <button class="btn btn-outline-danger btn-sm border-0 delete-period-btn" data-id="${p.id}" title="削除">
+          <button class="btn btn-outline-danger btn-sm border-0 delete-period-btn" data-period-id="${p.id}" title="削除">
             <i class="fas fa-trash"></i>
           </button>
         </div>
@@ -296,17 +425,26 @@ export class SettingsPage {
     `).join('');
 
     // イベントリスナーを追加
+    this.setupPeriodEventListeners();
+  }
+
+  setupPeriodEventListeners() {
+    const list = document.getElementById('periods-list');
+    if (!list) return;
+    
+    // 編集ボタンのイベントリスナー
     list.querySelectorAll('.edit-period-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.openEditModal('period', btn.dataset.id));
+      btn.addEventListener('click', () => this.openEditModal('period', btn.dataset.periodId));
     });
 
+    // 削除ボタンのイベントリスナー
     list.querySelectorAll('.delete-period-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.deletePeriod(btn.dataset.id));
+      btn.addEventListener('click', () => this.deletePeriod(btn.dataset.periodId));
     });
   }
 
   selectJobType(id) {
-    if (this.hasUnsavedChanges && !confirm(this.app.i18n.t('settings.unsaved_warning'))) {
+    if (this.hasUnsavedChanges && !confirm('保存されていない変更があります。ページを離れてもよろしいですか？')) {
       return;
     }
     
@@ -347,7 +485,8 @@ export class SettingsPage {
       <div id="categories-container">
         ${structure.categories.length > 0 ? 
           structure.categories.map((cat, catIndex) => this.renderCategory(cat, catIndex)).join('') :
-          `<div class="text-center p-4 text-muted">
+          `<div class="text-center p-4 text-muted border rounded">
+             <i class="fas fa-folder-plus fa-2x mb-3"></i>
              <p>「カテゴリを追加」ボタンから評価カテゴリを作成してください。</p>
            </div>`
         }
@@ -367,10 +506,10 @@ export class SettingsPage {
         <div class="card-header d-flex justify-content-between align-items-center">
           <h6 class="mb-0">${this.app.sanitizeHtml(category.name)}</h6>
           <div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-primary border-0 edit-category-btn" data-id="${category.id}" title="編集">
+            <button class="btn btn-outline-primary border-0 edit-category-btn" data-category-id="${category.id}" title="編集">
               <i class="fas fa-pen"></i>
             </button>
-            <button class="btn btn-outline-danger border-0 delete-category-btn" data-id="${category.id}" title="削除">
+            <button class="btn btn-outline-danger border-0 delete-category-btn" data-category-id="${category.id}" title="削除">
               <i class="fas fa-trash"></i>
             </button>
           </div>
@@ -381,10 +520,10 @@ export class SettingsPage {
               <div class="list-group-item d-flex justify-content-between align-items-center">
                 <span>${this.app.sanitizeHtml(item.name)}</span>
                 <div class="btn-group btn-group-sm">
-                  <button class="btn btn-outline-primary border-0 edit-item-btn" data-id="${item.id}" data-category-id="${category.id}" title="編集">
+                  <button class="btn btn-outline-primary border-0 edit-item-btn" data-item-id="${item.id}" data-category-id="${category.id}" title="編集">
                     <i class="fas fa-pen"></i>
                   </button>
-                  <button class="btn btn-outline-danger border-0 delete-item-btn" data-id="${item.id}" data-category-id="${category.id}" title="削除">
+                  <button class="btn btn-outline-danger border-0 delete-item-btn" data-item-id="${item.id}" data-category-id="${category.id}" title="削除">
                     <i class="fas fa-trash"></i>
                   </button>
                 </div>
@@ -402,12 +541,19 @@ export class SettingsPage {
   }
 
   openEditModal(type, id = null, parentId = null) {
-    if (!this.editModal) {
-      console.error("Settings: Modal not initialized");
-      return;
-    }
-
     try {
+      console.log("Settings: Opening edit modal for", type, id);
+      
+      // モーダルがない場合は処理を停止
+      if (!this.editModal) {
+        console.error("Settings: Modal not initialized");
+        this.app.showError("モーダルが初期化されていません");
+        return;
+      }
+
+      // 現在表示されているモーダルを強制的に閉じる
+      this.forceCleanupModals();
+      
       const form = document.getElementById('editForm');
       const label = document.getElementById('editModalLabel');
       
@@ -460,10 +606,29 @@ export class SettingsPage {
         `;
       }
 
-      this.editModal.show();
+      // モーダルを表示
+      setTimeout(() => {
+        this.editModal.show();
+      }, 100);
+      
     } catch (error) {
       console.error("Settings: Error opening modal:", error);
-      this.app.showError("モーダルの表示に失敗しました");
+      this.app.showError("モーダルの表示に失敗しました: " + error.message);
+    }
+  }
+
+  closeModal() {
+    try {
+      if (this.editModal) {
+        this.editModal.hide();
+      }
+      // 追加のクリーンアップ
+      setTimeout(() => {
+        this.forceCleanupModals();
+      }, 300);
+    } catch (error) {
+      console.error("Settings: Error closing modal:", error);
+      this.forceCleanupModals();
     }
   }
 
@@ -523,12 +688,15 @@ export class SettingsPage {
         this.saveItem(id, name, parentId);
       }
 
-      this.editModal.hide();
+      this.closeModal();
       this.markUnsaved();
       this.renderAll();
+      
+      this.app.showSuccess(`${this.getTypeDisplayName(type)}を${id ? '更新' : '追加'}しました`);
+      
     } catch (error) {
       console.error("Settings: Error saving from modal:", error);
-      this.app.showError("保存に失敗しました");
+      this.app.showError("保存に失敗しました: " + error.message);
     }
   }
 
@@ -613,6 +781,7 @@ export class SettingsPage {
     
     this.markUnsaved();
     this.renderAll();
+    this.app.showSuccess('職種を削除しました');
   }
 
   deletePeriod(id) {
@@ -621,6 +790,7 @@ export class SettingsPage {
     this.settings.periods = this.settings.periods.filter(p => p.id !== id);
     this.markUnsaved();
     this.renderAll();
+    this.app.showSuccess('評価期間を削除しました');
   }
 
   markUnsaved() {
@@ -635,44 +805,71 @@ export class SettingsPage {
     if (saveBtn) saveBtn.disabled = true;
   }
 
+  setupUnloadWarning() {
+    window.addEventListener('beforeunload', (e) => {
+      if (this.hasUnsavedChanges) {
+        e.preventDefault();
+        return e.returnValue = '保存されていない変更があります。ページを離れてもよろしいですか？';
+      }
+    });
+  }
+
   async saveSettings() {
     const btn = document.getElementById('save-settings-btn');
     if (!btn) return;
     
+    const originalText = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> 保存中...`;
     
     try {
+      console.log("Settings: Saving settings to Firebase...");
       await this.app.api.saveSettings(this.settings);
       this.markAsSaved();
       this.app.showSuccess('設定を保存しました');
+      console.log("Settings: Settings saved successfully");
     } catch (error) {
       console.error("Settings: Save error:", error);
       this.app.showError('設定の保存に失敗しました: ' + error.message);
       btn.disabled = false;
     } finally {
-      btn.innerHTML = `<i class="fas fa-save me-2"></i>変更を保存`;
+      btn.innerHTML = originalText;
     }
   }
 
   // クリーンアップメソッド
   cleanup() {
-    if (this.editModal) {
-      try {
-        this.editModal.dispose();
-      } catch (error) {
-        console.warn("Settings: Modal disposal error:", error);
-      }
-    }
+    console.log("Settings: Starting cleanup...");
     
-    window.removeEventListener('beforeunload', this.unloadHandler);
-    console.log("Settings: Cleanup completed");
+    try {
+      // モーダルのクリーンアップ
+      if (this.editModal) {
+        this.editModal.dispose();
+        this.editModal = null;
+      }
+      
+      // 強制的なモーダルクリーンアップ
+      this.forceCleanupModals();
+      
+      // タイマーのクリーンアップ
+      if (this.modalCleanupTimer) {
+        clearTimeout(this.modalCleanupTimer);
+        this.modalCleanupTimer = null;
+      }
+      
+      // ページ離脱警告のクリーンアップ
+      window.removeEventListener('beforeunload', this.unloadHandler);
+      
+      console.log("Settings: Cleanup completed");
+    } catch (error) {
+      console.error("Settings: Cleanup error:", error);
+    }
   }
 
   // ページから離れることができるかチェック
   canLeave() {
     if (this.hasUnsavedChanges) {
-      return confirm(this.app.i18n.t('settings.unsaved_warning'));
+      return confirm('保存されていない変更があります。ページを離れてもよろしいですか？');
     }
     return true;
   }
