@@ -1,5 +1,5 @@
 /**
- * Settings Page Component - 完全修正版（モーダル問題・Firebase連携対応）
+ * Settings Page Component - モーダル問題完全修正版
  * 設定ページコンポーネント
  */
 export class SettingsPage {
@@ -14,7 +14,7 @@ export class SettingsPage {
     this.hasUnsavedChanges = false;
     this.editModal = null;
     this.isInitialized = false;
-    this.modalCleanupTimer = null;
+    this.modalElement = null;
   }
 
   async render() {
@@ -75,27 +75,6 @@ export class SettingsPage {
           </div>
         </div>
       </div>
-      
-      <!-- 編集モーダル -->
-      <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="editModalLabel">項目を編集</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-              <form id="editForm">
-                <!-- フォーム内容は動的に生成 -->
-              </form>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" id="cancel-modal-btn">キャンセル</button>
-              <button type="button" class="btn btn-primary" id="save-modal-btn">保存</button>
-            </div>
-          </div>
-        </div>
-      </div>
     `;
   }
 
@@ -110,17 +89,17 @@ export class SettingsPage {
     this.app.currentPage = this;
     
     try {
-      // ★★★ 最初にモーダルの残骸をクリーンアップ ★★★
+      // 既存のモーダルを強制クリーンアップ
       this.forceCleanupModals();
-      
-      // 基本的なイベントリスナーを設定
-      this.setupBasicEventListeners();
       
       // データを読み込み
       await this.loadData();
       
-      // モーダルを初期化（データ読み込み後）
-      await this.initializeModal();
+      // イベントリスナーを設定
+      this.setupEventListeners();
+      
+      // モーダルを動的に作成・初期化
+      this.createAndInitializeModal();
       
       // ページ離脱時の警告設定
       this.setupUnloadWarning();
@@ -135,7 +114,7 @@ export class SettingsPage {
   }
 
   /**
-   * モーダルの残骸を強制クリーンアップ
+   * 既存のモーダルを強制的にクリーンアップ
    */
   forceCleanupModals() {
     try {
@@ -152,14 +131,29 @@ export class SettingsPage {
         backdrop.remove();
       });
       
-      // 既存のモーダルを非表示にする
-      const existingModals = document.querySelectorAll('.modal');
+      // 既存の編集モーダルを削除
+      const existingModals = document.querySelectorAll('#editModal');
       existingModals.forEach(modal => {
+        // Bootstrap インスタンスを破棄
+        const bsModal = bootstrap.Modal.getInstance(modal);
+        if (bsModal) {
+          bsModal.dispose();
+        }
+        modal.remove();
+      });
+      
+      // 全てのモーダルを非表示にする
+      const allModals = document.querySelectorAll('.modal');
+      allModals.forEach(modal => {
         modal.style.display = 'none';
         modal.classList.remove('show');
         modal.setAttribute('aria-hidden', 'true');
         modal.removeAttribute('aria-modal');
+        modal.removeAttribute('role');
       });
+      
+      this.editModal = null;
+      this.modalElement = null;
       
       console.log("Settings: Modal cleanup completed");
     } catch (error) {
@@ -167,83 +161,150 @@ export class SettingsPage {
     }
   }
 
-  setupBasicEventListeners() {
+  /**
+   * モーダルを動的に作成・初期化
+   */
+  createAndInitializeModal() {
     try {
-      console.log("Settings: Setting up basic event listeners...");
+      console.log("Settings: Creating modal dynamically...");
       
-      // メインボタンのイベントリスナー
-      document.addEventListener('click', (e) => {
-        if (e.target.closest('#save-settings-btn')) {
-          e.preventDefault();
-          this.saveSettings();
-        } else if (e.target.closest('#add-job-type-btn')) {
-          e.preventDefault();
-          this.openEditModal('jobType');
-        } else if (e.target.closest('#add-period-btn')) {
-          e.preventDefault();
-          this.openEditModal('period');
-        }
-      });
+      // 既存のモーダルを削除
+      const existingModal = document.getElementById('editModal');
+      if (existingModal) {
+        existingModal.remove();
+      }
       
-      console.log("Settings: Basic event listeners setup completed");
+      // モーダルHTMLを動的に作成
+      const modalHTML = `
+        <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel">項目を編集</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <form id="editForm">
+                  <!-- フォーム内容は動的に生成 -->
+                </form>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancel-modal-btn">キャンセル</button>
+                <button type="button" class="btn btn-primary" id="save-modal-btn">保存</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // bodyに追加
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+      
+      // モーダル要素を取得
+      this.modalElement = document.getElementById('editModal');
+      
+      if (this.modalElement) {
+        // Bootstrap Modalインスタンスを作成
+        this.editModal = new bootstrap.Modal(this.modalElement, {
+          backdrop: 'static',
+          keyboard: false
+        });
+        
+        // モーダルイベントリスナー
+        this.modalElement.addEventListener('hidden.bs.modal', () => {
+          this.onModalHidden();
+        });
+        
+        // モーダル内ボタンのイベントリスナー
+        document.getElementById('save-modal-btn')?.addEventListener('click', () => {
+          this.saveFromModal();
+        });
+        
+        document.getElementById('cancel-modal-btn')?.addEventListener('click', () => {
+          this.closeModal();
+        });
+        
+        console.log("Settings: Modal created and initialized successfully");
+      } else {
+        throw new Error("Modal element not found after creation");
+      }
+      
     } catch (error) {
-      console.error("Settings: Error setting up basic event listeners:", error);
+      console.error("Settings: Error creating modal:", error);
+      this.app.showError("モーダルの初期化に失敗しました");
     }
   }
 
-  async initializeModal() {
-    return new Promise((resolve) => {
-      console.log("Settings: Initializing modal...");
+  setupEventListeners() {
+    try {
+      console.log("Settings: Setting up event listeners...");
       
-      const initModal = () => {
-        const modalElement = document.getElementById('editModal');
-        if (modalElement) {
-          try {
-            // 既存のモーダルインスタンスを破棄
-            const existingModal = bootstrap.Modal.getInstance(modalElement);
-            if (existingModal) {
-              existingModal.dispose();
-            }
-            
-            this.editModal = new bootstrap.Modal(modalElement, {
-              backdrop: 'static',
-              keyboard: false
-            });
-            
-            // モーダルイベントリスナー
-            modalElement.addEventListener('hidden.bs.modal', () => {
-              this.onModalHidden();
-            });
-            
-            // モーダル内ボタンのイベントリスナー
-            document.getElementById('save-modal-btn')?.addEventListener('click', () => {
-              this.saveFromModal();
-            });
-            
-            document.getElementById('cancel-modal-btn')?.addEventListener('click', () => {
-              this.closeModal();
-            });
-            
-            console.log("Settings: Modal initialized successfully");
-            resolve();
-          } catch (error) {
-            console.error("Settings: Modal initialization error:", error);
-            setTimeout(initModal, 200);
-          }
-        } else {
-          setTimeout(initModal, 100);
+      // メインボタンのイベントリスナー（イベント委譲を使用）
+      document.addEventListener('click', (e) => {
+        // 設定ページ内のクリックのみ処理
+        if (!e.target.closest('.settings-page')) return;
+        
+        if (e.target.closest('#save-settings-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.saveSettings();
+        } 
+        else if (e.target.closest('#add-job-type-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.openEditModal('jobType');
+        } 
+        else if (e.target.closest('#add-period-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.openEditModal('period');
         }
-      };
+        else if (e.target.closest('.edit-job-type-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const jobTypeId = e.target.closest('.edit-job-type-btn').dataset.jobTypeId;
+          this.openEditModal('jobType', jobTypeId);
+        }
+        else if (e.target.closest('.delete-job-type-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const jobTypeId = e.target.closest('.delete-job-type-btn').dataset.jobTypeId;
+          this.deleteJobType(jobTypeId);
+        }
+        else if (e.target.closest('.edit-period-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const periodId = e.target.closest('.edit-period-btn').dataset.periodId;
+          this.openEditModal('period', periodId);
+        }
+        else if (e.target.closest('.delete-period-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const periodId = e.target.closest('.delete-period-btn').dataset.periodId;
+          this.deletePeriod(periodId);
+        }
+        else if (e.target.closest('[data-job-type-id]') && !e.target.closest('.btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const jobTypeId = e.target.closest('[data-job-type-id]').dataset.jobTypeId;
+          this.selectJobType(jobTypeId);
+        }
+      });
       
-      initModal();
-    });
+      console.log("Settings: Event listeners setup completed");
+    } catch (error) {
+      console.error("Settings: Error setting up event listeners:", error);
+    }
   }
 
   onModalHidden() {
     try {
       console.log("Settings: Modal hidden event");
       // モーダルが閉じた後の追加クリーンアップ
-      this.forceCleanupModals();
+      setTimeout(() => {
+        this.forceCleanupModals();
+        this.createAndInitializeModal(); // モーダルを再作成
+      }, 100);
     } catch (error) {
       console.error("Settings: Modal hidden event error:", error);
     }
@@ -273,8 +334,6 @@ export class SettingsPage {
       
     } catch (error) {
       console.error("Settings: Error loading data:", error);
-      
-      // エラー時のダミーデータ表示
       this.renderErrorState();
       this.app.showError("設定データの読み込みに失敗しました: " + error.message);
     }
@@ -352,41 +411,6 @@ export class SettingsPage {
         </div>
       </div>
     `).join('');
-
-    // イベントリスナーを追加
-    this.setupJobTypeEventListeners();
-  }
-
-  setupJobTypeEventListeners() {
-    const list = document.getElementById('job-types-list');
-    if (!list) return;
-    
-    // 職種選択のイベントリスナー
-    list.querySelectorAll('[data-job-type-id]').forEach(item => {
-      if (!item.classList.contains('btn')) {
-        item.addEventListener('click', (e) => {
-          if (!e.target.closest('.btn')) {
-            this.selectJobType(item.dataset.jobTypeId);
-          }
-        });
-      }
-    });
-
-    // 編集ボタンのイベントリスナー
-    list.querySelectorAll('.edit-job-type-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.openEditModal('jobType', btn.dataset.jobTypeId);
-      });
-    });
-
-    // 削除ボタンのイベントリスナー
-    list.querySelectorAll('.delete-job-type-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.deleteJobType(btn.dataset.jobTypeId);
-      });
-    });
   }
 
   renderPeriodsList() {
@@ -423,24 +447,6 @@ export class SettingsPage {
         </div>
       </div>
     `).join('');
-
-    // イベントリスナーを追加
-    this.setupPeriodEventListeners();
-  }
-
-  setupPeriodEventListeners() {
-    const list = document.getElementById('periods-list');
-    if (!list) return;
-    
-    // 編集ボタンのイベントリスナー
-    list.querySelectorAll('.edit-period-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.openEditModal('period', btn.dataset.periodId));
-    });
-
-    // 削除ボタンのイベントリスナー
-    list.querySelectorAll('.delete-period-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.deletePeriod(btn.dataset.periodId));
-    });
   }
 
   selectJobType(id) {
@@ -492,12 +498,6 @@ export class SettingsPage {
         }
       </div>
     `;
-
-    // カテゴリ追加ボタンのイベントリスナー
-    const addCategoryBtn = editor.querySelector('.add-category-btn');
-    if (addCategoryBtn) {
-      addCategoryBtn.addEventListener('click', () => this.openEditModal('category'));
-    }
   }
 
   renderCategory(category, catIndex) {
@@ -544,72 +544,84 @@ export class SettingsPage {
     try {
       console.log("Settings: Opening edit modal for", type, id);
       
-      // モーダルがない場合は処理を停止
-      if (!this.editModal) {
-        console.error("Settings: Modal not initialized");
-        this.app.showError("モーダルが初期化されていません");
-        return;
+      // モーダルが存在しない、または破損している場合は再作成
+      if (!this.editModal || !this.modalElement || !document.body.contains(this.modalElement)) {
+        console.log("Settings: Modal not found, recreating...");
+        this.createAndInitializeModal();
       }
 
-      // 現在表示されているモーダルを強制的に閉じる
+      // まず画面をクリーンアップ
       this.forceCleanupModals();
       
-      const form = document.getElementById('editForm');
-      const label = document.getElementById('editModalLabel');
-      
-      if (!form || !label) {
-        console.error("Settings: Modal form elements not found");
-        return;
-      }
-
-      // フォームのリセット
-      form.innerHTML = '';
-      form.dataset.type = type;
-      form.dataset.id = id || '';
-      form.dataset.parentId = parentId || '';
-
-      let titleText = '';
-      let entity = {};
-
-      // データの取得と表示設定
-      if (id) {
-        titleText = `${this.getTypeDisplayName(type)}を編集`;
-        entity = this.findEntity(type, id, parentId);
-      } else {
-        titleText = `${this.getTypeDisplayName(type)}を追加`;
-      }
-
-      label.textContent = titleText;
-
-      // フォーム内容の生成
-      if (type === 'jobType' || type === 'category' || type === 'item') {
-        form.innerHTML = `
-          <div class="mb-3">
-            <label for="entityName" class="form-label">名前</label>
-            <input type="text" class="form-control" id="entityName" value="${this.app.sanitizeHtml(entity.name || '')}" required>
-          </div>
-        `;
-      } else if (type === 'period') {
-        form.innerHTML = `
-          <div class="mb-3">
-            <label for="entityName" class="form-label">期間名</label>
-            <input type="text" class="form-control" id="entityName" value="${this.app.sanitizeHtml(entity.name || '')}" required>
-          </div>
-          <div class="mb-3">
-            <label for="startDate" class="form-label">開始日</label>
-            <input type="date" class="form-control" id="startDate" value="${entity.startDate || ''}" required>
-          </div>
-          <div class="mb-3">
-            <label for="endDate" class="form-label">終了日</label>
-            <input type="date" class="form-control" id="endDate" value="${entity.endDate || ''}" required>
-          </div>
-        `;
-      }
-
-      // モーダルを表示
+      // 少し待ってからモーダルを開く
       setTimeout(() => {
-        this.editModal.show();
-      }, 100);
+        try {
+          const form = document.getElementById('editForm');
+          const label = document.getElementById('editModalLabel');
+          
+          if (!form || !label) {
+            console.error("Settings: Modal form elements not found");
+            this.app.showError("モーダルフォームが見つかりません");
+            return;
+          }
+
+          // フォームのリセット
+          form.innerHTML = '';
+          form.dataset.type = type;
+          form.dataset.id = id || '';
+          form.dataset.parentId = parentId || '';
+
+          let titleText = '';
+          let entity = {};
+
+          // データの取得と表示設定
+          if (id) {
+            titleText = `${this.getTypeDisplayName(type)}を編集`;
+            entity = this.findEntity(type, id, parentId);
+          } else {
+            titleText = `${this.getTypeDisplayName(type)}を追加`;
+          }
+
+          label.textContent = titleText;
+
+          // フォーム内容の生成
+          if (type === 'jobType' || type === 'category' || type === 'item') {
+            form.innerHTML = `
+              <div class="mb-3">
+                <label for="entityName" class="form-label">名前</label>
+                <input type="text" class="form-control" id="entityName" value="${this.app.sanitizeHtml(entity.name || '')}" required>
+              </div>
+            `;
+          } else if (type === 'period') {
+            form.innerHTML = `
+              <div class="mb-3">
+                <label for="entityName" class="form-label">期間名</label>
+                <input type="text" class="form-control" id="entityName" value="${this.app.sanitizeHtml(entity.name || '')}" required>
+              </div>
+              <div class="mb-3">
+                <label for="startDate" class="form-label">開始日</label>
+                <input type="date" class="form-control" id="startDate" value="${entity.startDate || ''}" required>
+              </div>
+              <div class="mb-3">
+                <label for="endDate" class="form-label">終了日</label>
+                <input type="date" class="form-control" id="endDate" value="${entity.endDate || ''}" required>
+              </div>
+            `;
+          }
+
+          // モーダルを表示
+          if (this.editModal) {
+            this.editModal.show();
+            console.log("Settings: Modal opened successfully");
+          } else {
+            throw new Error("Modal instance not available");
+          }
+          
+        } catch (modalError) {
+          console.error("Settings: Error in modal opening process:", modalError);
+          this.app.showError("モーダルの表示でエラーが発生しました: " + modalError.message);
+        }
+      }, 200);
       
     } catch (error) {
       console.error("Settings: Error opening modal:", error);
@@ -622,13 +634,14 @@ export class SettingsPage {
       if (this.editModal) {
         this.editModal.hide();
       }
-      // 追加のクリーンアップ
       setTimeout(() => {
         this.forceCleanupModals();
+        this.createAndInitializeModal();
       }, 300);
     } catch (error) {
       console.error("Settings: Error closing modal:", error);
       this.forceCleanupModals();
+      this.createAndInitializeModal();
     }
   }
 
@@ -848,14 +861,14 @@ export class SettingsPage {
         this.editModal = null;
       }
       
+      // モーダル要素の削除
+      if (this.modalElement && document.body.contains(this.modalElement)) {
+        this.modalElement.remove();
+      }
+      this.modalElement = null;
+      
       // 強制的なモーダルクリーンアップ
       this.forceCleanupModals();
-      
-      // タイマーのクリーンアップ
-      if (this.modalCleanupTimer) {
-        clearTimeout(this.modalCleanupTimer);
-        this.modalCleanupTimer = null;
-      }
       
       // ページ離脱警告のクリーンアップ
       window.removeEventListener('beforeunload', this.unloadHandler);
