@@ -1,0 +1,190 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===== Helper Functions =====
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function hasRole(role) {
+      return isAuthenticated() && getUserData().role == role;
+    }
+    
+    function hasAnyRole(roles) {
+      return isAuthenticated() && getUserData().role in roles;
+    }
+    
+    function isSameTenant(tenantId) {
+      return isAuthenticated() && getUserData().tenantId == tenantId;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isActiveUser() {
+      return isAuthenticated() && getUserData().status == 'active';
+    }
+    
+    function isUserActiveInTenant(tenantId) {
+      return isActiveUser() && isSameTenant(tenantId);
+    }
+
+    // ===== Users Collection =====
+    match /users/{userId} {
+      // 読み取り権限
+      allow read: if isOwner(userId) 
+                  || hasRole('developer') 
+                  || (hasAnyRole(['admin', 'evaluator']) && isSameTenant(resource.data.tenantId));
+      
+      // 作成権限（開発者のみ、または招待による登録）
+      allow create: if hasRole('developer') 
+                    || (isAuthenticated() && request.auth.uid == userId);
+      
+      // 更新権限
+      allow update: if hasRole('developer') 
+                    || (hasRole('admin') && isSameTenant(resource.data.tenantId))
+                    || (isOwner(userId) && 
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'updatedAt']));
+      
+      // 削除権限（開発者のみ）
+      allow delete: if hasRole('developer');
+    }
+    
+    // ===== Tenants Collection =====
+    match /tenants/{tenantId} {
+      allow read, write: if hasRole('developer');
+      allow read: if hasRole('admin') && isSameTenant(tenantId);
+    }
+    
+    // ===== Invitations Collection =====
+    match /invitations/{invitationId} {
+      // 読み取り（トークンベースの公開読み取り）
+      allow read: if true;
+      
+      // 作成（管理者または開発者）
+      allow create: if hasAnyRole(['developer', 'admin']);
+      
+      // 更新（使用済みマークなど）
+      allow update: if true;
+      
+      // 削除
+      allow delete: if hasAnyRole(['developer', 'admin']);
+    }
+    
+    // ===== Job Types Collection =====
+    match /targetJobTypes/{jobTypeId} {
+      // 読み取り（同一テナント内のアクティブユーザー）
+      allow read: if isUserActiveInTenant(resource.data.tenantId);
+      
+      // 作成・更新・削除（同一テナントの管理者のみ）
+      allow create, update: if hasRole('admin') && isSameTenant(request.resource.data.tenantId);
+      allow delete: if hasRole('admin') && isSameTenant(resource.data.tenantId);
+    }
+    
+    // ===== Evaluation Periods Collection =====
+    match /evaluationPeriods/{periodId} {
+      // 読み取り（同一テナント内のアクティブユーザー）
+      allow read: if isUserActiveInTenant(resource.data.tenantId);
+      
+      // 作成・更新・削除（同一テナントの管理者のみ）
+      allow create, update: if hasRole('admin') && isSameTenant(request.resource.data.tenantId);
+      allow delete: if hasRole('admin') && isSameTenant(resource.data.tenantId);
+    }
+    
+    // ===== Evaluation Structures Collection =====
+    match /evaluationStructures/{structureId} {
+      // 読み取り（同一テナント内のアクティブユーザー）
+      allow read: if isUserActiveInTenant(resource.data.tenantId);
+      
+      // 作成・更新・削除（同一テナントの管理者のみ）
+      allow create, update: if hasRole('admin') && isSameTenant(request.resource.data.tenantId);
+      allow delete: if hasRole('admin') && isSameTenant(resource.data.tenantId);
+    }
+    
+    // ===== Qualitative Goals Collection =====
+    match /qualitativeGoals/{goalId} {
+      // 読み取り（本人、管理者、評価者）
+      allow read: if isOwner(resource.data.userId) 
+                  || (hasRole('admin') && isSameTenant(resource.data.tenantId))
+                  || (hasRole('evaluator') && isSameTenant(resource.data.tenantId));
+      
+      // 作成・更新（本人または管理者）
+      allow create, update: if isOwner(request.resource.data.userId) 
+                            || (hasRole('admin') && isSameTenant(request.resource.data.tenantId));
+      
+      // 削除（管理者のみ）
+      allow delete: if hasRole('admin') && isSameTenant(resource.data.tenantId);
+    }
+    
+    // ===== Evaluations Collection =====
+    match /evaluations/{evaluationId} {
+      // 読み取り（評価対象者、評価者、管理者、開発者）
+      allow read: if isOwner(resource.data.targetUserId) 
+                  || isOwner(resource.data.evaluatorId)
+                  || (hasRole('admin') && isSameTenant(resource.data.tenantId))
+                  || hasRole('developer');
+      
+      // 作成・更新（評価対象者、評価者、管理者）
+      allow create, update: if isOwner(request.resource.data.targetUserId) 
+                            || isOwner(request.resource.data.evaluatorId)
+                            || (hasRole('admin') && isSameTenant(request.resource.data.tenantId));
+      
+      // 削除（管理者または開発者のみ）
+      allow delete: if (hasRole('admin') && isSameTenant(resource.data.tenantId))
+                    || hasRole('developer');
+    }
+    
+    // ===== System Collections (開発者専用) =====
+    match /systemSettings/{settingId} {
+      allow read, write: if hasRole('developer');
+    }
+    
+    match /auditLogs/{logId} {
+      allow read, write: if hasRole('developer');
+      allow read: if hasRole('admin') && isSameTenant(resource.data.tenantId);
+    }
+    
+    // ===== Additional Security Rules =====
+    
+    // バッチ操作の制限
+    match /{document=**} {
+      allow read, write: if false; // デフォルトで全拒否
+    }
+    
+    // テスト用コレクション（開発環境のみ）
+    match /test/{testId} {
+      allow read, write: if hasRole('developer');
+    }
+  }
+}
+
+// ===== Firebase Functions用ルール =====
+/*
+以下のCloud Functionsが必要です：
+
+1. approveAdmin(userId)
+   - 管理者承認処理
+   - テナント作成
+   - ユーザーステータス更新
+
+2. createTenant(adminUserId, companyName)
+   - テナント作成
+   - 初期設定データ作成
+
+3. sendInvitationEmail(invitationId)
+   - 招待メール送信（オプション）
+
+4. cleanupExpiredInvitations()
+   - 期限切れ招待の削除（定期実行）
+
+5. auditLogger(action, userId, data)
+   - 監査ログ記録
+
+これらの関数は別途実装が必要です。
+*/
