@@ -18,31 +18,71 @@ class App {
   }
 
   async init() {
+    console.log("Starting application initialization...");
+    
+    // 強制的にローディング画面を表示（初期化中）
+    this.showLoadingScreen();
+    
     try {
-      console.log("Starting application initialization...");
-      
-      // 段階的に初期化を行う
+      // Step 1: I18n初期化
+      console.log("Step 1: Initializing I18n...");
       await this.i18n.init();
-      console.log("I18n initialized");
+      console.log("✓ I18n initialized");
       
+      // Step 2: 認証初期化（最も重要）
+      console.log("Step 2: Initializing Auth...");
       await this.auth.init();
-      console.log("Auth initialized");
+      console.log("✓ Auth initialized");
       
+      // Step 3: イベントリスナー設定
+      console.log("Step 3: Setting up event listeners...");
       this.setupEventListeners();
-      console.log("Event listeners setup");
+      console.log("✓ Event listeners setup");
       
-      // ルーティングの前にアプリを表示
+      // Step 4: アプリ表示（ロード画面を非表示）
+      console.log("Step 4: Showing app...");
       this.showApp();
       
+      // Step 5: 初期ルーティング
+      console.log("Step 5: Initial routing...");
       await this.router.route();
-      console.log("Router initialized");
+      console.log("✓ Router initialized");
       
-      console.log("Application initialized successfully");
+      console.log("🎉 Application initialized successfully");
+      
     } catch (error) {
-      console.error("Failed to initialize application:", error);
-      this.showError("アプリケーションの起動に失敗しました: " + error.message);
-      // エラーが発生してもアプリは表示する
+      console.error("❌ Failed to initialize application:", error);
+      
+      // エラーが発生してもアプリを表示
       this.showApp();
+      
+      // エラーメッセージを表示
+      setTimeout(() => {
+        this.showError("アプリケーションの起動中にエラーが発生しました。ページを再読み込みしてください。");
+      }, 500);
+      
+      // 緊急時のルーティング
+      try {
+        if (this.isAuthenticated()) {
+          this.navigate("#/dashboard");
+        } else {
+          this.navigate("#/login");
+        }
+      } catch (routingError) {
+        console.error("Emergency routing failed:", routingError);
+      }
+    }
+  }
+
+  showLoadingScreen() {
+    const loadingScreen = document.getElementById("loading-screen");
+    const appEl = document.getElementById("app");
+    
+    if (loadingScreen) {
+      loadingScreen.style.display = "flex";
+    }
+    if (appEl) {
+      appEl.classList.add("d-none");
     }
   }
 
