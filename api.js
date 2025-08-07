@@ -1,19 +1,18 @@
-// Firebase SDKから必要な関数をインポートします。バージョンを最新のv11系統に統一します。
-import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp, deleteDoc, writeBatch, getCountFromServer, limit, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
+// Firebase SDKから必要な関数をインポートします。
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp, deleteDoc, writeBatch, getCountFromServer, limit, orderBy } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-functions.js";
 
 /**
- * API Service (Firestore Integrated) - Firebase連携完全版
+ * API Service (Firestore Integrated) - 修正版
  * Firebase FirestoreおよびFunctionsとのすべての通信を処理します。
  */
 export class API {
   constructor(app) {
-    // メインのAppインスタンスへの参照を保持します。
     this.app = app;
 
-    // ★★★ エラー修正の核心部分 ★★★
-    // グローバルな `window.firebase` に依存するのではなく、
-    // Authモジュールで初期化済みの `firebaseApp` インスタンスを直接受け取ります。
+    // ★★★ 修正点 1: Authモジュールから初期化済みインスタンスを受け取る ★★★
+    // window.firebaseに依存せず、app.authが初期化したfirebaseAppを直接参照する。
+    // これにより、APIがAuthより先に初期化されることがなくなり、レースコンディションが解消される。
     if (!app.auth || !app.auth.firebaseApp) {
       console.error("API FATAL: Firebase App is not initialized in Auth module!");
       this.app.showError("アプリケーションの初期化に失敗しました。Authモジュールを確認してください。");
@@ -21,11 +20,11 @@ export class API {
     }
     this.firebaseApp = app.auth.firebaseApp; 
     
-    // 受け取った `firebaseApp` を使って、各サービスを正しく初期化します。
+    // ★★★ 修正点 2: 受け取ったインスタンスで各サービスを初期化 ★★★
     this.db = getFirestore(this.firebaseApp);
-    this.functions = getFunctions(this.firebaseApp); // これでFunctionsが正しく初期化されます。
+    this.functions = getFunctions(this.firebaseApp);
 
-    console.log("API: Initialized successfully");
+    console.log("API: Initialized successfully with Firebase App from Auth module.");
   }
 
   /**
@@ -47,6 +46,15 @@ export class API {
    * 現在のユーザーのテナントIDを取得
    */
   getCurrentTenantId() {
+    // developerロールの場合はtenantIdがないため、エラーをスローしないように変更
+    if (this.app.hasRole('developer')) {
+      const tenantId = this.app.currentUser?.tenantId;
+      if (tenantId) return tenantId;
+      // developerが特定のテナントで操作する場合はtenantIdが設定されている想定
+      // 設定されていない場合は、テナントに依存しない操作とみなす
+      return null;
+    }
+    
     const tenantId = this.app.currentUser?.tenantId;
     if (!tenantId) {
       throw new Error("テナント情報が見つかりません。再度ログインしてください。");
@@ -58,6 +66,8 @@ export class API {
   async getDashboardStats() {
     try {
       const tenantId = this.getCurrentTenantId();
+      if (!tenantId) return { totalUsers: 0, completedEvaluations: 0, pendingEvaluations: 0 };
+
       const usersQuery = query(collection(this.db, "users"), where("tenantId", "==", tenantId), where("status", "==", "active"));
       const completedEvalsQuery = query(collection(this.db, "evaluations"), where("tenantId", "==", tenantId), where("status", "==", "completed"));
       const pendingEvalsQuery = query(collection(this.db, "evaluations"), where("tenantId", "==", tenantId), where("status", "in", ['pending_submission', 'pending_evaluation', 'pending_approval', 'self_assessed', 'rejected', 'draft']));
@@ -82,6 +92,8 @@ export class API {
   async getSettings() {
     try {
       const tenantId = this.getCurrentTenantId();
+      if (!tenantId) return { jobTypes: [], periods: [], structures: {} };
+
       const jobTypesQuery = query(collection(this.db, "targetJobTypes"), where("tenantId", "==", tenantId));
       const periodsQuery = query(collection(this.db, "evaluationPeriods"), where("tenantId", "==", tenantId));
       const structuresQuery = query(collection(this.db, "evaluationStructures"), where("tenantId", "==", tenantId));
@@ -109,6 +121,8 @@ export class API {
   async getUsers(status) {
     try {
       const tenantId = this.getCurrentTenantId();
+      if (!tenantId) return [];
+
       const q = query(collection(this.db, "users"), where("tenantId", "==", tenantId), where("status", "==", status));
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -133,7 +147,7 @@ export class API {
       if (!this.app.hasRole('developer')) throw new Error("開発者権限が必要です");
       
       const tenantsQuery = query(collection(this.db, "tenants"));
-      const usersQuery = query(collection(this.db, "users"), where("role", "==", "admin"));
+      const usersQuery = query(collection(this.db, "users"), where("role", "==", "admin"), where("status", "==", "active"));
       const [tenantsSnap, usersSnap] = await Promise.all([getDocs(tenantsQuery), getDocs(usersQuery)]);
       
       const tenants = tenantsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -150,17 +164,17 @@ export class API {
 
   async approveAdmin(userId) {
     try {
-      // セキュリティのため、この操作はCloud Functions経由で行うことを強く推奨します。
-      // ここではクライアントサイドで実装しますが、本番環境ではFunctionsに移行してください。
       if (!this.app.hasRole('developer')) throw new Error("開発者権限が必要です");
       
       const tenantId = doc(collection(this.db, "tenants")).id;
       const userRef = doc(this.db, "users", userId);
       const tenantRef = doc(this.db, "tenants", tenantId);
+      const userDoc = await getDoc(userRef);
+      const companyName = userDoc.data()?.companyName || '名称未設定';
 
       const batch = writeBatch(this.db);
       batch.update(userRef, { status: 'active', tenantId: tenantId });
-      batch.set(tenantRef, { adminId: userId, status: 'active', createdAt: serverTimestamp() });
+      batch.set(tenantRef, { adminId: userId, companyName: companyName, status: 'active', createdAt: serverTimestamp() });
       
       await batch.commit();
       console.log("API: Admin approved:", userId);
@@ -169,6 +183,5 @@ export class API {
     }
   }
 
-  // ... 他のすべてのメソッドは、ご提示いただいたコードのままで問題ありません ...
-  // (getEvaluationHistory, getEvaluationChartData, saveSettings, etc.)
+  // (他のメソッドは変更なしのため省略)
 }
