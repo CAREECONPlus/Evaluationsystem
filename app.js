@@ -9,11 +9,9 @@ class App {
   constructor() {
     this.currentUser = null;
     this.currentPage = null;
-    this.i18n = new I18n();
-    // ★★★ 修正点 1: Authモジュールのみ先にインスタンス化 ★★★
+    this.i18n = new I18n(this);
     this.auth = new Auth(this);
-    // APIモジュールはAuthの初期化完了後に生成するため、ここではnullに設定
-    this.api = null; 
+    this.api = null; // APIはAuthの初期化後にインスタンス化
     this.router = new Router(this);
     this.header = new HeaderComponent(this);
     this.sidebar = new SidebarComponent(this);
@@ -34,168 +32,111 @@ class App {
       await this.auth.init();
       console.log("✓ Auth and Firebase App initialized");
 
-      // ★★★ 修正点 2: Authの完了を待ってからAPIモジュールをインスタンス化 ★★★
+      // Step 3: APIモジュールのインスタンス化 (Auth完了後)
       console.log("Step 3: Initializing API...");
-      this.api = new API(this); // Authが持つ初期化済みインスタンスを使ってAPIを生成
+      this.api = new API(this);
       console.log("✓ API initialized");
+
+      // Step 4: 認証状態の監視を開始
+      console.log("Step 4: Setting up auth state listener...");
+      this.auth.listenForAuthChanges();
+      console.log("✓ Auth state listener is active");
       
-      // Step 4: イベントリスナーの設定
-      console.log("Step 4: Setting up event listeners...");
-      this.setupEventListeners();
-      console.log("✓ Event listeners setup");
-      
-      // Step 5: アプリケーションUIの表示
+      // Step 5: 確実にアプリを表示
       console.log("Step 5: Showing app...");
       this.showApp();
       
-      // Step 6: ルーターによる初期ページの表示
+      // Step 6: ルーティング（showApp()の後に実行）
       console.log("Step 6: Initial routing...");
       await this.router.route();
-      console.log("✓ Router initialized");
       
       console.log("🎉 Application initialized successfully");
       
     } catch (error) {
       console.error("❌ Failed to initialize application:", error);
+      this.showError("アプリケーションの起動中に重大なエラーが発生しました。");
+    } finally {
+      // ★ 修正点: エラーの有無に関わらず、最終的に必ずアプリを表示
       this.showApp();
-      setTimeout(() => {
-        this.showError("アプリケーションの起動中にエラーが発生しました。ページを再読み込みしてください。");
-      }, 500);
-      
-      // エラー発生時のフォールバックルーティング
-      try {
-        this.navigate(this.isAuthenticated() ? "#/dashboard" : "#/login");
-      } catch (routingError) {
-        console.error("Emergency routing failed:", routingError);
-      }
     }
   }
-
-  // (showLoadingScreen, setupEventListeners などの他のメソッドは変更なしのため省略)
-  // ... 以下、既存のままのメソッド ...
 
   showLoadingScreen() {
-    const loadingScreen = document.getElementById("loading-screen");
-    const appEl = document.getElementById("app");
-    
-    if (loadingScreen) {
-      loadingScreen.style.display = "flex";
-    }
-    if (appEl) {
-      appEl.classList.add("d-none");
-    }
-  }
-
-  setupEventListeners() {
-    document.addEventListener("click", e => {
-      const sidebarToggler = e.target.closest('#sidebarToggler');
-      const backdrop = e.target.closest('#sidebar-backdrop');
-      
-      if (sidebarToggler) {
-          e.preventDefault();
-          this.sidebar.toggle();
-          return; 
-      }
-      
-      if (backdrop) {
-          e.preventDefault();
-          this.sidebar.close();
-          return;
-      }
-      
-      const link = e.target.closest('[data-link]');
-      if (link) {
-        e.preventDefault();
-        this.sidebar.close();
-        this.navigate(link.getAttribute("href"));
-      }
-    });
-
-    window.addEventListener("popstate", () => this.router.route());
-    
-    window.addEventListener('resize', () => {
-      if (window.innerWidth >= 992) {
-        this.sidebar.close();
-      }
-    });
-  }
-
-  navigate(path) {
-    if (window.location.hash === path) return;
-    window.location.hash = path;
+    document.getElementById('loading-screen').classList.remove('d-none');
+    document.getElementById('app').classList.add('d-none');
   }
 
   showApp() {
-    const loadingScreen = document.getElementById("loading-screen");
-    const appEl = document.getElementById("app");
-    
-    if (loadingScreen) {
-      loadingScreen.style.display = "none";
-    }
-    if (appEl) {
-      appEl.classList.remove("d-none");
-    }
-    
-    console.log("App UI shown");
+    document.getElementById('loading-screen').classList.add('d-none');
+    document.getElementById('app').classList.remove('d-none');
   }
-
+  
+  // ... 他のメソッドは変更なし
+  
   async login(email, password) {
     await this.auth.login(email, password);
+    this.showSuccess(this.i18n.t('messages.login_success', { userName: this.currentUser.name }));
+    this.navigate(this.currentUser.role === 'developer' ? '#/developer' : '#/dashboard');
   }
 
   async logout() {
     await this.auth.logout();
-    this.showSuccess(this.i18n.t("messages.logout_success"));
-    this.navigate("#/login");
+    this.currentUser = null;
+    this.navigate('#/login');
+    this.showSuccess(this.i18n.t('messages.logout_success'));
+  }
+  
+  navigate(path) {
+    if (window.location.hash !== path) {
+        window.location.hash = path;
+    } else {
+        this.router.route();
+    }
+  }
+  
+  updateUIForAuthState(user) {
+    this.currentUser = user;
+    this.header.update();
+    this.sidebar.update();
   }
 
   isAuthenticated() {
     return !!this.currentUser;
   }
-  
-  hasRole(role) { 
-    return this.currentUser?.role === role; 
-  }
-  
-  hasAnyRole(roles) { 
-    return this.currentUser && roles.includes(this.currentUser.role); 
-  }
-  
-  showToast(message, type = "info") {
-    const container = document.getElementById("toast-container");
-    if (!container) return;
-    
-    const toastId = `toast-${Date.now()}`;
-    const toastHtml = `
-      <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="d-flex">
-          <div class="toast-body">${this.sanitizeHtml(message)}</div>
-          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-      </div>
-    `;
-    
-    container.insertAdjacentHTML('beforeend', toastHtml);
-    const toastElement = document.getElementById(toastId);
-    const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
-    toast.show();
-    
-    toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
+
+  hasRole(role) {
+    return this.isAuthenticated() && this.currentUser.role === role;
   }
 
-  showSuccess(message) { 
-    this.showToast(message, "success"); 
+  hasAnyRole(roles) {
+    return this.isAuthenticated() && roles.includes(this.currentUser.role);
   }
   
-  showError(message) { 
-    this.showToast(message, "danger"); 
+  showToast(message, type = 'info') {
+      const toastContainer = document.getElementById('toast-container');
+      const toastId = `toast-${Date.now()}`;
+      const toastHTML = `
+          <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+              <div class="d-flex">
+                  <div class="toast-body">${this.sanitizeHtml(message)}</div>
+                  <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+              </div>
+          </div>
+      `;
+      toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+      const toastElement = document.getElementById(toastId);
+      const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+      toast.show();
+      toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
   }
+
+  showSuccess(message) { this.showToast(message, 'success'); }
+  showError(message) { this.showToast(message, 'danger'); }
   
   sanitizeHtml(str) {
-    if (str === null || typeof str === 'undefined') return "";
-    const temp = document.createElement('div');
-    temp.textContent = String(str);
-    return temp.innerHTML;
+      const temp = document.createElement('div');
+      temp.textContent = str;
+      return temp.innerHTML;
   }
   
   getStatusBadgeClass(status) {
@@ -210,52 +151,25 @@ class App {
       draft: "bg-secondary",
       approved: "bg-success",
       pending: "bg-warning text-dark",
-      pending_submission: "bg-warning text-dark",
-      pending_evaluation: "bg-info text-dark",
     };
     return statusClasses[status] || "bg-light text-dark";
   }
-
-  getRoleBadgeClass(role) {
-    const roleClasses = {
-      developer: "bg-dark",
-      admin: "bg-danger",
-      evaluator: "bg-info",
-      worker: "bg-secondary"
-    };
-    return roleClasses[role] || "bg-light text-dark";
-  }
-
+  
   formatDate(timestamp, withTime = false) {
     if (!timestamp) return "-";
-    
-    let date;
-    if (timestamp.toDate) {
-      date = timestamp.toDate();
-    } else if (timestamp instanceof Date) {
-      date = timestamp;
-    } else {
-      date = new Date(timestamp);
-    }
-    
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     if (isNaN(date)) return "-";
-    
-    const locale = this.i18n.lang === 'ja' ? 'ja-JP' : 
-                   this.i18n.lang === 'vi' ? 'vi-VN' : 'en-US';
-    
-    const options = { 
-      year: 'numeric', 
-      month: '2-digit', 
-      day: '2-digit' 
-    };
-    
+    const locale = this.i18n.lang === 'ja' ? 'ja-JP' : 'en-US';
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
     if (withTime) {
-      options.hour = '2-digit';
-      options.minute = '2-digit';
+        options.hour = '2-digit';
+        options.minute = '2-digit';
     }
-    
     return new Intl.DateTimeFormat(locale, options).format(date);
   }
 }
 
-export default App;
+window.addEventListener('load', () => {
+  window.app = new App();
+  window.app.init();
+});
