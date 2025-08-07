@@ -56,7 +56,6 @@ class App {
       console.error("❌ Failed to initialize application:", error);
       this.showError("アプリケーションの起動中に重大なエラーが発生しました。");
     } finally {
-      // ★ 修正点: エラーの有無に関わらず、最終的に必ずアプリを表示
       this.showApp();
     }
   }
@@ -70,8 +69,6 @@ class App {
     document.getElementById('loading-screen').classList.add('d-none');
     document.getElementById('app').classList.remove('d-none');
   }
-  
-  // ... 他のメソッドは変更なし
   
   async login(email, password) {
     await this.auth.login(email, password);
@@ -169,14 +166,5 @@ class App {
   }
 }
 
-// ★ 修正点 1: Appクラスをデフォルトエクスポートする
+// ★ 修正点: Appクラスをデフォルトエクスポートする
 export default App;
-
-// ★ 修正点 2: 自己初期化コードを削除。
-// 初期化はindex.htmlなどの読み込み元で行う。
-/*
-window.addEventListener('load', () => {
-  window.app = new App();
-  window.app.init();
-});
-*/
