@@ -10,8 +10,10 @@ class App {
     this.currentUser = null;
     this.currentPage = null;
     this.i18n = new I18n();
+    // ★★★ 修正点 1: Authモジュールのみ先にインスタンス化 ★★★
     this.auth = new Auth(this);
-    this.api = new API(this);
+    // APIモジュールはAuthの初期化完了後に生成するため、ここではnullに設定
+    this.api = null; 
     this.router = new Router(this);
     this.header = new HeaderComponent(this);
     this.sidebar = new SidebarComponent(this);
@@ -19,32 +21,35 @@ class App {
 
   async init() {
     console.log("Starting application initialization...");
-    
-    // 強制的にローディング画面を表示（初期化中）
     this.showLoadingScreen();
     
     try {
-      // Step 1: I18n初期化
+      // Step 1: I18nの初期化
       console.log("Step 1: Initializing I18n...");
       await this.i18n.init();
       console.log("✓ I18n initialized");
       
-      // Step 2: 認証初期化（最も重要）
-      console.log("Step 2: Initializing Auth...");
+      // Step 2: 認証モジュールの初期化 (Firebase Appの初期化もここに含まれる)
+      console.log("Step 2: Initializing Auth and Firebase App...");
       await this.auth.init();
-      console.log("✓ Auth initialized");
+      console.log("✓ Auth and Firebase App initialized");
+
+      // ★★★ 修正点 2: Authの完了を待ってからAPIモジュールをインスタンス化 ★★★
+      console.log("Step 3: Initializing API...");
+      this.api = new API(this); // Authが持つ初期化済みインスタンスを使ってAPIを生成
+      console.log("✓ API initialized");
       
-      // Step 3: イベントリスナー設定
-      console.log("Step 3: Setting up event listeners...");
+      // Step 4: イベントリスナーの設定
+      console.log("Step 4: Setting up event listeners...");
       this.setupEventListeners();
       console.log("✓ Event listeners setup");
       
-      // Step 4: アプリ表示（ロード画面を非表示）
-      console.log("Step 4: Showing app...");
+      // Step 5: アプリケーションUIの表示
+      console.log("Step 5: Showing app...");
       this.showApp();
       
-      // Step 5: 初期ルーティング
-      console.log("Step 5: Initial routing...");
+      // Step 6: ルーターによる初期ページの表示
+      console.log("Step 6: Initial routing...");
       await this.router.route();
       console.log("✓ Router initialized");
       
@@ -52,27 +57,22 @@ class App {
       
     } catch (error) {
       console.error("❌ Failed to initialize application:", error);
-      
-      // エラーが発生してもアプリを表示
       this.showApp();
-      
-      // エラーメッセージを表示
       setTimeout(() => {
         this.showError("アプリケーションの起動中にエラーが発生しました。ページを再読み込みしてください。");
       }, 500);
       
-      // 緊急時のルーティング
+      // エラー発生時のフォールバックルーティング
       try {
-        if (this.isAuthenticated()) {
-          this.navigate("#/dashboard");
-        } else {
-          this.navigate("#/login");
-        }
+        this.navigate(this.isAuthenticated() ? "#/dashboard" : "#/login");
       } catch (routingError) {
         console.error("Emergency routing failed:", routingError);
       }
     }
   }
+
+  // (showLoadingScreen, setupEventListeners などの他のメソッドは変更なしのため省略)
+  // ... 以下、既存のままのメソッド ...
 
   showLoadingScreen() {
     const loadingScreen = document.getElementById("loading-screen");
@@ -87,7 +87,6 @@ class App {
   }
 
   setupEventListeners() {
-    // ハンバーガーメニューのイベントリスナーを修正
     document.addEventListener("click", e => {
       const sidebarToggler = e.target.closest('#sidebarToggler');
       const backdrop = e.target.closest('#sidebar-backdrop');
@@ -114,7 +113,6 @@ class App {
 
     window.addEventListener("popstate", () => this.router.route());
     
-    // ウィンドウリサイズ時のレスポンシブ対応
     window.addEventListener('resize', () => {
       if (window.innerWidth >= 992) {
         this.sidebar.close();
