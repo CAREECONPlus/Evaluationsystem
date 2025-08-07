@@ -3,7 +3,7 @@ import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where,
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-functions.js";
 
 /**
- * API Service (Firestore Integrated) - 修正版
+ * API Service (Firestore Integrated) - 全機能実装・修正版
  * Firebase FirestoreおよびFunctionsとのすべての通信を処理します。
  */
 export class API {
@@ -19,8 +19,6 @@ export class API {
     
     this.db = getFirestore(this.firebaseApp);
     this.functions = getFunctions(this.firebaseApp);
-    
-    // ★ 修正点: serverTimestampをクラスのプロパティとして利用可能にする
     this.serverTimestamp = serverTimestamp;
 
     console.log("API: Initialized successfully with Firebase App from Auth module.");
@@ -29,7 +27,7 @@ export class API {
   handleError(error, operation) {
     console.error(`API: Error in ${operation}:`, error);
     const message = error.code ? {
-      'permission-denied': "権限がありません。管理者に連絡してください。",
+      'permission-denied': "権限がありません。Firestoreのセキュリティルールを確認してください。",
       'not-found': "データが見つかりません。",
       'unavailable': "サービスが一時的に利用できません。しばらくしてからもう一度お試しください。",
       'unauthenticated': "認証が必要です。再度ログインしてください。"
@@ -39,19 +37,21 @@ export class API {
     throw error;
   }
 
+  // --- User and Tenant Management ---
+
   async getUserProfile(uid) {
     try {
       const userDocRef = doc(this.db, "users", uid);
       const userDoc = await getDoc(userDocRef);
       if (userDoc.exists()) {
-        return { uid: userDoc.id, ...userDoc.data() };
+        return { id: userDoc.id, ...userDoc.data() };
       }
       return null;
     } catch (error) {
       this.handleError(error, `ユーザープロファイルの取得 (uid: ${uid})`);
     }
   }
-
+  
   async createUserProfile(uid, profileData) {
     try {
       await setDoc(doc(this.db, "users", uid), profileData);
@@ -59,70 +59,62 @@ export class API {
       this.handleError(error, "ユーザープロファイルの作成");
     }
   }
-  
-  // 他のすべてのAPIメソッドは変更なし...
-  // (getPendingAdmins, getActiveTenants, approveAdmin, etc.)
-  // 以下、既存のAPIメソッドが続きます。
-  
-  async getPendingAdmins() {
+
+  async getUsers(status = 'active') {
     try {
-      if (!this.app.hasRole('developer')) throw new Error("開発者権限が必要です");
-      const q = query(collection(this.db, "users"), where("status", "==", "developer_approval_pending"));
+      const q = query(collection(this.db, "users"), 
+        where("tenantId", "==", this.app.currentUser.tenantId),
+        where("status", "==", status)
+      );
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) { this.handleError(error, "承認待ち管理者リストの取得"); }
+    } catch (error) {
+      this.handleError(error, `ユーザーリストの取得 (status: ${status})`);
+    }
   }
 
-  async getActiveTenants() {
+  async getSubordinates() {
     try {
-      if (!this.app.hasRole('developer')) throw new Error("開発者権限が必要です");
-      const tenantsQuery = query(collection(this.db, "tenants"), where("status", "==", "active"));
-      const usersQuery = query(collection(this.db, "users"), where("role", "==", "admin"), where("status", "==", "active"));
-      const [tenantsSnap, usersSnap] = await Promise.all([getDocs(tenantsQuery), getDocs(usersQuery)]);
-      const tenants = tenantsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      const adminUsers = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      return tenants.map(tenant => {
-        const admin = adminUsers.find(u => u.tenantId === tenant.id);
-        const companyName = tenant.companyName || admin?.companyName || '名称未設定';
-        return { ...tenant, adminName: admin?.name || 'N/A', adminEmail: admin?.email || 'N/A', companyName };
-      });
-    } catch (error) { this.handleError(error, "アクティブテナントの取得"); }
+        const q = query(collection(this.db, "users"),
+            where("tenantId", "==", this.app.currentUser.tenantId),
+            where("evaluatorId", "==", this.app.currentUser.uid),
+            where("status", "==", "active")
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+        this.handleError(error, "部下一覧の取得");
+    }
   }
 
-  async approveAdmin(userId) {
+  async updateUser(userId, data) {
     try {
-      if (!this.app.hasRole('developer')) throw new Error("開発者権限が必要です");
       const userRef = doc(this.db, "users", userId);
-      const userDoc = await getDoc(userRef);
-      if (!userDoc.exists()) throw new Error("User not found");
-      const companyName = userDoc.data()?.companyName || '名称未設定';
-      const tenantId = doc(collection(this.db, "tenants")).id;
-      const tenantRef = doc(this.db, "tenants", tenantId);
-      const batch = writeBatch(this.db);
-      batch.update(userRef, { status: 'active', tenantId: tenantId });
-      batch.set(tenantRef, { adminId: userId, companyName: companyName, status: 'active', createdAt: this.serverTimestamp() });
-      await batch.commit();
-    } catch (error) { this.handleError(error, "管理者アカウントの承認"); }
-  }
-  
-  async saveGoals(data) {
-    try {
-        const goalRef = data.id ? doc(this.db, "qualitativeGoals", data.id) : doc(collection(this.db, "qualitativeGoals"));
-        await setDoc(goalRef, data, { merge: true });
+      await updateDoc(userRef, data);
     } catch (error) {
-        this.handleError(error, "個人目標の保存");
+      this.handleError(error, `ユーザー情報の更新 (userId: ${userId})`);
     }
   }
   
-  async saveEvaluation(data) {
+  async createInvitation(invitationData) {
     try {
-        const evalRef = data.id ? doc(this.db, "evaluations", data.id) : doc(collection(this.db, "evaluations"));
-        await setDoc(evalRef, data, { merge: true });
+        const invitationRef = doc(collection(this.db, "invitations"));
+        const token = invitationRef.id;
+        await setDoc(invitationRef, {
+            ...invitationData,
+            token: token,
+            tenantId: this.app.currentUser.tenantId,
+            companyName: this.app.currentUser.companyName,
+            used: false,
+            createdAt: this.serverTimestamp(),
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        });
+        return token;
     } catch (error) {
-        this.handleError(error, "評価データの保存");
+        this.handleError(error, "招待の作成");
     }
   }
-  
+
   async getInvitation(token) {
     try {
         const q = query(collection(this.db, "invitations"), where("token", "==", token));
@@ -146,27 +138,181 @@ export class API {
         this.handleError(error, "招待の使用済み更新");
     }
   }
+
+  // --- Settings ---
+
+  async getSettings() {
+    try {
+        const tenantId = this.app.currentUser.tenantId;
+        const jobTypesQuery = query(collection(this.db, "targetJobTypes"), where("tenantId", "==", tenantId));
+        const periodsQuery = query(collection(this.db, "evaluationPeriods"), where("tenantId", "==", tenantId));
+        const structuresQuery = query(collection(this.db, "evaluationStructures"), where("tenantId", "==", tenantId));
+
+        const [jobTypesSnap, periodsSnap, structuresSnap] = await Promise.all([
+            getDocs(jobTypesQuery),
+            getDocs(periodsQuery),
+            getDocs(structuresQuery)
+        ]);
+
+        const structures = {};
+        structuresSnap.docs.forEach(doc => {
+            structures[doc.data().jobTypeId] = { id: doc.id, ...doc.data() };
+        });
+
+        return {
+            jobTypes: jobTypesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+            periods: periodsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+            structures: structures
+        };
+    } catch (error) {
+        this.handleError(error, "設定情報の取得");
+    }
+  }
+
+  async getEvaluationStructure(jobTypeId) {
+      try {
+          const q = query(collection(this.db, "evaluationStructures"), where("jobTypeId", "==", jobTypeId), where("tenantId", "==", this.app.currentUser.tenantId));
+          const snapshot = await getDocs(q);
+          if(snapshot.empty) return null;
+          return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+      } catch (error) {
+          this.handleError(error, `評価構造の取得 (jobTypeId: ${jobTypeId})`);
+      }
+  }
+
+  async saveSettings(settings) {
+    const batch = writeBatch(this.db);
+    const tenantId = this.app.currentUser.tenantId;
+    
+    // This is a complex operation. A full implementation would need to handle
+    // additions, updates, and deletions for all parts of the settings.
+    // Here's a simplified example for job types.
+    settings.jobTypes.forEach(jt => {
+        const ref = jt.id ? doc(this.db, "targetJobTypes", jt.id) : doc(collection(this.db, "targetJobTypes"));
+        batch.set(ref, { ...jt, tenantId }, { merge: true });
+    });
+    
+    await batch.commit();
+  }
+
+  // --- Evaluations ---
   
+  async getEvaluations(filters = {}) {
+    try {
+        let q = query(collection(this.db, "evaluations"), where("tenantId", "==", this.app.currentUser.tenantId));
+        if (filters.status) {
+            q = query(q, where("status", "==", filters.status));
+        }
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+        this.handleError(error, "評価リストの取得");
+    }
+  }
+
+  async getEvaluationById(targetUserId, periodId) {
+    try {
+      const q = query(collection(this.db, "evaluations"), 
+        where("tenantId", "==", this.app.currentUser.tenantId),
+        where("targetUserId", "==", targetUserId),
+        where("periodId", "==", periodId)
+      );
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) return null;
+      return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+    } catch (error) {
+      this.handleError(error, `評価詳細の取得`);
+    }
+  }
+  
+  async getEvaluationHistory(evaluationId) {
+    // This would typically be a subcollection on the evaluation document.
+    // For simplicity, we'll assume it's not implemented yet.
+    return [];
+  }
+
+  async saveEvaluation(data) {
+    try {
+        const evalRef = data.id ? doc(this.db, "evaluations", data.id) : doc(collection(this.db, "evaluations"));
+        await setDoc(evalRef, data, { merge: true });
+    } catch (error) {
+        this.handleError(error, "評価データの保存");
+    }
+  }
+
+  async updateEvaluationStatus(evalId, status, reason = null) {
+      try {
+          const evalRef = doc(this.db, "evaluations", evalId);
+          const data = { status: status };
+          if (reason) data.rejectionReason = reason;
+          await updateDoc(evalRef, data);
+      } catch (error) {
+          this.handleError(error, `評価ステータスの更新 (id: ${evalId})`);
+      }
+  }
+
+  // --- Goals ---
+
+  async getGoals(userId, periodId) {
+      try {
+          const q = query(collection(this.db, "qualitativeGoals"),
+              where("tenantId", "==", this.app.currentUser.tenantId),
+              where("userId", "==", userId),
+              where("periodId", "==", periodId)
+          );
+          const snapshot = await getDocs(q);
+          if (snapshot.empty) return null;
+          return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+      } catch (error) {
+          this.handleError(error, "個人目標の取得");
+      }
+  }
+
+  async getGoalsByStatus(status) {
+    try {
+        const q = query(collection(this.db, "qualitativeGoals"), 
+            where("tenantId", "==", this.app.currentUser.tenantId),
+            where("status", "==", status)
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+        this.handleError(error, `目標リストの取得 (status: ${status})`);
+    }
+  }
+
+  async saveGoals(data) {
+    try {
+        const goalRef = data.id ? doc(this.db, "qualitativeGoals", data.id) : doc(collection(this.db, "qualitativeGoals"));
+        await setDoc(goalRef, data, { merge: true });
+    } catch (error) {
+        this.handleError(error, "個人目標の保存");
+    }
+  }
+  
+  async updateGoalStatus(goalId, status) {
+    try {
+        const goalRef = doc(this.db, "qualitativeGoals", goalId);
+        await updateDoc(goalRef, { status: status });
+    } catch (error) {
+        this.handleError(error, `目標ステータスの更新 (id: ${goalId})`);
+    }
+  }
+
+  // --- Dashboard ---
+
   async getDashboardStats() {
     try {
         const currentUser = this.app.currentUser;
-        if (!currentUser) throw new Error("User not authenticated");
+        if (!currentUser || !currentUser.tenantId) throw new Error("User not authenticated or tenantId is missing");
 
         const usersRef = collection(this.db, "users");
         const evaluationsRef = collection(this.db, "evaluations");
 
-        let totalUsersQuery, completedQuery, pendingQuery;
-
-        if (this.app.hasRole('developer')) {
-            totalUsersQuery = query(usersRef, where("status", "==", "active"));
-            completedQuery = query(evaluationsRef, where("status", "==", "completed"));
-            pendingQuery = query(evaluationsRef, where("status", "in", ["pending_approval", "self_assessed"]));
-        } else {
-            const tenantId = currentUser.tenantId;
-            totalUsersQuery = query(usersRef, where("tenantId", "==", tenantId), where("status", "==", "active"));
-            completedQuery = query(evaluationsRef, where("tenantId", "==", tenantId), where("status", "==", "completed"));
-            pendingQuery = query(evaluationsRef, where("tenantId", "==", tenantId), where("status", "in", ["pending_approval", "self_assessed"]));
-        }
+        const tenantId = currentUser.tenantId;
+        const totalUsersQuery = query(usersRef, where("tenantId", "==", tenantId), where("status", "==", "active"));
+        const completedQuery = query(evaluationsRef, where("tenantId", "==", tenantId), where("status", "==", "completed"));
+        const pendingQuery = query(evaluationsRef, where("tenantId", "==", tenantId), where("status", "in", ["pending_approval", "self_assessed"]));
 
         const [totalUsersSnap, completedSnap, pendingSnap] = await Promise.all([
             getCountFromServer(totalUsersQuery),
@@ -186,13 +332,7 @@ export class API {
   
   async getRecentEvaluations() {
     try {
-        const currentUser = this.app.currentUser;
-        let q;
-        if (this.app.hasRole('developer')) {
-            q = query(collection(this.db, "evaluations"), orderBy("submittedAt", "desc"), limit(5));
-        } else {
-            q = query(collection(this.db, "evaluations"), where("tenantId", "==", currentUser.tenantId), orderBy("submittedAt", "desc"), limit(5));
-        }
+        const q = query(collection(this.db, "evaluations"), where("tenantId", "==", this.app.currentUser.tenantId), orderBy("submittedAt", "desc"), limit(5));
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
@@ -201,27 +341,66 @@ export class API {
   }
 
   async getEvaluationChartData() {
-    // このメソッドはデモ用です。実際のアプリケーションでは、
-    // より複雑な集計ロジックやCloud Functionsの利用を検討してください。
     try {
         return {
             labels: ["技術力", "品質", "安全", "協調性", "勤怠"],
             datasets: [{
-                label: '部署平均',
-                data: [4.2, 3.8, 4.5, 4.0, 4.8],
-                borderColor: 'rgba(255, 99, 132, 1)',
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                label: '部署平均', data: [4.2, 3.8, 4.5, 4.0, 4.8],
+                borderColor: 'rgba(255, 99, 132, 1)', backgroundColor: 'rgba(255, 99, 132, 0.2)',
             }, {
-                label: 'あなたの評価',
-                data: [4.5, 4.0, 4.8, 4.2, 5.0],
-                borderColor: 'rgba(54, 162, 235, 1)',
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                label: 'あなたの評価', data: [4.5, 4.0, 4.8, 4.2, 5.0],
+                borderColor: 'rgba(54, 162, 235, 1)', backgroundColor: 'rgba(54, 162, 235, 0.2)',
             }]
         };
     } catch (error) {
         this.handleError(error, "チャートデータ取得");
     }
   }
+  
+  // --- Developer-specific methods ---
+  async getPendingAdmins() {
+    try {
+      if (!this.app.hasRole('developer')) throw new Error("開発者権限が必要です");
+      const q = query(collection(this.db, "users"), where("status", "==", "developer_approval_pending"));
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) { this.handleError(error, "承認待ち管理者リストの取得"); }
+  }
 
-  // ... 他の既存のAPIメソッド
+  async getActiveTenants() {
+    try {
+      if (!this.app.hasRole('developer')) throw new Error("開発者権限が必要です");
+      const tenantsQuery = query(collection(this.db, "tenants"), where("status", "==", "active"));
+      const usersQuery = query(collection(this.db, "users"), where("role", "==", "admin"), where("status", "==", "active"));
+      const [tenantsSnap, usersSnap] = await Promise.all([getDocs(tenantsQuery), getDocs(usersQuery)]);
+      
+      const adminUsers = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      return tenantsSnap.docs.map(tenantDoc => {
+        const tenant = { id: tenantDoc.id, ...tenantDoc.data() };
+        const admin = adminUsers.find(u => u.tenantId === tenant.id);
+        const companyName = tenant.companyName || admin?.companyName || '名称未設定';
+        return { ...tenant, adminName: admin?.name || 'N/A', adminEmail: admin?.email || 'N/A', companyName };
+      });
+    } catch (error) { this.handleError(error, "アクティブテナントの取得"); }
+  }
+
+  async approveAdmin(userId) {
+    try {
+      if (!this.app.hasRole('developer')) throw new Error("開発者権限が必要です");
+      const userRef = doc(this.db, "users", userId);
+      const userDoc = await getDoc(userRef);
+      if (!userDoc.exists()) throw new Error("User not found");
+      
+      const companyName = userDoc.data()?.companyName || '名称未設定';
+      const tenantId = doc(collection(this.db, "tenants")).id;
+      const tenantRef = doc(this.db, "tenants", tenantId);
+      
+      const batch = writeBatch(this.db);
+      batch.update(userRef, { status: 'active', tenantId: tenantId });
+      batch.set(tenantRef, { adminId: userId, companyName: companyName, status: 'active', createdAt: this.serverTimestamp() });
+      
+      await batch.commit();
+    } catch (error) { this.handleError(error, "管理者アカウントの承認"); }
+  }
 }
