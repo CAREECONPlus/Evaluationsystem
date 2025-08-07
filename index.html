@@ -5,38 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>建設業従業員評価管理システム</title>
     <link rel="icon" href="favicon.ico" type="image/x-icon">
+    
+    <!-- External CSS Libraries -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    
+    <!-- Custom Stylesheet -->
     <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+    <!-- Loading Screen -->
     <div id="loading-screen" class="d-flex justify-content-center align-items-center vh-100">
         <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
             <span class="visually-hidden">Loading...</span>
         </div>
     </div>
 
+    <!-- Main Application Container -->
     <div id="app" class="d-none">
         <div id="header-container"></div>
         <div class="main-layout">
             <div id="sidebar-container"></div>
-            <main id="content"></main>
+            <main id="content" class="content-area"></main>
         </div>
         <div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index: 1055;"></div>
     </div>
 
+    <!-- Sidebar Backdrop for mobile -->
     <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
 
+    <!-- External JS Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
 
+    <!-- ★★★ 修正点: アプリケーションのエントリーポイント ★★★ -->
+    <!-- 'type="module"' を指定し、app.jsからAppクラスをインポートして初期化する -->
     <script type="module">
-        // ★★★ 修正点: Firebaseの初期化コードをすべて削除 ★★★
-        // 初期化はAuthモジュールが責任を持つため、ここではAppをインポートして起動するだけ。
-        import App from './app.js';
-        
-        window.app = new App();
-        window.app.init();
+      import App from './app.js';
+
+      // Appのインスタンスを作成し、グローバルでアクセス可能にする
+      const app = new App();
+      window.app = app;
+      
+      // アプリケーションを初期化
+      app.init();
     </script>
 </body>
 </html>
