@@ -624,7 +624,7 @@ html, body {
   }
 }
 
-/* --- ★★★ ユーザー要望による追加スタイル ★★★ --- */
+/* --- ★★★ ユーザー要望による追加スタイル (修正版) ★★★ --- */
 #loading-screen,
 #header-container,
 #sidebar-container {
@@ -632,7 +632,7 @@ html, body {
 }
 
 .main-layout {
-    margin-top: 0px !important;
+    margin-top: 0px !important; /* マージントップ：0px！重要。 */
 }
 
 #content {
