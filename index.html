@@ -31,30 +31,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
-        import { getAuth } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
-        import { getFunctions } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-functions.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk",
-            authDomain: "hyouka-db.firebaseapp.com",
-            projectId: "hyouka-db",
-            storageBucket: "hyouka-db.appspot.com",
-            messagingSenderId: "861016804589",
-            appId: "1:861016804589:web:d911d516d6c79aa73690e4"
-        };
-
-        const firebaseApp = initializeApp(firebaseConfig);
-        window.firebase = {
-            app: firebaseApp,
-            auth: getAuth(firebaseApp),
-            db: getFirestore(firebaseApp),
-            functions: getFunctions(firebaseApp)
-        };
-
-        // ★★★ 修正点: モジュールの読み込みパスを './' から始まる相対パスに統一します ★★★
+        // ★★★ 修正点: Firebaseの初期化コードをすべて削除 ★★★
+        // 初期化はAuthモジュールが責任を持つため、ここではAppをインポートして起動するだけ。
         import App from './app.js';
+        
         window.app = new App();
         window.app.init();
     </script>
