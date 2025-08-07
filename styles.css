@@ -623,3 +623,18 @@ html, body {
     border: 1px solid #dee2e6;
   }
 }
+
+/* --- ★★★ ユーザー要望による追加スタイル ★★★ --- */
+#loading-screen,
+#header-container,
+#sidebar-container {
+    display: none !important;
+}
+
+.main-layout {
+    margin-top: 0px !important;
+}
+
+#content {
+    padding: 0px !important;
+}
