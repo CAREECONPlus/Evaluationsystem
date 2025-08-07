@@ -11,7 +11,7 @@ class App {
     this.currentPage = null;
     this.i18n = new I18n(this);
     this.auth = new Auth(this);
-    this.api = null; // APIはAuthの初期化後にインスタンス化
+    this.api = null;
     this.router = new Router(this);
     this.header = new HeaderComponent(this);
     this.sidebar = new SidebarComponent(this);
@@ -22,31 +22,26 @@ class App {
     this.showLoadingScreen();
     
     try {
-      // Step 1: I18nの初期化
       console.log("Step 1: Initializing I18n...");
       await this.i18n.init();
       console.log("✓ I18n initialized");
       
-      // Step 2: 認証モジュールの初期化 (Firebase Appの初期化もここに含まれる)
-      console.log("Step 2: Initializing Auth and Firebase App...");
+      console.log("Step 2: Initializing Auth module...");
       await this.auth.init();
-      console.log("✓ Auth and Firebase App initialized");
+      console.log("✓ Auth module initialized");
 
-      // Step 3: APIモジュールのインスタンス化 (Auth完了後)
       console.log("Step 3: Initializing API...");
       this.api = new API(this);
       console.log("✓ API initialized");
 
-      // Step 4: 認証状態の監視を開始
-      console.log("Step 4: Setting up auth state listener...");
-      this.auth.listenForAuthChanges();
-      console.log("✓ Auth state listener is active");
+      // ★ 修正点: 認証状態の監視を開始し、完了を待つ
+      console.log("Step 4: Setting up and awaiting auth state listener...");
+      await this.auth.listenForAuthChanges();
+      console.log("✓ Auth state listener has completed its initial check.");
       
-      // Step 5: 確実にアプリを表示
       console.log("Step 5: Showing app...");
       this.showApp();
       
-      // Step 6: ルーティング（showApp()の後に実行）
       console.log("Step 6: Initial routing...");
       await this.router.route();
       
@@ -72,15 +67,12 @@ class App {
   
   async login(email, password) {
     await this.auth.login(email, password);
-    this.showSuccess(this.i18n.t('messages.login_success', { userName: this.currentUser.name }));
-    this.navigate(this.currentUser.role === 'developer' ? '#/developer' : '#/dashboard');
+    // ログイン後のリダイレクトはlistenForAuthChangesとrouterに任せる
   }
 
   async logout() {
     await this.auth.logout();
-    this.currentUser = null;
-    this.navigate('#/login');
-    this.showSuccess(this.i18n.t('messages.logout_success'));
+    // ログアウト後のリダイレクトはlistenForAuthChangesとrouterに任せる
   }
   
   navigate(path) {
@@ -111,6 +103,7 @@ class App {
   
   showToast(message, type = 'info') {
       const toastContainer = document.getElementById('toast-container');
+      if (!toastContainer) return;
       const toastId = `toast-${Date.now()}`;
       const toastHTML = `
           <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
@@ -166,5 +159,4 @@ class App {
   }
 }
 
-// ★ 修正点: Appクラスをデフォルトエクスポートする
 export default App;
