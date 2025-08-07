@@ -169,7 +169,14 @@ class App {
   }
 }
 
+// ★ 修正点 1: Appクラスをデフォルトエクスポートする
+export default App;
+
+// ★ 修正点 2: 自己初期化コードを削除。
+// 初期化はindex.htmlなどの読み込み元で行う。
+/*
 window.addEventListener('load', () => {
   window.app = new App();
   window.app.init();
 });
+*/
