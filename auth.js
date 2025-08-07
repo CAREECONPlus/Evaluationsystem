@@ -1,24 +1,41 @@
 // careeconplus/evaluationsystem/Evaluationsystem-main/auth.js
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
 import {
+    getAuth,
     onAuthStateChanged,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     signOut,
     sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
-import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
 /**
- * Authentication Service (Firebase Integrated)
+ * Authentication Service (Firebase Integrated) - 修正版
  * 認証サービス (Firebase連携版)
  */
 export class Auth {
     constructor(app) {
         this.app = app;
-        this.auth = window.firebase.auth;
-        this.db = window.firebase.db;
-        this.authStateInitialized = false; // 初期化が完了したかどうかのフラグ
+
+        // Firebase設定をここに集約
+        const firebaseConfig = {
+            apiKey: "AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk",
+            authDomain: "hyouka-db.firebaseapp.com",
+            projectId: "hyouka-db",
+            storageBucket: "hyouka-db.appspot.com",
+            messagingSenderId: "861016804589",
+            appId: "1:861016804589:web:d911d516d6c79aa73690e4"
+        };
+
+        // ★★★ 修正点 1: 自身のクラス内でFirebase Appを初期化・保持 ★★★
+        // window.firebaseに依存せず、常に有効なインスタンスを確保する
+        this.firebaseApp = initializeApp(firebaseConfig);
+        this.auth = getAuth(this.firebaseApp);
+        this.db = getFirestore(this.firebaseApp);
+        
+        this.authStateInitialized = false;
     }
 
     /**
