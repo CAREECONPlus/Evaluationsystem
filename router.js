@@ -52,16 +52,31 @@ export class Router {
             const path = window.location.hash.slice(1).split('?')[0] || "/login";
             const routeConfig = this.routes[path] || this.routes['/login'];
 
-            if (routeConfig.auth && !this.app.isAuthenticated()) {
+            // ★★★ 修正点: ログイン状態に応じたリダイレクト処理 ★★★
+            const isAuthenticated = this.app.isAuthenticated();
+            
+            // ケース1: 認証が必要なページに未認証でアクセス
+            if (routeConfig.auth && !isAuthenticated) {
+                console.log("Router: Auth required, redirecting to /login");
                 this.app.navigate("#/login");
-                return;
+                return; // ここで処理を終了
             }
+
+            // ケース2: 公開ページに認証済みでアクセス
+            if (!routeConfig.auth && isAuthenticated) {
+                console.log("Router: Already authenticated, redirecting to /dashboard");
+                this.app.navigate("#/dashboard");
+                return; // ここで処理を終了
+            }
+            
+            // ケース3: 権限が不足している
             if (routeConfig.roles && !this.app.hasAnyRole(routeConfig.roles)) {
                 this.app.showError(this.app.i18n.t('errors.access_denied'));
                 this.app.navigate("#/dashboard");
-                return;
+                return; // ここで処理を終了
             }
 
+            // ページの描画処理
             const PageClass = routeConfig.component;
             this.currentPageInstance = new PageClass(this.app);
             
@@ -78,7 +93,6 @@ export class Router {
             console.error("Router: Fatal error in route():", error);
             this.renderErrorPage(error);
         } finally {
-            // ★ 修正点: ページ遷移完了後、確実にローディングを解除
             this.isRouting = false;
             this.app.showApp();
         }
