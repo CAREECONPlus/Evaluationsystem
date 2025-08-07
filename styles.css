@@ -444,9 +444,20 @@ html, body {
 }
 
 /* --- ローディング --- */
+#loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+}
+
 .spinner-border {
-  width: 2rem;
-  height: 2rem;
+  width: 3rem;
+  height: 3rem;
 }
 
 .spinner-border-sm {
@@ -622,19 +633,4 @@ html, body {
     box-shadow: none;
     border: 1px solid #dee2e6;
   }
-}
-
-/* --- ★★★ ユーザー要望による追加スタイル (修正版) ★★★ --- */
-#loading-screen,
-#header-container,
-#sidebar-container {
-    display: none !important;
-}
-
-.main-layout {
-    margin-top: 0px !important; /* マージントップ：0px！重要。 */
-}
-
-#content {
-    padding: 0px !important;
 }
