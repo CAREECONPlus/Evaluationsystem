@@ -34,7 +34,6 @@ class App {
       this.api = new API(this);
       console.log("✓ API initialized");
 
-      // ★ 修正点: 認証状態の監視を開始し、完了を待つ
       console.log("Step 4: Setting up and awaiting auth state listener...");
       await this.auth.listenForAuthChanges();
       console.log("✓ Auth state listener has completed its initial check.");
@@ -85,8 +84,23 @@ class App {
   
   updateUIForAuthState(user) {
     this.currentUser = user;
-    this.header.update();
-    this.sidebar.update();
+    
+    // ログイン状態に応じてヘッダーとサイドバーの表示を制御
+    if (user) {
+      // ログイン済みの場合
+      this.header.update();
+      this.sidebar.update();
+      // ログインページのクリーンアップ
+      const loginPageElements = document.querySelectorAll('.login-page');
+      loginPageElements.forEach(el => el.remove());
+    } else {
+      // 未ログインの場合
+      // ヘッダーとサイドバーをクリア
+      const headerContainer = document.getElementById('header-container');
+      const sidebarContainer = document.getElementById('sidebar-container');
+      if (headerContainer) headerContainer.innerHTML = '';
+      if (sidebarContainer) sidebarContainer.innerHTML = '';
+    }
   }
 
   isAuthenticated() {
@@ -143,6 +157,17 @@ class App {
       pending: "bg-warning text-dark",
     };
     return statusClasses[status] || "bg-light text-dark";
+  }
+
+  // 新規追加: ロールバッジクラス取得
+  getRoleBadgeClass(role) {
+    const roleClasses = {
+      developer: "bg-dark",
+      admin: "bg-primary", 
+      evaluator: "bg-info",
+      worker: "bg-secondary"
+    };
+    return roleClasses[role] || "bg-light text-dark";
   }
   
   formatDate(timestamp, withTime = false) {
