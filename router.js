@@ -1,4 +1,4 @@
-// Import all page components
+// router.js - 完全修正版
 import { LoginPage } from './pages/login.js';
 import { DashboardPage } from './pages/dashboard.js';
 import { UserManagementPage } from './pages/user-management.js';
@@ -12,10 +12,6 @@ import { DeveloperPage } from './pages/developer.js';
 import { RegisterAdminPage } from './pages/register-admin.js';
 import { RegisterPage } from './pages/register.js';
 
-/**
- * Router Service - 安定化版
- * ルーターサービス（SPA向けハッシュベース）
- */
 export class Router {
     constructor(app) {
         this.app = app;
@@ -45,42 +41,58 @@ export class Router {
         this.app.showLoadingScreen();
 
         try {
-            if (this.currentPageInstance && typeof this.currentPageInstance.cleanup === 'function') {
-                this.currentPageInstance.cleanup();
+            // 現在のページのクリーンアップ
+            if (this.currentPageInstance) {
+                if (typeof this.currentPageInstance.cleanup === 'function') {
+                    this.currentPageInstance.cleanup();
+                }
+                // ページインスタンスを完全に破棄
+                this.currentPageInstance = null;
             }
+
+            // 既存のログインページ要素を削除
+            const loginPageElements = document.querySelectorAll('.login-page');
+            loginPageElements.forEach(el => el.remove());
 
             const path = window.location.hash.slice(1).split('?')[0] || "/login";
             const routeConfig = this.routes[path] || this.routes['/login'];
 
-            // ★★★ 修正点: ログイン状態に応じたリダイレクト処理 ★★★
             const isAuthenticated = this.app.isAuthenticated();
             
-            // ケース1: 認証が必要なページに未認証でアクセス
+            // 認証が必要なページに未認証でアクセス
             if (routeConfig.auth && !isAuthenticated) {
                 console.log("Router: Auth required, redirecting to /login");
-                this.app.navigate("#/login");
-                return; // ここで処理を終了
+                window.location.hash = "#/login";
+                this.isRouting = false;
+                this.app.showApp();
+                return;
             }
 
-            // ケース2: 公開ページに認証済みでアクセス
+            // 公開ページに認証済みでアクセス
             if (!routeConfig.auth && isAuthenticated) {
                 console.log("Router: Already authenticated, redirecting to /dashboard");
-                this.app.navigate("#/dashboard");
-                return; // ここで処理を終了
+                window.location.hash = "#/dashboard";
+                this.isRouting = false;
+                this.app.showApp();
+                return;
             }
             
-            // ケース3: 権限が不足している
+            // 権限チェック
             if (routeConfig.roles && !this.app.hasAnyRole(routeConfig.roles)) {
                 this.app.showError(this.app.i18n.t('errors.access_denied'));
-                this.app.navigate("#/dashboard");
-                return; // ここで処理を終了
+                window.location.hash = "#/dashboard";
+                this.isRouting = false;
+                this.app.showApp();
+                return;
             }
 
-            // ページの描画処理
+            // ページの描画
             const PageClass = routeConfig.component;
             this.currentPageInstance = new PageClass(this.app);
             
             const contentContainer = document.getElementById("content");
+            // コンテンツを完全にクリア
+            contentContainer.innerHTML = '';
             contentContainer.innerHTML = await this.currentPageInstance.render();
             
             if (typeof this.currentPageInstance.init === 'function') {
