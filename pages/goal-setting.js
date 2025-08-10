@@ -8,7 +8,7 @@ export class GoalSettingPage {
     this.goals = [];
     this.periods = [];
     this.selectedPeriodId = null;
-    this.existingGoalDoc = null; // To store the loaded goal document from Firestore
+    this.existingGoalDoc = null;
     this.totalWeight = 0;
     this.maxGoals = 5;
   }
@@ -37,7 +37,7 @@ export class GoalSettingPage {
         <div class="card">
           <div class="card-body">
             <div class="mb-3">
-              <label for="period-select" class="form-label" data-i18n="goals.evaluation_period"></label>
+              <label for="period-select" class="form-label" data-i18n="goals.select_evaluation_period"></label>
               <select id="period-select" class="form-select"></select>
             </div>
             <hr>
@@ -64,18 +64,193 @@ export class GoalSettingPage {
     this.app.i18n.updateUI();
   }
   
-  // ... 他のメソッドは変更なし
+  async loadInitialData() {
+    try {
+      const settings = await this.app.api.getSettings();
+      this.periods = settings.periods;
+      this.renderPeriodSelect();
+    } catch (error) {
+      console.error("Error loading periods:", error);
+      this.app.showError("評価期間の読み込みに失敗しました");
+    }
+  }
+
+  renderPeriodSelect() {
+    const select = document.getElementById('period-select');
+    select.innerHTML = `
+      <option value="" data-i18n="common.select"></option>
+      ${this.periods.map(p => 
+        `<option value="${p.id}">${this.app.sanitizeHtml(p.name)}</option>`
+      ).join('')}
+    `;
+  }
+
+  setupEventListeners() {
+    document.getElementById('period-select').addEventListener('change', (e) => this.onPeriodChange(e));
+    document.getElementById('add-goal-btn').addEventListener('click', () => this.addGoal());
+    document.getElementById('submit-goals-btn').addEventListener('click', () => this.submitGoals());
+  }
+
+  async onPeriodChange(e) {
+    this.selectedPeriodId = e.target.value;
+    if (!this.selectedPeriodId) {
+      this.goals = [];
+      this.existingGoalDoc = null;
+      this.renderGoals();
+      return;
+    }
+
+    try {
+      const existingGoals = await this.app.api.getGoals(
+        this.app.currentUser.uid, 
+        this.selectedPeriodId
+      );
+      
+      if (existingGoals) {
+        this.existingGoalDoc = existingGoals;
+        this.goals = existingGoals.goals || [];
+        this.renderStatusDisplay(existingGoals.status);
+      } else {
+        this.goals = [];
+        this.existingGoalDoc = null;
+        this.renderStatusDisplay(null);
+      }
+      
+      this.renderGoals();
+      this.updateTotalWeight();
+    } catch (error) {
+      console.error("Error loading goals:", error);
+      this.app.showError("目標の読み込みに失敗しました");
+    }
+  }
+
+  renderStatusDisplay(status) {
+    const statusDisplay = document.getElementById('status-display');
+    if (!status) {
+      statusDisplay.innerHTML = '';
+      return;
+    }
+
+    const statusClass = this.app.getStatusBadgeClass(status);
+    statusDisplay.innerHTML = `
+      <div class="alert alert-info">
+        <span data-i18n="common.current_status"></span>: 
+        <span class="badge ${statusClass}" data-i18n="status.${status}"></span>
+      </div>
+    `;
+    this.app.i18n.updateUI(statusDisplay);
+  }
+
+  addGoal() {
+    if (this.goals.length >= this.maxGoals) {
+      this.app.showError(`最大${this.maxGoals}つまでの目標を設定できます`);
+      return;
+    }
+
+    this.goals.push({
+      text: '',
+      weight: 0
+    });
+    
+    this.renderGoals();
+  }
+
+  removeGoal(index) {
+    this.goals.splice(index, 1);
+    this.renderGoals();
+    this.updateTotalWeight();
+  }
+
+  renderGoals() {
+    const container = document.getElementById('goals-container');
+    
+    if (this.goals.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-4 text-muted">
+          <i class="fas fa-bullseye fa-3x mb-3"></i>
+          <p>目標を追加してください</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = this.goals.map((goal, index) => `
+      <div class="goal-item mb-3 p-3 border rounded">
+        <div class="row">
+          <div class="col-md-7">
+            <label class="form-label">目標 ${index + 1}</label>
+            <input type="text" class="form-control goal-text" 
+                   data-index="${index}" 
+                   value="${this.app.sanitizeHtml(goal.text)}"
+                   placeholder="目標を入力してください">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">ウェイト (%)</label>
+            <input type="number" class="form-control goal-weight" 
+                   data-index="${index}" 
+                   value="${goal.weight}"
+                   min="0" max="100" step="5">
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <button class="btn btn-outline-danger btn-sm w-100" 
+                    onclick="window.app.currentPage.removeGoal(${index})">
+              <i class="fas fa-trash"></i> 削除
+            </button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    // イベントリスナーを設定
+    container.querySelectorAll('.goal-text').forEach(input => {
+      input.addEventListener('change', (e) => {
+        const index = parseInt(e.target.dataset.index);
+        this.goals[index].text = e.target.value;
+      });
+    });
+
+    container.querySelectorAll('.goal-weight').forEach(input => {
+      input.addEventListener('change', (e) => {
+        const index = parseInt(e.target.dataset.index);
+        this.goals[index].weight = parseInt(e.target.value) || 0;
+        this.updateTotalWeight();
+      });
+    });
+  }
+
+  updateTotalWeight() {
+    this.totalWeight = this.goals.reduce((sum, goal) => sum + (goal.weight || 0), 0);
+    document.getElementById('total-weight').textContent = this.totalWeight;
+    
+    const submitBtn = document.getElementById('submit-goals-btn');
+    submitBtn.disabled = this.totalWeight !== 100 || this.goals.length === 0;
+    
+    // 合計が100%でない場合は警告を表示
+    if (this.totalWeight !== 100 && this.goals.length > 0) {
+      document.getElementById('total-weight').parentElement.classList.add('text-danger');
+    } else {
+      document.getElementById('total-weight').parentElement.classList.remove('text-danger');
+    }
+  }
 
   async submitGoals() {
     if (this.totalWeight !== 100) {
         this.app.showError("合計ウェイトは100%にしてください。");
         return;
     }
+    
+    // 空の目標がないかチェック
+    const emptyGoals = this.goals.filter(g => !g.text.trim());
+    if (emptyGoals.length > 0) {
+        this.app.showError("すべての目標にテキストを入力してください。");
+        return;
+    }
+    
     if (!confirm(this.app.i18n.t('goals.confirm_apply'))) return;
 
     const period = this.periods.find(p => p.id === this.selectedPeriodId);
     const data = {
-        id: this.existingGoalDoc?.id, // Pass ID for updates
+        id: this.existingGoalDoc?.id,
         userId: this.app.currentUser.uid,
         userName: this.app.currentUser.name,
         periodId: this.selectedPeriodId,
@@ -83,7 +258,6 @@ export class GoalSettingPage {
         goals: this.goals,
         status: 'pending_approval',
         tenantId: this.app.currentUser.tenantId,
-        // ★ 修正点: this.app.api経由で呼び出す
         submittedAt: this.app.api.serverTimestamp()
     };
 
@@ -102,6 +276,4 @@ export class GoalSettingPage {
         this.app.i18n.updateUI(btn);
     }
   }
-  
-  // ... 他のメソッドは変更なし
 }
