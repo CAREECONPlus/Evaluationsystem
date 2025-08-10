@@ -23,24 +23,28 @@ export class Auth {
         this.firebaseApp = initializeApp(firebaseConfig);
         this.auth = getAuth(this.firebaseApp);
         this.db = getFirestore(this.firebaseApp);
+        this.authStateResolved = false;
     }
 
     async init() {
         console.log("Auth: Module initialized.");
-        // initでは何もしない。認証監視はlistenForAuthChangesで行う
         return Promise.resolve();
     }
 
-    // ★ 修正点 1: 認証状態の監視ロジックを独立したメソッドにする
     listenForAuthChanges() {
         return new Promise((resolve) => {
-            onAuthStateChanged(this.auth, async (user) => {
+            const unsubscribe = onAuthStateChanged(this.auth, async (user) => {
                 if (user) {
                     try {
                         const userProfile = await this.app.api.getUserProfile(user.uid);
                         if (userProfile && userProfile.status === 'active') {
                             console.log("Auth state changed: User is signed in and active.", user.email);
                             this.app.updateUIForAuthState(userProfile);
+                            
+                            // 初回認証チェック時のみ、ダッシュボードへリダイレクト
+                            if (!this.authStateResolved && window.location.hash === '#/login') {
+                                window.location.hash = '#/dashboard';
+                            }
                         } else {
                             console.log("Auth state changed: User is signed in but not active or profile not found.");
                             await this.logout();
@@ -54,18 +58,33 @@ export class Auth {
                 } else {
                     console.log("Auth state changed: User is signed out.");
                     this.app.updateUIForAuthState(null);
+                    
+                    // ログアウト時、保護されたページにいる場合はログインページへ
+                    if (window.location.hash && window.location.hash !== '#/login' && 
+                        window.location.hash !== '#/register' && 
+                        window.location.hash !== '#/register-admin') {
+                        window.location.hash = '#/login';
+                    }
                 }
-                resolve(); // 最初の認証状態チェックが完了したことを通知
+                
+                // 初回の認証状態チェックが完了
+                if (!this.authStateResolved) {
+                    this.authStateResolved = true;
+                    resolve();
+                }
             });
         });
     }
 
     async login(email, password) {
-        await signInWithEmailAndPassword(this.auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(this.auth, email, password);
+        // ログイン成功後、onAuthStateChangedがダッシュボードへのリダイレクトを処理
+        return userCredential;
     }
 
     async logout() {
         await signOut(this.auth);
+        // ログアウト後、onAuthStateChangedがログインページへのリダイレクトを処理
     }
 
     async registerWithEmail(email, password) {
@@ -107,6 +126,10 @@ export class Auth {
                 return this.app.i18n.t('errors.email_already_in_use');
             case 'auth/weak-password':
                 return this.app.i18n.t('errors.weak_password');
+            case 'auth/network-request-failed':
+                return 'ネットワークエラーが発生しました。接続を確認してください。';
+            case 'auth/too-many-requests':
+                return 'ログイン試行回数が多すぎます。しばらくしてからお試しください。';
             default:
                 console.error("Unhandled Firebase Auth Error:", error);
                 return this.app.i18n.t('errors.login_failed_generic');
