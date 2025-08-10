@@ -1,10 +1,31 @@
 /**
- * Sidebar Component - レスポンシブ対応版
+ * Sidebar Component - 完全修正版
  * サイドバーコンポーネント
  */
 export class SidebarComponent {
     constructor(app) {
         this.app = app;
+        this.setupHamburgerMenu();
+    }
+
+    setupHamburgerMenu() {
+        // ハンバーガーメニューのイベントリスナーを設定
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#sidebarToggler')) {
+                e.preventDefault();
+                this.toggle();
+            }
+            
+            // バックドロップクリックで閉じる
+            if (e.target.id === 'sidebar-backdrop') {
+                this.close();
+            }
+        });
+
+        // ルート変更時にサイドバーを閉じる
+        window.addEventListener('hashchange', () => {
+            this.close();
+        });
     }
 
     update() {
