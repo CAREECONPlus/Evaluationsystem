@@ -19,7 +19,137 @@ export class RegisterPage {
     `;
   }
 
-  // ... 他のメソッドは変更なし
+  async init(params) {
+    this.app.currentPage = this;
+    this.token = params.get('token');
+    
+    if (!this.token) {
+      this.renderError('招待トークンが見つかりません');
+      return;
+    }
+
+    try {
+      this.invitation = await this.app.api.getInvitation(this.token);
+      
+      if (!this.invitation) {
+        this.renderError('無効な招待リンクです');
+        return;
+      }
+      
+      if (this.invitation.used) {
+        this.renderError('この招待リンクは既に使用されています');
+        return;
+      }
+      
+      if (new Date(this.invitation.expiresAt) < new Date()) {
+        this.renderError('この招待リンクは有効期限が切れています');
+        return;
+      }
+      
+      this.renderRegistrationForm();
+      
+    } catch (error) {
+      console.error("Error loading invitation:", error);
+      this.renderError('招待情報の読み込みに失敗しました');
+    }
+  }
+
+  renderError(message) {
+    const container = document.getElementById('register-page-container');
+    container.innerHTML = `
+      <div class="card shadow-sm" style="max-width: 500px;">
+        <div class="card-body text-center p-5">
+          <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+          <h4 class="mb-3">エラー</h4>
+          <p class="text-muted">${message}</p>
+          <a href="#/login" class="btn btn-primary mt-3" data-link>
+            <i class="fas fa-arrow-left me-2"></i>ログインページへ戻る
+          </a>
+        </div>
+      </div>
+    `;
+  }
+
+  renderRegistrationForm() {
+    const container = document.getElementById('register-page-container');
+    container.innerHTML = `
+      <div class="card shadow-sm" style="max-width: 500px; width: 100%;">
+        <div class="card-body p-4">
+          <h3 class="text-center mb-4" data-i18n="auth.register_user">ユーザー登録</h3>
+          
+          <div class="alert alert-info">
+            <small>
+              <strong>企業:</strong> ${this.app.sanitizeHtml(this.invitation.companyName)}<br>
+              <strong>役割:</strong> <span data-i18n="roles.${this.invitation.role}"></span><br>
+              <strong>メールアドレス:</strong> ${this.app.sanitizeHtml(this.invitation.email)}
+            </small>
+          </div>
+          
+          <form id="registrationForm">
+            <div class="mb-3">
+              <label for="name" class="form-label" data-i18n="auth.name">氏名</label>
+              <input type="text" class="form-control" id="name" required>
+            </div>
+            
+            <div class="mb-3">
+              <label for="password" class="form-label" data-i18n="auth.password">パスワード</label>
+              <input type="password" class="form-control" id="password" required minlength="6">
+              <small class="form-text text-muted">6文字以上で入力してください</small>
+            </div>
+            
+            <div class="mb-3">
+              <label for="confirmPassword" class="form-label" data-i18n="auth.confirm_password">パスワード確認</label>
+              <input type="password" class="form-control" id="confirmPassword" required>
+              <div id="passwordMatch" class="form-text"></div>
+            </div>
+            
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                <span data-i18n="auth.register">登録</span>
+              </button>
+            </div>
+          </form>
+          
+          <div class="text-center mt-3">
+            <a href="#/login" data-link data-i18n="common.back_to_login">ログインページに戻る</a>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    this.setupEventListeners();
+    this.app.i18n.updateUI(container);
+  }
+
+  setupEventListeners() {
+    const form = document.getElementById('registrationForm');
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirmPassword');
+    
+    form.addEventListener('submit', (e) => this.handleRegistration(e));
+    password.addEventListener('input', () => this.checkPasswordMatch());
+    confirmPassword.addEventListener('input', () => this.checkPasswordMatch());
+  }
+
+  checkPasswordMatch() {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    const matchDiv = document.getElementById('passwordMatch');
+    
+    if (confirmPassword.length === 0) {
+      matchDiv.textContent = '';
+      return;
+    }
+    
+    if (password === confirmPassword) {
+      matchDiv.textContent = 'パスワードが一致しました';
+      matchDiv.className = 'form-text text-success';
+    } else {
+      matchDiv.textContent = 'パスワードが一致しません';
+      matchDiv.className = 'form-text text-danger';
+    }
+  }
 
   async handleRegistration(e) {
     e.preventDefault();
@@ -55,7 +185,6 @@ export class RegisterPage {
             tenantId: userData.tenantId,
             evaluatorId: userData.evaluatorId,
             jobTypeId: userData.jobTypeId,
-            // ★ 修正点: this.app.api経由で呼び出す
             createdAt: this.app.api.serverTimestamp(),
         };
 
@@ -71,6 +200,4 @@ export class RegisterPage {
         submitButton.disabled = false;
     }
   }
-  
-  // ... 他のメソッドは変更なし
 }
