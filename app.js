@@ -15,6 +15,9 @@ class App {
     this.router = new Router(this);
     this.header = new HeaderComponent(this);
     this.sidebar = new SidebarComponent(this);
+    
+    // グローバルエラーハンドラーの設定
+    this.setupGlobalErrorHandlers();
   }
 
   async init() {
@@ -54,6 +57,60 @@ class App {
     }
   }
 
+  // グローバルエラーハンドラーの設定
+  setupGlobalErrorHandlers() {
+    // 未処理のPromiseエラーをキャッチ
+    window.addEventListener('unhandledrejection', (event) => {
+      console.error('Unhandled promise rejection:', event.reason);
+      this.handleError(event.reason, 'Promise rejection');
+      event.preventDefault();
+    });
+
+    // 一般的なJavaScriptエラーをキャッチ
+    window.addEventListener('error', (event) => {
+      console.error('Global error:', event.error);
+      this.handleError(event.error, 'JavaScript error');
+      event.preventDefault();
+    });
+  }
+
+  // 統一エラーハンドリング
+  handleError(error, context = '') {
+    console.error(`Error in ${context}:`, error);
+    
+    let message = '';
+    
+    // エラータイプに応じた処理
+    if (error?.code) {
+      // Firebaseエラー
+      switch(error.code) {
+        case 'permission-denied':
+          message = '権限がありません。管理者に連絡してください。';
+          break;
+        case 'unavailable':
+          message = 'サービスが一時的に利用できません。しばらくしてからお試しください。';
+          break;
+        case 'unauthenticated':
+          message = 'ログインが必要です。';
+          this.navigate('#/login');
+          break;
+        case 'network-request-failed':
+          message = 'ネットワークエラーが発生しました。接続を確認してください。';
+          break;
+        default:
+          message = error.message || '予期せぬエラーが発生しました。';
+      }
+    } else if (error instanceof TypeError) {
+      message = 'データの処理中にエラーが発生しました。';
+    } else if (error instanceof ReferenceError) {
+      message = 'システムエラーが発生しました。';
+    } else {
+      message = error?.message || '予期せぬエラーが発生しました。';
+    }
+    
+    this.showError(message);
+  }
+
   showLoadingScreen() {
     document.getElementById('loading-screen').classList.remove('d-none');
     document.getElementById('app').classList.add('d-none');
@@ -65,13 +122,28 @@ class App {
   }
   
   async login(email, password) {
-    await this.auth.login(email, password);
-    // ログイン後のリダイレクトはlistenForAuthChangesとrouterに任せる
+    try {
+      // バリデーション
+      if (!this.api?.validateEmail(email)) {
+        throw new Error('有効なメールアドレスを入力してください');
+      }
+      if (!this.api?.validatePassword(password)) {
+        throw new Error('パスワードは6文字以上で入力してください');
+      }
+      
+      await this.auth.login(email, password);
+    } catch (error) {
+      this.handleError(error, 'Login');
+      throw error;
+    }
   }
 
   async logout() {
-    await this.auth.logout();
-    // ログアウト後のリダイレクトはlistenForAuthChangesとrouterに任せる
+    try {
+      await this.auth.logout();
+    } catch (error) {
+      this.handleError(error, 'Logout');
+    }
   }
   
   navigate(path) {
@@ -115,29 +187,54 @@ class App {
     return this.isAuthenticated() && roles.includes(this.currentUser.role);
   }
   
-  showToast(message, type = 'info') {
+  showToast(message, type = 'info', duration = 5000) {
       const toastContainer = document.getElementById('toast-container');
       if (!toastContainer) return;
+      
       const toastId = `toast-${Date.now()}`;
+      const iconMap = {
+        'success': 'fa-check-circle',
+        'danger': 'fa-exclamation-circle',
+        'warning': 'fa-exclamation-triangle',
+        'info': 'fa-info-circle'
+      };
+      
       const toastHTML = `
           <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
               <div class="d-flex">
-                  <div class="toast-body">${this.sanitizeHtml(message)}</div>
+                  <div class="toast-body">
+                    <i class="fas ${iconMap[type]} me-2"></i>
+                    ${this.sanitizeHtml(message)}
+                  </div>
                   <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
               </div>
           </div>
       `;
       toastContainer.insertAdjacentHTML('beforeend', toastHTML);
       const toastElement = document.getElementById(toastId);
-      const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+      const toast = new bootstrap.Toast(toastElement, { delay: duration });
       toast.show();
       toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
   }
 
-  showSuccess(message) { this.showToast(message, 'success'); }
-  showError(message) { this.showToast(message, 'danger'); }
+  showSuccess(message) { 
+    this.showToast(message, 'success'); 
+  }
+  
+  showError(message) { 
+    this.showToast(message, 'danger', 8000); // エラーは長めに表示
+  }
+  
+  showWarning(message) {
+    this.showToast(message, 'warning', 6000);
+  }
+  
+  showInfo(message) {
+    this.showToast(message, 'info');
+  }
   
   sanitizeHtml(str) {
+      if (!str) return '';
       const temp = document.createElement('div');
       temp.textContent = str;
       return temp.innerHTML;
@@ -159,7 +256,6 @@ class App {
     return statusClasses[status] || "bg-light text-dark";
   }
 
-  // 新規追加: ロールバッジクラス取得
   getRoleBadgeClass(role) {
     const roleClasses = {
       developer: "bg-dark",
@@ -172,15 +268,117 @@ class App {
   
   formatDate(timestamp, withTime = false) {
     if (!timestamp) return "-";
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    if (isNaN(date)) return "-";
-    const locale = this.i18n.lang === 'ja' ? 'ja-JP' : 'en-US';
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    if (withTime) {
-        options.hour = '2-digit';
-        options.minute = '2-digit';
+    
+    try {
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      if (isNaN(date)) return "-";
+      
+      const locale = this.i18n.lang === 'ja' ? 'ja-JP' : 
+                    this.i18n.lang === 'vi' ? 'vi-VN' : 'en-US';
+      
+      const options = { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      };
+      
+      if (withTime) {
+          options.hour = '2-digit';
+          options.minute = '2-digit';
+      }
+      
+      return new Intl.DateTimeFormat(locale, options).format(date);
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return "-";
     }
-    return new Intl.DateTimeFormat(locale, options).format(date);
+  }
+
+  // 入力値のサニタイゼーション
+  sanitizeInput(input) {
+    if (!input) return '';
+    return input.trim().replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  }
+
+  // 確認ダイアログの表示
+  async confirm(message, title = '確認') {
+    return new Promise((resolve) => {
+      // カスタム確認ダイアログのHTMLを作成
+      const modalHTML = `
+        <div class="modal fade" id="confirmModal" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">${this.sanitizeHtml(title)}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <p>${this.sanitizeHtml(message)}</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary" id="confirmBtn">確認</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // モーダルを追加
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+      const modalElement = document.getElementById('confirmModal');
+      const modal = new bootstrap.Modal(modalElement);
+      
+      // イベントリスナー設定
+      document.getElementById('confirmBtn').addEventListener('click', () => {
+        modal.hide();
+        resolve(true);
+      });
+      
+      modalElement.addEventListener('hidden.bs.modal', () => {
+        modalElement.remove();
+        resolve(false);
+      });
+      
+      modal.show();
+    });
+  }
+
+  // ローディング表示
+  showLoading(message = '処理中...') {
+    const loadingHTML = `
+      <div id="global-loading" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(0,0,0,0.5); z-index: 9999;">
+        <div class="card">
+          <div class="card-body text-center">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p class="mb-0">${this.sanitizeHtml(message)}</p>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', loadingHTML);
+  }
+
+  hideLoading() {
+    const loading = document.getElementById('global-loading');
+    if (loading) loading.remove();
+  }
+
+  // デバッグモード
+  enableDebugMode() {
+    window.DEBUG = true;
+    console.log('Debug mode enabled');
+  }
+
+  disableDebugMode() {
+    window.DEBUG = false;
+    console.log('Debug mode disabled');
+  }
+
+  debug(...args) {
+    if (window.DEBUG) {
+      console.log('[DEBUG]', ...args);
+    }
   }
 }
 
