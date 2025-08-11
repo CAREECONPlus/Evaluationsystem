@@ -3,7 +3,7 @@ import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where,
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-functions.js";
 
 /**
- * API Service (Firestore Integrated) - 完全修正版
+ * API Service (Firestore Integrated) - 管理者招待機能追加版
  * Firebase FirestoreおよびFunctionsとのすべての通信を処理します。
  */
 export class API {
@@ -141,6 +141,29 @@ export class API {
         return token;
     } catch (error) {
         this.handleError(error, "招待の作成");
+    }
+  }
+
+  // 新規追加: 管理者アカウントの招待機能
+  async createAdminInvitation(invitationData) {
+    try {
+        if (!this.app.hasRole('developer')) {
+            throw new Error("開発者権限が必要です");
+        }
+        
+        const invitationRef = doc(collection(this.db, "invitations"));
+        const token = invitationRef.id;
+        await setDoc(invitationRef, {
+            ...invitationData,
+            type: 'admin',  // 管理者招待フラグ
+            token: token,
+            used: false,
+            createdAt: serverTimestamp(),
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        });
+        return token;
+    } catch (error) {
+        this.handleError(error, "管理者招待の作成");
     }
   }
 
@@ -543,5 +566,27 @@ export class API {
     } catch (error) {
       this.handleError(error, `テナントステータスの更新 (tenantId: ${tenantId})`);
     }
+  }
+
+  // --- データバリデーション ---
+  validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  }
+
+  validatePassword(password) {
+    return password && password.length >= 6;
+  }
+
+  validateName(name) {
+    return name && name.trim().length >= 2;
+  }
+
+  validateCompanyName(companyName) {
+    return companyName && companyName.trim().length >= 2;
+  }
+
+  validateWeight(weight) {
+    return weight >= 0 && weight <= 100;
   }
 }
