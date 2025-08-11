@@ -63,6 +63,22 @@ export class HeaderComponent {
                 </div>
             </nav>`;
         
+        // サイドバートグルボタンのイベントリスナー追加
+        const toggler = document.getElementById('sidebarToggler');
+        if (toggler) {
+            toggler.addEventListener('click', () => {
+                this.app.sidebar.toggle();
+            });
+        }
+        
+        // バックドロップのクリックイベント追加
+        const backdrop = document.getElementById('sidebar-backdrop');
+        if (backdrop) {
+            backdrop.addEventListener('click', () => {
+                this.app.sidebar.close();
+            });
+        }
+        
         this.app.i18n.updateUI(container);
     }
 }
