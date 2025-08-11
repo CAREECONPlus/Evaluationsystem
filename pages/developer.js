@@ -1,21 +1,24 @@
-// careeconplus/evaluationsystem/Evaluationsystem-main/pages/developer.js
-
 /**
- * Developer Page Component (Firebase Integrated & Enhanced)
- * 開発者ページコンポーネント（Firebase連携・機能改善版）
+ * Developer Page Component (管理者招待機能追加版)
+ * 開発者ページコンポーネント
  */
 export class DeveloperPage {
   constructor(app) {
     this.app = app;
     this.pendingAdmins = [];
-    this.activeTenants = []; // For the new Tenant Management tab
-    this.selectedTab = 'approvals'; // 'approvals' or 'tenants'
+    this.activeTenants = [];
+    this.selectedTab = 'approvals';
   }
 
   async render() {
     return `
       <div class="developer-page p-4">
-        <h1 data-i18n="nav.developer"></h1>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h1 data-i18n="nav.developer"></h1>
+          <button class="btn btn-success" id="invite-admin-btn">
+            <i class="fas fa-envelope me-2"></i>管理者を招待
+          </button>
+        </div>
         
         <ul class="nav nav-tabs mt-4 mb-3">
           <li class="nav-item">
@@ -43,6 +46,66 @@ export class DeveloperPage {
             </div>
         </div>
       </div>
+
+      <!-- 管理者招待モーダル -->
+      <div class="modal fade" id="inviteAdminModal" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">管理者アカウントの招待</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <form id="inviteAdminForm">
+                <div class="mb-3">
+                  <label for="adminCompanyName" class="form-label">企業名</label>
+                  <input type="text" class="form-control" id="adminCompanyName" required>
+                  <div class="invalid-feedback">企業名を入力してください（2文字以上）</div>
+                </div>
+                <div class="mb-3">
+                  <label for="adminName" class="form-label">管理者氏名</label>
+                  <input type="text" class="form-control" id="adminName" required>
+                  <div class="invalid-feedback">氏名を入力してください（2文字以上）</div>
+                </div>
+                <div class="mb-3">
+                  <label for="adminEmail" class="form-label">メールアドレス</label>
+                  <input type="email" class="form-control" id="adminEmail" required>
+                  <div class="invalid-feedback">有効なメールアドレスを入力してください</div>
+                </div>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+              <button type="button" class="btn btn-primary" id="send-admin-invitation-btn">
+                <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                招待リンクを作成
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 招待リンク表示モーダル -->
+      <div class="modal fade" id="adminInviteLinkModal" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">管理者招待リンク</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <p>以下のリンクをコピーして、招待する管理者に送信してください。</p>
+              <div class="input-group">
+                <input type="text" class="form-control" id="adminInviteLinkInput" readonly>
+                <button class="btn btn-outline-secondary" id="copy-admin-link-btn" type="button">
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+              <small class="text-muted">このリンクは7日間有効です。</small>
+            </div>
+          </div>
+        </div>
+      </div>
     `;
   }
 
@@ -54,12 +117,28 @@ export class DeveloperPage {
     }
 
     this.setupEventListeners();
+    this.setupModals();
     await this.loadData();
   }
 
+  setupModals() {
+    this.inviteAdminModal = new bootstrap.Modal(document.getElementById('inviteAdminModal'));
+    this.inviteLinkModal = new bootstrap.Modal(document.getElementById('adminInviteLinkModal'));
+  }
+
   setupEventListeners() {
+    // タブ切り替え
     document.getElementById('approvals-tab-btn').addEventListener('click', () => this.switchTab('approvals'));
     document.getElementById('tenants-tab-btn').addEventListener('click', () => this.switchTab('tenants'));
+
+    // 管理者招待ボタン
+    document.getElementById('invite-admin-btn').addEventListener('click', () => this.openInviteAdminModal());
+    document.getElementById('send-admin-invitation-btn').addEventListener('click', () => this.sendAdminInvitation());
+    document.getElementById('copy-admin-link-btn').addEventListener('click', () => this.copyAdminInviteLink());
+
+    // フォームバリデーション
+    const form = document.getElementById('inviteAdminForm');
+    form.addEventListener('input', (e) => this.validateField(e.target));
 
     // Event delegation for dynamic buttons
     document.querySelector('.tab-content').addEventListener('click', (e) => {
@@ -71,6 +150,109 @@ export class DeveloperPage {
 
         const toggleStatusBtn = e.target.closest('.toggle-status-btn');
         if (toggleStatusBtn) this.toggleTenantStatus(toggleStatusBtn.dataset.tenantId, toggleStatusBtn.dataset.status);
+    });
+  }
+
+  validateField(field) {
+    let isValid = false;
+    const value = field.value.trim();
+
+    switch(field.id) {
+      case 'adminCompanyName':
+        isValid = this.app.api.validateCompanyName(value);
+        break;
+      case 'adminName':
+        isValid = this.app.api.validateName(value);
+        break;
+      case 'adminEmail':
+        isValid = this.app.api.validateEmail(value);
+        break;
+    }
+
+    if (isValid) {
+      field.classList.remove('is-invalid');
+      field.classList.add('is-valid');
+    } else {
+      field.classList.remove('is-valid');
+      field.classList.add('is-invalid');
+    }
+
+    return isValid;
+  }
+
+  validateForm() {
+    const form = document.getElementById('inviteAdminForm');
+    const fields = form.querySelectorAll('input[required]');
+    let isValid = true;
+
+    fields.forEach(field => {
+      if (!this.validateField(field)) {
+        isValid = false;
+      }
+    });
+
+    return isValid;
+  }
+
+  openInviteAdminModal() {
+    // フォームをリセット
+    const form = document.getElementById('inviteAdminForm');
+    form.reset();
+    form.querySelectorAll('.is-valid, .is-invalid').forEach(el => {
+      el.classList.remove('is-valid', 'is-invalid');
+    });
+    
+    this.inviteAdminModal.show();
+  }
+
+  async sendAdminInvitation() {
+    if (!this.validateForm()) {
+      this.app.showError('入力内容を確認してください');
+      return;
+    }
+
+    const btn = document.getElementById('send-admin-invitation-btn');
+    const spinner = btn.querySelector('.spinner-border');
+    
+    spinner.classList.remove('d-none');
+    btn.disabled = true;
+
+    try {
+      const invitationData = {
+        companyName: document.getElementById('adminCompanyName').value.trim(),
+        name: document.getElementById('adminName').value.trim(),
+        email: document.getElementById('adminEmail').value.trim(),
+        role: 'admin'
+      };
+
+      const token = await this.app.api.createAdminInvitation(invitationData);
+      
+      // モーダルを閉じて、リンク表示モーダルを開く
+      this.inviteAdminModal.hide();
+      
+      // URLを生成して表示
+      const url = `${window.location.origin}${window.location.pathname}#/register-admin?token=${token}`;
+      document.getElementById('adminInviteLinkInput').value = url;
+      
+      this.inviteLinkModal.show();
+      
+    } catch (error) {
+      this.app.showError('招待の作成に失敗しました: ' + error.message);
+    } finally {
+      spinner.classList.add('d-none');
+      btn.disabled = false;
+    }
+  }
+
+  copyAdminInviteLink() {
+    const input = document.getElementById('adminInviteLinkInput');
+    navigator.clipboard.writeText(input.value).then(() => {
+      this.app.showSuccess('リンクをコピーしました');
+    }).catch(() => {
+      // フォールバック
+      input.select();
+      document.execCommand('copy');
+      this.app.showSuccess('リンクをコピーしました');
     });
   }
 
@@ -101,7 +283,12 @@ export class DeveloperPage {
   renderPendingList() {
     const container = document.getElementById('pending-admins-list');
     if (this.pendingAdmins.length === 0) {
-      container.innerHTML = `<div class="text-center p-3" data-i18n="common.no_data"></div>`;
+      container.innerHTML = `
+        <div class="text-center p-5">
+          <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+          <p class="text-muted">承認待ちの管理者はいません</p>
+        </div>
+      `;
       return;
     }
     container.innerHTML = this.createTable(this.pendingAdmins, true);
@@ -110,7 +297,12 @@ export class DeveloperPage {
   renderTenantList() {
     const container = document.getElementById('active-tenants-list');
      if (this.activeTenants.length === 0) {
-      container.innerHTML = `<div class="text-center p-3" data-i18n="common.no_data"></div>`;
+      container.innerHTML = `
+        <div class="text-center p-5">
+          <i class="fas fa-building fa-3x text-muted mb-3"></i>
+          <p class="text-muted">アクティブなテナントはありません</p>
+        </div>
+      `;
       return;
     }
     container.innerHTML = this.createTable(this.activeTenants, false);
@@ -118,7 +310,7 @@ export class DeveloperPage {
 
   createTable(data, isPending) {
     const headers = isPending 
-        ? ['auth.company', 'auth.name', 'auth.email', 'users.actions']
+        ? ['auth.company', 'auth.name', 'auth.email', 'users.created_at', 'users.actions']
         : ['auth.company', 'auth.name', 'auth.email', 'users.status', 'users.actions'];
 
     return `
@@ -142,6 +334,7 @@ export class DeveloperPage {
         <td>${this.app.sanitizeHtml(admin.companyName)}</td>
         <td>${this.app.sanitizeHtml(admin.name)}</td>
         <td>${this.app.sanitizeHtml(admin.email)}</td>
+        <td>${this.app.formatDate(admin.createdAt)}</td>
         <td>
           <button class="btn btn-sm btn-success approve-admin-btn" data-user-id="${admin.id}">
             <i class="fas fa-check me-1"></i><span data-i18n="developer.approve"></span>
