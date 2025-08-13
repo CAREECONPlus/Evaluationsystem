@@ -1,9 +1,10 @@
 // Firebase SDKから必要な関数をインポートします。
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp, deleteDoc, writeBatch, getCountFromServer, limit, orderBy } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-functions.js";
+import { CacheService } from './cache.js';
 
 /**
- * API Service (Firestore Integrated) - 管理者招待機能追加版
+ * API Service (完全版 - Phase 3/4機能統合)
  * Firebase FirestoreおよびFunctionsとのすべての通信を処理します。
  */
 export class API {
@@ -19,8 +20,8 @@ export class API {
     
     this.db = getFirestore(this.firebaseApp);
     this.functions = getFunctions(this.firebaseApp);
-    // serverTimestampを直接エクスポート
     this.serverTimestamp = serverTimestamp;
+    this.cache = new CacheService();
 
     console.log("API: Initialized successfully with Firebase App from Auth module.");
   }
@@ -41,11 +42,17 @@ export class API {
   // --- User and Tenant Management ---
 
   async getUserProfile(uid) {
+    const cacheKey = `user_${uid}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
     try {
       const userDocRef = doc(this.db, "users", uid);
       const userDoc = await getDoc(userDocRef);
       if (userDoc.exists()) {
-        return { id: userDoc.id, ...userDoc.data() };
+        const userData = { id: userDoc.id, ...userDoc.data() };
+        this.cache.set(cacheKey, userData, 60000); // 1分キャッシュ
+        return userData;
       }
       return null;
     } catch (error) {
@@ -60,25 +67,36 @@ export class API {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
+      this.cache.clear(`user_${uid}`);
     } catch (error) {
       this.handleError(error, "ユーザープロファイルの作成");
     }
   }
 
   async getUsers(status = 'active') {
+    const cacheKey = `users_${this.app.currentUser.tenantId}_${status}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
     try {
       const q = query(collection(this.db, "users"), 
         where("tenantId", "==", this.app.currentUser.tenantId),
         where("status", "==", status)
       );
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      this.cache.set(cacheKey, users);
+      return users;
     } catch (error) {
       this.handleError(error, `ユーザーリストの取得 (status: ${status})`);
     }
   }
 
   async getSubordinates() {
+    const cacheKey = `subordinates_${this.app.currentUser.uid}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
     try {
         const q = query(collection(this.db, "users"),
             where("tenantId", "==", this.app.currentUser.tenantId),
@@ -86,7 +104,9 @@ export class API {
             where("status", "==", "active")
         );
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const subordinates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        this.cache.set(cacheKey, subordinates);
+        return subordinates;
     } catch (error) {
         this.handleError(error, "部下一覧の取得");
     }
@@ -99,27 +119,31 @@ export class API {
         ...data,
         updatedAt: serverTimestamp()
       });
+      this.cache.clear(`user_${userId}`);
+      this.cache.clear(`users_`);
     } catch (error) {
       this.handleError(error, `ユーザー情報の更新 (userId: ${userId})`);
     }
   }
 
-  // 新規追加: ユーザーステータス更新
   async updateUserStatus(userId, status) {
     try {
       await updateDoc(doc(this.db, "users", userId), { 
         status: status,
         updatedAt: serverTimestamp()
       });
+      this.cache.clear(`user_${userId}`);
+      this.cache.clear(`users_`);
     } catch (error) {
       this.handleError(error, `ユーザーステータスの更新 (userId: ${userId})`);
     }
   }
 
-  // 新規追加: ユーザー削除
   async deleteUser(userId) {
     try {
       await deleteDoc(doc(this.db, "users", userId));
+      this.cache.clear(`user_${userId}`);
+      this.cache.clear(`users_`);
     } catch (error) {
       this.handleError(error, `ユーザーの削除 (userId: ${userId})`);
     }
@@ -138,13 +162,19 @@ export class API {
             createdAt: serverTimestamp(),
             expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
         });
+        
+        // メール送信
+        if (invitationData.email) {
+          const inviteUrl = `${window.location.origin}${window.location.pathname}#/register?token=${token}`;
+          await this.sendInvitationEmail(invitationData.email, inviteUrl, invitationData.role);
+        }
+        
         return token;
     } catch (error) {
         this.handleError(error, "招待の作成");
     }
   }
 
-  // 新規追加: 管理者アカウントの招待機能
   async createAdminInvitation(invitationData) {
     try {
         if (!this.app.hasRole('developer')) {
@@ -155,12 +185,19 @@ export class API {
         const token = invitationRef.id;
         await setDoc(invitationRef, {
             ...invitationData,
-            type: 'admin',  // 管理者招待フラグ
+            type: 'admin',
             token: token,
             used: false,
             createdAt: serverTimestamp(),
             expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
         });
+        
+        // 管理者招待メール送信
+        if (invitationData.email) {
+          const inviteUrl = `${window.location.origin}${window.location.pathname}#/register-admin?token=${token}`;
+          await this.sendInvitationEmail(invitationData.email, inviteUrl, 'admin');
+        }
+        
         return token;
     } catch (error) {
         this.handleError(error, "管理者招待の作成");
@@ -194,6 +231,10 @@ export class API {
   // --- Settings ---
 
   async getSettings() {
+    const cacheKey = `settings_${this.app.currentUser.tenantId}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
     try {
         const tenantId = this.app.currentUser.tenantId;
         const jobTypesQuery = query(collection(this.db, "targetJobTypes"), where("tenantId", "==", tenantId));
@@ -211,36 +252,50 @@ export class API {
             structures[doc.data().jobTypeId] = { id: doc.id, ...doc.data() };
         });
 
-        return {
+        const result = {
             jobTypes: jobTypesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
             periods: periodsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
             structures: structures
         };
+        
+        this.cache.set(cacheKey, result);
+        return result;
     } catch (error) {
         this.handleError(error, "設定情報の取得");
     }
   }
 
-  // 新規追加: 職種リストの取得
   async getJobTypes() {
+    const cacheKey = `jobTypes_${this.app.currentUser.tenantId}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
     try {
         const q = query(collection(this.db, "targetJobTypes"), 
             where("tenantId", "==", this.app.currentUser.tenantId));
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const jobTypes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        this.cache.set(cacheKey, jobTypes);
+        return jobTypes;
     } catch (error) {
         this.handleError(error, "職種リストの取得");
     }
   }
 
   async getEvaluationStructure(jobTypeId) {
+      const cacheKey = `structure_${jobTypeId}_${this.app.currentUser.tenantId}`;
+      const cached = this.cache.get(cacheKey);
+      if (cached) return cached;
+
       try {
           const q = query(collection(this.db, "evaluationStructures"), 
               where("jobTypeId", "==", jobTypeId), 
               where("tenantId", "==", this.app.currentUser.tenantId));
           const snapshot = await getDocs(q);
           if(snapshot.empty) return null;
-          return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+          const structure = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+          this.cache.set(cacheKey, structure);
+          return structure;
       } catch (error) {
           this.handleError(error, `評価構造の取得 (jobTypeId: ${jobTypeId})`);
       }
@@ -294,6 +349,9 @@ export class API {
       });
       
       await batch.commit();
+      this.cache.clear('settings_');
+      this.cache.clear('jobTypes_');
+      this.cache.clear('structure_');
     } catch (error) {
       this.handleError(error, "設定の保存");
     }
@@ -341,6 +399,11 @@ export class API {
             ...data,
             updatedAt: serverTimestamp()
         }, { merge: true });
+        
+        // 完了時にメール通知
+        if (data.status === 'completed' && data.targetUserEmail) {
+          await this.sendEvaluationCompleteEmail(data.targetUserEmail, data.targetUserName, data.periodName);
+        }
     } catch (error) {
         this.handleError(error, "評価データの保存");
     }
@@ -416,6 +479,10 @@ export class API {
   // --- Dashboard ---
 
   async getDashboardStats() {
+    const cacheKey = `dashboard_stats_${this.app.currentUser.tenantId}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
     try {
         const currentUser = this.app.currentUser;
         if (!currentUser || !currentUser.tenantId) throw new Error("User not authenticated or tenantId is missing");
@@ -434,11 +501,14 @@ export class API {
             getCountFromServer(pendingQuery)
         ]);
 
-        return {
+        const stats = {
             totalUsers: totalUsersSnap.data().count,
             completedEvaluations: completedSnap.data().count,
             pendingEvaluations: pendingSnap.data().count,
         };
+        
+        this.cache.set(cacheKey, stats, 30000); // 30秒キャッシュ
+        return stats;
     } catch (error) {
         this.handleError(error, "ダッシュボード統計の取得");
     }
@@ -550,12 +620,12 @@ export class API {
       });
       
       await batch.commit();
+      this.cache.clear();
     } catch (error) { 
       this.handleError(error, "管理者アカウントの承認"); 
     }
   }
 
-  // 新規追加: テナントステータス更新
   async updateTenantStatus(tenantId, status) {
     try {
       if (!this.app.hasRole('developer')) throw new Error("開発者権限が必要です");
@@ -563,9 +633,64 @@ export class API {
         status: status,
         updatedAt: serverTimestamp()
       });
+      this.cache.clear();
     } catch (error) {
       this.handleError(error, `テナントステータスの更新 (tenantId: ${tenantId})`);
     }
+  }
+
+  // --- メール送信機能 ---
+  async sendEmail(to, subject, html, text) {
+    try {
+      const mailRef = doc(collection(this.db, "mail"));
+      await setDoc(mailRef, {
+        to: to,
+        message: {
+          subject: subject,
+          html: html,
+          text: text || html.replace(/<[^>]*>/g, '')
+        },
+        createdAt: serverTimestamp()
+      });
+      return true;
+    } catch (error) {
+      console.error("メール送信エラー:", error);
+      return false;
+    }
+  }
+
+  async sendInvitationEmail(email, inviteUrl, role) {
+    const roleNames = {
+      admin: '管理者',
+      evaluator: '評価者',
+      worker: '作業員'
+    };
+    const subject = '評価管理システムへの招待';
+    const html = `
+      <h2>評価管理システムへの招待</h2>
+      <p>${email}様</p>
+      <p>あなたは${roleNames[role] || role}として評価管理システムに招待されました。</p>
+      <p>以下のリンクから登録を完了してください：</p>
+      <a href="${inviteUrl}" style="display:inline-block;padding:10px 20px;background:#007bff;color:white;text-decoration:none;border-radius:5px;">登録する</a>
+      <p>このリンクは7日間有効です。</p>
+      <hr>
+      <small>このメールに心当たりがない場合は、無視してください。</small>
+    `;
+    return await this.sendEmail(email, subject, html);
+  }
+
+  async sendEvaluationCompleteEmail(email, userName, periodName) {
+    const subject = '評価が完了しました';
+    const html = `
+      <h2>評価完了のお知らせ</h2>
+      <p>${userName}様</p>
+      <p>${periodName}の評価が完了しました。</p>
+      <p>詳細は評価管理システムにログインしてご確認ください。</p>
+      <a href="${window.location.origin}${window.location.pathname}" style="display:inline-block;padding:10px 20px;background:#28a745;color:white;text-decoration:none;border-radius:5px;">システムにログイン</a>
+      <hr>
+      <small>このメールは自動送信されています。</small>
+    `;
+    return await this.sendEmail(email, subject, html);
   }
 
   // --- データバリデーション ---
