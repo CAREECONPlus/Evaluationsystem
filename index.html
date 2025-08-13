@@ -1,54 +1,290 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>建設業従業員評価管理システム</title>
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="建設業向け評価管理システム - 作業員の評価を効率的に管理">
+    <meta name="keywords" content="建設業,評価管理,人事評価,作業員管理">
+    <meta name="author" content="Construction Evaluation System">
     
-    <!-- External CSS Libraries -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <!-- OGP設定 -->
+    <meta property="og:title" content="建設業評価管理システム">
+    <meta property="og:description" content="作業員の評価を効率的に管理するクラウドベースのシステム">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://hyouka-db.firebaseapp.com">
     
-    <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="styles.css" />
+    <!-- PWA設定 -->
+    <meta name="theme-color" content="#007bff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="評価管理">
+    
+    <title>建設業評価管理システム</title>
+    
+    <!-- 外部CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- カスタムCSS -->
+    <link href="styles.css" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    
+    <!-- DNS Prefetch -->
+    <link rel="dns-prefetch" href="https://www.gstatic.com">
+    <link rel="dns-prefetch" href="https://firestore.googleapis.com">
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="loading-screen" class="d-flex justify-content-center align-items-center vh-100">
-        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-            <span class="visually-hidden">Loading...</span>
+    <!-- ローディング画面 -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="spinner-border text-white" style="width: 4rem; height: 4rem;" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h2 class="mt-4 text-white">
+                <i class="fas fa-hard-hat me-2"></i>
+                建設業評価管理システム
+            </h2>
+            <p class="text-white-50 mt-2">システムを起動しています...</p>
+            <div class="progress mt-3" style="width: 200px; height: 4px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+            </div>
         </div>
     </div>
 
-    <!-- Main Application Container -->
+    <!-- メインアプリケーション -->
     <div id="app" class="d-none">
-        <div id="header-container"></div>
-        <div class="main-layout">
-            <div id="sidebar-container"></div>
-            <main id="content" class="content-area"></main>
+        <!-- ヘッダー -->
+        <header id="header-container"></header>
+        
+        <!-- メインコンテナ -->
+        <div class="d-flex">
+            <!-- サイドバー -->
+            <nav id="sidebar-container"></nav>
+            
+            <!-- サイドバー用バックドロップ -->
+            <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+            
+            <!-- メインコンテンツ -->
+            <main id="content" class="content flex-grow-1" role="main"></main>
         </div>
-        <div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index: 1055;"></div>
     </div>
 
-    <!-- Sidebar Backdrop for mobile -->
-    <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+    <!-- トースト通知コンテナ -->
+    <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" aria-live="polite" aria-atomic="true"></div>
 
-    <!-- External JS Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <!-- グローバルモーダルコンテナ -->
+    <div id="modal-container"></div>
 
-    <!-- ★★★ 修正点: アプリケーションのエントリーポイント ★★★ -->
-    <!-- 'type="module"' を指定し、app.jsからAppクラスをインポートして初期化する -->
+    <!-- 外部JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+
+    <!-- Firebase設定とアプリケーション初期化 -->
     <script type="module">
-      import App from './app.js';
-
-      // Appのインスタンスを作成し、グローバルでアクセス可能にする
-      const app = new App();
-      window.app = app;
-      
-      // アプリケーションを初期化
-      app.init();
+        import App from './js/app.js';
+        
+        // グローバルエラーハンドリング
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen && !loadingScreen.classList.contains('d-none')) {
+                loadingScreen.innerHTML = `
+                    <div class="loading-content text-center">
+                        <div class="text-warning mb-3">
+                            <i class="fas fa-exclamation-triangle fa-4x"></i>
+                        </div>
+                        <h2 class="text-white">エラーが発生しました</h2>
+                        <p class="text-white-50">システムの起動中に問題が発生しました。</p>
+                        <div class="mt-4">
+                            <button class="btn btn-light me-2" onclick="location.reload()">
+                                <i class="fas fa-redo me-2"></i>再読み込み
+                            </button>
+                            <button class="btn btn-outline-light" onclick="this.nextElementSibling.classList.toggle('d-none')">
+                                <i class="fas fa-info-circle me-2"></i>詳細
+                            </button>
+                            <div class="d-none mt-3 text-start bg-dark p-3 rounded">
+                                <small class="text-white-50">
+                                    <code>${event.error?.stack || event.error?.message || 'Unknown error'}</code>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        
+        // Service Worker の登録
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful:', registration.scope);
+                        
+                        // Service Worker の更新チェック
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // 新しいバージョンが利用可能
+                                    if (confirm('新しいバージョンが利用可能です。更新しますか？')) {
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch(err => {
+                        console.warn('ServiceWorker registration failed:', err);
+                    });
+            });
+        }
+        
+        // オフライン検知
+        window.addEventListener('online', () => {
+            console.log('Network connection restored');
+            if (window.app) {
+                window.app.showSuccess('ネットワーク接続が復旧しました');
+            }
+        });
+        
+        window.addEventListener('offline', () => {
+            console.log('Network connection lost');
+            if (window.app) {
+                window.app.showWarning('ネットワーク接続が失われました。一部の機能が制限される可能性があります。');
+            }
+        });
+        
+        // アプリケーションの初期化
+        console.log('Initializing application...');
+        window.app = new App();
+        
+        // 初期化タイムアウト設定（30秒）
+        const initTimeout = setTimeout(() => {
+            console.error('Application initialization timeout');
+            document.getElementById('loading-screen').innerHTML = `
+                <div class="loading-content text-center">
+                    <div class="text-warning mb-3">
+                        <i class="fas fa-clock fa-4x"></i>
+                    </div>
+                    <h2 class="text-white">接続がタイムアウトしました</h2>
+                    <p class="text-white-50">ネットワーク接続を確認してください。</p>
+                    <button class="btn btn-light mt-3" onclick="location.reload()">
+                        <i class="fas fa-redo me-2"></i>再試行
+                    </button>
+                </div>
+            `;
+        }, 30000);
+        
+        // アプリケーション初期化実行
+        window.app.init()
+            .then(() => {
+                clearTimeout(initTimeout);
+                console.log('Application initialized successfully');
+            })
+            .catch(error => {
+                clearTimeout(initTimeout);
+                console.error("Failed to initialize application:", error);
+                document.getElementById('loading-screen').innerHTML = `
+                    <div class="loading-content text-center">
+                        <div class="text-danger mb-3">
+                            <i class="fas fa-exclamation-circle fa-4x"></i>
+                        </div>
+                        <h2 class="text-white">システムエラー</h2>
+                        <p class="text-white-50">アプリケーションの起動に失敗しました。</p>
+                        <div class="mt-4">
+                            <button class="btn btn-light me-2" onclick="location.reload()">
+                                <i class="fas fa-redo me-2"></i>再読み込み
+                            </button>
+                            <a href="mailto:support@example.com" class="btn btn-outline-light">
+                                <i class="fas fa-envelope me-2"></i>サポートに連絡
+                            </a>
+                        </div>
+                        <details class="mt-4 text-start">
+                            <summary class="text-white-50 cursor-pointer">エラー詳細</summary>
+                            <div class="bg-dark p-3 rounded mt-2">
+                                <small class="text-white-50">
+                                    <code>${error?.stack || error?.message || 'Unknown error'}</code>
+                                </small>
+                            </div>
+                        </details>
+                    </div>
+                `;
+            });
+        
+        // ページ離脱時の確認（未保存データがある場合）
+        window.addEventListener('beforeunload', (event) => {
+            if (window.app && window.app.hasUnsavedChanges && window.app.hasUnsavedChanges()) {
+                event.preventDefault();
+                event.returnValue = '保存されていない変更があります。ページを離れますか？';
+            }
+        });
+        
+        // ブラウザバック対応
+        window.addEventListener('popstate', () => {
+            if (window.app && window.app.router) {
+                window.app.router.route();
+            }
+        });
+        
+        // デバッグモード（開発環境のみ）
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            window.DEBUG = true;
+            console.log('Debug mode enabled');
+            
+            // デバッグ用のグローバル関数
+            window.debugApp = {
+                clearCache: () => {
+                    if (window.app && window.app.api && window.app.api.cache) {
+                        window.app.api.cache.clear();
+                        console.log('Cache cleared');
+                    }
+                },
+                showUser: () => {
+                    console.log('Current user:', window.app?.currentUser);
+                },
+                toggleHighContrast: () => {
+                    if (window.app && window.app.accessibility) {
+                        window.app.accessibility.toggleHighContrast();
+                    }
+                },
+                reloadApp: () => {
+                    location.reload();
+                }
+            };
+        }
+        
+        // パフォーマンス計測
+        if (window.performance && window.performance.mark) {
+            window.performance.mark('app-init-start');
+            window.addEventListener('load', () => {
+                window.performance.mark('app-init-end');
+                window.performance.measure('app-init', 'app-init-start', 'app-init-end');
+                const measure = window.performance.getEntriesByName('app-init')[0];
+                console.log(`App initialization took ${measure.duration.toFixed(2)}ms`);
+            });
+        }
     </script>
+
+    <!-- ノンスクリプト対応 -->
+    <noscript>
+        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+            <div style="text-align: center; color: white; padding: 20px;">
+                <i class="fas fa-exclamation-triangle fa-4x mb-3"></i>
+                <h2>JavaScriptが無効です</h2>
+                <p>このアプリケーションを使用するにはJavaScriptを有効にしてください。</p>
+                <a href="https://enable-javascript.com/ja/" target="_blank" style="color: white; text-decoration: underline;">
+                    JavaScriptを有効にする方法
+                </a>
+            </div>
+        </div>
+    </noscript>
 </body>
 </html>
