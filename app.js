@@ -4,6 +4,9 @@ import { Auth } from './auth.js';
 import { Router } from './router.js';
 import { HeaderComponent } from './components/header.js';
 import { SidebarComponent } from './components/sidebar.js';
+import { AccessibilityHelper } from './accessibility.js';
+import { PerformanceOptimizer } from './performance.js';
+import { AnimationHelper } from './animations.js';
 
 class App {
   constructor() {
@@ -15,6 +18,9 @@ class App {
     this.router = new Router(this);
     this.header = new HeaderComponent(this);
     this.sidebar = new SidebarComponent(this);
+    this.accessibility = null;
+    this.performance = null;
+    this.animations = null;
     
     // グローバルエラーハンドラーの設定
     this.setupGlobalErrorHandlers();
@@ -46,6 +52,21 @@ class App {
       
       console.log("Step 6: Initial routing...");
       await this.router.route();
+      
+      console.log("Step 7: Initializing accessibility features...");
+      this.accessibility = new AccessibilityHelper(this);
+      this.accessibility.init();
+      console.log("✓ Accessibility features initialized");
+      
+      console.log("Step 8: Initializing performance optimizations...");
+      this.performance = new PerformanceOptimizer(this);
+      this.performance.init();
+      console.log("✓ Performance optimizations initialized");
+      
+      console.log("Step 9: Initializing animations...");
+      this.animations = new AnimationHelper(this);
+      this.animations.init();
+      console.log("✓ Animations initialized");
       
       console.log("🎉 Application initialized successfully");
       
@@ -152,6 +173,11 @@ class App {
     } else {
         this.router.route();
     }
+    
+    // アクセシビリティ通知
+    if (this.accessibility) {
+      this.accessibility.announce('ページを読み込んでいます');
+    }
   }
   
   updateUIForAuthState(user) {
@@ -240,6 +266,12 @@ class App {
       return temp.innerHTML;
   }
   
+  // 入力値のサニタイゼーション
+  sanitizeInput(input) {
+    if (!input) return '';
+    return input.trim().replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  }
+  
   getStatusBadgeClass(status) {
     const statusClasses = {
       active: "bg-success",
@@ -292,12 +324,6 @@ class App {
       console.error('Date formatting error:', error);
       return "-";
     }
-  }
-
-  // 入力値のサニタイゼーション
-  sanitizeInput(input) {
-    if (!input) return '';
-    return input.trim().replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
   }
 
   // 確認ダイアログの表示
