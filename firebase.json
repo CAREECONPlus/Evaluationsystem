@@ -1,31 +1,30 @@
 {
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
   "hosting": {
-    "public": ".",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**", "scripts/**"],
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
     "rewrites": [
       {
         "source": "**",
         "destination": "/index.html"
       }
-    ],
-    "headers": [
-      {
-        "source": "**/*.@(js|css)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "max-age=31536000"
-          }
-        ]
-      }
     ]
   },
-  "firestore": {
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
-  },
-  "functions": {
-    "source": "functions",
-    "runtime": "nodejs18"
+  "extensions": {
+    "firestore-send-email": {
+      "source": "firebase/firestore-send-email@0.1.29",
+      "params": {
+        "SMTP_CONNECTION_URI": "${param:SMTP_CONNECTION_URI}",
+        "EMAIL_COLLECTION": "mail",
+        "DEFAULT_FROM": "${param:DEFAULT_FROM}"
+      }
+    }
   }
 }
