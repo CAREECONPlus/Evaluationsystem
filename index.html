@@ -13,9 +13,9 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://hyouka-db.firebaseapp.com">
     
-    <!-- PWA設定 -->
+    <!-- PWA設定（修正版） -->
     <meta name="theme-color" content="#007bff">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="評価管理">
     
@@ -33,9 +33,8 @@
     <!-- カスタムCSS -->
     <link href="styles.css" rel="stylesheet">
     
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <!-- Favicon（データURIで対応） -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23007bff'/><text y='50' x='50' text-anchor='middle' font-size='50' fill='white' dy='.3em'>評</text></svg>">
     
     <!-- DNS Prefetch -->
     <link rel="dns-prefetch" href="https://www.gstatic.com">
@@ -121,28 +120,39 @@
             }
         });
         
-        // Service Worker の登録
+        // Service Worker の登録（オプショナル - ファイルが存在する場合のみ）
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
+                // まずService Workerファイルが存在するか確認
+                fetch('/service-worker.js', { method: 'HEAD' })
+                    .then(response => {
+                        if (response.ok) {
+                            return navigator.serviceWorker.register('/service-worker.js');
+                        } else {
+                            console.log('Service Worker file not found, skipping registration');
+                            return null;
+                        }
+                    })
                     .then(registration => {
-                        console.log('ServiceWorker registration successful:', registration.scope);
-                        
-                        // Service Worker の更新チェック
-                        registration.addEventListener('updatefound', () => {
-                            const newWorker = registration.installing;
-                            newWorker.addEventListener('statechange', () => {
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    // 新しいバージョンが利用可能
-                                    if (confirm('新しいバージョンが利用可能です。更新しますか？')) {
-                                        window.location.reload();
+                        if (registration) {
+                            console.log('ServiceWorker registration successful:', registration.scope);
+                            
+                            // Service Worker の更新チェック
+                            registration.addEventListener('updatefound', () => {
+                                const newWorker = registration.installing;
+                                newWorker.addEventListener('statechange', () => {
+                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                        // 新しいバージョンが利用可能
+                                        if (confirm('新しいバージョンが利用可能です。更新しますか？')) {
+                                            window.location.reload();
+                                        }
                                     }
-                                }
+                                });
                             });
-                        });
+                        }
                     })
                     .catch(err => {
-                        console.warn('ServiceWorker registration failed:', err);
+                        console.log('ServiceWorker registration skipped:', err.message);
                     });
             });
         }
@@ -208,7 +218,7 @@
                             </a>
                         </div>
                         <details class="mt-4 text-start">
-                            <summary class="text-white-50 cursor-pointer">エラー詳細</summary>
+                            <summary class="text-white-50" style="cursor: pointer;">エラー詳細</summary>
                             <div class="bg-dark p-3 rounded mt-2">
                                 <small class="text-white-50">
                                     <code>${error?.stack || error?.message || 'Unknown error'}</code>
