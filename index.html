@@ -16,6 +16,7 @@
     <!-- PWA設定（修正版） -->
     <meta name="theme-color" content="#007bff">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="評価管理">
     
@@ -31,7 +32,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- カスタムCSS -->
-    <link href="styles.css" rel="stylesheet">
+    <link href="./styles.css" rel="stylesheet">
     
     <!-- Favicon（データURIで対応） -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23007bff'/><text y='50' x='50' text-anchor='middle' font-size='50' fill='white' dy='.3em'>評</text></svg>">
@@ -87,9 +88,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
 
     <!-- Firebase設定とアプリケーション初期化 -->
-　　<script type="module">
-    // パスを修正（./js/app.js → ./app.js）
-    import App from './app.js';
+    <script type="module">
+        // ★★★ パス修正済み：./js/app.js → ./app.js ★★★
+        import App from './app.js';
         
         // グローバルエラーハンドリング
         window.addEventListener('error', (event) => {
@@ -121,14 +122,14 @@
             }
         });
         
-        // Service Worker の登録（オプショナル - ファイルが存在する場合のみ）
+        // Service Worker の登録（publicフォルダ内のservice-worker.jsを参照）
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                // まずService Workerファイルが存在するか確認
-                fetch('/service-worker.js', { method: 'HEAD' })
+                // Service Workerファイルの存在確認
+                fetch('./public/service-worker.js', { method: 'HEAD' })
                     .then(response => {
                         if (response.ok) {
-                            return navigator.serviceWorker.register('/service-worker.js');
+                            return navigator.serviceWorker.register('./public/service-worker.js');
                         } else {
                             console.log('Service Worker file not found, skipping registration');
                             return null;
