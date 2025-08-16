@@ -121,8 +121,11 @@
             }
         });
         
-        // Service Worker は一時的に無効化
-        console.log('Service Worker disabled for debugging');
+        // 未処理のPromise拒否を捕捉
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+            event.preventDefault();
+        });
         
         // オフライン検知
         window.addEventListener('online', () => {
