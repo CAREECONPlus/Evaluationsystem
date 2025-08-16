@@ -1,5 +1,5 @@
 // Firebase SDKから必要な関数をインポートします。
-import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp, deleteDoc, writeBatch, getCountFromServer, limit, orderBy } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp, deleteDoc, writeBatch, getCountFromServer, limit, orderBy, addDoc } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
 /**
  * API Service (最小構成版)
@@ -296,6 +296,212 @@ export class API {
     }
   }
 
+  // --- Goals Management ---
+
+  async getGoals(userId, periodId) {
+    try {
+        const q = query(collection(this.db, "qualitativeGoals"), 
+            where("userId", "==", userId),
+            where("periodId", "==", periodId),
+            where("tenantId", "==", this.app.currentUser.tenantId)
+        );
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) return null;
+        return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+    } catch (error) {
+        this.handleError(error, "目標の取得");
+    }
+  }
+
+  async saveGoals(goalData) {
+    try {
+        if (goalData.id && !goalData.id.startsWith('goal_')) {
+            // 既存の目標を更新
+            const goalRef = doc(this.db, "qualitativeGoals", goalData.id);
+            await updateDoc(goalRef, {
+                goals: goalData.goals,
+                status: goalData.status,
+                submittedAt: goalData.submittedAt,
+                updatedAt: serverTimestamp()
+            });
+        } else {
+            // 新規目標を作成
+            const goalRef = await addDoc(collection(this.db, "qualitativeGoals"), {
+                userId: goalData.userId,
+                userName: goalData.userName,
+                periodId: goalData.periodId,
+                periodName: goalData.periodName,
+                goals: goalData.goals,
+                status: goalData.status,
+                tenantId: goalData.tenantId,
+                submittedAt: goalData.submittedAt,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+            return goalRef.id;
+        }
+    } catch (error) {
+        this.handleError(error, "目標の保存");
+    }
+  }
+
+  async getGoalsByStatus(status) {
+    try {
+        const q = query(collection(this.db, "qualitativeGoals"),
+            where("tenantId", "==", this.app.currentUser.tenantId),
+            where("status", "==", status),
+            orderBy("submittedAt", "desc")
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+        this.handleError(error, `目標の取得 (status: ${status})`);
+    }
+  }
+
+  async updateGoalStatus(goalId, status, additionalData = {}) {
+    try {
+        const goalRef = doc(this.db, "qualitativeGoals", goalId);
+        await updateDoc(goalRef, {
+            status: status,
+            updatedAt: serverTimestamp(),
+            ...additionalData
+        });
+    } catch (error) {
+        this.handleError(error, "目標ステータスの更新");
+    }
+  }
+
+  // --- Evaluations Management ---
+
+  async getEvaluations(filters = {}) {
+    try {
+        let q = query(collection(this.db, "evaluations"),
+            where("tenantId", "==", this.app.currentUser.tenantId),
+            orderBy("updatedAt", "desc")
+        );
+
+        // フィルターがある場合は追加
+        if (filters.targetUserId) {
+            q = query(q, where("targetUserId", "==", filters.targetUserId));
+        }
+        if (filters.periodId) {
+            q = query(q, where("periodId", "==", filters.periodId));
+        }
+        if (filters.status) {
+            q = query(q, where("status", "==", filters.status));
+        }
+
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+        this.handleError(error, "評価一覧の取得");
+    }
+  }
+
+  async saveEvaluation(evaluationData) {
+    try {
+        if (evaluationData.id && !evaluationData.id.startsWith('eval_')) {
+            // 既存の評価を更新
+            const evalRef = doc(this.db, "evaluations", evaluationData.id);
+            await updateDoc(evalRef, {
+                ratings: evaluationData.ratings,
+                status: evaluationData.status,
+                submittedAt: evaluationData.submittedAt,
+                updatedAt: evaluationData.updatedAt
+            });
+        } else {
+            // 新規評価を作成
+            const evalRef = await addDoc(collection(this.db, "evaluations"), {
+                tenantId: evaluationData.tenantId,
+                targetUserId: evaluationData.targetUserId,
+                targetUserName: evaluationData.targetUserName,
+                targetUserEmail: evaluationData.targetUserEmail,
+                jobTypeId: evaluationData.jobTypeId,
+                periodId: evaluationData.periodId,
+                periodName: evaluationData.periodName,
+                evaluatorId: evaluationData.evaluatorId,
+                evaluatorName: evaluationData.evaluatorName,
+                ratings: evaluationData.ratings,
+                status: evaluationData.status,
+                submittedAt: evaluationData.submittedAt,
+                createdAt: serverTimestamp(),
+                updatedAt: evaluationData.updatedAt
+            });
+            return evalRef.id;
+        }
+    } catch (error) {
+        this.handleError(error, "評価の保存");
+    }
+  }
+
+  async updateEvaluationStatus(evaluationId, status, additionalData = {}) {
+    try {
+        const evalRef = doc(this.db, "evaluations", evaluationId);
+        await updateDoc(evalRef, {
+            status: status,
+            updatedAt: serverTimestamp(),
+            ...additionalData
+        });
+    } catch (error) {
+        this.handleError(error, "評価ステータスの更新");
+    }
+  }
+
+  async getEvaluationById(evaluationId) {
+    try {
+        const evalRef = doc(this.db, "evaluations", evaluationId);
+        const evalDoc = await getDoc(evalRef);
+        if (evalDoc.exists()) {
+            return { id: evalDoc.id, ...evalDoc.data() };
+        }
+        return null;
+    } catch (error) {
+        this.handleError(error, `評価の取得 (id: ${evaluationId})`);
+    }
+  }
+
+  async getEvaluationHistory(evaluationId) {
+    try {
+        // 簡単な履歴シミュレーション（実際の実装では別コレクションまたは履歴フィールドを使用）
+        const evaluation = await this.getEvaluationById(evaluationId);
+        if (!evaluation) return [];
+
+        const history = [];
+        
+        // 作成時
+        if (evaluation.createdAt) {
+            history.push({
+                status: 'created',
+                timestamp: evaluation.createdAt,
+                actor: evaluation.targetUserName
+            });
+        }
+
+        // 提出時
+        if (evaluation.submittedAt && evaluation.status !== 'draft') {
+            history.push({
+                status: evaluation.status === 'self_assessed' ? 'self_assessed' : 'submitted',
+                timestamp: evaluation.submittedAt,
+                actor: evaluation.status === 'self_assessed' ? evaluation.targetUserName : evaluation.evaluatorName
+            });
+        }
+
+        // 完了時
+        if (evaluation.status === 'completed' && evaluation.updatedAt) {
+            history.push({
+                status: 'completed',
+                timestamp: evaluation.updatedAt,
+                actor: 'System'
+            });
+        }
+
+        return history.sort((a, b) => a.timestamp - b.timestamp);
+    } catch (error) {
+        this.handleError(error, "評価履歴の取得");
+    }
+  }
+
   // --- Dashboard ---
 
   async getDashboardStats() {
@@ -331,6 +537,7 @@ export class API {
     try {
         const q = query(collection(this.db, "evaluations"), 
             where("tenantId", "==", this.app.currentUser.tenantId), 
+            orderBy("updatedAt", "desc"),
             limit(5));
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
