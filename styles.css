@@ -10,12 +10,19 @@
     --dark-color: #343a40;
     --sidebar-width: 250px;
     --header-height: 56px;
+    --animation-duration: 0.3s;
+    --animation-easing: ease-in-out;
+}
+
+* {
+    box-sizing: border-box;
 }
 
 body {
     font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background-color: #f4f6f9;
     min-height: 100vh;
+    line-height: 1.6;
 }
 
 /* === ローディング画面 === */
@@ -51,7 +58,7 @@ body {
     height: calc(100vh - var(--header-height));
     background: white;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease;
+    transition: transform var(--animation-duration) var(--animation-easing);
     z-index: 999;
     overflow-y: auto;
 }
@@ -69,22 +76,26 @@ body {
     background: rgba(0, 0, 0, 0.5);
     display: none;
     z-index: 998;
+    transition: opacity var(--animation-duration) var(--animation-easing);
 }
 
 .sidebar-backdrop.show {
     display: block;
+    opacity: 1;
 }
 
 .sidebar .nav-link {
     color: #333;
     padding: 12px 20px;
-    transition: all 0.3s ease;
+    transition: all var(--animation-duration) var(--animation-easing);
     border-left: 3px solid transparent;
+    text-decoration: none;
 }
 
 .sidebar .nav-link:hover {
     background: #f8f9fa;
     border-left-color: var(--primary-color);
+    color: var(--primary-color);
 }
 
 .sidebar .nav-link.active {
@@ -100,7 +111,7 @@ body {
     margin-top: var(--header-height);
     min-height: calc(100vh - var(--header-height));
     padding: 20px;
-    transition: margin-left 0.3s ease;
+    transition: margin-left var(--animation-duration) var(--animation-easing);
 }
 
 /* === カード === */
@@ -108,7 +119,8 @@ body {
     border: none;
     border-radius: 10px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
+    transition: all var(--animation-duration) var(--animation-easing);
+    background: white;
 }
 
 .card:hover {
@@ -120,6 +132,11 @@ body {
     color: white;
     font-weight: 600;
     border-radius: 10px 10px 0 0 !important;
+    border-bottom: none;
+}
+
+.card-title-icon i {
+    margin-right: 8px;
 }
 
 /* === ステータスバッジ === */
@@ -127,40 +144,152 @@ body {
     padding: 6px 12px;
     font-weight: 500;
     border-radius: 20px;
+    font-size: 0.85em;
 }
 
 /* === フォーム === */
+.form-control,
+.form-select {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    transition: all var(--animation-duration) var(--animation-easing);
+}
+
 .form-control:focus,
 .form-select:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+    border-color: var(--danger-color);
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.form-control.is-valid,
+.form-select.is-valid {
+    border-color: var(--success-color);
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
 }
 
 .invalid-feedback {
     display: block;
+    color: var(--danger-color);
+    font-size: 0.875em;
+    margin-top: 0.25rem;
+}
+
+.valid-feedback {
+    display: block;
+    color: var(--success-color);
+    font-size: 0.875em;
+    margin-top: 0.25rem;
 }
 
 /* === ボタン === */
 .btn {
-    border-radius: 5px;
-    padding: 8px 16px;
-    transition: all 0.3s ease;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 500;
+    transition: all var(--animation-duration) var(--animation-easing);
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px; /* アクセシビリティのための最小タッチターゲット */
 }
 
-.btn:hover {
+.btn:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.btn i {
+    margin-right: 6px;
+}
+
+.btn-sm {
+    min-height: 32px;
+    padding: 6px 12px;
+    font-size: 0.875rem;
+}
+
+.btn-lg {
+    min-height: 48px;
+    padding: 12px 24px;
+    font-size: 1.125rem;
 }
 
 /* === テーブル === */
 .table {
     background: white;
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 .table thead th {
     border-bottom: 2px solid #dee2e6;
     font-weight: 600;
     color: #495057;
+    background-color: #f8f9fa;
+    padding: 12px;
+}
+
+.table tbody td {
+    padding: 12px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* === トースト通知 === */
+.toast-container {
+    z-index: 1055;
+}
+
+.toast {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: none;
+    margin-bottom: 0.5rem;
+}
+
+/* === モーダル === */
+.modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    border-bottom: 1px solid #f0f0f0;
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-footer {
+    border-top: 1px solid #f0f0f0;
+    border-radius: 0 0 12px 12px;
 }
 
 /* === モバイル対応 === */
@@ -175,212 +304,521 @@ body {
     
     .content {
         margin-left: 0;
+        padding: 15px;
+    }
+}
+
+@media (max-width: 576px) {
+    .content {
+        padding: 10px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+    }
+    
+    .table-responsive {
+        border-radius: 8px;
     }
 }
 
 /* === アクセシビリティ対応スタイル === */
 
+/* スキップリンク */
+.skip-links {
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    z-index: 1000;
+}
+
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: var(--primary-color);
+    color: white;
+    padding: 8px;
+    text-decoration: none;
+    border-radius: 4px;
+    z-index: 1000;
+    transition: top 0.3s;
+}
+
+.skip-link:focus {
+    top: 6px;
+    color: white;
+}
+
 /* キーボードナビゲーション時のフォーカス表示 */
 .keyboard-nav *:focus {
-  outline: 3px solid #0066cc;
-  outline-offset: 2px;
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.keyboard-nav .btn:focus {
+    outline-color: white;
 }
 
 /* ハイコントラストモード */
 .high-contrast {
-  filter: contrast(1.2);
+    filter: contrast(1.5) brightness(1.2);
 }
 
 .high-contrast * {
-  border-color: currentColor !important;
+    border-color: currentColor !important;
 }
 
 .high-contrast .btn-primary {
-  background-color: #000 !important;
-  color: #fff !important;
-  border: 2px solid #fff !important;
+    background-color: #000 !important;
+    color: #fff !important;
+    border: 2px solid #fff !important;
 }
 
 .high-contrast .card {
-  border: 2px solid #000 !important;
+    border: 2px solid #000 !important;
+}
+
+.high-contrast .table {
+    border: 2px solid #000 !important;
+}
+
+.high-contrast .table th,
+.high-contrast .table td {
+    border: 1px solid #000 !important;
 }
 
 /* スクリーンリーダー用 */
 .visually-hidden {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  padding: 0 !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  clip: rect(0, 0, 0, 0) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
 }
 
 /* フォーカス可能な要素の最小サイズ確保 */
-button, a, input, select, textarea {
-  min-height: 44px;
+button, a, input, select, textarea, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
 }
 
 /* カラーコントラスト改善 */
 .text-muted {
-  color: #6c757d !important;
+    color: #6c757d !important;
 }
 
 .high-contrast .text-muted {
-  color: #495057 !important;
+    color: #495057 !important;
 }
 
 /* === アニメーション === */
+
+/* アニメーション無効化 */
+.animations-disabled,
+.animations-disabled *,
+.animations-disabled *::before,
+.animations-disabled *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0.01ms !important;
+}
+
+/* 基本的なアニメーション */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+    from { 
+        opacity: 0; 
+    }
+    to { 
+        opacity: 1; 
+    }
+}
+
+@keyframes fadeOut {
+    from { 
+        opacity: 1; 
+    }
+    to { 
+        opacity: 0; 
+    }
 }
 
 @keyframes slideInLeft {
-  from {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+    0% { 
+        transform: scale(1); 
+        opacity: 1;
+    }
+    50% { 
+        transform: scale(1.05); 
+        opacity: 0.8;
+    }
+    100% { 
+        transform: scale(1); 
+        opacity: 1;
+    }
 }
 
+@keyframes bounce {
+    0%, 20%, 53%, 80%, 100% {
+        animation-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
+        transform: translate3d(0,0,0);
+    }
+    40%, 43% {
+        animation-timing-function: cubic-bezier(0.755, 0.050, 0.855, 0.060);
+        transform: translate3d(0, -30px, 0);
+    }
+    70% {
+        animation-timing-function: cubic-bezier(0.755, 0.050, 0.855, 0.060);
+        transform: translate3d(0, -15px, 0);
+    }
+    90% {
+        transform: translate3d(0,-4px,0);
+    }
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* アニメーションクラス */
 .animate-fadeIn {
-  animation: fadeIn 0.3s ease-in-out;
+    animation: fadeIn var(--animation-duration) var(--animation-easing);
 }
 
-.animate-slideIn {
-  animation: slideInLeft 0.3s ease-out;
+.animate-fadeOut {
+    animation: fadeOut var(--animation-duration) var(--animation-easing);
+}
+
+.animate-slideInLeft {
+    animation: slideInLeft var(--animation-duration) var(--animation-easing);
+}
+
+.animate-slideInRight {
+    animation: slideInRight var(--animation-duration) var(--animation-easing);
+}
+
+.animate-slideInUp {
+    animation: slideInUp var(--animation-duration) var(--animation-easing);
+}
+
+.animate-slideInDown {
+    animation: slideInDown var(--animation-duration) var(--animation-easing);
 }
 
 .animate-pulse {
-  animation: pulse 0.3s ease-in-out;
+    animation: pulse 1s var(--animation-easing) infinite;
+}
+
+.animate-bounce {
+    animation: bounce 1s var(--animation-easing);
 }
 
 /* スケルトンローディング */
+.skeleton-container {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
 .skeleton-line {
-  height: 20px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-  border-radius: 4px;
+    height: 20px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 4px;
+    margin-bottom: 8px;
 }
 
 @keyframes loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+    0% { 
+        background-position: 200% 0; 
+    }
+    100% { 
+        background-position: -200% 0; 
+    }
 }
 
 /* リップルエフェクト */
 .ripple {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.6);
-  transform: scale(0);
-  animation: ripple 0.6s ease-out;
-  pointer-events: none;
-}
-
-@keyframes ripple {
-  to {
-    transform: scale(4);
-    opacity: 0;
-  }
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.6);
+    transform: scale(0);
+    animation: ripple 0.6s ease-out;
+    pointer-events: none;
 }
 
 /* トランジション */
 .transition-all {
-  transition: all 0.3s ease;
+    transition: all var(--animation-duration) var(--animation-easing);
 }
 
 .transition-opacity {
-  transition: opacity 0.3s ease;
+    transition: opacity var(--animation-duration) var(--animation-easing);
 }
 
 .transition-transform {
-  transition: transform 0.3s ease;
+    transition: transform var(--animation-duration) var(--animation-easing);
 }
 
 /* === ユーティリティクラス === */
 .cursor-pointer {
-  cursor: pointer;
+    cursor: pointer;
 }
 
 .user-select-none {
-  user-select: none;
+    user-select: none;
 }
 
 .overflow-auto {
-  overflow: auto;
+    overflow: auto;
 }
 
 .text-truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-/* === ダッシュボードカード === */
+.shadow-sm {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08) !important;
+}
+
+.shadow {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12) !important;
+}
+
+.shadow-lg {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* === パフォーマンス最適化 === */
+.loaded {
+    opacity: 1;
+}
+
+.loading {
+    opacity: 0.6;
+}
+
+.error {
+    opacity: 0.3;
+    filter: grayscale(100%);
+}
+
+/* === ダッシュボード専用スタイル === */
 .stat-card {
-  background: white;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all var(--animation-duration) var(--animation-easing);
+    border-left: 4px solid var(--primary-color);
 }
 
 .stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .stat-card .stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+    color: white;
 }
 
 /* === 評価フォーム === */
 .evaluation-form .form-label {
-  font-weight: 600;
-  color: #495057;
-  margin-bottom: 8px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
 }
 
 .evaluation-form .rating-select {
-  cursor: pointer;
+    cursor: pointer;
+}
+
+.evaluation-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* === ページ固有のスタイル === */
+.login-page {
+    min-height: 100vh;
+}
+
+.dashboard-page .page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+}
+
+.settings-page .job-type-item.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* === カスタムスクロールバー === */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
 }
 
 /* === プリント対応 === */
 @media print {
-  .sidebar,
-  #header-container,
-  .btn,
-  .toast-container {
-    display: none !important;
-  }
-  
-  .content {
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  
-  .card {
-    box-shadow: none !important;
-    page-break-inside: avoid;
-  }
+    .sidebar,
+    #header-container,
+    .btn,
+    .toast-container,
+    .sidebar-backdrop {
+        display: none !important;
+    }
+    
+    .content {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .card {
+        box-shadow: none !important;
+        page-break-inside: avoid;
+        border: 1px solid #ddd !important;
+    }
+    
+    .table {
+        border-collapse: collapse !important;
+    }
+    
+    .table th,
+    .table td {
+        border: 1px solid #ddd !important;
+    }
+}
+
+/* === ダークモード対応（オプション） === */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-color: #1a1a1a;
+        --text-color: #ffffff;
+        --card-bg: #2d2d2d;
+        --border-color: #404040;
+    }
+    
+    .dark-mode-enabled {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+    }
+    
+    .dark-mode-enabled .card {
+        background-color: var(--card-bg);
+        color: var(--text-color);
+    }
+    
+    .dark-mode-enabled .table {
+        background-color: var(--card-bg);
+        color: var(--text-color);
+    }
+    
+    .dark-mode-enabled .form-control,
+    .dark-mode-enabled .form-select {
+        background-color: var(--card-bg);
+        border-color: var(--border-color);
+        color: var(--text-color);
+    }
+}
+
+/* === レスポンシブタイポグラフィ === */
+@media (min-width: 1200px) {
+    h1 { font-size: 2.5rem; }
+    h2 { font-size: 2rem; }
+    h3 { font-size: 1.75rem; }
+    h4 { font-size: 1.5rem; }
+    h5 { font-size: 1.25rem; }
+}
+
+@media (max-width: 576px) {
+    h1 { font-size: 1.75rem; }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.25rem; }
+    h4 { font-size: 1.1rem; }
+    h5 { font-size: 1rem; }
 }
