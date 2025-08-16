@@ -1,6 +1,5 @@
 // Firebase SDKから必要な関数をインポートします。
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp, deleteDoc, writeBatch, getCountFromServer, limit, orderBy } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-functions.js";
 
 /**
  * API Service (最小構成版)
@@ -18,7 +17,6 @@ export class API {
     this.firebaseApp = app.auth.firebaseApp; 
     
     this.db = getFirestore(this.firebaseApp);
-    this.functions = getFunctions(this.firebaseApp);
     this.serverTimestamp = serverTimestamp;
     // キャッシュ機能は一時的に無効化
     this.cache = null;
