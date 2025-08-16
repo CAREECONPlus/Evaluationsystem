@@ -3,8 +3,7 @@
  * 強化された国際化（i18n）サービス
  */
 export class I18n {
-  constructor(app) {
-    this.app = app;
+  constructor() {
     this.lang = "ja";
     this.translations = {};
     this.supportedLanguages = ["ja", "en", "vi"];
@@ -61,17 +60,20 @@ export class I18n {
     this.setupNumberFormats();
     this.setupDateFormats();
     
-    // UIコンポーネントの更新
-    if (this.app && this.app.header) {
-        this.app.header.update();
-    }
-    if (this.app && this.app.sidebar) {
-        this.app.sidebar.update();
-    }
-    
-    // 現在のページを再描画
-    if (this.app && this.app.router && this.app.router.currentPageInstance) {
-        this.updateUI();
+    // UIの更新（app.jsが存在する場合のみ）
+    if (window.app) {
+      // UIコンポーネントの更新
+      if (window.app.header) {
+          window.app.header.update();
+      }
+      if (window.app.sidebar) {
+          window.app.sidebar.update();
+      }
+      
+      // 現在のページを再描画
+      if (window.app.router && window.app.router.currentPageInstance) {
+          this.updateUI();
+      }
     }
   }
 
