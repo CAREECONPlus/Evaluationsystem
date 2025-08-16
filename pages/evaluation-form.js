@@ -13,33 +13,67 @@ export class EvaluationFormPage {
     this.usersForEvaluation = [];
     this.periods = [];
     this.existingEvaluation = null;
+    this.isReadOnly = false;
+    this.isDraft = false;
   }
 
   async render() {
     return `
       <div class="evaluation-form-page p-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 data-i18n="evaluations.form_title"></h1>
-            <button id="submit-eval-btn" class="btn btn-primary btn-lg" disabled>
-                <i class="fas fa-paper-plane me-2"></i><span data-i18n="common.submit"></span>
-            </button>
+            <h1 data-i18n="evaluations.form_title">評価入力フォーム</h1>
+            <div class="evaluation-actions">
+                <button id="save-draft-btn" class="btn btn-outline-secondary me-2" style="display:none;">
+                    <i class="fas fa-save me-2"></i><span data-i18n="common.save_draft">下書き保存</span>
+                </button>
+                <button id="submit-eval-btn" class="btn btn-primary btn-lg" disabled>
+                    <i class="fas fa-paper-plane me-2"></i><span data-i18n="common.submit">提出</span>
+                </button>
+            </div>
         </div>
 
+        <!-- ステータス表示 -->
+        <div id="evaluation-status" class="alert d-none mb-4"></div>
+
         <div class="card mb-4">
-            <div class="card-header"><h5 class="mb-0" data-i18n="evaluations.target_info"></h5></div>
+            <div class="card-header">
+                <h5 class="mb-0" data-i18n="evaluations.target_info">評価対象情報</h5>
+            </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="target-user-select" class="form-label" data-i18n="evaluations.target_user"></label>
-                        <select id="target-user-select" class="form-select"></select>
+                        <label for="target-user-select" class="form-label" data-i18n="evaluations.target_user">評価対象者</label>
+                        <select id="target-user-select" class="form-select">
+                            <option value="" data-i18n="common.select">選択してください</option>
+                        </select>
+                        <div class="invalid-feedback">評価対象者を選択してください</div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="period-select" class="form-label" data-i18n="evaluations.evaluation_period"></label>
-                        <select id="period-select" class="form-select"></select>
+                        <label for="period-select" class="form-label" data-i18n="evaluations.evaluation_period">評価期間</label>
+                        <select id="period-select" class="form-select">
+                            <option value="" data-i18n="common.select">選択してください</option>
+                        </select>
+                        <div class="invalid-feedback">評価期間を選択してください</div>
+                    </div>
+                </div>
+                
+                <!-- 対象者詳細情報 -->
+                <div id="target-user-info" class="mt-3 p-3 bg-light rounded d-none">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>氏名:</strong> <span id="target-user-name"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>職種:</strong> <span id="target-user-job-type"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>評価者:</strong> <span id="target-user-evaluator"></span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+        
         <div id="evaluation-content" class="d-none">
             <!-- Evaluation form will be rendered here -->
         </div>
@@ -56,9 +90,9 @@ export class EvaluationFormPage {
 
   async loadInitialData() {
     try {
-      // 評価対象ユーザーと評価期間のリストを取得
       const currentUser = this.app.currentUser;
       
+      // 権限に応じて評価対象者を取得
       if (currentUser.role === 'worker') {
         // 作業員は自分のみを評価対象とする
         this.usersForEvaluation = [currentUser];
@@ -77,6 +111,7 @@ export class EvaluationFormPage {
       
       this.renderUserSelect();
       this.renderPeriodSelect();
+      
     } catch (error) {
       console.error("Error loading initial data:", error);
       this.app.showError("初期データの読み込みに失敗しました");
@@ -85,8 +120,10 @@ export class EvaluationFormPage {
 
   renderUserSelect() {
     const select = document.getElementById('target-user-select');
+    if (!select) return;
+    
     select.innerHTML = `
-      <option value="" data-i18n="common.select"></option>
+      <option value="" data-i18n="common.select">選択してください</option>
       ${this.usersForEvaluation.map(user => 
         `<option value="${user.id}">${this.app.sanitizeHtml(user.name)}</option>`
       ).join('')}
@@ -95,8 +132,10 @@ export class EvaluationFormPage {
 
   renderPeriodSelect() {
     const select = document.getElementById('period-select');
+    if (!select) return;
+    
     select.innerHTML = `
-      <option value="" data-i18n="common.select"></option>
+      <option value="" data-i18n="common.select">選択してください</option>
       ${this.periods.map(period => 
         `<option value="${period.id}">${this.app.sanitizeHtml(period.name)}</option>`
       ).join('')}
@@ -107,6 +146,7 @@ export class EvaluationFormPage {
     document.getElementById('target-user-select').addEventListener('change', () => this.onSelectionChange());
     document.getElementById('period-select').addEventListener('change', () => this.onSelectionChange());
     document.getElementById('submit-eval-btn').addEventListener('click', () => this.submitEvaluation());
+    document.getElementById('save-draft-btn').addEventListener('click', () => this.saveDraft());
   }
 
   async onSelectionChange() {
@@ -115,24 +155,89 @@ export class EvaluationFormPage {
 
     if (!userId || !periodId) {
       document.getElementById('evaluation-content').classList.add('d-none');
+      document.getElementById('target-user-info').classList.add('d-none');
       document.getElementById('submit-eval-btn').disabled = true;
+      this.hideStatus();
       return;
     }
 
     this.targetUser = this.usersForEvaluation.find(u => u.id === userId);
     this.selectedPeriod = this.periods.find(p => p.id === periodId);
 
+    // 対象者情報を表示
+    this.renderTargetUserInfo();
+    
+    // バリデーション
+    const validationResult = await this.validateUserForEvaluation();
+    if (!validationResult.isValid) {
+      this.showStatus(validationResult.message, 'warning');
+      document.getElementById('evaluation-content').classList.add('d-none');
+      document.getElementById('submit-eval-btn').disabled = true;
+      return;
+    }
+
     await this.loadEvaluationForm();
+  }
+
+  renderTargetUserInfo() {
+    const infoDiv = document.getElementById('target-user-info');
+    const jobType = this.usersForEvaluation.find(u => u.jobTypeId === this.targetUser.jobTypeId);
+    const evaluator = this.usersForEvaluation.find(u => u.id === this.targetUser.evaluatorId);
+    
+    document.getElementById('target-user-name').textContent = this.targetUser.name;
+    document.getElementById('target-user-job-type').textContent = jobType?.name || '未設定';
+    document.getElementById('target-user-evaluator').textContent = evaluator?.name || '未設定';
+    
+    infoDiv.classList.remove('d-none');
+  }
+
+  async validateUserForEvaluation() {
+    // 職種設定チェック
+    if (!this.targetUser.jobTypeId) {
+      return {
+        isValid: false,
+        message: '対象者に職種が設定されていません。管理者に連絡してください。'
+      };
+    }
+
+    // 既存評価の重複チェック
+    try {
+      const existingEvals = await this.app.api.getEvaluations({
+        targetUserId: this.targetUser.id,
+        periodId: this.selectedPeriod.id
+      });
+
+      const duplicateEval = existingEvals.find(eval => 
+        eval.targetUserId === this.targetUser.id && 
+        eval.periodId === this.selectedPeriod.id
+      );
+
+      if (duplicateEval) {
+        if (duplicateEval.status === 'completed') {
+          this.existingEvaluation = duplicateEval;
+          this.isReadOnly = true;
+          return {
+            isValid: true,
+            message: 'この評価は既に完了しています。（閲覧モード）'
+          };
+        } else if (duplicateEval.status === 'draft') {
+          this.existingEvaluation = duplicateEval;
+          this.isDraft = true;
+          return {
+            isValid: true,
+            message: '下書きが見つかりました。続きから編集できます。'
+          };
+        }
+      }
+    } catch (error) {
+      console.error("Error checking existing evaluations:", error);
+    }
+
+    return { isValid: true, message: null };
   }
 
   async loadEvaluationForm() {
     try {
-      // 既存の評価データを取得
-      this.existingEvaluation = await this.app.api.getEvaluationById(
-        this.targetUser.id, 
-        this.selectedPeriod.id
-      );
-
       // 評価構造を取得
       if (this.targetUser.jobTypeId) {
         this.evaluationStructure = await this.app.api.getEvaluationStructure(this.targetUser.jobTypeId);
@@ -140,11 +245,24 @@ export class EvaluationFormPage {
 
       // 個人目標を取得
       const goals = await this.app.api.getGoals(this.targetUser.id, this.selectedPeriod.id);
-      this.qualitativeGoals = goals ? goals.goals : [];
+      this.qualitativeGoals = goals?.goals || [];
 
       this.renderEvaluationForm();
       document.getElementById('evaluation-content').classList.remove('d-none');
-      document.getElementById('submit-eval-btn').disabled = false;
+      
+      // ボタンの状態設定
+      if (this.isReadOnly) {
+        document.getElementById('submit-eval-btn').style.display = 'none';
+        document.getElementById('save-draft-btn').style.display = 'none';
+        this.showStatus('この評価は完了済みです。', 'info');
+      } else {
+        document.getElementById('submit-eval-btn').disabled = false;
+        document.getElementById('save-draft-btn').style.display = 'inline-block';
+        
+        if (this.isDraft) {
+          this.showStatus('下書きから復元しました。', 'info');
+        }
+      }
 
     } catch (error) {
       console.error("Error loading evaluation form:", error);
@@ -154,7 +272,6 @@ export class EvaluationFormPage {
 
   renderEvaluationForm() {
     const container = document.getElementById('evaluation-content');
-    const isReadonly = this.existingEvaluation?.status === 'completed';
     const isSelfEvaluation = this.targetUser.id === this.app.currentUser.uid;
 
     let formHTML = '<div class="row">';
@@ -165,10 +282,12 @@ export class EvaluationFormPage {
         <div class="col-lg-6 mb-4">
           <div class="card h-100">
             <div class="card-header">
-              <h5 class="mb-0">定量的評価</h5>
+              <h5 class="mb-0">
+                <i class="fas fa-chart-bar me-2"></i>定量的評価
+              </h5>
             </div>
             <div class="card-body">
-              ${this.renderQuantitativeSection(isReadonly, isSelfEvaluation)}
+              ${this.renderQuantitativeSection(isSelfEvaluation)}
             </div>
           </div>
         </div>
@@ -181,10 +300,30 @@ export class EvaluationFormPage {
         <div class="col-lg-6 mb-4">
           <div class="card h-100">
             <div class="card-header">
-              <h5 class="mb-0">目標達成度評価</h5>
+              <h5 class="mb-0">
+                <i class="fas fa-bullseye me-2"></i>目標達成度評価
+              </h5>
             </div>
             <div class="card-body">
-              ${this.renderQualitativeSection(isReadonly, isSelfEvaluation)}
+              ${this.renderQualitativeSection(isSelfEvaluation)}
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      formHTML += `
+        <div class="col-lg-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header">
+              <h5 class="mb-0">
+                <i class="fas fa-bullseye me-2"></i>目標達成度評価
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                評価対象の目標が設定されていません。
+              </div>
             </div>
           </div>
         </div>
@@ -197,26 +336,29 @@ export class EvaluationFormPage {
     formHTML += `
       <div class="card mt-4">
         <div class="card-header">
-          <h5 class="mb-0">総合コメント</h5>
+          <h5 class="mb-0">
+            <i class="fas fa-comment me-2"></i>総合コメント
+          </h5>
         </div>
         <div class="card-body">
-          ${this.renderCommentSection(isReadonly, isSelfEvaluation)}
+          ${this.renderCommentSection(isSelfEvaluation)}
         </div>
       </div>
     `;
 
     container.innerHTML = formHTML;
     this.loadExistingData();
+    this.setupFormValidation();
   }
 
-  renderQuantitativeSection(isReadonly, isSelfEvaluation) {
-    let html = '<div class="table-responsive"><table class="table">';
-    html += '<thead><tr><th>カテゴリ</th><th>評価項目</th>';
+  renderQuantitativeSection(isSelfEvaluation) {
+    let html = '<div class="table-responsive"><table class="table table-sm">';
+    html += '<thead><tr><th style="width: 25%;">カテゴリ</th><th style="width: 35%;">評価項目</th>';
     
     if (isSelfEvaluation) {
-      html += '<th>自己評価</th>';
+      html += '<th style="width: 40%;">自己評価</th>';
     } else {
-      html += '<th>自己評価</th><th>評価者評価</th>';
+      html += '<th style="width: 20%;">自己評価</th><th style="width: 20%;">評価者評価</th>';
     }
     html += '</tr></thead><tbody>';
 
@@ -225,16 +367,16 @@ export class EvaluationFormPage {
         const key = `quant_${catIndex}_${itemIndex}`;
         html += `
           <tr>
-            <td>${this.app.sanitizeHtml(category.name)}</td>
-            <td>${this.app.sanitizeHtml(item.name)}</td>
+            <td><small class="fw-bold">${this.app.sanitizeHtml(category.name)}</small></td>
+            <td><small>${this.app.sanitizeHtml(item.name)}</small></td>
         `;
         
         if (isSelfEvaluation) {
           html += `
             <td>
-              <select class="form-select form-select-sm" data-eval-key="${key}_self" ${isReadonly ? 'disabled' : ''}>
-                <option value="">-</option>
-                ${[1,2,3,4,5].map(n => `<option value="${n}">${n}</option>`).join('')}
+              <select class="form-select form-select-sm evaluation-input" data-eval-key="${key}_self" ${this.isReadOnly ? 'disabled' : ''} required>
+                <option value="">選択してください</option>
+                ${[1,2,3,4,5].map(n => `<option value="${n}">${n} - ${this.getScoreLabel(n)}</option>`).join('')}
               </select>
             </td>
           `;
@@ -247,9 +389,9 @@ export class EvaluationFormPage {
               </select>
             </td>
             <td>
-              <select class="form-select form-select-sm" data-eval-key="${key}_evaluator" ${isReadonly ? 'disabled' : ''}>
-                <option value="">-</option>
-                ${[1,2,3,4,5].map(n => `<option value="${n}">${n}</option>`).join('')}
+              <select class="form-select form-select-sm evaluation-input" data-eval-key="${key}_evaluator" ${this.isReadOnly ? 'disabled' : ''} required>
+                <option value="">選択してください</option>
+                ${[1,2,3,4,5].map(n => `<option value="${n}">${n} - ${this.getScoreLabel(n)}</option>`).join('')}
               </select>
             </td>
           `;
@@ -262,14 +404,25 @@ export class EvaluationFormPage {
     return html;
   }
 
-  renderQualitativeSection(isReadonly, isSelfEvaluation) {
-    let html = '<div class="table-responsive"><table class="table">';
-    html += '<thead><tr><th>目標</th><th>ウェイト</th>';
+  getScoreLabel(score) {
+    const labels = {
+      1: '要改善',
+      2: '基準以下', 
+      3: '標準',
+      4: '良好',
+      5: '優秀'
+    };
+    return labels[score] || '';
+  }
+
+  renderQualitativeSection(isSelfEvaluation) {
+    let html = '<div class="table-responsive"><table class="table table-sm">';
+    html += '<thead><tr><th style="width: 50%;">目標</th><th style="width: 15%;">ウェイト</th>';
     
     if (isSelfEvaluation) {
-      html += '<th>自己評価</th>';
+      html += '<th style="width: 35%;">自己評価</th>';
     } else {
-      html += '<th>自己評価</th><th>評価者評価</th>';
+      html += '<th style="width: 17.5%;">自己評価</th><th style="width: 17.5%;">評価者評価</th>';
     }
     html += '</tr></thead><tbody>';
 
@@ -277,16 +430,16 @@ export class EvaluationFormPage {
       const key = `qual_${index}`;
       html += `
         <tr>
-          <td>${this.app.sanitizeHtml(goal.text)}</td>
-          <td>${goal.weight}%</td>
+          <td><small>${this.app.sanitizeHtml(goal.text)}</small></td>
+          <td><small class="fw-bold">${goal.weight}%</small></td>
       `;
       
       if (isSelfEvaluation) {
         html += `
           <td>
-            <select class="form-select form-select-sm" data-eval-key="${key}_self" ${isReadonly ? 'disabled' : ''}>
-              <option value="">-</option>
-              ${[1,2,3,4,5].map(n => `<option value="${n}">${n}</option>`).join('')}
+            <select class="form-select form-select-sm evaluation-input" data-eval-key="${key}_self" ${this.isReadOnly ? 'disabled' : ''} required>
+              <option value="">選択してください</option>
+              ${[1,2,3,4,5].map(n => `<option value="${n}">${n} - ${this.getAchievementLabel(n)}</option>`).join('')}
             </select>
           </td>
         `;
@@ -299,9 +452,9 @@ export class EvaluationFormPage {
             </select>
           </td>
           <td>
-            <select class="form-select form-select-sm" data-eval-key="${key}_evaluator" ${isReadonly ? 'disabled' : ''}>
-              <option value="">-</option>
-              ${[1,2,3,4,5].map(n => `<option value="${n}">${n}</option>`).join('')}
+            <select class="form-select form-select-sm evaluation-input" data-eval-key="${key}_evaluator" ${this.isReadOnly ? 'disabled' : ''} required>
+              <option value="">選択してください</option>
+              ${[1,2,3,4,5].map(n => `<option value="${n}">${n} - ${this.getAchievementLabel(n)}</option>`).join('')}
             </select>
           </td>
         `;
@@ -313,25 +466,43 @@ export class EvaluationFormPage {
     return html;
   }
 
-  renderCommentSection(isReadonly, isSelfEvaluation) {
+  getAchievementLabel(score) {
+    const labels = {
+      1: '未達成',
+      2: '一部達成',
+      3: '概ね達成',
+      4: '達成',
+      5: '大幅達成'
+    };
+    return labels[score] || '';
+  }
+
+  renderCommentSection(isSelfEvaluation) {
     let html = '';
     
     if (isSelfEvaluation) {
       html += `
         <div class="mb-3">
-          <label class="form-label">自己評価コメント</label>
-          <textarea class="form-control" rows="3" data-eval-key="comment_self" ${isReadonly ? 'disabled' : ''}></textarea>
+          <label class="form-label fw-bold">自己評価コメント</label>
+          <textarea class="form-control evaluation-input" rows="4" data-eval-key="comment_self" 
+                    placeholder="今期の振り返り、頑張った点、改善したい点などを記入してください..." 
+                    ${this.isReadOnly ? 'disabled' : ''}></textarea>
+          <small class="form-text text-muted">※ 具体的なエピソードを交えて記入してください</small>
         </div>
       `;
     } else {
       html += `
         <div class="mb-3">
-          <label class="form-label">自己評価コメント</label>
-          <textarea class="form-control" rows="3" data-eval-key="comment_self" disabled></textarea>
+          <label class="form-label fw-bold">自己評価コメント</label>
+          <textarea class="form-control" rows="3" data-eval-key="comment_self" disabled 
+                    placeholder="対象者の自己評価コメントが表示されます"></textarea>
         </div>
         <div class="mb-3">
-          <label class="form-label">評価者コメント</label>
-          <textarea class="form-control" rows="3" data-eval-key="comment_evaluator" ${isReadonly ? 'disabled' : ''}></textarea>
+          <label class="form-label fw-bold">評価者コメント</label>
+          <textarea class="form-control evaluation-input" rows="4" data-eval-key="comment_evaluator" 
+                    placeholder="評価対象者の成果、強み、改善点、今後の期待などを記入してください..." 
+                    ${this.isReadOnly ? 'disabled' : ''}></textarea>
+          <small class="form-text text-muted">※ 建設的なフィードバックを心がけてください</small>
         </div>
       `;
     }
@@ -339,10 +510,50 @@ export class EvaluationFormPage {
     return html;
   }
 
-  loadExistingData() {
-    if (!this.existingEvaluation) return;
+  setupFormValidation() {
+    // リアルタイムバリデーション
+    document.querySelectorAll('.evaluation-input').forEach(input => {
+      input.addEventListener('change', () => this.validateForm());
+      input.addEventListener('input', () => this.validateForm());
+    });
+  }
+
+  validateForm() {
+    const requiredInputs = document.querySelectorAll('.evaluation-input[required]');
+    let isValid = true;
+    let completedCount = 0;
+
+    requiredInputs.forEach(input => {
+      if (!input.value) {
+        isValid = false;
+        input.classList.add('is-invalid');
+      } else {
+        input.classList.remove('is-invalid');
+        completedCount++;
+      }
+    });
+
+    // 進捗表示
+    const progressPercent = requiredInputs.length > 0 ? (completedCount / requiredInputs.length) * 100 : 100;
     
-    const ratings = this.existingEvaluation.ratings || {};
+    const submitBtn = document.getElementById('submit-eval-btn');
+    if (submitBtn && !this.isReadOnly) {
+      submitBtn.disabled = !isValid;
+      
+      if (progressPercent < 100) {
+        submitBtn.innerHTML = `<i class="fas fa-paper-plane me-2"></i>提出 (${Math.round(progressPercent)}%完了)`;
+      } else {
+        submitBtn.innerHTML = `<i class="fas fa-paper-plane me-2"></i>提出`;
+      }
+    }
+
+    return isValid;
+  }
+
+  loadExistingData() {
+    if (!this.existingEvaluation || !this.existingEvaluation.ratings) return;
+    
+    const ratings = this.existingEvaluation.ratings;
     
     // すべての評価要素に既存データをロード
     document.querySelectorAll('[data-eval-key]').forEach(element => {
@@ -351,6 +562,9 @@ export class EvaluationFormPage {
         element.value = ratings[key];
       }
     });
+
+    // バリデーション実行
+    this.validateForm();
   }
 
   collectEvaluationData() {
@@ -358,35 +572,65 @@ export class EvaluationFormPage {
     
     document.querySelectorAll('[data-eval-key]').forEach(element => {
       const key = element.dataset.evalKey;
-      const value = element.value;
+      const value = element.value.trim();
       if (value) {
         data[key] = element.tagName === 'SELECT' ? parseInt(value) : value;
       }
     });
     
     this.evaluationData = data;
+    return data;
+  }
+
+  async saveDraft() {
+    if (this.isReadOnly) return;
+
+    const data = this.collectEvaluationData();
+    await this.saveEvaluationWithStatus('draft');
+    this.app.showSuccess('下書きを保存しました');
   }
 
   async submitEvaluation() {
+    if (this.isReadOnly) return;
+    
+    if (!this.validateForm()) {
+      this.app.showError('未入力の項目があります。すべて入力してから提出してください。');
+      return;
+    }
+
     if (!confirm(this.app.i18n.t('evaluations.confirm_submit'))) return;
 
     this.collectEvaluationData();
 
     const currentUser = this.app.currentUser;
     const isSelfEvaluation = this.targetUser.id === currentUser.uid;
-    let status = this.existingEvaluation?.status || 'pending_submission';
-
+    
+    // ステータス決定ロジック
+    let status = 'completed';
     if (isSelfEvaluation) {
         status = 'self_assessed';
-    } else if (this.app.hasAnyRole(['admin', 'evaluator'])) {
+    } else if (this.app.hasAnyRole(['evaluator'])) {
         status = 'pending_approval';
+    } else if (this.app.hasRole('admin')) {
+        status = 'completed';
     }
+
+    await this.saveEvaluationWithStatus(status);
+    
+    this.app.showSuccess('評価を提出しました');
+    this.app.navigate('#/evaluations');
+  }
+
+  async saveEvaluationWithStatus(status) {
+    const currentUser = this.app.currentUser;
+    const isSelfEvaluation = this.targetUser.id === currentUser.uid;
 
     const data = {
         id: this.existingEvaluation?.id,
         tenantId: currentUser.tenantId,
         targetUserId: this.targetUser.id,
         targetUserName: this.targetUser.name,
+        targetUserEmail: this.targetUser.email,
         jobTypeId: this.targetUser.jobTypeId,
         periodId: this.selectedPeriod.id,
         periodName: this.selectedPeriod.name,
@@ -396,22 +640,50 @@ export class EvaluationFormPage {
             currentUser.name,
         ratings: this.evaluationData,
         status: status,
-        submittedAt: this.app.api.serverTimestamp()
+        submittedAt: this.app.api.serverTimestamp(),
+        updatedAt: this.app.api.serverTimestamp()
     };
 
     const btn = document.getElementById('submit-eval-btn');
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${this.app.i18n.t('common.loading')}`;
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${this.app.i18n.t('common.loading')}`;
+    }
 
     try {
         await this.app.api.saveEvaluation(data);
-        this.app.showSuccess(this.app.i18n.t('messages.save_success'));
-        this.app.navigate('#/evaluations');
-    } catch (e) {
-        this.app.showError(e.message);
-        btn.disabled = false;
-        btn.innerHTML = `<i class="fas fa-paper-plane me-2"></i><span data-i18n="common.submit"></span>`;
-        this.app.i18n.updateUI(btn);
+    } catch (error) {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-paper-plane me-2"></i><span data-i18n="common.submit"></span>`;
+            this.app.i18n.updateUI(btn);
+        }
+        throw error;
     }
+  }
+
+  showStatus(message, type = 'info') {
+    const statusDiv = document.getElementById('evaluation-status');
+    statusDiv.className = `alert alert-${type}`;
+    statusDiv.innerHTML = `<i class="fas fa-info-circle me-2"></i>${message}`;
+    statusDiv.classList.remove('d-none');
+  }
+
+  hideStatus() {
+    const statusDiv = document.getElementById('evaluation-status');
+    statusDiv.classList.add('d-none');
+  }
+
+  // ページから離れる際のチェック
+  hasUnsavedChanges() {
+    if (this.isReadOnly) return false;
+    
+    const inputs = document.querySelectorAll('.evaluation-input');
+    for (let input of inputs) {
+      if (input.value.trim()) {
+        return true;
+      }
+    }
+    return false;
   }
 }
