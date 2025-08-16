@@ -1,7 +1,7 @@
 // Firebase SDKから必要な関数をインポートします。
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp, deleteDoc, writeBatch, getCountFromServer, limit, orderBy } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-functions.js";
-import { CacheService } from './cache.js';
+import { CacheService } from './js/cache.js';
 
 /**
  * API Service (完全版 - Phase 3/4機能統合)
