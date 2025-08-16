@@ -4,9 +4,9 @@ import { Auth } from './auth.js';
 import { Router } from './router.js';
 import { HeaderComponent } from './components/header.js';
 import { SidebarComponent } from './components/sidebar.js';
-import { AccessibilityHelper } from './accessibility.js';
-import { PerformanceOptimizer } from './performance.js';
-import { AnimationHelper } from './animations.js';
+import { AccessibilityHelper } from './js/accessibility.js';
+import { PerformanceOptimizer } from './js/performance.js';
+import { AnimationHelper } from './js/animations.js';
 
 class App {
   constructor() {
