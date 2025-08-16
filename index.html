@@ -89,7 +89,6 @@
 
     <!-- Firebase設定とアプリケーション初期化 -->
     <script type="module">
-        // ★★★ パス修正済み：./js/app.js → ./app.js ★★★
         import App from './app.js';
         
         // グローバルエラーハンドリング
@@ -122,42 +121,8 @@
             }
         });
         
-        // Service Worker の登録（publicフォルダ内のservice-worker.jsを参照）
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                // Service Workerファイルの存在確認
-                fetch('./public/service-worker.js', { method: 'HEAD' })
-                    .then(response => {
-                        if (response.ok) {
-                            return navigator.serviceWorker.register('./public/service-worker.js');
-                        } else {
-                            console.log('Service Worker file not found, skipping registration');
-                            return null;
-                        }
-                    })
-                    .then(registration => {
-                        if (registration) {
-                            console.log('ServiceWorker registration successful:', registration.scope);
-                            
-                            // Service Worker の更新チェック
-                            registration.addEventListener('updatefound', () => {
-                                const newWorker = registration.installing;
-                                newWorker.addEventListener('statechange', () => {
-                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                        // 新しいバージョンが利用可能
-                                        if (confirm('新しいバージョンが利用可能です。更新しますか？')) {
-                                            window.location.reload();
-                                        }
-                                    }
-                                });
-                            });
-                        }
-                    })
-                    .catch(err => {
-                        console.log('ServiceWorker registration skipped:', err.message);
-                    });
-            });
-        }
+        // Service Worker は一時的に無効化
+        console.log('Service Worker disabled for debugging');
         
         // オフライン検知
         window.addEventListener('online', () => {
