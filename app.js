@@ -12,7 +12,7 @@ class App {
   constructor() {
     this.currentUser = null;
     this.currentPage = null;
-    this.i18n = new I18n(this);
+    this.i18n = new I18n();
     this.auth = new Auth(this);
     this.api = null;
     this.router = new Router(this);
