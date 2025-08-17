@@ -4,9 +4,6 @@ import { Auth } from './auth.js';
 import { Router } from './router.js';
 import { HeaderComponent } from './components/header.js';
 import { SidebarComponent } from './components/sidebar.js';
-import { AccessibilityHelper } from './js/accessibility.js';
-import { PerformanceOptimizer } from './js/performance.js';
-import { AnimationHelper } from './js/animations.js';
 
 class App {
   constructor() {
@@ -53,20 +50,38 @@ class App {
       console.log("Step 6: Initial routing...");
       await this.router.route();
       
-      console.log("Step 7: Initializing accessibility features...");
-      this.accessibility = new AccessibilityHelper(this);
-      this.accessibility.init();
-      console.log("✓ Accessibility features initialized");
+      // アクセシビリティ機能を動的にロード
+      console.log("Step 7: Loading accessibility features...");
+      try {
+        const { AccessibilityHelper } = await import('./js/accessibility.js');
+        this.accessibility = new AccessibilityHelper(this);
+        this.accessibility.init();
+        console.log("✓ Accessibility features initialized");
+      } catch (error) {
+        console.warn("⚠ Accessibility features could not be loaded:", error);
+      }
       
-      console.log("Step 8: Initializing performance optimizations...");
-      this.performance = new PerformanceOptimizer(this);
-      this.performance.init();
-      console.log("✓ Performance optimizations initialized");
+      // パフォーマンス最適化を動的にロード
+      console.log("Step 8: Loading performance optimizations...");
+      try {
+        const { PerformanceOptimizer } = await import('./js/performance.js');
+        this.performance = new PerformanceOptimizer(this);
+        this.performance.init();
+        console.log("✓ Performance optimizations initialized");
+      } catch (error) {
+        console.warn("⚠ Performance optimizations could not be loaded:", error);
+      }
       
-      console.log("Step 9: Initializing animations...");
-      this.animations = new AnimationHelper(this);
-      this.animations.init();
-      console.log("✓ Animations initialized");
+      // アニメーションを動的にロード
+      console.log("Step 9: Loading animations...");
+      try {
+        const { AnimationHelper } = await import('./js/animations.js');
+        this.animations = new AnimationHelper(this);
+        this.animations.init();
+        console.log("✓ Animations initialized");
+      } catch (error) {
+        console.warn("⚠ Animation features could not be loaded:", error);
+      }
       
       console.log("🎉 Application initialized successfully");
       
