@@ -26,7 +26,7 @@ export class EvaluationFormPage {
                 <button id="save-draft-btn" class="btn btn-outline-secondary me-2" style="display:none;">
                     <i class="fas fa-save me-2"></i><span data-i18n="common.save_draft">下書き保存</span>
                 </button>
-                <button id="submit-eval-btn" class="btn btn-primary btn-lg" disabled>
+                <button id="submit-evaluation-btn" class="btn btn-primary btn-lg" disabled>
                     <i class="fas fa-paper-plane me-2"></i><span data-i18n="common.submit">提出</span>
                 </button>
             </div>
@@ -145,7 +145,7 @@ export class EvaluationFormPage {
   setupEventListeners() {
     document.getElementById('target-user-select').addEventListener('change', () => this.onSelectionChange());
     document.getElementById('period-select').addEventListener('change', () => this.onSelectionChange());
-    document.getElementById('submit-eval-btn').addEventListener('click', () => this.submitEvaluation());
+    document.getElementById('submit-evaluation-btn').addEventListener('click', () => this.submitEvaluation());
     document.getElementById('save-draft-btn').addEventListener('click', () => this.saveDraft());
   }
 
@@ -156,7 +156,7 @@ export class EvaluationFormPage {
     if (!userId || !periodId) {
       document.getElementById('evaluation-content').classList.add('d-none');
       document.getElementById('target-user-info').classList.add('d-none');
-      document.getElementById('submit-eval-btn').disabled = true;
+      document.getElementById('submit-evaluation-btn').disabled = true;
       this.hideStatus();
       return;
     }
@@ -172,7 +172,7 @@ export class EvaluationFormPage {
     if (!validationResult.isValid) {
       this.showStatus(validationResult.message, 'warning');
       document.getElementById('evaluation-content').classList.add('d-none');
-      document.getElementById('submit-eval-btn').disabled = true;
+      document.getElementById('submit-evaluation-btn').disabled = true;
       return;
     }
 
@@ -202,26 +202,26 @@ export class EvaluationFormPage {
 
     // 既存評価の重複チェック
     try {
-      const existingEvals = await this.app.api.getEvaluations({
+      const existingEvaluations = await this.app.api.getEvaluations({
         targetUserId: this.targetUser.id,
         periodId: this.selectedPeriod.id
       });
 
-      const duplicateEval = existingEvals.find(eval => 
-        eval.targetUserId === this.targetUser.id && 
-        eval.periodId === this.selectedPeriod.id
+      const duplicateEvaluation = existingEvaluations.find(evaluation => 
+        evaluation.targetUserId === this.targetUser.id && 
+        evaluation.periodId === this.selectedPeriod.id
       );
 
-      if (duplicateEval) {
-        if (duplicateEval.status === 'completed') {
-          this.existingEvaluation = duplicateEval;
+      if (duplicateEvaluation) {
+        if (duplicateEvaluation.status === 'completed') {
+          this.existingEvaluation = duplicateEvaluation;
           this.isReadOnly = true;
           return {
             isValid: true,
             message: 'この評価は既に完了しています。（閲覧モード）'
           };
-        } else if (duplicateEval.status === 'draft') {
-          this.existingEvaluation = duplicateEval;
+        } else if (duplicateEvaluation.status === 'draft') {
+          this.existingEvaluation = duplicateEvaluation;
           this.isDraft = true;
           return {
             isValid: true,
@@ -252,11 +252,11 @@ export class EvaluationFormPage {
       
       // ボタンの状態設定
       if (this.isReadOnly) {
-        document.getElementById('submit-eval-btn').style.display = 'none';
+        document.getElementById('submit-evaluation-btn').style.display = 'none';
         document.getElementById('save-draft-btn').style.display = 'none';
         this.showStatus('この評価は完了済みです。', 'info');
       } else {
-        document.getElementById('submit-eval-btn').disabled = false;
+        document.getElementById('submit-evaluation-btn').disabled = false;
         document.getElementById('save-draft-btn').style.display = 'inline-block';
         
         if (this.isDraft) {
@@ -374,7 +374,7 @@ export class EvaluationFormPage {
         if (isSelfEvaluation) {
           html += `
             <td>
-              <select class="form-select form-select-sm evaluation-input" data-eval-key="${key}_self" ${this.isReadOnly ? 'disabled' : ''} required>
+              <select class="form-select form-select-sm evaluation-input" data-evaluation-key="${key}_self" ${this.isReadOnly ? 'disabled' : ''} required>
                 <option value="">選択してください</option>
                 ${[1,2,3,4,5].map(n => `<option value="${n}">${n} - ${this.getScoreLabel(n)}</option>`).join('')}
               </select>
@@ -383,13 +383,13 @@ export class EvaluationFormPage {
         } else {
           html += `
             <td>
-              <select class="form-select form-select-sm" data-eval-key="${key}_self" disabled>
+              <select class="form-select form-select-sm" data-evaluation-key="${key}_self" disabled>
                 <option value="">-</option>
                 ${[1,2,3,4,5].map(n => `<option value="${n}">${n}</option>`).join('')}
               </select>
             </td>
             <td>
-              <select class="form-select form-select-sm evaluation-input" data-eval-key="${key}_evaluator" ${this.isReadOnly ? 'disabled' : ''} required>
+              <select class="form-select form-select-sm evaluation-input" data-evaluation-key="${key}_evaluator" ${this.isReadOnly ? 'disabled' : ''} required>
                 <option value="">選択してください</option>
                 ${[1,2,3,4,5].map(n => `<option value="${n}">${n} - ${this.getScoreLabel(n)}</option>`).join('')}
               </select>
@@ -437,7 +437,7 @@ export class EvaluationFormPage {
       if (isSelfEvaluation) {
         html += `
           <td>
-            <select class="form-select form-select-sm evaluation-input" data-eval-key="${key}_self" ${this.isReadOnly ? 'disabled' : ''} required>
+            <select class="form-select form-select-sm evaluation-input" data-evaluation-key="${key}_self" ${this.isReadOnly ? 'disabled' : ''} required>
               <option value="">選択してください</option>
               ${[1,2,3,4,5].map(n => `<option value="${n}">${n} - ${this.getAchievementLabel(n)}</option>`).join('')}
             </select>
@@ -446,13 +446,13 @@ export class EvaluationFormPage {
       } else {
         html += `
           <td>
-            <select class="form-select form-select-sm" data-eval-key="${key}_self" disabled>
+            <select class="form-select form-select-sm" data-evaluation-key="${key}_self" disabled>
               <option value="">-</option>
               ${[1,2,3,4,5].map(n => `<option value="${n}">${n}</option>`).join('')}
             </select>
           </td>
           <td>
-            <select class="form-select form-select-sm evaluation-input" data-eval-key="${key}_evaluator" ${this.isReadOnly ? 'disabled' : ''} required>
+            <select class="form-select form-select-sm evaluation-input" data-evaluation-key="${key}_evaluator" ${this.isReadOnly ? 'disabled' : ''} required>
               <option value="">選択してください</option>
               ${[1,2,3,4,5].map(n => `<option value="${n}">${n} - ${this.getAchievementLabel(n)}</option>`).join('')}
             </select>
@@ -484,7 +484,7 @@ export class EvaluationFormPage {
       html += `
         <div class="mb-3">
           <label class="form-label fw-bold">自己評価コメント</label>
-          <textarea class="form-control evaluation-input" rows="4" data-eval-key="comment_self" 
+          <textarea class="form-control evaluation-input" rows="4" data-evaluation-key="comment_self" 
                     placeholder="今期の振り返り、頑張った点、改善したい点などを記入してください..." 
                     ${this.isReadOnly ? 'disabled' : ''}></textarea>
           <small class="form-text text-muted">※ 具体的なエピソードを交えて記入してください</small>
@@ -494,12 +494,12 @@ export class EvaluationFormPage {
       html += `
         <div class="mb-3">
           <label class="form-label fw-bold">自己評価コメント</label>
-          <textarea class="form-control" rows="3" data-eval-key="comment_self" disabled 
+          <textarea class="form-control" rows="3" data-evaluation-key="comment_self" disabled 
                     placeholder="対象者の自己評価コメントが表示されます"></textarea>
         </div>
         <div class="mb-3">
           <label class="form-label fw-bold">評価者コメント</label>
-          <textarea class="form-control evaluation-input" rows="4" data-eval-key="comment_evaluator" 
+          <textarea class="form-control evaluation-input" rows="4" data-evaluation-key="comment_evaluator" 
                     placeholder="評価対象者の成果、強み、改善点、今後の期待などを記入してください..." 
                     ${this.isReadOnly ? 'disabled' : ''}></textarea>
           <small class="form-text text-muted">※ 建設的なフィードバックを心がけてください</small>
@@ -536,7 +536,7 @@ export class EvaluationFormPage {
     // 進捗表示
     const progressPercent = requiredInputs.length > 0 ? (completedCount / requiredInputs.length) * 100 : 100;
     
-    const submitBtn = document.getElementById('submit-eval-btn');
+    const submitBtn = document.getElementById('submit-evaluation-btn');
     if (submitBtn && !this.isReadOnly) {
       submitBtn.disabled = !isValid;
       
@@ -556,8 +556,8 @@ export class EvaluationFormPage {
     const ratings = this.existingEvaluation.ratings;
     
     // すべての評価要素に既存データをロード
-    document.querySelectorAll('[data-eval-key]').forEach(element => {
-      const key = element.dataset.evalKey;
+    document.querySelectorAll('[data-evaluation-key]').forEach(element => {
+      const key = element.dataset.evaluationKey;
       if (ratings[key] !== undefined) {
         element.value = ratings[key];
       }
@@ -570,8 +570,8 @@ export class EvaluationFormPage {
   collectEvaluationData() {
     const data = {};
     
-    document.querySelectorAll('[data-eval-key]').forEach(element => {
-      const key = element.dataset.evalKey;
+    document.querySelectorAll('[data-evaluation-key]').forEach(element => {
+      const key = element.dataset.evaluationKey;
       const value = element.value.trim();
       if (value) {
         data[key] = element.tagName === 'SELECT' ? parseInt(value) : value;
@@ -644,7 +644,7 @@ export class EvaluationFormPage {
         updatedAt: this.app.api.serverTimestamp()
     };
 
-    const btn = document.getElementById('submit-eval-btn');
+    const btn = document.getElementById('submit-evaluation-btn');
     if (btn) {
         btn.disabled = true;
         btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${this.app.i18n.t('common.loading')}`;
