@@ -502,47 +502,88 @@ export class API {
     }
   }
 
-  // --- Dashboard ---
+  // --- Dashboard (修正版) ---
 
   async getDashboardStats() {
     try {
-        const currentUser = this.app.currentUser;
-        if (!currentUser || !currentUser.tenantId) throw new Error("User not authenticated or tenantId is missing");
-
+      const currentUser = this.app.currentUser;
+      if (!currentUser) throw new Error("User not authenticated");
+      
+      // 開発者の場合は全テナントの統計を取得
+      if (currentUser.role === 'developer') {
         const usersRef = collection(this.db, "users");
         const evaluationsRef = collection(this.db, "evaluations");
-
-        const tenantId = currentUser.tenantId;
-        const totalUsersQuery = query(usersRef, where("tenantId", "==", tenantId), where("status", "==", "active"));
-        const completedQuery = query(evaluationsRef, where("tenantId", "==", tenantId), where("status", "==", "completed"));
-        const pendingQuery = query(evaluationsRef, where("tenantId", "==", tenantId), where("status", "in", ["pending_approval", "self_assessed"]));
-
+        
+        const totalUsersQuery = query(usersRef, where("status", "==", "active"));
+        const completedQuery = query(evaluationsRef, where("status", "==", "completed"));
+        const pendingQuery = query(evaluationsRef, where("status", "in", ["pending_approval", "self_assessed"]));
+        
         const [totalUsersSnap, completedSnap, pendingSnap] = await Promise.all([
-            getCountFromServer(totalUsersQuery),
-            getCountFromServer(completedQuery),
-            getCountFromServer(pendingQuery)
+          getCountFromServer(totalUsersQuery),
+          getCountFromServer(completedQuery),
+          getCountFromServer(pendingQuery)
         ]);
-
+        
         return {
-            totalUsers: totalUsersSnap.data().count,
-            completedEvaluations: completedSnap.data().count,
-            pendingEvaluations: pendingSnap.data().count,
+          totalUsers: totalUsersSnap.data().count,
+          completedEvaluations: completedSnap.data().count,
+          pendingEvaluations: pendingSnap.data().count,
         };
+      }
+      
+      // 通常のユーザーの場合
+      if (!currentUser.tenantId) throw new Error("tenantId is missing");
+      
+      const usersRef = collection(this.db, "users");
+      const evaluationsRef = collection(this.db, "evaluations");
+      
+      const tenantId = currentUser.tenantId;
+      const totalUsersQuery = query(usersRef, where("tenantId", "==", tenantId), where("status", "==", "active"));
+      const completedQuery = query(evaluationsRef, where("tenantId", "==", tenantId), where("status", "==", "completed"));
+      const pendingQuery = query(evaluationsRef, where("tenantId", "==", tenantId), where("status", "in", ["pending_approval", "self_assessed"]));
+      
+      const [totalUsersSnap, completedSnap, pendingSnap] = await Promise.all([
+        getCountFromServer(totalUsersQuery),
+        getCountFromServer(completedQuery),
+        getCountFromServer(pendingQuery)
+      ]);
+      
+      return {
+        totalUsers: totalUsersSnap.data().count,
+        completedEvaluations: completedSnap.data().count,
+        pendingEvaluations: pendingSnap.data().count,
+      };
     } catch (error) {
-        this.handleError(error, "ダッシュボード統計の取得");
+      this.handleError(error, "ダッシュボード統計の取得");
     }
   }
   
   async getRecentEvaluations() {
     try {
-        const q = query(collection(this.db, "evaluations"), 
-            where("tenantId", "==", this.app.currentUser.tenantId), 
-            orderBy("updatedAt", "desc"),
-            limit(5));
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const currentUser = this.app.currentUser;
+      if (!currentUser) throw new Error("User not authenticated");
+      
+      let q;
+      
+      // 開発者の場合は全テナントから取得
+      if (currentUser.role === 'developer') {
+        q = query(collection(this.db, "evaluations"), 
+          orderBy("updatedAt", "desc"),
+          limit(5));
+      } else {
+        // 通常のユーザーの場合
+        if (!currentUser.tenantId) throw new Error("tenantId is missing");
+        
+        q = query(collection(this.db, "evaluations"), 
+          where("tenantId", "==", currentUser.tenantId), 
+          orderBy("updatedAt", "desc"),
+          limit(5));
+      }
+      
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
-        this.handleError(error, "最近の評価取得");
+      this.handleError(error, "最近の評価取得");
     }
   }
 
