@@ -1,11 +1,12 @@
 /**
- * Sidebar Component - 完全修正版
+ * Sidebar Component - ナビゲーション修正版
  * サイドバーコンポーネント
  */
 export class SidebarComponent {
     constructor(app) {
         this.app = app;
         this.setupHamburgerMenu();
+        this.setupNavigationHandling();
     }
 
     setupHamburgerMenu() {
@@ -25,6 +26,22 @@ export class SidebarComponent {
         // ルート変更時にサイドバーを閉じる
         window.addEventListener('hashchange', () => {
             this.close();
+        });
+    }
+
+    setupNavigationHandling() {
+        // サイドバー内のナビゲーションリンクのクリックイベント
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest('.sidebar .nav-link[href]');
+            if (link) {
+                e.preventDefault();
+                const href = link.getAttribute('href');
+                if (href && href !== '#') {
+                    console.log('Sidebar: Navigating to', href);
+                    this.app.navigate(href);
+                    this.close(); // モバイルでサイドバーを閉じる
+                }
+            }
         });
     }
 
@@ -108,10 +125,10 @@ export class SidebarComponent {
                     ${menuItems
                         .filter(item => item.roles.includes(role))
                         .map(item => {
-                            const isActive = activePath.startsWith(item.path);
+                            const isActive = activePath === item.path || activePath.startsWith(item.path.replace('#', '') + '/');
                             return `
                             <a class="nav-link text-white d-flex align-items-center py-3 px-3 mb-1 rounded transition-all ${isActive ? 'active bg-primary' : ''}" 
-                               href="${item.path}" data-link>
+                               href="${item.path}">
                                 <i class="fas ${item.icon} fa-fw me-3"></i>
                                 <span data-i18n="${item.labelKey}"></span>
                             </a>
