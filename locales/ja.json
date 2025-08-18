@@ -157,8 +157,10 @@
     "total_score": "総合スコア",
     "target_user": "評価対象者",
     "period": "評価期間",
+    "evaluation_period": "評価期間",
     "target_info": "評価対象情報",
-    "confirm_submit": "評価を提出しますか？提出後は編集できません。"
+    "confirm_submit": "評価を提出しますか？提出後は編集できません。",
+    "evaluator": "評価者"
   },
   "goals": {
     "title": "目標設定",
@@ -216,11 +218,7 @@
     "unsaved_warning": "保存されていない変更があります。ページを離れてもよろしいですか？",
     "name_label": "名前",
     "add_jobType": "職種を追加",
-    "add_period": "期間を追加",
-    "add_category": "カテゴリを追加",
-    "add_item": "項目を追加",
     "edit_jobType": "職種を編集",
-    "edit_period": "期間を編集",
     "edit_category": "カテゴリを編集",
     "edit_item": "項目を編集",
     "no_job_types": "職種が登録されていません",
@@ -253,7 +251,11 @@
     "department_average": "部署平均",
     "radar": "レーダー",
     "bar": "バー",
-    "line": "ライン"
+    "line": "ライン",
+    "total_users": "総ユーザー数",
+    "completed_evaluations": "完了済み評価",
+    "pending_evaluations": "承認待ち評価",
+    "performance_chart": "パフォーマンスチャート"
   },
   "chart_items": {
     "technical_skill": "技術力",
@@ -297,6 +299,13 @@
     "passwords_match": "パスワードが一致しました。",
     "login_failed_generic": "ログイン中に予期せぬエラーが発生しました。",
     "email_already_in_use": "このメールアドレスは既に使用されています。",
-    "weak_password": "パスワードは6文字以上で入力してください。"
+    "weak_password": "パスワードは6文字以上で入力してください。",
+    "chart_library_failed": "チャートライブラリの読み込みに失敗しました"
+  },
+  "time": {
+    "just_now": "たった今",
+    "minutes_ago": "{{count}}分前",
+    "hours_ago": "{{count}}時間前",
+    "days_ago": "{{count}}日前"
   }
 }
