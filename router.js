@@ -11,7 +11,6 @@ import { GoalApprovalsPage } from "./pages/goal-approvals.js"
 import { DeveloperPage } from "./pages/developer.js"
 import { RegisterAdminPage } from "./pages/register-admin.js"
 import { RegisterPage } from "./pages/register.js"
-import { bootstrap } from "bootstrap" // Declare the bootstrap variable
 
 export class Router {
   constructor(app) {
@@ -249,7 +248,7 @@ export class Router {
       const modals = document.querySelectorAll(".modal:not(.permanent-modal)")
       modals.forEach((modal) => {
         try {
-          const bsModal = bootstrap.Modal.getInstance(modal)
+          const bsModal = window.bootstrap.Modal.getInstance(modal)
           if (bsModal) {
             bsModal.dispose()
           }
