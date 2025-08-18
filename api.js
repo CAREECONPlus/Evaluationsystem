@@ -209,36 +209,87 @@ export class API {
     }
   }
 
-  // --- Settings ---
-
+ // --- Settings ---
   async getSettings() {
     try {
-      const tenantId = this.app.currentUser.tenantId
-      const jobTypesQuery = query(collection(this.db, "targetJobTypes"), where("tenantId", "==", tenantId))
-      const periodsQuery = query(collection(this.db, "evaluationPeriods"), where("tenantId", "==", tenantId))
-      const structuresQuery = query(collection(this.db, "evaluationStructures"), where("tenantId", "==", tenantId))
+      const currentUser = this.app.currentUser;
+      
+      // ユーザー認証チェック
+      if (!currentUser) {
+        throw new Error("ユーザーが認証されていません");
+      }
+      
+      // 管理者権限チェック
+      if (currentUser.role !== 'admin') {
+        throw new Error("設定にアクセスする権限がありません");
+      }
+      
+      // テナントIDチェック
+      if (!currentUser.tenantId) {
+        throw new Error("テナントIDが設定されていません");
+      }
 
-      const [jobTypesSnap, periodsSnap, structuresSnap] = await Promise.all([
-        getDocs(jobTypesQuery),
-        getDocs(periodsQuery),
-        getDocs(structuresQuery),
-      ])
+      const tenantId = currentUser.tenantId;
+      console.log("API: Loading settings for tenant:", tenantId);
 
-      const structures = {}
+      // タイムアウト付きでクエリを実行
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Settings loading timeout")), 10000);
+      });
+
+      const jobTypesQuery = query(
+        collection(this.db, "targetJobTypes"), 
+        where("tenantId", "==", tenantId)
+      );
+      
+      const periodsQuery = query(
+        collection(this.db, "evaluationPeriods"), 
+        where("tenantId", "==", tenantId)
+      );
+      
+      const structuresQuery = query(
+        collection(this.db, "evaluationStructures"), 
+        where("tenantId", "==", tenantId)
+      );
+
+      // タイムアウト付きでデータを取得
+      const [jobTypesSnap, periodsSnap, structuresSnap] = await Promise.race([
+        Promise.all([
+          getDocs(jobTypesQuery),
+          getDocs(periodsQuery),
+          getDocs(structuresQuery),
+        ]),
+        timeoutPromise
+      ]);
+
+      const structures = {};
       structuresSnap.docs.forEach((doc) => {
-        structures[doc.data().jobTypeId] = { id: doc.id, ...doc.data() }
-      })
+        structures[doc.data().jobTypeId] = { id: doc.id, ...doc.data() };
+      });
 
-      return {
+      const result = {
         jobTypes: jobTypesSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
         periods: periodsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
         structures: structures,
-      }
+      };
+
+      console.log("API: Settings loaded successfully:", result);
+      return result;
+      
     } catch (error) {
-      this.handleError(error, "設定情報の取得")
+      console.error("API: Error in getSettings:", error);
+      
+      if (error.message === "Settings loading timeout") {
+        throw new Error("設定の読み込みがタイムアウトしました。ネットワーク接続を確認してください。");
+      }
+      
+      if (error.code === "permission-denied") {
+        throw new Error("設定データにアクセスする権限がありません。Firestoreのセキュリティルールを確認してください。");
+      }
+      
+      this.handleError(error, "設定情報の取得");
     }
   }
-
   async getJobTypes() {
     try {
       const q = query(collection(this.db, "targetJobTypes"), where("tenantId", "==", this.app.currentUser.tenantId))
