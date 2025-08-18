@@ -88,37 +88,49 @@ service cloud.firestore {
     // ===== Job Types Collection =====
     match /targetJobTypes/{jobTypeId} {
       // 読み取り（同一テナント内のアクティブユーザー）
-      allow read: if isUserActiveInTenant(resource.data.tenantId);
+      allow read: if hasRole('developer') 
+                  || isUserActiveInTenant(resource.data.tenantId);
       
       // 作成・更新・削除（同一テナントの管理者のみ）
-      allow create: if hasRole('admin') && request.resource.data.tenantId == getUserData().tenantId;
-      allow update: if hasRole('admin') && isSameTenant(resource.data.tenantId)
-                    && request.resource.data.tenantId == resource.data.tenantId;
-      allow delete: if hasRole('admin') && isSameTenant(resource.data.tenantId);
+      allow create: if hasRole('developer')
+                    || (hasRole('admin') && request.resource.data.tenantId == getUserData().tenantId);
+      allow update: if hasRole('developer')
+                    || (hasRole('admin') && isSameTenant(resource.data.tenantId)
+                        && request.resource.data.tenantId == resource.data.tenantId);
+      allow delete: if hasRole('developer')
+                    || (hasRole('admin') && isSameTenant(resource.data.tenantId));
     }
     
     // ===== Evaluation Periods Collection =====
     match /evaluationPeriods/{periodId} {
       // 読み取り（同一テナント内のアクティブユーザー）
-      allow read: if isUserActiveInTenant(resource.data.tenantId);
+      allow read: if hasRole('developer') 
+                  || isUserActiveInTenant(resource.data.tenantId);
       
       // 作成・更新・削除（同一テナントの管理者のみ）
-      allow create: if hasRole('admin') && request.resource.data.tenantId == getUserData().tenantId;
-      allow update: if hasRole('admin') && isSameTenant(resource.data.tenantId)
-                    && request.resource.data.tenantId == resource.data.tenantId;
-      allow delete: if hasRole('admin') && isSameTenant(resource.data.tenantId);
+      allow create: if hasRole('developer')
+                    || (hasRole('admin') && request.resource.data.tenantId == getUserData().tenantId);
+      allow update: if hasRole('developer')
+                    || (hasRole('admin') && isSameTenant(resource.data.tenantId)
+                        && request.resource.data.tenantId == resource.data.tenantId);
+      allow delete: if hasRole('developer')
+                    || (hasRole('admin') && isSameTenant(resource.data.tenantId));
     }
     
     // ===== Evaluation Structures Collection =====
     match /evaluationStructures/{structureId} {
       // 読み取り（同一テナント内のアクティブユーザー）
-      allow read: if isUserActiveInTenant(resource.data.tenantId);
+      allow read: if hasRole('developer') 
+                  || isUserActiveInTenant(resource.data.tenantId);
       
       // 作成・更新・削除（同一テナントの管理者のみ）
-      allow create: if hasRole('admin') && request.resource.data.tenantId == getUserData().tenantId;
-      allow update: if hasRole('admin') && isSameTenant(resource.data.tenantId)
-                    && request.resource.data.tenantId == resource.data.tenantId;
-      allow delete: if hasRole('admin') && isSameTenant(resource.data.tenantId);
+      allow create: if hasRole('developer')
+                    || (hasRole('admin') && request.resource.data.tenantId == getUserData().tenantId);
+      allow update: if hasRole('developer')
+                    || (hasRole('admin') && isSameTenant(resource.data.tenantId)
+                        && request.resource.data.tenantId == resource.data.tenantId);
+      allow delete: if hasRole('developer')
+                    || (hasRole('admin') && isSameTenant(resource.data.tenantId));
     }
     
     // ===== Qualitative Goals Collection =====
@@ -126,18 +138,22 @@ service cloud.firestore {
       // 読み取り（本人、管理者、評価者）
       allow read: if isOwner(resource.data.userId) 
                   || (hasRole('admin') && isSameTenant(resource.data.tenantId))
-                  || (hasRole('evaluator') && isSameTenant(resource.data.tenantId));
+                  || (hasRole('evaluator') && isSameTenant(resource.data.tenantId))
+                  || hasRole('developer');
       
       // 作成・更新（本人または管理者）
       allow create: if (isOwner(request.resource.data.userId) && isActiveUser())
-                    || (hasRole('admin') && isSameTenant(request.resource.data.tenantId));
+                    || (hasRole('admin') && isSameTenant(request.resource.data.tenantId))
+                    || hasRole('developer');
       
       allow update: if (isOwner(resource.data.userId) && isActiveUser()
                         && resource.data.status in ['draft', 'rejected'])
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId));
+                    || (hasRole('admin') && isSameTenant(resource.data.tenantId))
+                    || hasRole('developer');
       
       // 削除（管理者のみ）
-      allow delete: if hasRole('admin') && isSameTenant(resource.data.tenantId);
+      allow delete: if (hasRole('admin') && isSameTenant(resource.data.tenantId))
+                    || hasRole('developer');
     }
     
     // ===== Evaluations Collection =====
@@ -151,14 +167,16 @@ service cloud.firestore {
       // 作成（評価対象者、評価者、管理者）
       allow create: if (isOwner(request.resource.data.targetUserId) && isActiveUser())
                     || (isOwner(request.resource.data.evaluatorId) && isActiveUser())
-                    || (hasRole('admin') && isSameTenant(request.resource.data.tenantId));
+                    || (hasRole('admin') && isSameTenant(request.resource.data.tenantId))
+                    || hasRole('developer');
       
       // 更新（ステータスに応じた権限制御）
       allow update: if (isOwner(resource.data.targetUserId) && isActiveUser()
                         && resource.data.status in ['pending_submission', 'rejected'])
                     || (isOwner(resource.data.evaluatorId) && isActiveUser()
                         && resource.data.status in ['self_assessed', 'rejected'])
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId));
+                    || (hasRole('admin') && isSameTenant(resource.data.tenantId))
+                    || hasRole('developer');
       
       // 削除（管理者または開発者のみ）
       allow delete: if (hasRole('admin') && isSameTenant(resource.data.tenantId))
