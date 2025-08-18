@@ -27,6 +27,11 @@ class App {
     console.log("Starting application initialization...")
     this.showLoadingScreen()
 
+    const initTimeout = setTimeout(() => {
+      console.error("Application initialization timeout")
+      this.showInitializationError("初期化がタイムアウトしました。ページを再読み込みしてください。")
+    }, 15000) // 15秒のタイムアウト
+
     try {
       console.log("Step 1: Initializing I18n...")
       await this.i18n.init()
@@ -41,8 +46,21 @@ class App {
       console.log("✓ API initialized")
 
       console.log("Step 4: Setting up and awaiting auth state listener...")
-      await this.auth.listenForAuthChanges()
-      console.log("✓ Auth state listener has completed its initial check.")
+      try {
+        await Promise.race([
+          this.auth.listenForAuthChanges(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Auth timeout")), 10000))
+        ])
+        console.log("✓ Auth state listener has completed its initial check.")
+      } catch (authError) {
+        if (authError.message === "Auth timeout") {
+          console.warn("⚠ Auth state check timed out, continuing with initialization")
+        } else if (authError.message && authError.message.includes("Operation cancelled")) {
+          console.warn("⚠ Auth operation cancelled, continuing with initialization")
+        } else {
+          throw authError
+        }
+      }
 
       console.log("Step 5: Showing app...")
       this.showApp()
@@ -83,11 +101,14 @@ class App {
         console.warn("⚠ Animation features could not be loaded:", error)
       }
 
+      clearTimeout(initTimeout)
       console.log("🎉 Application initialized successfully")
     } catch (error) {
+      clearTimeout(initTimeout)
       console.error("❌ Failed to initialize application:", error)
-      this.showError("アプリケーションの起動中に重大なエラーが発生しました。")
+      this.showInitializationError("アプリケーションの起動中にエラーが発生しました。")
     } finally {
+      clearTimeout(initTimeout)
       this.showApp()
     }
   }
@@ -96,8 +117,8 @@ class App {
   setupGlobalErrorHandlers() {
     // 未処理のPromiseエラーをキャッチ
     window.addEventListener("unhandledrejection", (event) => {
-      if (event.reason && event.reason.message && event.reason.message.includes("Operation cancelled")) {
-        console.log("[v0] Firebase operation cancelled - likely due to page reload, ignoring error")
+      if (this.isOperationCancelledError(event.reason)) {
+        console.log("[App] Firebase operation cancelled - likely due to page reload, ignoring error")
         event.preventDefault()
         return
       }
@@ -109,8 +130,8 @@ class App {
 
     // 一般的なJavaScriptエラーをキャッチ
     window.addEventListener("error", (event) => {
-      if (event.error && event.error.message && event.error.message.includes("Operation cancelled")) {
-        console.log("[v0] Firebase timer operation cancelled - likely due to page reload, ignoring error")
+      if (this.isOperationCancelledError(event.error)) {
+        console.log("[App] Firebase timer operation cancelled - likely due to page reload, ignoring error")
         event.preventDefault()
         return
       }
@@ -121,10 +142,15 @@ class App {
     })
   }
 
+  // Operation cancelled エラーの判定
+  isOperationCancelledError(error) {
+    return error && error.message && error.message.includes("Operation cancelled")
+  }
+
   // 統一エラーハンドリング
   handleError(error, context = "") {
-    if (error && error.message && error.message.includes("Operation cancelled")) {
-      console.log(`[v0] Firebase operation cancelled in ${context} - likely due to page reload, ignoring error`)
+    if (this.isOperationCancelledError(error)) {
+      console.log(`[App] Firebase operation cancelled in ${context} - likely due to page reload, ignoring error`)
       return
     }
 
@@ -171,6 +197,26 @@ class App {
   showApp() {
     document.getElementById("loading-screen").classList.add("d-none")
     document.getElementById("app").classList.remove("d-none")
+  }
+
+  showInitializationError(message) {
+    const loadingScreen = document.getElementById("loading-screen")
+    if (loadingScreen) {
+      loadingScreen.innerHTML = `
+        <div class="loading-content text-center">
+          <div class="text-danger mb-3">
+            <i class="fas fa-exclamation-circle fa-4x"></i>
+          </div>
+          <h2 class="text-white">初期化エラー</h2>
+          <p class="text-white-50">${message}</p>
+          <div class="mt-4">
+            <button class="btn btn-light me-2" onclick="location.reload()">
+              <i class="fas fa-redo me-2"></i>再読み込み
+            </button>
+          </div>
+        </div>
+      `
+    }
   }
 
   async login(email, password) {
