@@ -1,6 +1,6 @@
 /**
- * Settings Page Component - 修正版
- * 設定ページコンポーネント
+ * Settings Page Component - 最終修正版
+ * イベント重複とデータ保存問題を修正
  */
 export class SettingsPage {
   constructor(app) {
@@ -13,6 +13,7 @@ export class SettingsPage {
     this.selectedJobTypeId = null;
     this.hasUnsavedChanges = false;
     this.isInitialized = false;
+    this.eventListenersSetup = false; // イベントリスナー重複防止フラグ
   }
 
   async render() {
@@ -130,17 +131,7 @@ export class SettingsPage {
     } catch (error) {
       console.error("Settings: Error loading data:", error);
       this.renderErrorState(error.message);
-      
-      if (error.message.includes("タイムアウト")) {
-        this.app.showError("設定の読み込みがタイムアウトしました。ページを再読み込みしてください。");
-      } else if (error.message.includes("権限")) {
-        this.app.showError("設定にアクセスする権限がありません。管理者に連絡してください。");
-      } else if (error.message.includes("認証")) {
-        this.app.showError("認証が必要です。再度ログインしてください。");
-        this.app.navigate("#/login");
-      } else {
-        this.app.showError("設定データの読み込みに失敗しました: " + error.message);
-      }
+      this.app.showError("設定データの読み込みに失敗しました: " + error.message);
     }
   }
 
@@ -219,56 +210,74 @@ export class SettingsPage {
   }
 
   setupEventListeners() {
+    // 重複防止チェック
+    if (this.eventListenersSetup) {
+      console.log("Settings: Event listeners already setup, skipping");
+      return;
+    }
+
     try {
       console.log("Settings: Setting up event listeners...");
       
-      document.addEventListener('click', (e) => {
-        if (!e.target.closest('.settings-page')) return;
-        
-        const target = e.target.closest('[id], [data-action]');
-        if (!target) return;
-        
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const action = target.id || target.dataset.action;
-        
-        switch (action) {
-          case 'save-settings-btn':
-            this.saveSettings();
-            break;
-          case 'add-job-type-btn':
-            this.openSimplePrompt('職種', '職種名を入力してください', '例: 建設作業員')
-              .then(name => {
-                if (name) {
-                  this.saveJobType(null, name);
-                  this.markUnsaved();
-                  this.renderAll();
-                  this.app.showSuccess('職種を追加しました');
-                }
-              });
-            break;
-          case 'add-period-btn':
-            this.openPeriodDialog()
-              .then(result => {
-                if (result) {
-                  this.savePeriod(null, result.name, result.startDate, result.endDate);
-                  this.markUnsaved();
-                  this.renderAll();
-                  this.app.showSuccess('評価期間を追加しました');
-                }
-              });
-            break;
-          default:
-            // データ属性を使ったイベント処理
-            if (target.dataset.jobTypeId && !target.closest('.btn')) {
-              this.selectJobType(target.dataset.jobTypeId);
-            } else if (target.dataset.action) {
-              this.handleDataAction(target);
-            }
-        }
-      });
+      // 特定のIDを持つボタンのイベントリスナー（重複防止）
+      const saveBtn = document.getElementById('save-settings-btn');
+      const addJobTypeBtn = document.getElementById('add-job-type-btn');
+      const addPeriodBtn = document.getElementById('add-period-btn');
       
+      if (saveBtn && !saveBtn.hasEventListener) {
+        saveBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.saveSettings();
+        });
+        saveBtn.hasEventListener = true;
+      }
+      
+      if (addJobTypeBtn && !addJobTypeBtn.hasEventListener) {
+        addJobTypeBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.addJobType();
+        });
+        addJobTypeBtn.hasEventListener = true;
+      }
+      
+      if (addPeriodBtn && !addPeriodBtn.hasEventListener) {
+        addPeriodBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.addPeriod();
+        });
+        addPeriodBtn.hasEventListener = true;
+      }
+
+      // 動的コンテンツ用のイベント委譲（1回のみ設定）
+      if (!this.delegatedEventSetup) {
+        document.addEventListener('click', (e) => {
+          if (!e.target.closest('.settings-page')) return;
+          
+          // data-action属性を使った操作
+          const actionElement = e.target.closest('[data-action]');
+          if (actionElement) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.handleDataAction(actionElement);
+            return;
+          }
+          
+          // 職種選択
+          const jobTypeElement = e.target.closest('[data-job-type-id]:not(.btn)');
+          if (jobTypeElement) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.selectJobType(jobTypeElement.dataset.jobTypeId);
+            return;
+          }
+        });
+        this.delegatedEventSetup = true;
+      }
+      
+      this.eventListenersSetup = true;
       console.log("Settings: Event listeners setup completed");
     } catch (error) {
       console.error("Settings: Error setting up event listeners:", error);
@@ -279,6 +288,8 @@ export class SettingsPage {
     const action = element.dataset.action;
     const id = element.dataset.id;
     const parentId = element.dataset.parentId;
+    
+    console.log("Settings: Handling action:", action, "with id:", id);
     
     switch (action) {
       case 'edit-job-type':
@@ -314,35 +325,77 @@ export class SettingsPage {
     }
   }
 
-  async openSimplePrompt(title, message, placeholder = '') {
+  async promptForValue(title, message, placeholder = '', currentValue = '') {
     return new Promise((resolve) => {
-      const input = prompt(`${title}\n\n${message}`, placeholder);
-      resolve(input?.trim() || null);
+      // より確実なプロンプト表示
+      setTimeout(() => {
+        const result = prompt(`${title}\n\n${message}`, currentValue || placeholder);
+        console.log("Prompt result:", result);
+        resolve(result ? result.trim() : null);
+      }, 100);
     });
   }
 
-  async openPeriodDialog() {
-    return new Promise((resolve) => {
-      const name = prompt('評価期間名を入力してください', '例: 2025年 上半期');
-      if (!name) {
-        resolve(null);
-        return;
-      }
+  async addJobType() {
+    console.log("Settings: Adding job type");
+    try {
+      const name = await this.promptForValue(
+        '職種追加', 
+        '職種名を入力してください',
+        '例: 建設作業員'
+      );
       
-      const startDate = prompt('開始日を入力してください (YYYY-MM-DD)', '2025-01-01');
-      if (!startDate) {
-        resolve(null);
-        return;
+      if (name && name.length > 0) {
+        console.log("Settings: Creating job type with name:", name);
+        this.saveJobType(null, name);
+        this.markUnsaved();
+        this.renderAll();
+        this.app.showSuccess('職種を追加しました');
+      } else {
+        console.log("Settings: Job type creation cancelled or empty name");
       }
+    } catch (error) {
+      console.error("Settings: Error adding job type:", error);
+      this.app.showError('職種の追加に失敗しました');
+    }
+  }
+
+  async addPeriod() {
+    console.log("Settings: Adding period");
+    try {
+      const name = await this.promptForValue(
+        '評価期間追加',
+        '期間名を入力してください',
+        '例: 2025年 上半期'
+      );
       
-      const endDate = prompt('終了日を入力してください (YYYY-MM-DD)', '2025-06-30');
-      if (!endDate) {
-        resolve(null);
-        return;
-      }
+      if (!name) return;
       
-      resolve({ name: name.trim(), startDate, endDate });
-    });
+      const startDate = await this.promptForValue(
+        '開始日設定',
+        '開始日を入力してください (YYYY-MM-DD)',
+        '2025-01-01'
+      );
+      
+      if (!startDate) return;
+      
+      const endDate = await this.promptForValue(
+        '終了日設定',
+        '終了日を入力してください (YYYY-MM-DD)',
+        '2025-06-30'
+      );
+      
+      if (!endDate) return;
+      
+      console.log("Settings: Creating period:", { name, startDate, endDate });
+      this.savePeriod(null, name, startDate, endDate);
+      this.markUnsaved();
+      this.renderAll();
+      this.app.showSuccess('評価期間を追加しました');
+    } catch (error) {
+      console.error("Settings: Error adding period:", error);
+      this.app.showError('評価期間の追加に失敗しました');
+    }
   }
 
   renderAll() {
@@ -429,6 +482,7 @@ export class SettingsPage {
       return;
     }
     
+    console.log("Settings: Selecting job type:", id);
     this.selectedJobTypeId = id;
     this.markAsSaved();
     this.renderAll();
@@ -516,19 +570,23 @@ export class SettingsPage {
   }
 
   // 各種操作メソッド
-  editJobType(id) {
+  async editJobType(id) {
     const jobType = this.settings.jobTypes.find(jt => jt.id === id);
     if (!jobType) return;
     
-    this.openSimplePrompt('職種編集', '職種名を入力してください', jobType.name)
-      .then(name => {
-        if (name && name !== jobType.name) {
-          this.saveJobType(id, name);
-          this.markUnsaved();
-          this.renderAll();
-          this.app.showSuccess('職種を更新しました');
-        }
-      });
+    const name = await this.promptForValue(
+      '職種編集', 
+      '職種名を入力してください', 
+      '', 
+      jobType.name
+    );
+    
+    if (name && name !== jobType.name) {
+      this.saveJobType(id, name);
+      this.markUnsaved();
+      this.renderAll();
+      this.app.showSuccess('職種を更新しました');
+    }
   }
 
   deleteJobType(id) {
@@ -546,19 +604,38 @@ export class SettingsPage {
     this.app.showSuccess('職種を削除しました');
   }
 
-  editPeriod(id) {
+  async editPeriod(id) {
     const period = this.settings.periods.find(p => p.id === id);
     if (!period) return;
     
-    this.openPeriodDialog()
-      .then(result => {
-        if (result) {
-          this.savePeriod(id, result.name, result.startDate, result.endDate);
-          this.markUnsaved();
-          this.renderAll();
-          this.app.showSuccess('評価期間を更新しました');
-        }
-      });
+    const name = await this.promptForValue(
+      '評価期間編集',
+      '期間名を入力してください',
+      '',
+      period.name
+    );
+    if (!name) return;
+    
+    const startDate = await this.promptForValue(
+      '開始日編集',
+      '開始日を入力してください (YYYY-MM-DD)',
+      '',
+      period.startDate
+    );
+    if (!startDate) return;
+    
+    const endDate = await this.promptForValue(
+      '終了日編集', 
+      '終了日を入力してください (YYYY-MM-DD)',
+      '',
+      period.endDate
+    );
+    if (!endDate) return;
+    
+    this.savePeriod(id, name, startDate, endDate);
+    this.markUnsaved();
+    this.renderAll();
+    this.app.showSuccess('評価期間を更新しました');
   }
 
   deletePeriod(id) {
@@ -570,36 +647,43 @@ export class SettingsPage {
     this.app.showSuccess('評価期間を削除しました');
   }
 
-  addCategory() {
+  async addCategory() {
     if (!this.selectedJobTypeId) return;
     
-    this.openSimplePrompt('カテゴリ追加', 'カテゴリ名を入力してください', '例: 技術スキル')
-      .then(name => {
-        if (name) {
-          this.saveCategory(null, name);
-          this.markUnsaved();
-          this.renderAll();
-          this.app.showSuccess('カテゴリを追加しました');
-        }
-      });
+    const name = await this.promptForValue(
+      'カテゴリ追加',
+      'カテゴリ名を入力してください',
+      '例: 技術スキル'
+    );
+    
+    if (name) {
+      this.saveCategory(null, name);
+      this.markUnsaved();
+      this.renderAll();
+      this.app.showSuccess('カテゴリを追加しました');
+    }
   }
 
-  editCategory(id) {
+  async editCategory(id) {
     if (!this.selectedJobTypeId) return;
     
     const structure = this.settings.structures[this.selectedJobTypeId];
     const category = structure?.categories.find(c => c.id === id);
     if (!category) return;
     
-    this.openSimplePrompt('カテゴリ編集', 'カテゴリ名を入力してください', category.name)
-      .then(name => {
-        if (name && name !== category.name) {
-          this.saveCategory(id, name);
-          this.markUnsaved();
-          this.renderAll();
-          this.app.showSuccess('カテゴリを更新しました');
-        }
-      });
+    const name = await this.promptForValue(
+      'カテゴリ編集',
+      'カテゴリ名を入力してください',
+      '',
+      category.name
+    );
+    
+    if (name && name !== category.name) {
+      this.saveCategory(id, name);
+      this.markUnsaved();
+      this.renderAll();
+      this.app.showSuccess('カテゴリを更新しました');
+    }
   }
 
   deleteCategory(id) {
@@ -614,19 +698,22 @@ export class SettingsPage {
     this.app.showSuccess('カテゴリを削除しました');
   }
 
-  addItem(parentId) {
-    this.openSimplePrompt('評価項目追加', '評価項目名を入力してください', '例: 図面の読解力')
-      .then(name => {
-        if (name) {
-          this.saveItem(null, name, parentId);
-          this.markUnsaved();
-          this.renderAll();
-          this.app.showSuccess('評価項目を追加しました');
-        }
-      });
+  async addItem(parentId) {
+    const name = await this.promptForValue(
+      '評価項目追加',
+      '評価項目名を入力してください',
+      '例: 図面の読解力'
+    );
+    
+    if (name) {
+      this.saveItem(null, name, parentId);
+      this.markUnsaved();
+      this.renderAll();
+      this.app.showSuccess('評価項目を追加しました');
+    }
   }
 
-  editItem(id, parentId) {
+  async editItem(id, parentId) {
     if (!this.selectedJobTypeId || !parentId) return;
     
     const structure = this.settings.structures[this.selectedJobTypeId];
@@ -634,15 +721,19 @@ export class SettingsPage {
     const item = category?.items.find(i => i.id === id);
     if (!item) return;
     
-    this.openSimplePrompt('評価項目編集', '評価項目名を入力してください', item.name)
-      .then(name => {
-        if (name && name !== item.name) {
-          this.saveItem(id, name, parentId);
-          this.markUnsaved();
-          this.renderAll();
-          this.app.showSuccess('評価項目を更新しました');
-        }
-      });
+    const name = await this.promptForValue(
+      '評価項目編集',
+      '評価項目名を入力してください',
+      '',
+      item.name
+    );
+    
+    if (name && name !== item.name) {
+      this.saveItem(id, name, parentId);
+      this.markUnsaved();
+      this.renderAll();
+      this.app.showSuccess('評価項目を更新しました');
+    }
   }
 
   deleteItem(id, parentId) {
@@ -660,21 +751,35 @@ export class SettingsPage {
     }
   }
 
-  // データ保存メソッド
+  // データ保存メソッド（修正版）
   saveJobType(id, name) {
+    console.log("Settings: saveJobType called with id:", id, "name:", name);
+    
+    if (!name || name.length === 0) {
+      console.error("Settings: Invalid job type name:", name);
+      return;
+    }
+    
     if (id) {
       const jobType = this.settings.jobTypes.find(e => e.id === id);
-      if (jobType) jobType.name = name;
+      if (jobType) {
+        jobType.name = name;
+        console.log("Settings: Updated job type:", jobType);
+      }
     } else {
       const newId = `jt_${Date.now()}`;
-      this.settings.jobTypes.push({ id: newId, name });
+      const newJobType = { id: newId, name: name };
+      this.settings.jobTypes.push(newJobType);
       this.settings.structures[newId] = { id: newId, categories: [] };
+      console.log("Settings: Created new job type:", newJobType);
     }
   }
 
   savePeriod(id, name, startDate, endDate) {
-    if (!startDate || !endDate) {
-      this.app.showError("開始日と終了日を入力してください");
+    console.log("Settings: savePeriod called with:", { id, name, startDate, endDate });
+    
+    if (!startDate || !endDate || !name) {
+      this.app.showError("すべてのフィールドを入力してください");
       return;
     }
 
@@ -684,19 +789,24 @@ export class SettingsPage {
         period.name = name;
         period.startDate = startDate;
         period.endDate = endDate;
+        console.log("Settings: Updated period:", period);
       }
     } else {
-      this.settings.periods.push({ 
+      const newPeriod = { 
         id: `p_${Date.now()}`, 
-        name, 
-        startDate, 
-        endDate 
-      });
+        name: name, 
+        startDate: startDate, 
+        endDate: endDate 
+      };
+      this.settings.periods.push(newPeriod);
+      console.log("Settings: Created new period:", newPeriod);
     }
   }
 
   saveCategory(id, name) {
-    if (!this.selectedJobTypeId) return;
+    if (!this.selectedJobTypeId || !name) return;
+    
+    console.log("Settings: saveCategory called with:", { id, name, selectedJobType: this.selectedJobTypeId });
     
     if (!this.settings.structures[this.selectedJobTypeId]) {
       this.settings.structures[this.selectedJobTypeId] = { id: this.selectedJobTypeId, categories: [] };
@@ -706,18 +816,25 @@ export class SettingsPage {
     
     if (id) {
       const category = structure.categories.find(e => e.id === id);
-      if (category) category.name = name;
+      if (category) {
+        category.name = name;
+        console.log("Settings: Updated category:", category);
+      }
     } else {
-      structure.categories.push({ 
+      const newCategory = { 
         id: `cat_${Date.now()}`, 
-        name, 
+        name: name, 
         items: [] 
-      });
+      };
+      structure.categories.push(newCategory);
+      console.log("Settings: Created new category:", newCategory);
     }
   }
 
   saveItem(id, name, parentId) {
-    if (!this.selectedJobTypeId || !parentId) return;
+    if (!this.selectedJobTypeId || !parentId || !name) return;
+    
+    console.log("Settings: saveItem called with:", { id, name, parentId });
     
     const structure = this.settings.structures[this.selectedJobTypeId];
     const category = structure?.categories.find(c => c.id === parentId);
@@ -725,12 +842,17 @@ export class SettingsPage {
     if (category) {
       if (id) {
         const item = category.items.find(e => e.id === id);
-        if (item) item.name = name;
+        if (item) {
+          item.name = name;
+          console.log("Settings: Updated item:", item);
+        }
       } else {
-        category.items.push({ 
+        const newItem = { 
           id: `item_${Date.now()}`, 
-          name 
-        });
+          name: name 
+        };
+        category.items.push(newItem);
+        console.log("Settings: Created new item:", newItem);
       }
     }
   }
@@ -738,22 +860,31 @@ export class SettingsPage {
   markUnsaved() {
     this.hasUnsavedChanges = true;
     const saveBtn = document.getElementById('save-settings-btn');
-    if (saveBtn) saveBtn.disabled = false;
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.classList.add('btn-warning');
+      saveBtn.classList.remove('btn-success');
+    }
   }
   
   markAsSaved() {
     this.hasUnsavedChanges = false;
     const saveBtn = document.getElementById('save-settings-btn');
-    if (saveBtn) saveBtn.disabled = true;
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.classList.remove('btn-warning');
+      saveBtn.classList.add('btn-success');
+    }
   }
 
   setupUnloadWarning() {
-    window.addEventListener('beforeunload', (e) => {
+    this.unloadHandler = (e) => {
       if (this.hasUnsavedChanges) {
         e.preventDefault();
         return e.returnValue = '保存されていない変更があります。ページを離れてもよろしいですか？';
       }
-    });
+    };
+    window.addEventListener('beforeunload', this.unloadHandler);
   }
 
   async saveSettings() {
@@ -761,20 +892,36 @@ export class SettingsPage {
     if (!btn) return;
     
     const originalText = btn.innerHTML;
+    const originalClass = btn.className;
+    
     btn.disabled = true;
     btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> 保存中...`;
+    btn.className = 'btn btn-info';
     
     try {
       console.log("Settings: Saving settings to Firebase...");
+      console.log("Settings data:", this.settings);
+      
+      // データが空でないことを確認
+      if (!this.settings.jobTypes) this.settings.jobTypes = [];
+      if (!this.settings.periods) this.settings.periods = [];
+      if (!this.settings.structures) this.settings.structures = {};
+      
       await this.app.api.saveSettings(this.settings);
       this.markAsSaved();
       this.app.showSuccess('設定を保存しました');
       console.log("Settings: Settings saved successfully");
+      
+      // 保存後に最新データを再読み込み
+      setTimeout(() => {
+        this.loadData();
+      }, 1000);
+      
     } catch (error) {
       console.error("Settings: Save error:", error);
       this.app.showError('設定の保存に失敗しました: ' + error.message);
       btn.disabled = false;
-    } finally {
+      btn.className = originalClass;
       btn.innerHTML = originalText;
     }
   }
@@ -783,7 +930,14 @@ export class SettingsPage {
     console.log("Settings: Starting cleanup...");
     
     try {
-      window.removeEventListener('beforeunload', this.unloadHandler);
+      if (this.unloadHandler) {
+        window.removeEventListener('beforeunload', this.unloadHandler);
+      }
+      
+      // イベントリスナーフラグをリセット
+      this.eventListenersSetup = false;
+      this.delegatedEventSetup = false;
+      
       console.log("Settings: Cleanup completed");
     } catch (error) {
       console.error("Settings: Cleanup error:", error);
