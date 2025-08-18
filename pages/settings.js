@@ -108,106 +108,7 @@ export class SettingsPage {
     }
   }
 
-  setupEventListeners() {
-    try {
-      console.log("Settings: Setting up event listeners...");
-      
-      // メインボタンのイベントリスナー（イベント委譲を使用）
-      document.addEventListener('click', (e) => {
-        // 設定ページ内のクリックのみ処理
-        if (!e.target.closest('.settings-page')) return;
-        
-        if (e.target.closest('#save-settings-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          this.saveSettings();
-        } 
-        else if (e.target.closest('#add-job-type-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          this.openEditDialog('jobType');
-        } 
-        else if (e.target.closest('#add-period-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          this.openEditDialog('period');
-        }
-        else if (e.target.closest('.edit-job-type-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const jobTypeId = e.target.closest('.edit-job-type-btn').dataset.jobTypeId;
-          this.openEditDialog('jobType', jobTypeId);
-        }
-        else if (e.target.closest('.delete-job-type-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const jobTypeId = e.target.closest('.delete-job-type-btn').dataset.jobTypeId;
-          this.deleteJobType(jobTypeId);
-        }
-        else if (e.target.closest('.edit-period-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const periodId = e.target.closest('.edit-period-btn').dataset.periodId;
-          this.openEditDialog('period', periodId);
-        }
-        else if (e.target.closest('.delete-period-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const periodId = e.target.closest('.delete-period-btn').dataset.periodId;
-          this.deletePeriod(periodId);
-        }
-        else if (e.target.closest('[data-job-type-id]') && !e.target.closest('.btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const jobTypeId = e.target.closest('[data-job-type-id]').dataset.jobTypeId;
-          this.selectJobType(jobTypeId);
-        }
-        else if (e.target.closest('.add-category-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          this.openEditDialog('category');
-        }
-        else if (e.target.closest('.edit-category-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const categoryId = e.target.closest('.edit-category-btn').dataset.categoryId;
-          this.openEditDialog('category', categoryId);
-        }
-        else if (e.target.closest('.delete-category-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const categoryId = e.target.closest('.delete-category-btn').dataset.categoryId;
-          this.deleteCategory(categoryId);
-        }
-        else if (e.target.closest('.add-item-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const categoryId = e.target.closest('.add-item-btn').dataset.categoryId;
-          this.openEditDialog('item', null, categoryId);
-        }
-        else if (e.target.closest('.edit-item-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const itemId = e.target.closest('.edit-item-btn').dataset.itemId;
-          const categoryId = e.target.closest('.edit-item-btn').dataset.categoryId;
-          this.openEditDialog('item', itemId, categoryId);
-        }
-        else if (e.target.closest('.delete-item-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const itemId = e.target.closest('.delete-item-btn').dataset.itemId;
-          const categoryId = e.target.closest('.delete-item-btn').dataset.categoryId;
-          this.deleteItem(itemId, categoryId);
-        }
-      });
-      
-      console.log("Settings: Event listeners setup completed");
-    } catch (error) {
-      console.error("Settings: Error setting up event listeners:", error);
-    }
-  }
-
- async loadData() {
+  async loadData() {
     try {
       console.log("Settings: Loading data from Firebase...");
       
@@ -335,18 +236,103 @@ export class SettingsPage {
       `;
     }
   }
-    
-    if (periodsList) {
-      periodsList.innerHTML = `
-        <div class="list-group-item text-center text-danger">
-          <i class="fas fa-exclamation-triangle me-2"></i>
-          データの読み込みに失敗しました
-          <br>
-          <button class="btn btn-sm btn-outline-primary mt-2" onclick="window.location.reload()">
-            再読み込み
-          </button>
-        </div>
-      `;
+
+  setupEventListeners() {
+    try {
+      console.log("Settings: Setting up event listeners...");
+      
+      // メインボタンのイベントリスナー（イベント委譲を使用）
+      document.addEventListener('click', (e) => {
+        // 設定ページ内のクリックのみ処理
+        if (!e.target.closest('.settings-page')) return;
+        
+        if (e.target.closest('#save-settings-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.saveSettings();
+        } 
+        else if (e.target.closest('#add-job-type-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.openEditDialog('jobType');
+        } 
+        else if (e.target.closest('#add-period-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.openEditDialog('period');
+        }
+        else if (e.target.closest('.edit-job-type-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const jobTypeId = e.target.closest('.edit-job-type-btn').dataset.jobTypeId;
+          this.openEditDialog('jobType', jobTypeId);
+        }
+        else if (e.target.closest('.delete-job-type-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const jobTypeId = e.target.closest('.delete-job-type-btn').dataset.jobTypeId;
+          this.deleteJobType(jobTypeId);
+        }
+        else if (e.target.closest('.edit-period-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const periodId = e.target.closest('.edit-period-btn').dataset.periodId;
+          this.openEditDialog('period', periodId);
+        }
+        else if (e.target.closest('.delete-period-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const periodId = e.target.closest('.delete-period-btn').dataset.periodId;
+          this.deletePeriod(periodId);
+        }
+        else if (e.target.closest('[data-job-type-id]') && !e.target.closest('.btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const jobTypeId = e.target.closest('[data-job-type-id]').dataset.jobTypeId;
+          this.selectJobType(jobTypeId);
+        }
+        else if (e.target.closest('.add-category-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.openEditDialog('category');
+        }
+        else if (e.target.closest('.edit-category-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const categoryId = e.target.closest('.edit-category-btn').dataset.categoryId;
+          this.openEditDialog('category', categoryId);
+        }
+        else if (e.target.closest('.delete-category-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const categoryId = e.target.closest('.delete-category-btn').dataset.categoryId;
+          this.deleteCategory(categoryId);
+        }
+        else if (e.target.closest('.add-item-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const categoryId = e.target.closest('.add-item-btn').dataset.categoryId;
+          this.openEditDialog('item', null, categoryId);
+        }
+        else if (e.target.closest('.edit-item-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const itemId = e.target.closest('.edit-item-btn').dataset.itemId;
+          const categoryId = e.target.closest('.edit-item-btn').dataset.categoryId;
+          this.openEditDialog('item', itemId, categoryId);
+        }
+        else if (e.target.closest('.delete-item-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const itemId = e.target.closest('.delete-item-btn').dataset.itemId;
+          const categoryId = e.target.closest('.delete-item-btn').dataset.categoryId;
+          this.deleteItem(itemId, categoryId);
+        }
+      });
+      
+      console.log("Settings: Event listeners setup completed");
+    } catch (error) {
+      console.error("Settings: Error setting up event listeners:", error);
     }
   }
 
