@@ -21,6 +21,9 @@ class App {
 
     // グローバルエラーハンドラーの設定
     this.setupGlobalErrorHandlers()
+    
+    // グローバルナビゲーションイベントハンドラー
+    this.setupGlobalNavigation()
   }
 
   async init() {
@@ -113,6 +116,22 @@ class App {
     }
   }
 
+  // グローバルナビゲーションイベントの設定
+  setupGlobalNavigation() {
+    // data-link属性を持つ要素のクリックイベントを処理
+    document.addEventListener('click', (e) => {
+      const link = e.target.closest('[data-link]');
+      if (link) {
+        e.preventDefault();
+        const href = link.getAttribute('href');
+        if (href && href !== '#') {
+          console.log('App: Global navigation to', href);
+          this.navigate(href);
+        }
+      }
+    });
+  }
+
   // グローバルエラーハンドラーの設定
   setupGlobalErrorHandlers() {
     // 未処理のPromiseエラーをキャッチ
@@ -190,13 +209,19 @@ class App {
   }
 
   showLoadingScreen() {
-    document.getElementById("loading-screen").classList.remove("d-none")
-    document.getElementById("app").classList.add("d-none")
+    const loadingScreen = document.getElementById("loading-screen")
+    const appContainer = document.getElementById("app")
+    
+    if (loadingScreen) loadingScreen.classList.remove("d-none")
+    if (appContainer) appContainer.classList.add("d-none")
   }
 
   showApp() {
-    document.getElementById("loading-screen").classList.add("d-none")
-    document.getElementById("app").classList.remove("d-none")
+    const loadingScreen = document.getElementById("loading-screen")
+    const appContainer = document.getElementById("app")
+    
+    if (loadingScreen) loadingScreen.classList.add("d-none")
+    if (appContainer) appContainer.classList.remove("d-none")
   }
 
   showInitializationError(message) {
@@ -245,11 +270,10 @@ class App {
   }
 
   navigate(path) {
-    if (window.location.hash !== path) {
-      window.location.hash = path
-    } else {
-      this.router.route()
-    }
+    console.log("App: navigate called with path:", path)
+    
+    // ルーターのnavigate メソッドを使用
+    this.router.navigate(path)
 
     // アクセシビリティ通知
     if (this.accessibility) {
@@ -260,9 +284,12 @@ class App {
   updateUIForAuthState(user) {
     this.currentUser = user
 
+    console.log("App: updateUIForAuthState called with user:", user ? user.email : 'null')
+
     // ログイン状態に応じてヘッダーとサイドバーの表示を制御
     if (user) {
       // ログイン済みの場合
+      console.log("App: User authenticated, updating header and sidebar")
       this.header.update()
       this.sidebar.update()
       // ログインページのクリーンアップ
@@ -270,6 +297,7 @@ class App {
       loginPageElements.forEach((el) => el.remove())
     } else {
       // 未ログインの場合
+      console.log("App: User not authenticated, clearing header and sidebar")
       // ヘッダーとサイドバーをクリア
       const headerContainer = document.getElementById("header-container")
       const sidebarContainer = document.getElementById("sidebar-container")
