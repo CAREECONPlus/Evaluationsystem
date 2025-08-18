@@ -4,7 +4,6 @@ import { Auth } from "./auth.js"
 import { Router } from "./router.js"
 import { HeaderComponent } from "./components/header.js"
 import { SidebarComponent } from "./components/sidebar.js"
-import bootstrap from "bootstrap" // Declare the bootstrap variable
 
 class App {
   constructor() {
@@ -270,7 +269,7 @@ class App {
       `
     toastContainer.insertAdjacentHTML("beforeend", toastHTML)
     const toastElement = document.getElementById(toastId)
-    const toast = new bootstrap.Toast(toastElement, { delay: duration })
+    const toast = new window.bootstrap.Toast(toastElement, { delay: duration })
     toast.show()
     toastElement.addEventListener("hidden.bs.toast", () => toastElement.remove())
   }
@@ -384,7 +383,7 @@ class App {
       // モーダルを追加
       document.body.insertAdjacentHTML("beforeend", modalHTML)
       const modalElement = document.getElementById("confirmModal")
-      const modal = new bootstrap.Modal(modalElement)
+      const modal = new window.bootstrap.Modal(modalElement)
 
       // イベントリスナー設定
       document.getElementById("confirmBtn").addEventListener("click", () => {
