@@ -207,41 +207,134 @@ export class SettingsPage {
     }
   }
 
-  async loadData() {
+ async loadData() {
     try {
       console.log("Settings: Loading data from Firebase...");
       
-      if (!this.app.currentUser || !this.app.currentUser.tenantId) {
-        throw new Error("認証情報またはテナント情報が見つかりません");
+      // 認証状態チェック
+      if (!this.app.currentUser) {
+        throw new Error("ユーザーが認証されていません");
       }
       
+      // 権限チェック
+      if (!this.app.hasRole('admin')) {
+        throw new Error("設定ページにアクセスする権限がありません");
+      }
+      
+      // テナントIDチェック
+      if (!this.app.currentUser.tenantId) {
+        console.warn("Settings: TenantId is missing. Creating empty settings structure.");
+        // テナントIDがない場合は空の設定構造を作成
+        this.settings = {
+          jobTypes: [],
+          periods: [],
+          structures: {}
+        };
+        this.renderAll();
+        this.showEmptyStateMessage();
+        return;
+      }
+      
+      // ローディング表示
+      this.showLoadingState();
+      
+      // データを取得（タイムアウト付き）
       this.settings = await this.app.api.getSettings();
+      
+      console.log("Settings: Data loaded successfully:", this.settings);
       this.renderAll();
-      console.log("Settings: Data loaded and rendered successfully");
       
     } catch (error) {
       console.error("Settings: Error loading data:", error);
-      this.renderErrorState();
-      this.app.showError("設定データの読み込みに失敗しました: " + error.message);
+      this.renderErrorState(error.message);
+      
+      // エラーメッセージを表示
+      if (error.message.includes("タイムアウト")) {
+        this.app.showError("設定の読み込みがタイムアウトしました。ページを再読み込みしてください。");
+      } else if (error.message.includes("権限")) {
+        this.app.showError("設定にアクセスする権限がありません。管理者に連絡してください。");
+      } else if (error.message.includes("認証")) {
+        this.app.showError("認証が必要です。再度ログインしてください。");
+        this.app.navigate("#/login");
+      } else {
+        this.app.showError("設定データの読み込みに失敗しました: " + error.message);
+      }
     }
   }
 
-  renderErrorState() {
+  showLoadingState() {
+    const jobTypesList = document.getElementById('job-types-list');
+    const periodsList = document.getElementById('periods-list');
+    const structureEditor = document.getElementById('structure-editor');
+    
+    const loadingHTML = `
+      <div class="list-group-item text-center text-muted p-4">
+        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+        読み込み中...
+      </div>
+    `;
+    
+    if (jobTypesList) jobTypesList.innerHTML = loadingHTML;
+    if (periodsList) periodsList.innerHTML = loadingHTML;
+    if (structureEditor) structureEditor.innerHTML = loadingHTML;
+  }
+
+  showEmptyStateMessage() {
     const jobTypesList = document.getElementById('job-types-list');
     const periodsList = document.getElementById('periods-list');
     
     if (jobTypesList) {
       jobTypesList.innerHTML = `
-        <div class="list-group-item text-center text-danger">
-          <i class="fas fa-exclamation-triangle me-2"></i>
-          データの読み込みに失敗しました
-          <br>
-          <button class="btn btn-sm btn-outline-primary mt-2" onclick="window.location.reload()">
-            再読み込み
+        <div class="list-group-item text-center text-info p-4">
+          <i class="fas fa-info-circle fa-2x mb-3"></i>
+          <h6>初期設定が必要です</h6>
+          <p class="mb-0 small">「+」ボタンから職種と評価期間を追加してください</p>
+        </div>
+      `;
+    }
+    
+    if (periodsList) {
+      periodsList.innerHTML = `
+        <div class="list-group-item text-center text-info p-4">
+          <i class="fas fa-calendar-plus fa-2x mb-3"></i>
+          <h6>評価期間を追加</h6>
+          <p class="mb-0 small">「+」ボタンから評価期間を設定してください</p>
+        </div>
+      `;
+    }
+  }
+
+  renderErrorState(errorMessage = "データの読み込みに失敗しました") {
+    const jobTypesList = document.getElementById('job-types-list');
+    const periodsList = document.getElementById('periods-list');
+    const structureEditor = document.getElementById('structure-editor');
+    
+    const errorHTML = `
+      <div class="list-group-item text-center text-danger p-4">
+        <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+        <h6>エラー</h6>
+        <p class="mb-3 small">${this.app.sanitizeHtml(errorMessage)}</p>
+        <button class="btn btn-sm btn-outline-primary" onclick="window.location.reload()">
+          <i class="fas fa-redo me-1"></i>再読み込み
+        </button>
+      </div>
+    `;
+    
+    if (jobTypesList) jobTypesList.innerHTML = errorHTML;
+    if (periodsList) periodsList.innerHTML = errorHTML;
+    if (structureEditor) {
+      structureEditor.innerHTML = `
+        <div class="text-center p-5 text-danger">
+          <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+          <h5>設定の読み込みに失敗しました</h5>
+          <p class="text-muted">${this.app.sanitizeHtml(errorMessage)}</p>
+          <button class="btn btn-outline-primary" onclick="window.location.reload()">
+            <i class="fas fa-redo me-2"></i>ページを再読み込み
           </button>
         </div>
       `;
     }
+  }
     
     if (periodsList) {
       periodsList.innerHTML = `
