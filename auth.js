@@ -1,4 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js"
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"
 import {
   getAuth,
   onAuthStateChanged,
@@ -6,13 +6,25 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
-} from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js"
+  updateProfile,
+  deleteUser,
+  reauthenticateWithCredential,
+  EmailAuthProvider
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"
 import {
   getFirestore,
   doc,
   setDoc,
   serverTimestamp,
-} from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js"
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+
+/**
+ * Enhanced Authentication Service
+ * 強化された認証サービス
+ */
+export class Auth {
+  constructor(app) {
+    this
 
 export class Auth {
   constructor(app) {
