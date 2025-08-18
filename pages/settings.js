@@ -1,5 +1,5 @@
 /**
- * Settings Page Component - モーダル問題完全修正版
+ * Settings Page Component - 修正版
  * 設定ページコンポーネント
  */
 export class SettingsPage {
@@ -12,10 +12,7 @@ export class SettingsPage {
     };
     this.selectedJobTypeId = null;
     this.hasUnsavedChanges = false;
-    this.editModal = null;
     this.isInitialized = false;
-    this.modalElement = null;
-    this.modalCreated = false;
   }
 
   async render() {
@@ -90,18 +87,11 @@ export class SettingsPage {
     this.app.currentPage = this;
     
     try {
-      // データを読み込み
       await this.loadData();
-      
-      // イベントリスナーを設定
       this.setupEventListeners();
-      
-      // ページ離脱時の警告設定
       this.setupUnloadWarning();
-      
       this.isInitialized = true;
       console.log("Settings: Initialization completed successfully");
-      
     } catch (error) {
       console.error("Settings: Initialization error:", error);
       this.app.showError("設定ページの初期化に失敗しました: " + error.message);
@@ -112,20 +102,16 @@ export class SettingsPage {
     try {
       console.log("Settings: Loading data from Firebase...");
       
-      // 認証状態チェック
       if (!this.app.currentUser) {
         throw new Error("ユーザーが認証されていません");
       }
       
-      // 権限チェック
       if (!this.app.hasRole('admin')) {
         throw new Error("設定ページにアクセスする権限がありません");
       }
       
-      // テナントIDチェック
       if (!this.app.currentUser.tenantId) {
         console.warn("Settings: TenantId is missing. Creating empty settings structure.");
-        // テナントIDがない場合は空の設定構造を作成
         this.settings = {
           jobTypes: [],
           periods: [],
@@ -136,12 +122,8 @@ export class SettingsPage {
         return;
       }
       
-      // ローディング表示
       this.showLoadingState();
-      
-      // データを取得（タイムアウト付き）
       this.settings = await this.app.api.getSettings();
-      
       console.log("Settings: Data loaded successfully:", this.settings);
       this.renderAll();
       
@@ -149,7 +131,6 @@ export class SettingsPage {
       console.error("Settings: Error loading data:", error);
       this.renderErrorState(error.message);
       
-      // エラーメッセージを表示
       if (error.message.includes("タイムアウト")) {
         this.app.showError("設定の読み込みがタイムアウトしました。ページを再読み込みしてください。");
       } else if (error.message.includes("権限")) {
@@ -241,92 +222,50 @@ export class SettingsPage {
     try {
       console.log("Settings: Setting up event listeners...");
       
-      // メインボタンのイベントリスナー（イベント委譲を使用）
       document.addEventListener('click', (e) => {
-        // 設定ページ内のクリックのみ処理
         if (!e.target.closest('.settings-page')) return;
         
-        if (e.target.closest('#save-settings-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          this.saveSettings();
-        } 
-        else if (e.target.closest('#add-job-type-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          this.openEditDialog('jobType');
-        } 
-        else if (e.target.closest('#add-period-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          this.openEditDialog('period');
-        }
-        else if (e.target.closest('.edit-job-type-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const jobTypeId = e.target.closest('.edit-job-type-btn').dataset.jobTypeId;
-          this.openEditDialog('jobType', jobTypeId);
-        }
-        else if (e.target.closest('.delete-job-type-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const jobTypeId = e.target.closest('.delete-job-type-btn').dataset.jobTypeId;
-          this.deleteJobType(jobTypeId);
-        }
-        else if (e.target.closest('.edit-period-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const periodId = e.target.closest('.edit-period-btn').dataset.periodId;
-          this.openEditDialog('period', periodId);
-        }
-        else if (e.target.closest('.delete-period-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const periodId = e.target.closest('.delete-period-btn').dataset.periodId;
-          this.deletePeriod(periodId);
-        }
-        else if (e.target.closest('[data-job-type-id]') && !e.target.closest('.btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const jobTypeId = e.target.closest('[data-job-type-id]').dataset.jobTypeId;
-          this.selectJobType(jobTypeId);
-        }
-        else if (e.target.closest('.add-category-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          this.openEditDialog('category');
-        }
-        else if (e.target.closest('.edit-category-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const categoryId = e.target.closest('.edit-category-btn').dataset.categoryId;
-          this.openEditDialog('category', categoryId);
-        }
-        else if (e.target.closest('.delete-category-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const categoryId = e.target.closest('.delete-category-btn').dataset.categoryId;
-          this.deleteCategory(categoryId);
-        }
-        else if (e.target.closest('.add-item-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const categoryId = e.target.closest('.add-item-btn').dataset.categoryId;
-          this.openEditDialog('item', null, categoryId);
-        }
-        else if (e.target.closest('.edit-item-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const itemId = e.target.closest('.edit-item-btn').dataset.itemId;
-          const categoryId = e.target.closest('.edit-item-btn').dataset.categoryId;
-          this.openEditDialog('item', itemId, categoryId);
-        }
-        else if (e.target.closest('.delete-item-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const itemId = e.target.closest('.delete-item-btn').dataset.itemId;
-          const categoryId = e.target.closest('.delete-item-btn').dataset.categoryId;
-          this.deleteItem(itemId, categoryId);
+        const target = e.target.closest('[id], [data-action]');
+        if (!target) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const action = target.id || target.dataset.action;
+        
+        switch (action) {
+          case 'save-settings-btn':
+            this.saveSettings();
+            break;
+          case 'add-job-type-btn':
+            this.openSimplePrompt('職種', '職種名を入力してください', '例: 建設作業員')
+              .then(name => {
+                if (name) {
+                  this.saveJobType(null, name);
+                  this.markUnsaved();
+                  this.renderAll();
+                  this.app.showSuccess('職種を追加しました');
+                }
+              });
+            break;
+          case 'add-period-btn':
+            this.openPeriodDialog()
+              .then(result => {
+                if (result) {
+                  this.savePeriod(null, result.name, result.startDate, result.endDate);
+                  this.markUnsaved();
+                  this.renderAll();
+                  this.app.showSuccess('評価期間を追加しました');
+                }
+              });
+            break;
+          default:
+            // データ属性を使ったイベント処理
+            if (target.dataset.jobTypeId && !target.closest('.btn')) {
+              this.selectJobType(target.dataset.jobTypeId);
+            } else if (target.dataset.action) {
+              this.handleDataAction(target);
+            }
         }
       });
       
@@ -334,6 +273,76 @@ export class SettingsPage {
     } catch (error) {
       console.error("Settings: Error setting up event listeners:", error);
     }
+  }
+
+  handleDataAction(element) {
+    const action = element.dataset.action;
+    const id = element.dataset.id;
+    const parentId = element.dataset.parentId;
+    
+    switch (action) {
+      case 'edit-job-type':
+        this.editJobType(id);
+        break;
+      case 'delete-job-type':
+        this.deleteJobType(id);
+        break;
+      case 'edit-period':
+        this.editPeriod(id);
+        break;
+      case 'delete-period':
+        this.deletePeriod(id);
+        break;
+      case 'add-category':
+        this.addCategory();
+        break;
+      case 'edit-category':
+        this.editCategory(id);
+        break;
+      case 'delete-category':
+        this.deleteCategory(id);
+        break;
+      case 'add-item':
+        this.addItem(parentId);
+        break;
+      case 'edit-item':
+        this.editItem(id, parentId);
+        break;
+      case 'delete-item':
+        this.deleteItem(id, parentId);
+        break;
+    }
+  }
+
+  async openSimplePrompt(title, message, placeholder = '') {
+    return new Promise((resolve) => {
+      const input = prompt(`${title}\n\n${message}`, placeholder);
+      resolve(input?.trim() || null);
+    });
+  }
+
+  async openPeriodDialog() {
+    return new Promise((resolve) => {
+      const name = prompt('評価期間名を入力してください', '例: 2025年 上半期');
+      if (!name) {
+        resolve(null);
+        return;
+      }
+      
+      const startDate = prompt('開始日を入力してください (YYYY-MM-DD)', '2025-01-01');
+      if (!startDate) {
+        resolve(null);
+        return;
+      }
+      
+      const endDate = prompt('終了日を入力してください (YYYY-MM-DD)', '2025-06-30');
+      if (!endDate) {
+        resolve(null);
+        return;
+      }
+      
+      resolve({ name: name.trim(), startDate, endDate });
+    });
   }
 
   renderAll() {
@@ -368,10 +377,10 @@ export class SettingsPage {
            data-job-type-id="${jt.id}">
         <span class="flex-grow-1 job-type-name">${this.app.sanitizeHtml(jt.name)}</span>
         <div class="btn-group btn-group-sm">
-          <button class="btn btn-outline-primary btn-sm border-0 edit-job-type-btn" data-job-type-id="${jt.id}" title="編集">
+          <button class="btn btn-outline-primary btn-sm border-0" data-action="edit-job-type" data-id="${jt.id}" title="編集">
             <i class="fas fa-pen"></i>
           </button>
-          <button class="btn btn-outline-danger btn-sm border-0 delete-job-type-btn" data-job-type-id="${jt.id}" title="削除">
+          <button class="btn btn-outline-danger btn-sm border-0" data-action="delete-job-type" data-id="${jt.id}" title="削除">
             <i class="fas fa-trash"></i>
           </button>
         </div>
@@ -404,10 +413,10 @@ export class SettingsPage {
           </small>
         </div>
         <div class="btn-group btn-group-sm">
-          <button class="btn btn-outline-primary btn-sm border-0 edit-period-btn" data-period-id="${p.id}" title="編集">
+          <button class="btn btn-outline-primary btn-sm border-0" data-action="edit-period" data-id="${p.id}" title="編集">
             <i class="fas fa-pen"></i>
           </button>
-          <button class="btn btn-outline-danger btn-sm border-0 delete-period-btn" data-period-id="${p.id}" title="削除">
+          <button class="btn btn-outline-danger btn-sm border-0" data-action="delete-period" data-id="${p.id}" title="削除">
             <i class="fas fa-trash"></i>
           </button>
         </div>
@@ -450,7 +459,7 @@ export class SettingsPage {
     editor.innerHTML = `
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4>${this.app.sanitizeHtml(jobType.name)} の評価構造</h4>
-        <button class="btn btn-outline-primary add-category-btn">
+        <button class="btn btn-outline-primary" data-action="add-category">
           <i class="fas fa-plus me-2"></i>カテゴリを追加
         </button>
       </div>
@@ -472,10 +481,10 @@ export class SettingsPage {
         <div class="card-header d-flex justify-content-between align-items-center">
           <h6 class="mb-0">${this.app.sanitizeHtml(category.name)}</h6>
           <div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-primary border-0 edit-category-btn" data-category-id="${category.id}" title="編集">
+            <button class="btn btn-outline-primary border-0" data-action="edit-category" data-id="${category.id}" title="編集">
               <i class="fas fa-pen"></i>
             </button>
-            <button class="btn btn-outline-danger border-0 delete-category-btn" data-category-id="${category.id}" title="削除">
+            <button class="btn btn-outline-danger border-0" data-action="delete-category" data-id="${category.id}" title="削除">
               <i class="fas fa-trash"></i>
             </button>
           </div>
@@ -486,17 +495,17 @@ export class SettingsPage {
               <div class="list-group-item d-flex justify-content-between align-items-center">
                 <span>${this.app.sanitizeHtml(item.name)}</span>
                 <div class="btn-group btn-group-sm">
-                  <button class="btn btn-outline-primary border-0 edit-item-btn" data-item-id="${item.id}" data-category-id="${category.id}" title="編集">
+                  <button class="btn btn-outline-primary border-0" data-action="edit-item" data-id="${item.id}" data-parent-id="${category.id}" title="編集">
                     <i class="fas fa-pen"></i>
                   </button>
-                  <button class="btn btn-outline-danger border-0 delete-item-btn" data-item-id="${item.id}" data-category-id="${category.id}" title="削除">
+                  <button class="btn btn-outline-danger border-0" data-action="delete-item" data-id="${item.id}" data-parent-id="${category.id}" title="削除">
                     <i class="fas fa-trash"></i>
                   </button>
                 </div>
               </div>
             `).join('')}
             <div class="list-group-item">
-              <button class="btn btn-sm btn-outline-secondary w-100 add-item-btn" data-category-id="${category.id}">
+              <button class="btn btn-sm btn-outline-secondary w-100" data-action="add-item" data-parent-id="${category.id}">
                 <i class="fas fa-plus me-2"></i>項目を追加
               </button>
             </div>
@@ -506,148 +515,152 @@ export class SettingsPage {
     `;
   }
 
-  // ★★★ 修正：シンプルなダイアログベースの編集機能 ★★★
-  openEditDialog(type, id = null, parentId = null) {
-    try {
-      console.log("Settings: Opening edit dialog for", type, id);
-      
-      let titleText = '';
-      let entity = {};
-
-      // データの取得と表示設定
-      if (id) {
-        titleText = `${this.getTypeDisplayName(type)}を編集`;
-        entity = this.findEntity(type, id, parentId);
-      } else {
-        titleText = `${this.getTypeDisplayName(type)}を追加`;
-      }
-
-      let inputFields = '';
-      
-      // フォーム内容の生成
-      if (type === 'jobType' || type === 'category' || type === 'item') {
-        inputFields = `
-          <label for="entityName">名前:</label>
-          <input type="text" id="entityName" value="${this.app.sanitizeHtml(entity.name || '')}" style="width: 100%; padding: 8px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px;">
-        `;
-      } else if (type === 'period') {
-        inputFields = `
-          <label for="entityName">期間名:</label>
-          <input type="text" id="entityName" value="${this.app.sanitizeHtml(entity.name || '')}" style="width: 100%; padding: 8px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px;">
-          <label for="startDate">開始日:</label>
-          <input type="date" id="startDate" value="${entity.startDate || ''}" style="width: 100%; padding: 8px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px;">
-          <label for="endDate">終了日:</label>
-          <input type="date" id="endDate" value="${entity.endDate || ''}" style="width: 100%; padding: 8px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px;">
-        `;
-      }
-
-      // シンプルなJavaScript promptの代替としてカスタムダイアログを作成
-      const result = this.showCustomDialog(titleText, inputFields);
-      
-      if (result) {
-        const name = document.getElementById('entityName')?.value;
-        if (!name) {
-          this.app.showError("名前を入力してください");
-          return;
-        }
-
-        if (type === 'jobType') {
-          this.saveJobType(id, name);
-        } else if (type === 'period') {
-          const startDate = document.getElementById('startDate')?.value;
-          const endDate = document.getElementById('endDate')?.value;
-          this.savePeriod(id, name, startDate, endDate);
-        } else if (type === 'category') {
-          this.saveCategory(id, name);
-        } else if (type === 'item') {
-          this.saveItem(id, name, parentId);
-        }
-
-        this.markUnsaved();
-        this.renderAll();
-        
-        this.app.showSuccess(`${this.getTypeDisplayName(type)}を${id ? '更新' : '追加'}しました`);
-      }
-      
-    } catch (error) {
-      console.error("Settings: Error opening dialog:", error);
-      this.app.showError("編集ダイアログの表示に失敗しました: " + error.message);
-    }
-  }
-
-  showCustomDialog(title, content) {
-    const dialogId = 'customEditDialog' + Date.now();
-    const dialogHTML = `
-      <div id="${dialogId}" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;">
-        <div style="background: white; padding: 20px; border-radius: 8px; max-width: 500px; width: 90%;">
-          <h5 style="margin-bottom: 15px;">${title}</h5>
-          <div style="margin-bottom: 20px;">
-            ${content}
-          </div>
-          <div style="text-align: right;">
-            <button id="${dialogId}Cancel" style="padding: 8px 16px; margin-right: 8px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer;">キャンセル</button>
-            <button id="${dialogId}Save" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">保存</button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', dialogHTML);
+  // 各種操作メソッド
+  editJobType(id) {
+    const jobType = this.settings.jobTypes.find(jt => jt.id === id);
+    if (!jobType) return;
     
-    return new Promise((resolve) => {
-      document.getElementById(`${dialogId}Save`).addEventListener('click', () => {
-        document.getElementById(dialogId).remove();
-        resolve(true);
-      });
-      
-      document.getElementById(`${dialogId}Cancel`).addEventListener('click', () => {
-        document.getElementById(dialogId).remove();
-        resolve(false);
-      });
-      
-      // ESCキーで閉じる
-      const escapeHandler = (e) => {
-        if (e.key === 'Escape') {
-          document.getElementById(dialogId).remove();
-          document.removeEventListener('keydown', escapeHandler);
-          resolve(false);
+    this.openSimplePrompt('職種編集', '職種名を入力してください', jobType.name)
+      .then(name => {
+        if (name && name !== jobType.name) {
+          this.saveJobType(id, name);
+          this.markUnsaved();
+          this.renderAll();
+          this.app.showSuccess('職種を更新しました');
         }
-      };
-      document.addEventListener('keydown', escapeHandler);
-    });
+      });
   }
 
-  getTypeDisplayName(type) {
-    const typeNames = {
-      jobType: '職種',
-      period: '評価期間',
-      category: 'カテゴリ',
-      item: '評価項目'
-    };
-    return typeNames[type] || type;
+  deleteJobType(id) {
+    if (!confirm('この職種を削除しますか？関連する評価構造も削除されます。')) return;
+    
+    this.settings.jobTypes = this.settings.jobTypes.filter(jt => jt.id !== id);
+    delete this.settings.structures[id];
+    
+    if (this.selectedJobTypeId === id) {
+      this.selectedJobTypeId = null;
+    }
+    
+    this.markUnsaved();
+    this.renderAll();
+    this.app.showSuccess('職種を削除しました');
   }
 
-  findEntity(type, id, parentId) {
-    try {
-      if (type === 'jobType') {
-        return this.settings.jobTypes.find(e => e.id === id) || {};
-      } else if (type === 'period') {
-        return this.settings.periods.find(e => e.id === id) || {};
-      } else if (type === 'category') {
-        const structure = this.settings.structures[this.selectedJobTypeId];
-        return structure?.categories.find(e => e.id === id) || {};
-      } else if (type === 'item') {
-        const structure = this.settings.structures[this.selectedJobTypeId];
-        const category = structure?.categories.find(c => c.id === parentId);
-        return category?.items.find(e => e.id === id) || {};
-      }
-      return {};
-    } catch (error) {
-      console.error("Settings: Error finding entity:", error);
-      return {};
+  editPeriod(id) {
+    const period = this.settings.periods.find(p => p.id === id);
+    if (!period) return;
+    
+    this.openPeriodDialog()
+      .then(result => {
+        if (result) {
+          this.savePeriod(id, result.name, result.startDate, result.endDate);
+          this.markUnsaved();
+          this.renderAll();
+          this.app.showSuccess('評価期間を更新しました');
+        }
+      });
+  }
+
+  deletePeriod(id) {
+    if (!confirm('この評価期間を削除しますか？')) return;
+    
+    this.settings.periods = this.settings.periods.filter(p => p.id !== id);
+    this.markUnsaved();
+    this.renderAll();
+    this.app.showSuccess('評価期間を削除しました');
+  }
+
+  addCategory() {
+    if (!this.selectedJobTypeId) return;
+    
+    this.openSimplePrompt('カテゴリ追加', 'カテゴリ名を入力してください', '例: 技術スキル')
+      .then(name => {
+        if (name) {
+          this.saveCategory(null, name);
+          this.markUnsaved();
+          this.renderAll();
+          this.app.showSuccess('カテゴリを追加しました');
+        }
+      });
+  }
+
+  editCategory(id) {
+    if (!this.selectedJobTypeId) return;
+    
+    const structure = this.settings.structures[this.selectedJobTypeId];
+    const category = structure?.categories.find(c => c.id === id);
+    if (!category) return;
+    
+    this.openSimplePrompt('カテゴリ編集', 'カテゴリ名を入力してください', category.name)
+      .then(name => {
+        if (name && name !== category.name) {
+          this.saveCategory(id, name);
+          this.markUnsaved();
+          this.renderAll();
+          this.app.showSuccess('カテゴリを更新しました');
+        }
+      });
+  }
+
+  deleteCategory(id) {
+    if (!confirm('このカテゴリを削除しますか？カテゴリ内の項目も削除されます。')) return;
+    
+    if (!this.selectedJobTypeId) return;
+    const structure = this.settings.structures[this.selectedJobTypeId];
+    structure.categories = structure.categories.filter(c => c.id !== id);
+    
+    this.markUnsaved();
+    this.renderAll();
+    this.app.showSuccess('カテゴリを削除しました');
+  }
+
+  addItem(parentId) {
+    this.openSimplePrompt('評価項目追加', '評価項目名を入力してください', '例: 図面の読解力')
+      .then(name => {
+        if (name) {
+          this.saveItem(null, name, parentId);
+          this.markUnsaved();
+          this.renderAll();
+          this.app.showSuccess('評価項目を追加しました');
+        }
+      });
+  }
+
+  editItem(id, parentId) {
+    if (!this.selectedJobTypeId || !parentId) return;
+    
+    const structure = this.settings.structures[this.selectedJobTypeId];
+    const category = structure?.categories.find(c => c.id === parentId);
+    const item = category?.items.find(i => i.id === id);
+    if (!item) return;
+    
+    this.openSimplePrompt('評価項目編集', '評価項目名を入力してください', item.name)
+      .then(name => {
+        if (name && name !== item.name) {
+          this.saveItem(id, name, parentId);
+          this.markUnsaved();
+          this.renderAll();
+          this.app.showSuccess('評価項目を更新しました');
+        }
+      });
+  }
+
+  deleteItem(id, parentId) {
+    if (!confirm('この評価項目を削除しますか？')) return;
+    
+    if (!this.selectedJobTypeId || !parentId) return;
+    const structure = this.settings.structures[this.selectedJobTypeId];
+    const category = structure?.categories.find(c => c.id === parentId);
+    
+    if (category) {
+      category.items = category.items.filter(i => i.id !== id);
+      this.markUnsaved();
+      this.renderAll();
+      this.app.showSuccess('評価項目を削除しました');
     }
   }
 
+  // データ保存メソッド
   saveJobType(id, name) {
     if (id) {
       const jobType = this.settings.jobTypes.find(e => e.id === id);
@@ -685,7 +698,12 @@ export class SettingsPage {
   saveCategory(id, name) {
     if (!this.selectedJobTypeId) return;
     
+    if (!this.settings.structures[this.selectedJobTypeId]) {
+      this.settings.structures[this.selectedJobTypeId] = { id: this.selectedJobTypeId, categories: [] };
+    }
+    
     const structure = this.settings.structures[this.selectedJobTypeId];
+    
     if (id) {
       const category = structure.categories.find(e => e.id === id);
       if (category) category.name = name;
@@ -702,7 +720,7 @@ export class SettingsPage {
     if (!this.selectedJobTypeId || !parentId) return;
     
     const structure = this.settings.structures[this.selectedJobTypeId];
-    const category = structure.categories.find(c => c.id === parentId);
+    const category = structure?.categories.find(c => c.id === parentId);
     
     if (category) {
       if (id) {
@@ -714,57 +732,6 @@ export class SettingsPage {
           name 
         });
       }
-    }
-  }
-
-  deleteJobType(id) {
-    if (!confirm('この職種を削除しますか？関連する評価構造も削除されます。')) return;
-    
-    this.settings.jobTypes = this.settings.jobTypes.filter(jt => jt.id !== id);
-    delete this.settings.structures[id];
-    
-    if (this.selectedJobTypeId === id) {
-      this.selectedJobTypeId = null;
-    }
-    
-    this.markUnsaved();
-    this.renderAll();
-    this.app.showSuccess('職種を削除しました');
-  }
-
-  deletePeriod(id) {
-    if (!confirm('この評価期間を削除しますか？')) return;
-    
-    this.settings.periods = this.settings.periods.filter(p => p.id !== id);
-    this.markUnsaved();
-    this.renderAll();
-    this.app.showSuccess('評価期間を削除しました');
-  }
-
-  deleteCategory(id) {
-    if (!confirm('このカテゴリを削除しますか？カテゴリ内の項目も削除されます。')) return;
-    
-    if (!this.selectedJobTypeId) return;
-    const structure = this.settings.structures[this.selectedJobTypeId];
-    structure.categories = structure.categories.filter(c => c.id !== id);
-    
-    this.markUnsaved();
-    this.renderAll();
-    this.app.showSuccess('カテゴリを削除しました');
-  }
-
-  deleteItem(id, parentId) {
-    if (!confirm('この評価項目を削除しますか？')) return;
-    
-    if (!this.selectedJobTypeId || !parentId) return;
-    const structure = this.settings.structures[this.selectedJobTypeId];
-    const category = structure.categories.find(c => c.id === parentId);
-    
-    if (category) {
-      category.items = category.items.filter(i => i.id !== id);
-      this.markUnsaved();
-      this.renderAll();
-      this.app.showSuccess('評価項目を削除しました');
     }
   }
 
@@ -812,21 +779,17 @@ export class SettingsPage {
     }
   }
 
-  // クリーンアップメソッド
   cleanup() {
     console.log("Settings: Starting cleanup...");
     
     try {
-      // ページ離脱警告のクリーンアップ
       window.removeEventListener('beforeunload', this.unloadHandler);
-      
       console.log("Settings: Cleanup completed");
     } catch (error) {
       console.error("Settings: Cleanup error:", error);
     }
   }
 
-  // ページから離れることができるかチェック
   canLeave() {
     if (this.hasUnsavedChanges) {
       return confirm('保存されていない変更があります。ページを離れてもよろしいですか？');
