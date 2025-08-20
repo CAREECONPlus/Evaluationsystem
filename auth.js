@@ -18,9 +18,10 @@ export class Auth {
   constructor(app) {
     this.app = app
     
-    // Firebase設定（セキュリティ警告：本番環境では環境変数を使用）
+    // 🚨 緊急修正：process.env を削除してブラウザ対応
+    // 本番環境では実際のFirebase設定に置き換えてください
     const firebaseConfig = {
-      apiKey: process.env.FIREBASE_API_KEY || "AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk", // 新しいAPIキーに変更
+      apiKey: "AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk",
       authDomain: "hyouka-db.firebaseapp.com",
       projectId: "hyouka-db",
       storageBucket: "hyouka-db.appspot.com",
