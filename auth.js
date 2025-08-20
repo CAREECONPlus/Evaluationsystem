@@ -24,11 +24,9 @@ import {
  */
 export class Auth {
   constructor(app) {
-    this
-
-export class Auth {
-  constructor(app) {
     this.app = app
+    
+    // Firebase設定（本番環境では環境変数を使用推奨）
     const firebaseConfig = {
       apiKey: "AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk",
       authDomain: "hyouka-db.firebaseapp.com",
@@ -37,6 +35,7 @@ export class Auth {
       messagingSenderId: "861016804589",
       appId: "1:861016804589:web:d911d516d6c79aa73690e4",
     }
+    
     this.firebaseApp = initializeApp(firebaseConfig)
     this.auth = getAuth(this.firebaseApp)
     this.db = getFirestore(this.firebaseApp)
@@ -206,7 +205,11 @@ export class Auth {
 
   async registerAndCreateProfile(userData, role, status) {
     try {
-      const userCredential = await createUserWithEmailAndPassword(this.auth, userData.email, userData.password)
+      const userCredential = await createUserWithEmailAndPassword(
+        this.auth, 
+        userData.email, 
+        userData.password
+      )
       const user = userCredential.user
 
       const userProfile = {
