@@ -21,39 +21,64 @@ import {
  * API Service (最小構成版)
  * Firebase FirestoreおよびFunctionsとのすべての通信を処理します。
  */
+// API Service - エラーハンドリング統一版
 export class API {
   constructor(app) {
     this.app = app
-
+    
     if (!app.auth || !app.auth.firebaseApp) {
-      console.error("API FATAL: Firebase App is not initialized in Auth module!")
-      this.app.showError("アプリケーションの初期化に失敗しました。Authモジュールを確認してください。")
+      console.error("API FATAL: Firebase App is not initialized!")
+      this.app.showError("アプリケーションの初期化に失敗しました。")
       return
     }
+    
     this.firebaseApp = app.auth.firebaseApp
-
     this.db = getFirestore(this.firebaseApp)
     this.serverTimestamp = serverTimestamp
-    // キャッシュ機能は一時的に無効化
-    this.cache = null
+    
+    // デフォルトタイムアウト設定
+    this.defaultTimeout = 10000 // 10秒
+    
+    console.log("API: Initialized successfully")
+  }
 
-    console.log("API: Initialized successfully with Firebase App from Auth module.")
+  // タイムアウト付きクエリ実行
+  async executeWithTimeout(queryPromise, operation, timeout = this.defaultTimeout) {
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`${operation} timeout`)), timeout)
+    })
+    
+    try {
+      return await Promise.race([queryPromise, timeoutPromise])
+    } catch (error) {
+      if (error.message.includes('timeout')) {
+        throw new Error(`${operation}がタイムアウトしました。ネットワーク接続を確認してください。`)
+      }
+      throw error
+    }
   }
 
   handleError(error, operation) {
     console.error(`API: Error in ${operation}:`, error)
-    const message = error.code
-      ? {
-          "permission-denied": "権限がありません。Firestoreのセキュリティルールを確認してください。",
-          "not-found": "データが見つかりません。",
-          unavailable: "サービスが一時的に利用できません。しばらくしてからもう一度お試しください。",
-          unauthenticated: "認証が必要です。再度ログインしてください。",
-        }[error.code] || `エラー: ${error.message}`
+    
+    // 標準化されたエラーメッセージ
+    const errorMessages = {
+      "permission-denied": "権限がありません。管理者に連絡してください。",
+      "not-found": "データが見つかりません。",
+      "unavailable": "サービスが一時的に利用できません。",
+      "unauthenticated": "認証が必要です。再度ログインしてください。",
+      "network-request-failed": "ネットワークエラーが発生しました。",
+      "quota-exceeded": "リクエスト制限に達しました。しばらくお待ちください。"
+    }
+    
+    const message = error.code 
+      ? errorMessages[error.code] || `エラー: ${error.message}`
       : `予期せぬエラーが発生しました: ${operation}`
-
+    
     this.app.showError(message)
     throw error
   }
+}
 
   // --- User and Tenant Management ---
 
