@@ -37,7 +37,6 @@ export class Auth {
     
     console.log("Auth: Firebase initialized with app:", this.firebaseApp)
   }
-}
 
   async init() {
     console.log("Auth: Module initialized.")
