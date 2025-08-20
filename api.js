@@ -18,28 +18,27 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js"
 
 /**
- * API Service (最小構成版)
- * Firebase FirestoreおよびFunctionsとのすべての通信を処理します。
+ * API Service (修正版)
+ * Firebase Firestoreとのすべての通信を処理します。
  */
-// API Service - エラーハンドリング統一版
 export class API {
   constructor(app) {
     this.app = app
-    
+
     if (!app.auth || !app.auth.firebaseApp) {
-      console.error("API FATAL: Firebase App is not initialized!")
-      this.app.showError("アプリケーションの初期化に失敗しました。")
+      console.error("API FATAL: Firebase App is not initialized in Auth module!")
+      this.app.showError("アプリケーションの初期化に失敗しました。Authモジュールを確認してください。")
       return
     }
-    
     this.firebaseApp = app.auth.firebaseApp
+
     this.db = getFirestore(this.firebaseApp)
     this.serverTimestamp = serverTimestamp
     
     // デフォルトタイムアウト設定
     this.defaultTimeout = 10000 // 10秒
     
-    console.log("API: Initialized successfully")
+    console.log("API: Initialized successfully with Firebase App from Auth module.")
   }
 
   // タイムアウト付きクエリ実行
@@ -61,31 +60,32 @@ export class API {
   handleError(error, operation) {
     console.error(`API: Error in ${operation}:`, error)
     
-    // 標準化されたエラーメッセージ
     const errorMessages = {
-      "permission-denied": "権限がありません。管理者に連絡してください。",
+      "permission-denied": "権限がありません。Firestoreのセキュリティルールを確認してください。",
       "not-found": "データが見つかりません。",
-      "unavailable": "サービスが一時的に利用できません。",
+      "unavailable": "サービスが一時的に利用できません。しばらくしてからもう一度お試しください。",
       "unauthenticated": "認証が必要です。再度ログインしてください。",
-      "network-request-failed": "ネットワークエラーが発生しました。",
+      "network-request-failed": "ネットワークエラーが発生しました。接続を確認してください。",
       "quota-exceeded": "リクエスト制限に達しました。しばらくお待ちください。"
     }
     
     const message = error.code 
       ? errorMessages[error.code] || `エラー: ${error.message}`
       : `予期せぬエラーが発生しました: ${operation}`
-    
+
     this.app.showError(message)
     throw error
   }
-}
 
   // --- User and Tenant Management ---
 
   async getUserProfile(uid) {
     try {
       const userDocRef = doc(this.db, "users", uid)
-      const userDoc = await getDoc(userDocRef)
+      const userDoc = await this.executeWithTimeout(
+        getDoc(userDocRef),
+        `ユーザープロファイルの取得 (uid: ${uid})`
+      )
       if (userDoc.exists()) {
         return { id: userDoc.id, ...userDoc.data() }
       }
@@ -97,11 +97,14 @@ export class API {
 
   async createUserProfile(uid, profileData) {
     try {
-      await setDoc(doc(this.db, "users", uid), {
-        ...profileData,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      })
+      await this.executeWithTimeout(
+        setDoc(doc(this.db, "users", uid), {
+          ...profileData,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }),
+        "ユーザープロファイルの作成"
+      )
     } catch (error) {
       this.handleError(error, "ユーザープロファイルの作成")
     }
@@ -114,7 +117,10 @@ export class API {
         where("tenantId", "==", this.app.currentUser.tenantId),
         where("status", "==", status),
       )
-      const querySnapshot = await getDocs(q)
+      const querySnapshot = await this.executeWithTimeout(
+        getDocs(q),
+        `ユーザーリストの取得 (status: ${status})`
+      )
       return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
     } catch (error) {
       this.handleError(error, `ユーザーリストの取得 (status: ${status})`)
@@ -129,7 +135,10 @@ export class API {
         where("evaluatorId", "==", this.app.currentUser.uid),
         where("status", "==", "active"),
       )
-      const snapshot = await getDocs(q)
+      const snapshot = await this.executeWithTimeout(
+        getDocs(q),
+        "部下一覧の取得"
+      )
       return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
     } catch (error) {
       this.handleError(error, "部下一覧の取得")
@@ -139,10 +148,13 @@ export class API {
   async updateUser(userId, data) {
     try {
       const userRef = doc(this.db, "users", userId)
-      await updateDoc(userRef, {
-        ...data,
-        updatedAt: serverTimestamp(),
-      })
+      await this.executeWithTimeout(
+        updateDoc(userRef, {
+          ...data,
+          updatedAt: serverTimestamp(),
+        }),
+        `ユーザー情報の更新 (userId: ${userId})`
+      )
     } catch (error) {
       this.handleError(error, `ユーザー情報の更新 (userId: ${userId})`)
     }
@@ -150,10 +162,13 @@ export class API {
 
   async updateUserStatus(userId, status) {
     try {
-      await updateDoc(doc(this.db, "users", userId), {
-        status: status,
-        updatedAt: serverTimestamp(),
-      })
+      await this.executeWithTimeout(
+        updateDoc(doc(this.db, "users", userId), {
+          status: status,
+          updatedAt: serverTimestamp(),
+        }),
+        `ユーザーステータスの更新 (userId: ${userId})`
+      )
     } catch (error) {
       this.handleError(error, `ユーザーステータスの更新 (userId: ${userId})`)
     }
@@ -161,7 +176,10 @@ export class API {
 
   async deleteUser(userId) {
     try {
-      await deleteDoc(doc(this.db, "users", userId))
+      await this.executeWithTimeout(
+        deleteDoc(doc(this.db, "users", userId)),
+        `ユーザーの削除 (userId: ${userId})`
+      )
     } catch (error) {
       this.handleError(error, `ユーザーの削除 (userId: ${userId})`)
     }
@@ -171,16 +189,18 @@ export class API {
     try {
       const invitationRef = doc(collection(this.db, "invitations"))
       const token = invitationRef.id
-      await setDoc(invitationRef, {
-        ...invitationData,
-        token: token,
-        tenantId: this.app.currentUser.tenantId,
-        companyName: this.app.currentUser.companyName,
-        used: false,
-        createdAt: serverTimestamp(),
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      })
-
+      await this.executeWithTimeout(
+        setDoc(invitationRef, {
+          ...invitationData,
+          token: token,
+          tenantId: this.app.currentUser.tenantId,
+          companyName: this.app.currentUser.companyName,
+          used: false,
+          createdAt: serverTimestamp(),
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        }),
+        "招待の作成"
+      )
       return token
     } catch (error) {
       this.handleError(error, "招待の作成")
@@ -195,15 +215,17 @@ export class API {
 
       const invitationRef = doc(collection(this.db, "invitations"))
       const token = invitationRef.id
-      await setDoc(invitationRef, {
-        ...invitationData,
-        type: "admin",
-        token: token,
-        used: false,
-        createdAt: serverTimestamp(),
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      })
-
+      await this.executeWithTimeout(
+        setDoc(invitationRef, {
+          ...invitationData,
+          type: "admin",
+          token: token,
+          used: false,
+          createdAt: serverTimestamp(),
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        }),
+        "管理者招待の作成"
+      )
       return token
     } catch (error) {
       this.handleError(error, "管理者招待の作成")
@@ -213,7 +235,10 @@ export class API {
   async getInvitation(token) {
     try {
       const q = query(collection(this.db, "invitations"), where("token", "==", token))
-      const snapshot = await getDocs(q)
+      const snapshot = await this.executeWithTimeout(
+        getDocs(q),
+        "招待情報の取得"
+      )
       if (snapshot.empty) return null
       return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() }
     } catch (error) {
@@ -224,101 +249,103 @@ export class API {
   async markInvitationAsUsed(invitationId, userId) {
     try {
       const invitationRef = doc(this.db, "invitations", invitationId)
-      await updateDoc(invitationRef, {
-        used: true,
-        usedAt: serverTimestamp(),
-        usedBy: userId,
-      })
+      await this.executeWithTimeout(
+        updateDoc(invitationRef, {
+          used: true,
+          usedAt: serverTimestamp(),
+          usedBy: userId,
+        }),
+        "招待の使用済み更新"
+      )
     } catch (error) {
       this.handleError(error, "招待の使用済み更新")
     }
   }
 
- // --- Settings ---
+  // --- Settings ---
   async getSettings() {
     try {
-      const currentUser = this.app.currentUser;
+      const currentUser = this.app.currentUser
       
       // ユーザー認証チェック
       if (!currentUser) {
-        throw new Error("ユーザーが認証されていません");
+        throw new Error("ユーザーが認証されていません")
       }
       
       // 管理者権限チェック
       if (currentUser.role !== 'admin') {
-        throw new Error("設定にアクセスする権限がありません");
+        throw new Error("設定にアクセスする権限がありません")
       }
       
       // テナントIDチェック
       if (!currentUser.tenantId) {
-        throw new Error("テナントIDが設定されていません");
+        throw new Error("テナントIDが設定されていません")
       }
 
-      const tenantId = currentUser.tenantId;
-      console.log("API: Loading settings for tenant:", tenantId);
-
-      // タイムアウト付きでクエリを実行
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Settings loading timeout")), 10000);
-      });
+      const tenantId = currentUser.tenantId
+      console.log("API: Loading settings for tenant:", tenantId)
 
       const jobTypesQuery = query(
         collection(this.db, "targetJobTypes"), 
         where("tenantId", "==", tenantId)
-      );
+      )
       
       const periodsQuery = query(
         collection(this.db, "evaluationPeriods"), 
         where("tenantId", "==", tenantId)
-      );
+      )
       
       const structuresQuery = query(
         collection(this.db, "evaluationStructures"), 
         where("tenantId", "==", tenantId)
-      );
+      )
 
       // タイムアウト付きでデータを取得
-      const [jobTypesSnap, periodsSnap, structuresSnap] = await Promise.race([
+      const [jobTypesSnap, periodsSnap, structuresSnap] = await this.executeWithTimeout(
         Promise.all([
           getDocs(jobTypesQuery),
           getDocs(periodsQuery),
           getDocs(structuresQuery),
         ]),
-        timeoutPromise
-      ]);
+        "設定情報の取得"
+      )
 
-      const structures = {};
+      const structures = {}
       structuresSnap.docs.forEach((doc) => {
-        structures[doc.data().jobTypeId] = { id: doc.id, ...doc.data() };
-      });
+        structures[doc.data().jobTypeId] = { id: doc.id, ...doc.data() }
+      })
 
       const result = {
         jobTypes: jobTypesSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
         periods: periodsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
         structures: structures,
-      };
+      }
 
-      console.log("API: Settings loaded successfully:", result);
-      return result;
+      console.log("API: Settings loaded successfully:", result)
+      return result
       
     } catch (error) {
-      console.error("API: Error in getSettings:", error);
+      console.error("API: Error in getSettings:", error)
       
       if (error.message === "Settings loading timeout") {
-        throw new Error("設定の読み込みがタイムアウトしました。ネットワーク接続を確認してください。");
+        throw new Error("設定の読み込みがタイムアウトしました。ネットワーク接続を確認してください。")
       }
       
       if (error.code === "permission-denied") {
-        throw new Error("設定データにアクセスする権限がありません。Firestoreのセキュリティルールを確認してください。");
+        throw new Error("設定データにアクセスする権限がありません。Firestoreのセキュリティルールを確認してください。")
       }
       
-      this.handleError(error, "設定情報の取得");
+      this.handleError(error, "設定情報の取得")
     }
   }
+
   async getJobTypes() {
     try {
       const q = query(collection(this.db, "targetJobTypes"), where("tenantId", "==", this.app.currentUser.tenantId))
-      const snapshot = await getDocs(q)
+      const snapshot = await this.executeWithTimeout(
+        getDocs(q),
+        "職種リストの取得"
+      )
       return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
     } catch (error) {
       this.handleError(error, "職種リストの取得")
@@ -332,7 +359,10 @@ export class API {
         where("jobTypeId", "==", jobTypeId),
         where("tenantId", "==", this.app.currentUser.tenantId),
       )
-      const snapshot = await getDocs(q)
+      const snapshot = await this.executeWithTimeout(
+        getDocs(q),
+        `評価構造の取得 (jobTypeId: ${jobTypeId})`
+      )
       if (snapshot.empty) return null
       return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() }
     } catch (error) {
@@ -402,7 +432,10 @@ export class API {
         }
       })
 
-      await batch.commit()
+      await this.executeWithTimeout(
+        batch.commit(),
+        "設定の保存"
+      )
     } catch (error) {
       this.handleError(error, "設定の保存")
     }
@@ -418,7 +451,10 @@ export class API {
         where("periodId", "==", periodId),
         where("tenantId", "==", this.app.currentUser.tenantId),
       )
-      const snapshot = await getDocs(q)
+      const snapshot = await this.executeWithTimeout(
+        getDocs(q),
+        "目標の取得"
+      )
       if (snapshot.empty) return null
       return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() }
     } catch (error) {
@@ -431,26 +467,32 @@ export class API {
       if (goalData.id && !goalData.id.startsWith("goal_")) {
         // 既存の目標を更新
         const goalRef = doc(this.db, "qualitativeGoals", goalData.id)
-        await updateDoc(goalRef, {
-          goals: goalData.goals,
-          status: goalData.status,
-          submittedAt: goalData.submittedAt,
-          updatedAt: serverTimestamp(),
-        })
+        await this.executeWithTimeout(
+          updateDoc(goalRef, {
+            goals: goalData.goals,
+            status: goalData.status,
+            submittedAt: goalData.submittedAt,
+            updatedAt: serverTimestamp(),
+          }),
+          "目標の更新"
+        )
       } else {
         // 新規目標を作成
-        const goalRef = await addDoc(collection(this.db, "qualitativeGoals"), {
-          userId: goalData.userId,
-          userName: goalData.userName,
-          periodId: goalData.periodId,
-          periodName: goalData.periodName,
-          goals: goalData.goals,
-          status: goalData.status,
-          tenantId: goalData.tenantId,
-          submittedAt: goalData.submittedAt,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        })
+        const goalRef = await this.executeWithTimeout(
+          addDoc(collection(this.db, "qualitativeGoals"), {
+            userId: goalData.userId,
+            userName: goalData.userName,
+            periodId: goalData.periodId,
+            periodName: goalData.periodName,
+            goals: goalData.goals,
+            status: goalData.status,
+            tenantId: goalData.tenantId,
+            submittedAt: goalData.submittedAt,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          }),
+          "目標の作成"
+        )
         return goalRef.id
       }
     } catch (error) {
@@ -465,7 +507,10 @@ export class API {
         where("tenantId", "==", this.app.currentUser.tenantId),
         where("status", "==", status),
       )
-      const snapshot = await getDocs(q)
+      const snapshot = await this.executeWithTimeout(
+        getDocs(q),
+        `目標の取得 (status: ${status})`
+      )
       const goals = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
 
       return goals.sort((a, b) => {
@@ -481,11 +526,14 @@ export class API {
   async updateGoalStatus(goalId, status, additionalData = {}) {
     try {
       const goalRef = doc(this.db, "qualitativeGoals", goalId)
-      await updateDoc(goalRef, {
-        status: status,
-        updatedAt: serverTimestamp(),
-        ...additionalData,
-      })
+      await this.executeWithTimeout(
+        updateDoc(goalRef, {
+          status: status,
+          updatedAt: serverTimestamp(),
+          ...additionalData,
+        }),
+        "目標ステータスの更新"
+      )
     } catch (error) {
       this.handleError(error, "目標ステータスの更新")
     }
@@ -508,7 +556,10 @@ export class API {
         q = query(q, where("status", "==", filters.status))
       }
 
-      const snapshot = await getDocs(q)
+      const snapshot = await this.executeWithTimeout(
+        getDocs(q),
+        "評価一覧の取得"
+      )
       const evaluations = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
 
       return evaluations.sort((a, b) => {
@@ -526,30 +577,36 @@ export class API {
       if (evaluationData.id && !evaluationData.id.startsWith("eval_")) {
         // 既存の評価を更新
         const evalRef = doc(this.db, "evaluations", evaluationData.id)
-        await updateDoc(evalRef, {
-          ratings: evaluationData.ratings,
-          status: evaluationData.status,
-          submittedAt: evaluationData.submittedAt,
-          updatedAt: evaluationData.updatedAt,
-        })
+        await this.executeWithTimeout(
+          updateDoc(evalRef, {
+            ratings: evaluationData.ratings,
+            status: evaluationData.status,
+            submittedAt: evaluationData.submittedAt,
+            updatedAt: evaluationData.updatedAt,
+          }),
+          "評価の更新"
+        )
       } else {
         // 新規評価を作成
-        const evalRef = await addDoc(collection(this.db, "evaluations"), {
-          tenantId: evaluationData.tenantId,
-          targetUserId: evaluationData.targetUserId,
-          targetUserName: evaluationData.targetUserName,
-          targetUserEmail: evaluationData.targetUserEmail,
-          jobTypeId: evaluationData.jobTypeId,
-          periodId: evaluationData.periodId,
-          periodName: evaluationData.periodName,
-          evaluatorId: evaluationData.evaluatorId,
-          evaluatorName: evaluationData.evaluatorName,
-          ratings: evaluationData.ratings,
-          status: evaluationData.status,
-          submittedAt: evaluationData.submittedAt,
-          createdAt: serverTimestamp(),
-          updatedAt: evaluationData.updatedAt,
-        })
+        const evalRef = await this.executeWithTimeout(
+          addDoc(collection(this.db, "evaluations"), {
+            tenantId: evaluationData.tenantId,
+            targetUserId: evaluationData.targetUserId,
+            targetUserName: evaluationData.targetUserName,
+            targetUserEmail: evaluationData.targetUserEmail,
+            jobTypeId: evaluationData.jobTypeId,
+            periodId: evaluationData.periodId,
+            periodName: evaluationData.periodName,
+            evaluatorId: evaluationData.evaluatorId,
+            evaluatorName: evaluationData.evaluatorName,
+            ratings: evaluationData.ratings,
+            status: evaluationData.status,
+            submittedAt: evaluationData.submittedAt,
+            createdAt: serverTimestamp(),
+            updatedAt: evaluationData.updatedAt,
+          }),
+          "評価の作成"
+        )
         return evalRef.id
       }
     } catch (error) {
@@ -560,11 +617,14 @@ export class API {
   async updateEvaluationStatus(evaluationId, status, additionalData = {}) {
     try {
       const evalRef = doc(this.db, "evaluations", evaluationId)
-      await updateDoc(evalRef, {
-        status: status,
-        updatedAt: serverTimestamp(),
-        ...additionalData,
-      })
+      await this.executeWithTimeout(
+        updateDoc(evalRef, {
+          status: status,
+          updatedAt: serverTimestamp(),
+          ...additionalData,
+        }),
+        "評価ステータスの更新"
+      )
     } catch (error) {
       this.handleError(error, "評価ステータスの更新")
     }
@@ -573,7 +633,10 @@ export class API {
   async getEvaluationById(evaluationId) {
     try {
       const evalRef = doc(this.db, "evaluations", evaluationId)
-      const evalDoc = await getDoc(evalRef)
+      const evalDoc = await this.executeWithTimeout(
+        getDoc(evalRef),
+        `評価の取得 (id: ${evaluationId})`
+      )
       if (evalDoc.exists()) {
         return { id: evalDoc.id, ...evalDoc.data() }
       }
@@ -624,7 +687,7 @@ export class API {
     }
   }
 
-  // --- Dashboard (修正版) ---
+  // --- Dashboard ---
 
   async getDashboardStats() {
     try {
@@ -640,11 +703,14 @@ export class API {
         const completedQuery = query(evaluationsRef, where("status", "==", "completed"))
         const pendingQuery = query(evaluationsRef, where("status", "in", ["pending_approval", "self_assessed"]))
 
-        const [totalUsersSnap, completedSnap, pendingSnap] = await Promise.all([
-          getCountFromServer(totalUsersQuery),
-          getCountFromServer(completedQuery),
-          getCountFromServer(pendingQuery),
-        ])
+        const [totalUsersSnap, completedSnap, pendingSnap] = await this.executeWithTimeout(
+          Promise.all([
+            getCountFromServer(totalUsersQuery),
+            getCountFromServer(completedQuery),
+            getCountFromServer(pendingQuery),
+          ]),
+          "ダッシュボード統計の取得"
+        )
 
         return {
           totalUsers: totalUsersSnap.data().count,
@@ -672,11 +738,14 @@ export class API {
         where("status", "in", ["pending_approval", "self_assessed"]),
       )
 
-      const [totalUsersSnap, completedSnap, pendingSnap] = await Promise.all([
-        getCountFromServer(totalUsersQuery),
-        getCountFromServer(completedQuery),
-        getCountFromServer(pendingQuery),
-      ])
+      const [totalUsersSnap, completedSnap, pendingSnap] = await this.executeWithTimeout(
+        Promise.all([
+          getCountFromServer(totalUsersQuery),
+          getCountFromServer(completedQuery),
+          getCountFromServer(pendingQuery),
+        ]),
+        "ダッシュボード統計の取得"
+      )
 
       return {
         totalUsers: totalUsersSnap.data().count,
@@ -697,15 +766,18 @@ export class API {
 
       // 開発者の場合は全テナントから取得
       if (currentUser.role === "developer") {
-        q = query(collection(this.db, "evaluations"), limit(20)) // Get more documents to sort client-side
+        q = query(collection(this.db, "evaluations"), limit(20))
       } else {
         // 通常のユーザーの場合
         if (!currentUser.tenantId) throw new Error("tenantId is missing")
 
-        q = query(collection(this.db, "evaluations"), where("tenantId", "==", currentUser.tenantId), limit(20)) // Get more documents to sort client-side
+        q = query(collection(this.db, "evaluations"), where("tenantId", "==", currentUser.tenantId), limit(20))
       }
 
-      const snapshot = await getDocs(q)
+      const snapshot = await this.executeWithTimeout(
+        getDocs(q),
+        "最近の評価取得"
+      )
       const evaluations = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
 
       return evaluations
@@ -749,7 +821,10 @@ export class API {
     try {
       if (!this.app.hasRole("developer")) throw new Error("開発者権限が必要です")
       const q = query(collection(this.db, "users"), where("status", "==", "developer_approval_pending"))
-      const querySnapshot = await getDocs(q)
+      const querySnapshot = await this.executeWithTimeout(
+        getDocs(q),
+        "承認待ち管理者リストの取得"
+      )
       return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
     } catch (error) {
       this.handleError(error, "承認待ち管理者リストの取得")
@@ -765,7 +840,10 @@ export class API {
         where("role", "==", "admin"),
         where("status", "==", "active"),
       )
-      const [tenantsSnap, usersSnap] = await Promise.all([getDocs(tenantsQuery), getDocs(usersQuery)])
+      const [tenantsSnap, usersSnap] = await this.executeWithTimeout(
+        Promise.all([getDocs(tenantsQuery), getDocs(usersQuery)]),
+        "アクティブテナントの取得"
+      )
 
       const adminUsers = usersSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
 
@@ -809,7 +887,10 @@ export class API {
         createdAt: serverTimestamp(),
       })
 
-      await batch.commit()
+      await this.executeWithTimeout(
+        batch.commit(),
+        "管理者アカウントの承認"
+      )
     } catch (error) {
       this.handleError(error, "管理者アカウントの承認")
     }
@@ -818,10 +899,13 @@ export class API {
   async updateTenantStatus(tenantId, status) {
     try {
       if (!this.app.hasRole("developer")) throw new Error("開発者権限が必要です")
-      await updateDoc(doc(this.db, "tenants", tenantId), {
-        status: status,
-        updatedAt: serverTimestamp(),
-      })
+      await this.executeWithTimeout(
+        updateDoc(doc(this.db, "tenants", tenantId), {
+          status: status,
+          updatedAt: serverTimestamp(),
+        }),
+        `テナントステータスの更新 (tenantId: ${tenantId})`
+      )
     } catch (error) {
       this.handleError(error, `テナントステータスの更新 (tenantId: ${tenantId})`)
     }
