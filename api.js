@@ -25,7 +25,7 @@ export class API {
   constructor(app) {
     this.app = app
 
-if (!app.auth || !app.auth.firebaseApp || !app.auth.db) {
+    if (!app.auth || !app.auth.firebaseApp || !app.auth.db) {
       console.error("API FATAL: Firebase/Firestore not initialized in Auth module!")
       if (this.app.showError) {
         this.app.showError("アプリケーションの初期化に失敗しました。")
@@ -40,7 +40,6 @@ if (!app.auth || !app.auth.firebaseApp || !app.auth.db) {
     
     console.log("API: Initialized with shared Firestore instance from Auth")
   }
-
 
   // タイムアウト付きクエリ実行
   async executeWithTimeout(queryPromise, operation, timeout = this.defaultTimeout) {
@@ -82,9 +81,11 @@ if (!app.auth || !app.auth.firebaseApp || !app.auth.db) {
 
   async getUserProfile(uid) {
     try {
-      const userDocRef = doc(this.db, "users", uid)
- 　　　if (!this.db) {
-     　 let userDocRef;
+      if (!this.db) {
+        throw new Error("Firestore is not initialized")
+      }
+      
+      let userDocRef;
       try {
         userDocRef = doc(this.db, "users", uid)
       } catch (docError) {
@@ -124,6 +125,10 @@ if (!app.auth || !app.auth.firebaseApp || !app.auth.db) {
 
   async getUsers(status = "active") {
     try {
+      if (!this.db) {
+        throw new Error("Firestore is not initialized")
+      }
+      
       const q = query(
         collection(this.db, "users"),
         where("tenantId", "==", this.app.currentUser.tenantId),
@@ -138,22 +143,6 @@ if (!app.auth || !app.auth.firebaseApp || !app.auth.db) {
       this.handleError(error, `ユーザーリストの取得 (status: ${status})`)
     }
   }
-        if (!this.db) {
-if（！this.db）{        throw new Error("Firestore is not initialized")
-      }
-      
-      const q = query(
-        collection(this.db, "users"),
-        where("tenantId", "==", this.app.currentUser.tenantId),
-        where("status", "==", status),
-      )
-      const querySnapshot = await getDocs(q)
-      return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-    } catch (error) {
-} catch（error）{      this.handleError(error, `ユーザーリストの取得 (status: ${status})`)
-    }
-  }
-}
 
   async getSubordinates() {
     try {
