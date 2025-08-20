@@ -15,7 +15,7 @@ import {
   getCountFromServer,
   limit,
   addDoc,
-} from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js"
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
 
 /**
  * API Service (修正版)
@@ -25,21 +25,22 @@ export class API {
   constructor(app) {
     this.app = app
 
-    if (!app.auth || !app.auth.firebaseApp) {
-      console.error("API FATAL: Firebase App is not initialized in Auth module!")
-      this.app.showError("アプリケーションの初期化に失敗しました。Authモジュールを確認してください。")
+if (!app.auth || !app.auth.firebaseApp || !app.auth.db) {
+      console.error("API FATAL: Firebase/Firestore not initialized in Auth module!")
+      if (this.app.showError) {
+        this.app.showError("アプリケーションの初期化に失敗しました。")
+      }
       return
     }
+    
     this.firebaseApp = app.auth.firebaseApp
-
-    this.db = getFirestore(this.firebaseApp)
+    this.db = app.auth.db  
     this.serverTimestamp = serverTimestamp
+    this.defaultTimeout = 10000
     
-    // デフォルトタイムアウト設定
-    this.defaultTimeout = 10000 // 10秒
-    
-    console.log("API: Initialized successfully with Firebase App from Auth module.")
+    console.log("API: Initialized with shared Firestore instance from Auth")
   }
+
 
   // タイムアウト付きクエリ実行
   async executeWithTimeout(queryPromise, operation, timeout = this.defaultTimeout) {
@@ -82,13 +83,24 @@ export class API {
   async getUserProfile(uid) {
     try {
       const userDocRef = doc(this.db, "users", uid)
-      const userDoc = await this.executeWithTimeout(
-        getDoc(userDocRef),
-        `ユーザープロファイルの取得 (uid: ${uid})`
-      )
-      if (userDoc.exists()) {
-        return { id: userDoc.id, ...userDoc.data() }
+ 　　　if (!this.db) {
+     　 let userDocRef;
+      try {
+        userDocRef = doc(this.db, "users", uid)
+      } catch (docError) {
+        console.error("API: Error creating document reference:", docError)
+        throw new Error("Failed to create document reference")
       }
+      
+      const userDoc = await getDoc(userDocRef)
+      
+      if (userDoc.exists()) {
+        const userData = { id: userDoc.id, ...userDoc.data() }
+        console.log("API: User profile found:", userData)
+        return userData
+      }
+      
+      console.log("API: User profile not found for uid:", uid)
       return null
     } catch (error) {
       this.handleError(error, `ユーザープロファイルの取得 (uid: ${uid})`)
@@ -126,6 +138,22 @@ export class API {
       this.handleError(error, `ユーザーリストの取得 (status: ${status})`)
     }
   }
+        if (!this.db) {
+if（！this.db）{        throw new Error("Firestore is not initialized")
+      }
+      
+      const q = query(
+        collection(this.db, "users"),
+        where("tenantId", "==", this.app.currentUser.tenantId),
+        where("status", "==", status),
+      )
+      const querySnapshot = await getDocs(q)
+      return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+    } catch (error) {
+} catch（error）{      this.handleError(error, `ユーザーリストの取得 (status: ${status})`)
+    }
+  }
+}
 
   async getSubordinates() {
     try {
