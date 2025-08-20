@@ -6,10 +6,6 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
-  updateProfile,
-  deleteUser,
-  reauthenticateWithCredential,
-  EmailAuthProvider
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"
 import {
   getFirestore,
@@ -18,17 +14,13 @@ import {
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
 
-/**
- * Enhanced Authentication Service
- * 強化された認証サービス
- */
 export class Auth {
   constructor(app) {
     this.app = app
     
-    // Firebase設定（本番環境では環境変数を使用推奨）
+    // Firebase設定（セキュリティ警告：本番環境では環境変数を使用）
     const firebaseConfig = {
-      apiKey: "AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk",
+      apiKey: process.env.FIREBASE_API_KEY || "YOUR_NEW_API_KEY", // 新しいAPIキーに変更
       authDomain: "hyouka-db.firebaseapp.com",
       projectId: "hyouka-db",
       storageBucket: "hyouka-db.appspot.com",
@@ -36,12 +28,16 @@ export class Auth {
       appId: "1:861016804589:web:d911d516d6c79aa73690e4",
     }
     
+    // Firebase初期化
     this.firebaseApp = initializeApp(firebaseConfig)
     this.auth = getAuth(this.firebaseApp)
-    this.db = getFirestore(this.firebaseApp)
+    this.db = getFirestore(this.firebaseApp) // Firestoreも初期化
     this.authStateUnsubscribe = null
     this.isInitialized = false
+    
+    console.log("Auth: Firebase initialized with app:", this.firebaseApp)
   }
+}
 
   async init() {
     console.log("Auth: Module initialized.")
