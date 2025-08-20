@@ -1,30 +1,23 @@
 {
-  "firestore": {
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
-  },
   "hosting": {
-    "public": "public",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
+    "headers": [
       {
         "source": "**",
-        "destination": "/index.html"
+        "headers": [
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          },
+          {
+            "key": "X-Frame-Options",
+            "value": "SAMEORIGIN"
+          },
+          {
+            "key": "X-XSS-Protection",
+            "value": "1; mode=block"
+          }
+        ]
       }
     ]
-  },
-  "extensions": {
-    "firestore-send-email": {
-      "source": "firebase/firestore-send-email@0.1.29",
-      "params": {
-        "SMTP_CONNECTION_URI": "${param:SMTP_CONNECTION_URI}",
-        "EMAIL_COLLECTION": "mail",
-        "DEFAULT_FROM": "${param:DEFAULT_FROM}"
-      }
-    }
   }
 }
