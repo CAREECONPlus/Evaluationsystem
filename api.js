@@ -344,183 +344,190 @@ export class API {
   }
 
   // --- Settings ---
+
   async getSettings() {
-    try {
-      const currentUser = this.app.currentUser
-      
-      // ユーザー認証チェック
-      if (!currentUser) {
-        throw new Error("ユーザーが認証されていません")
-      }
-      
-      // 管理者権限チェック
-      if (currentUser.role !== 'admin') {
-        throw new Error("設定にアクセスする権限がありません")
-      }
-      
-      // テナントIDチェック
-      if (!currentUser.tenantId) {
-        throw new Error("テナントIDが設定されていません")
-      }
-
-      const tenantId = currentUser.tenantId
-      console.log("API: Loading settings for tenant:", tenantId)
-
-      const jobTypesQuery = query(
-        collection(this.db, "targetJobTypes"), 
-        where("tenantId", "==", tenantId)
-      )
-      
-      const periodsQuery = query(
-        collection(this.db, "evaluationPeriods"), 
-        where("tenantId", "==", tenantId)
-      )
-      
-      const structuresQuery = query(
-        collection(this.db, "evaluationStructures"), 
-        where("tenantId", "==", tenantId)
-      )
-
-      // タイムアウト付きでデータを取得
-      const [jobTypesSnap, periodsSnap, structuresSnap] = await this.executeWithTimeout(
-        Promise.all([
-          getDocs(jobTypesQuery),
-          getDocs(periodsQuery),
-          getDocs(structuresQuery),
-        ]),
-        "設定情報の取得"
-      )
-
-      const structures = {}
-      structuresSnap.docs.forEach((doc) => {
-        structures[doc.data().jobTypeId] = { id: doc.id, ...doc.data() }
-      })
-
-      const result = {
-        jobTypes: jobTypesSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
-        periods: periodsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
-        structures: structures,
-      }
-
-      console.log("API: Settings loaded successfully:", result)
-      return result
-      
-    } catch (error) {
-      console.error("API: Error in getSettings:", error)
-      
-      if (error.message === "Settings loading timeout") {
-        throw new Error("設定の読み込みがタイムアウトしました。ネットワーク接続を確認してください。")
-      }
-      
-      if (error.code === "permission-denied") {
-        throw new Error("設定データにアクセスする権限がありません。Firestoreのセキュリティルールを確認してください。")
-      }
-      
-      this.handleError(error, "設定情報の取得")
+  try {
+    const currentUser = this.app.currentUser
+    
+    // ユーザー認証チェック
+    if (!currentUser) {
+      throw new Error("ユーザーが認証されていません")
     }
-  }
-
-  async getJobTypes() {
-    try {
-      const q = query(collection(this.db, "targetJobTypes"), where("tenantId", "==", this.app.currentUser.tenantId))
-      const snapshot = await this.executeWithTimeout(
-        getDocs(q),
-        "職種リストの取得"
-      )
-      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-    } catch (error) {
-      this.handleError(error, "職種リストの取得")
+    
+    // 管理者権限チェック
+    if (currentUser.role !== 'admin') {
+      throw new Error("設定にアクセスする権限がありません")
     }
-  }
-
-  async getEvaluationStructure(jobTypeId) {
-    try {
-      const q = query(
-        collection(this.db, "evaluationStructures"),
-        where("jobTypeId", "==", jobTypeId),
-        where("tenantId", "==", this.app.currentUser.tenantId),
-      )
-      const snapshot = await this.executeWithTimeout(
-        getDocs(q),
-        `評価構造の取得 (jobTypeId: ${jobTypeId})`
-      )
-      if (snapshot.empty) return null
-      return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() }
-    } catch (error) {
-      this.handleError(error, `評価構造の取得 (jobTypeId: ${jobTypeId})`)
-    }
-  }
-
-  async saveSettings(settings) {
-    const batch = writeBatch(this.db)
-    const tenantId = this.app.currentUser.tenantId
-
-    try {
-      // 職種の保存
-      settings.jobTypes.forEach((jt) => {
-        const ref =
-          jt.id && !jt.id.startsWith("jt_")
-            ? doc(this.db, "targetJobTypes", jt.id)
-            : doc(collection(this.db, "targetJobTypes"))
-        batch.set(
-          ref,
-          {
-            name: jt.name,
-            tenantId: tenantId,
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true },
+    
+    console.log("API: Current user data:", currentUser)
+    
+    // 🔧 重要: tenantId の安全な取得と修復
+    let tenantId = currentUser.tenantId
+    
+    // tenantId が null、"null"文字列、または未定義の場合の修復
+    if (!tenantId || tenantId === "null" || tenantId === null || tenantId === undefined) {
+      console.warn("API: tenantId is null/invalid, attempting to resolve from tenants collection")
+      
+      // tenantsコレクションから管理者のtenantIdを検索
+      try {
+        const tenantsQuery = query(
+          collection(this.db, "tenants"),
+          where("adminId", "==", currentUser.uid)
         )
-      })
-
-      // 評価期間の保存
-      settings.periods.forEach((period) => {
-        const ref =
-          period.id && !period.id.startsWith("p_")
-            ? doc(this.db, "evaluationPeriods", period.id)
-            : doc(collection(this.db, "evaluationPeriods"))
-        batch.set(
-          ref,
-          {
-            name: period.name,
-            startDate: period.startDate,
-            endDate: period.endDate,
+        const tenantsSnapshot = await getDocs(tenantsQuery)
+        
+        if (!tenantsSnapshot.empty) {
+          const tenantDoc = tenantsSnapshot.docs[0]
+          tenantId = tenantDoc.id
+          
+          console.log("API: Resolved tenantId from tenants collection:", tenantId)
+          
+          // ユーザーのtenantIdを修復
+          const userRef = doc(this.db, "users", currentUser.uid)
+          await updateDoc(userRef, {
             tenantId: tenantId,
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true },
-        )
-      })
-
-      // 評価構造の保存
-      Object.keys(settings.structures).forEach((jobTypeId) => {
-        const structure = settings.structures[jobTypeId]
-        if (structure && structure.categories) {
-          const ref =
-            structure.id && !structure.id.startsWith("struct_")
-              ? doc(this.db, "evaluationStructures", structure.id)
-              : doc(collection(this.db, "evaluationStructures"))
-          batch.set(
-            ref,
-            {
-              jobTypeId: jobTypeId,
-              categories: structure.categories,
-              tenantId: tenantId,
-              updatedAt: serverTimestamp(),
-            },
-            { merge: true },
-          )
+            updatedAt: serverTimestamp()
+          })
+          
+          // アプリのcurrentUserも更新
+          this.app.currentUser.tenantId = tenantId
+          
+          console.log("API: Updated user tenantId to:", tenantId)
+        } else {
+          throw new Error("テナント情報が見つかりません。管理者権限を確認してください。")
         }
-      })
-
-      await this.executeWithTimeout(
-        batch.commit(),
-        "設定の保存"
-      )
-    } catch (error) {
-      this.handleError(error, "設定の保存")
+      } catch (resolveError) {
+        console.error("API: Failed to resolve tenantId:", resolveError)
+        throw new Error("テナントIDの解決に失敗しました。システム管理者にお問い合わせください。")
+      }
     }
+    
+    // 最終チェック
+    if (!tenantId) {
+      throw new Error("テナントIDが設定されていません")
+    }
+
+    console.log("API: Loading settings for tenant:", tenantId)
+
+    const jobTypesQuery = query(
+      collection(this.db, "targetJobTypes"), 
+      where("tenantId", "==", tenantId)
+    )
+    
+    const periodsQuery = query(
+      collection(this.db, "evaluationPeriods"), 
+      where("tenantId", "==", tenantId)
+    )
+    
+    const structuresQuery = query(
+      collection(this.db, "evaluationStructures"), 
+      where("tenantId", "==", tenantId)
+    )
+
+    // タイムアウト付きでデータを取得
+    const [jobTypesSnap, periodsSnap, structuresSnap] = await this.executeWithTimeout(
+      Promise.all([
+        getDocs(jobTypesQuery),
+        getDocs(periodsQuery),
+        getDocs(structuresQuery),
+      ]),
+      "設定情報の取得"
+    )
+
+    const structures = {}
+    structuresSnap.docs.forEach((doc) => {
+      structures[doc.data().jobTypeId] = { id: doc.id, ...doc.data() }
+    })
+
+    const result = {
+      jobTypes: jobTypesSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+      periods: periodsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+      structures: structures,
+    }
+
+    console.log("API: Settings loaded successfully:", result)
+    
+    // 🔧 重要: 空のデータの場合はデフォルト構造を作成
+    if (result.jobTypes.length === 0 && result.periods.length === 0) {
+      console.log("API: No settings found, creating default structure")
+      
+      // デフォルト職種を作成
+      const defaultJobTypes = [
+        { name: "営業" },
+        { name: "作業員" },
+        { name: "管理職" }
+      ]
+      
+      // デフォルト評価期間を作成
+      const currentYear = new Date().getFullYear()
+      const defaultPeriods = [
+        { 
+          name: `${currentYear}年 上半期`,
+          startDate: `${currentYear}-04-01`,
+          endDate: `${currentYear}-09-30`
+        },
+        { 
+          name: `${currentYear}年 下半期`, 
+          startDate: `${currentYear}-10-01`,
+          endDate: `${currentYear+1}-03-31`
+        }
+      ]
+      
+      // デフォルトデータをFirestoreに保存
+      const batch = writeBatch(this.db)
+      
+      // 職種の作成
+      defaultJobTypes.forEach((jt) => {
+        const ref = doc(collection(this.db, "targetJobTypes"))
+        const id = ref.id
+        batch.set(ref, {
+          name: jt.name,
+          tenantId: tenantId,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        })
+        result.jobTypes.push({ id, name: jt.name, tenantId })
+      })
+      
+      // 評価期間の作成
+      defaultPeriods.forEach((period) => {
+        const ref = doc(collection(this.db, "evaluationPeriods"))
+        const id = ref.id
+        batch.set(ref, {
+          name: period.name,
+          startDate: period.startDate,
+          endDate: period.endDate,
+          tenantId: tenantId,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        })
+        result.periods.push({ id, ...period, tenantId })
+      })
+      
+      await batch.commit()
+      console.log("API: Default settings created successfully")
+      
+      // 成功メッセージ表示
+      this.app.showSuccess("初期設定を作成しました")
+    }
+    
+    return result
+    
+  } catch (error) {
+    console.error("API: Error in getSettings:", error)
+    
+    if (error.message.includes("timeout")) {
+      throw new Error("設定の読み込みがタイムアウトしました。ネットワーク接続を確認してください。")
+    }
+    
+    if (error.code === "permission-denied") {
+      throw new Error("設定データにアクセスする権限がありません。Firestoreのセキュリティルールを確認してください。")
+    }
+    
+    // 元のエラーをそのまま投げる（handleErrorは呼ばない）
+    throw error
   }
+}
 
   // --- Goals Management ---
 
