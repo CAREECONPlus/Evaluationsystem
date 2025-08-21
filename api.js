@@ -307,41 +307,49 @@ async getUserProfile(uid) {
   }
 }
 
-  async createUserProfile(uid, profileData) {
+ async createUserProfile(userData) {
     try {
-      await this.executeWithTimeout(
-        setDoc(doc(this.db, "users", uid), {
-          ...profileData,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        }),
-        "ユーザープロファイルの作成"
-      )
-    } catch (error) {
-      this.handleError(error, "ユーザープロファイルの作成")
-    }
-  }
+        // undefinedフィールドを除外する関数
+        const cleanData = (obj) => {
+            const cleaned = {};
+            for (const [key, value] of Object.entries(obj)) {
+                if (value !== undefined && value !== null && value !== '') {
+                    cleaned[key] = value;
+                }
+            }
+            return cleaned;
+        };
 
-  async getUsers(status = "active") {
-    try {
-      if (!this.db) {
-        throw new Error("Firestore is not initialized")
-      }
-      
-      const q = query(
-        collection(this.db, "users"),
-        where("tenantId", "==", this.app.currentUser.tenantId),
-        where("status", "==", status),
-      )
-      const querySnapshot = await this.executeWithTimeout(
-        getDocs(q),
-        `ユーザーリストの取得 (status: ${status})`
-      )
-      return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+        // データをクリーンアップ
+        const cleanedUserData = cleanData(userData);
+        
+        console.log("API: Creating user profile with cleaned data:", cleanedUserData);
+
+        // usersコレクションに保存
+        await setDoc(doc(this.db, "users", userData.uid), {
+            ...cleanedUserData,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+
+        // global_usersにも保存（メールベース）
+        if (userData.email) {
+            await setDoc(doc(this.db, "global_users", userData.email), {
+                ...cleanedUserData,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+        }
+
+        console.log("API: User profile created successfully");
+        return { success: true };
+
     } catch (error) {
-      this.handleError(error, `ユーザーリストの取得 (status: ${status})`)
+        console.error("API: Error creating user profile:", error);
+        this.handleError(error, 'ユーザープロファイルの作成');
+        throw error;
     }
-  }
+}
 
   async getSubordinates() {
     try {
