@@ -1,6 +1,6 @@
 /**
- * Settings Page Component - 改善版
- * シンプル化とエラーハンドリング強化
+ * Settings Page Component - 修正版
+ * prompt()問題の完全解決
  */
 export class SettingsPage {
   constructor(app) {
@@ -206,8 +206,6 @@ export class SettingsPage {
     
     // イベント委譲を使用してシンプルに実装
     document.addEventListener('click', this.handleClick.bind(this));
-    
-    // フォームイベント用
     document.addEventListener('input', this.handleInput.bind(this));
     document.addEventListener('change', this.handleChange.bind(this));
   }
@@ -290,9 +288,78 @@ export class SettingsPage {
     // 変更時の処理（必要に応じて実装）
   }
 
+  // 🔧 修正版：Bootstrapモーダルベースの入力
   async promptForValue(title, message, placeholder = '', currentValue = '') {
-    const result = prompt(`${title}\n\n${message}`, currentValue || placeholder);
-    return result ? result.trim() : null;
+    return new Promise((resolve) => {
+      const modalHTML = `
+        <div class="modal fade" id="inputModal" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">${this.app.sanitizeHtml(title)}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label for="inputValue" class="form-label">${this.app.sanitizeHtml(message)}</label>
+                  <input type="text" class="form-control" id="inputValue" placeholder="${this.app.sanitizeHtml(placeholder)}" value="${this.app.sanitizeHtml(currentValue)}">
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary" id="confirmInput">確認</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // 既存のモーダルを削除
+      const existingModal = document.getElementById('inputModal');
+      if (existingModal) {
+        existingModal.remove();
+      }
+
+      // 新しいモーダルを追加
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+      
+      const modal = new bootstrap.Modal(document.getElementById('inputModal'));
+      const inputField = document.getElementById('inputValue');
+      const confirmBtn = document.getElementById('confirmInput');
+
+      // 確認ボタンのイベント
+      confirmBtn.addEventListener('click', () => {
+        const value = inputField.value.trim();
+        if (value) {
+          modal.hide();
+          resolve(value);
+        } else {
+          inputField.classList.add('is-invalid');
+        }
+      });
+
+      // Enterキーでも確認
+      inputField.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          confirmBtn.click();
+        }
+      });
+
+      // キャンセル処理
+      document.getElementById('inputModal').addEventListener('hidden.bs.modal', () => {
+        document.getElementById('inputModal').remove();
+        resolve(null);
+      });
+
+      // モーダル表示
+      modal.show();
+      
+      // フォーカス設定
+      document.getElementById('inputModal').addEventListener('shown.bs.modal', () => {
+        inputField.focus();
+        inputField.select();
+      });
+    });
   }
 
   async addJobType() {
@@ -524,7 +591,7 @@ export class SettingsPage {
     `;
   }
 
-  // 各種操作メソッド（簡素化）
+  // 各種操作メソッド
   async editJobType(id) {
     const jobType = this.settings.jobTypes.find(jt => jt.id === id);
     if (!jobType) return;
@@ -624,169 +691,51 @@ export class SettingsPage {
     this.app.showSuccess('カテゴリを削除しました');
   }
 
-// settings.js の prompt() 置き換え修正
-
-// 元のコード（問題のある箇所）
-// const periodName = prompt("評価期間名を入力してください:");
-
-// 修正版：Bootstrapモーダルを使用
-function showInputModal(title, placeholder, callback) {
-  const modalHTML = `
-    <div class="modal fade" id="inputModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">${title}</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label for="inputValue" class="form-label">入力してください</label>
-              <input type="text" class="form-control" id="inputValue" placeholder="${placeholder}">
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-            <button type="button" class="btn btn-primary" id="confirmInput">確認</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  // 既存のモーダルを削除
-  const existingModal = document.getElementById('inputModal');
-  if (existingModal) {
-    existingModal.remove();
+  async addItem(parentId) {
+    if (!this.selectedJobTypeId || !parentId) return;
+    
+    const name = await this.promptForValue('項目追加', '評価項目名を入力してください', '例: コミュニケーション能力');
+    
+    if (name) {
+      this.saveItem(null, name, parentId);
+      this.markUnsaved();
+      this.renderAll();
+      this.app.showSuccess('評価項目を追加しました');
+    }
   }
 
-  // 新しいモーダルを追加
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
-  
-  const modal = new bootstrap.Modal(document.getElementById('inputModal'));
-  const inputField = document.getElementById('inputValue');
-  const confirmBtn = document.getElementById('confirmInput');
-
-  // 確認ボタンのイベント
-  confirmBtn.addEventListener('click', () => {
-    const value = inputField.value.trim();
-    if (value) {
-      modal.hide();
-      callback(value);
-    } else {
-      // エラー表示
-      inputField.classList.add('is-invalid');
+  async editItem(id, parentId) {
+    if (!this.selectedJobTypeId || !parentId) return;
+    
+    const structure = this.settings.structures[this.selectedJobTypeId];
+    const category = structure?.categories.find(c => c.id === parentId);
+    const item = category?.items.find(i => i.id === id);
+    if (!item) return;
+    
+    const name = await this.promptForValue('項目編集', '評価項目名を入力してください', '', item.name);
+    
+    if (name && name !== item.name) {
+      this.saveItem(id, name, parentId);
+      this.markUnsaved();
+      this.renderAll();
+      this.app.showSuccess('評価項目を更新しました');
     }
-  });
+  }
 
-  // Enterキーでも確認
-  inputField.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      confirmBtn.click();
+  deleteItem(id, parentId) {
+    if (!confirm('この評価項目を削除しますか？')) return;
+    
+    if (!this.selectedJobTypeId || !parentId) return;
+    const structure = this.settings.structures[this.selectedJobTypeId];
+    const category = structure?.categories.find(c => c.id === parentId);
+    
+    if (category) {
+      category.items = category.items.filter(i => i.id !== id);
+      this.markUnsaved();
+      this.renderAll();
+      this.app.showSuccess('評価項目を削除しました');
     }
-  });
-
-  // モーダル表示
-  modal.show();
-  
-  // フォーカス設定
-  document.getElementById('inputModal').addEventListener('shown.bs.modal', () => {
-    inputField.focus();
-  });
-
-  // モーダル削除
-  document.getElementById('inputModal').addEventListener('hidden.bs.modal', () => {
-    document.getElementById('inputModal').remove();
-  });
-}
-
-// 修正版：評価期間追加機能
-function addPeriod() {
-  console.log("Settings: Adding period");
-  
-  showInputModal(
-    "評価期間の追加",
-    "例: 2024年度上期",
-    (periodName) => {
-      if (periodName) {
-        const period = {
-          id: `p_${Date.now()}`,
-          name: periodName,
-          startDate: "",
-          endDate: ""
-        };
-        
-        // 期間をリストに追加
-        this.settings.periods.push(period);
-        
-        // UI更新
-        this.updatePeriodsDisplay();
-        
-        // 保存
-        this.saveSettings();
-        
-        console.log("Settings: Period added:", periodName);
-      }
-    }
-  );
-}
-
-// 同様に他のprompt()も修正
-function addJobType() {
-  console.log("Settings: Adding job type");
-  
-  showInputModal(
-    "職種の追加", 
-    "例: エンジニア",
-    (jobTypeName) => {
-      if (jobTypeName) {
-        const jobType = {
-          id: `jt_${Date.now()}`,
-          name: jobTypeName
-        };
-        
-        this.settings.jobTypes.push(jobType);
-        this.updateJobTypesDisplay();
-        this.saveSettings();
-        
-        console.log("Settings: Job type added:", jobTypeName);
-      }
-    }
-  );
-}
-
-function addCategory(jobTypeId) {
-  console.log("Settings: Adding category for job type:", jobTypeId);
-  
-  showInputModal(
-    "評価カテゴリの追加",
-    "例: 技術力",
-    (categoryName) => {
-      if (categoryName) {
-        if (!this.settings.structures[jobTypeId]) {
-          this.settings.structures[jobTypeId] = {
-            id: `struct_${Date.now()}`,
-            jobTypeId: jobTypeId,
-            categories: []
-          };
-        }
-        
-        const category = {
-          id: `cat_${Date.now()}`,
-          name: categoryName,
-          weight: 20,
-          criteria: []
-        };
-        
-        this.settings.structures[jobTypeId].categories.push(category);
-        this.updateStructureDisplay();
-        this.saveSettings();
-        
-        console.log("Settings: Category added:", categoryName);
-      }
-    }
-  );
-}
+  }
 
   // データ保存メソッド
   saveJobType(id, name) {
