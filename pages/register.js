@@ -151,53 +151,116 @@ export class RegisterPage {
     }
   }
 
-  async handleRegistration(e) {
-    e.preventDefault();
-    const submitButton = e.target.querySelector('button[type="submit"]');
-    const spinner = submitButton.querySelector('.spinner-border');
-
-    const password = document.getElementById('password').value;
-    if (password !== document.getElementById('confirmPassword').value) {
-        this.app.showError(this.app.i18n.t('errors.passwords_not_match'));
+async handleRegistration(event) {
+    event.preventDefault();
+    const form = event.target;
+    
+    if (!form.checkValidity()) {
+        event.stopPropagation();
+        form.classList.add('was-validated');
         return;
     }
 
+    const submitButton = form.querySelector('button[type="submit"]');
+    const spinner = submitButton.querySelector('.spinner-border');
     spinner.classList.remove('d-none');
     submitButton.disabled = true;
 
     const userData = {
-        email: this.invitation.email,
-        password: password,
-        name: document.getElementById('name').value,
-        tenantId: this.invitation.tenantId,
-        evaluatorId: this.invitation.evaluatorId,
-        jobTypeId: this.invitation.jobTypeId,
+        email: document.getElementById('email').value.trim().toLowerCase(),
+        password: document.getElementById('password').value,
+        name: document.getElementById('name').value.trim(),
+        invitationCode: document.getElementById('invitationCode').value.trim()
     };
 
     try {
-        const userCredential = await this.app.auth.registerWithEmail(userData.email, userData.password);
+        console.log("Register: Starting registration process...");
         
+        // Step 1: 招待コードの検証
+        const invitation = await this.app.api.validateInvitationCode(userData.invitationCode);
+        console.log("Register: Invitation validated:", invitation);
+
+        // Step 2: Firebase Authにユーザーを作成
+        const userCredential = await this.app.auth.registerWithEmail(userData.email, userData.password);
+        console.log("Register: Firebase Auth user created:", userCredential.user.uid);
+
+        // Step 3: ユーザープロファイルを作成（undefinedフィールドを除外）
         const profileData = {
-            name: userData.name,
+            uid: userCredential.user.uid,
             email: userData.email,
-            role: this.invitation.role,
-            status: 'pending_approval',
-            tenantId: userData.tenantId,
-            evaluatorId: userData.evaluatorId,
-            jobTypeId: userData.jobTypeId,
-            createdAt: this.app.api.serverTimestamp(),
+            name: userData.name,
+            role: invitation.role,
+            tenantId: invitation.tenantId,
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            invitationId: invitation.id
         };
 
-        await this.app.api.createUserProfile(userCredential.user.uid, profileData);
-        await this.app.api.markInvitationAsUsed(this.invitation.id, userCredential.user.uid);
+        // undefinedフィールドを除外する関数
+        const cleanData = (obj) => {
+            const cleaned = {};
+            for (const [key, value] of Object.entries(obj)) {
+                if (value !== undefined && value !== null && value !== '') {
+                    cleaned[key] = value;
+                }
+            }
+            return cleaned;
+        };
 
-        this.app.showSuccess(this.app.i18n.t('messages.register_user_success'));
-        this.app.navigate('#/login');
+        // 招待タイプに応じた追加フィールド（undefinedチェック付き）
+        if (invitation.role === 'evaluator' && invitation.evaluatorId) {
+            profileData.evaluatorId = invitation.evaluatorId;
+        }
+        
+        if (invitation.targetJobTypeId) {
+            profileData.targetJobTypeId = invitation.targetJobTypeId;
+        }
+
+        // 評価対象者の場合
+        if (invitation.role === 'worker') {
+            if (invitation.evaluatorId) {
+                profileData.evaluatorId = invitation.evaluatorId;
+            }
+            if (invitation.targetUserId) {
+                profileData.targetUserId = invitation.targetUserId;
+            }
+        }
+
+        // undefinedフィールドをクリーンアップ
+        const cleanedProfileData = cleanData(profileData);
+        console.log("Register: Creating profile with data:", cleanedProfileData);
+
+        await this.app.api.createUserProfile(cleanedProfileData);
+        console.log("Register: User profile created successfully");
+
+        // Step 4: 招待コードを使用済みにマーク
+        await this.app.api.markInvitationAsUsed(invitation.id, userCredential.user.uid);
+        console.log("Register: Invitation marked as used");
+
+        // Step 5: 成功画面を表示
+        this.showSuccessScreen(userData.name, invitation.role);
 
     } catch (err) {
-        this.app.showError(this.app.auth.getFirebaseAuthErrorMessage(err));
+        console.error("Register: Registration error:", err);
+        
+        let errorMessage = "登録処理中にエラーが発生しました。";
+        
+        if (err.code === 'auth/email-already-in-use') {
+            errorMessage = "このメールアドレスは既に使用されています。既存アカウントでログインするか、パスワードリセットをお試しください。";
+        } else if (err.code === 'auth/weak-password') {
+            errorMessage = "パスワードは6文字以上で設定してください。";
+        } else if (err.code === 'auth/invalid-email') {
+            errorMessage = "有効なメールアドレスを入力してください。";
+        } else if (err.message && err.message.includes('invitation')) {
+            errorMessage = "招待コードが無効または期限切れです。正しい招待コードを入力してください。";
+        } else if (err.message && err.message.includes('undefined')) {
+            errorMessage = "データ構造に問題があります。管理者にお問い合わせください。";
+        } else if (err.code === 'permission-denied') {
+            errorMessage = "アクセス権限がありません。管理者にお問い合わせください。";
+        }
+        
+        this.app.showError(errorMessage);
         spinner.classList.add('d-none');
         submitButton.disabled = false;
     }
-  }
-}
+} 
