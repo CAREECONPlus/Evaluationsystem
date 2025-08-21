@@ -472,50 +472,39 @@ async getUserProfile(uid) {
 
   async markInvitationAsUsed(invitationId, userId) {
     try {
-      const invitationRef = doc(this.db, "invitations", invitationId)
-      const invitationDoc = await getDoc(invitationRef)
-      
-      if (!invitationDoc.exists()) {
-        throw new Error("Invitation not found")
-      }
-      
-      const invitationData = invitationDoc.data()
-      
-      // 🔧 修正: 招待データからtenantIdを取得してユーザーに設定
-      if (invitationData.tenantId) {
-        const userRef = doc(this.db, "users", userId)
-        const batch = writeBatch(this.db)
+        console.log("API: Marking invitation as used:", { invitationId, userId });
+
+        // 現在の招待データを取得
+        const invitationRef = doc(this.db, "invitations", invitationId);
+        const invitationDoc = await getDoc(invitationRef);
         
-        // 招待の使用済みマーク
-        batch.update(invitationRef, {
-          used: true,
-          usedAt: serverTimestamp(),
-          usedBy: userId,
-        })
-        
-        // ユーザーのtenantId更新
-        batch.update(userRef, {
-          tenantId: invitationData.tenantId,
-          companyName: invitationData.companyName,
-          updatedAt: serverTimestamp(),
-        })
-        
-        await batch.commit()
-      } else {
-        // フォールバック: 招待のみ更新
-        await this.executeWithTimeout(
-          updateDoc(invitationRef, {
+        if (!invitationDoc.exists()) {
+            throw new Error("招待が見つかりません");
+        }
+
+        const currentData = invitationDoc.data();
+        console.log("API: Current invitation data:", currentData);
+
+        // 最小限のフィールドのみ更新
+        const updateData = {
             used: true,
-            usedAt: serverTimestamp(),
             usedBy: userId,
-          }),
-          "招待の使用済み更新"
-        )
-      }
+            usedAt: serverTimestamp()
+        };
+
+        console.log("API: Updating with data:", updateData);
+
+        await updateDoc(invitationRef, updateData);
+        console.log("API: Invitation marked as used successfully");
+
+        return { success: true };
+
     } catch (error) {
-      this.handleError(error, "招待の使用済み更新")
+        console.error("API: Error marking invitation as used:", error);
+        this.handleError(error, '招待の使用済み更新');
+        throw error;
     }
-  }
+}
 
   // --- Settings ---
 async getSettings() {
