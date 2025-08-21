@@ -233,71 +233,79 @@ export class API {
 
   // --- User and Tenant Management ---
 
-  async getUserProfile(uid) {
+// api.js の getUserProfile メソッドを修正
+
+async getUserProfile(uid) {
+  try {
+    if (!this.db) {
+      throw new Error("Firestore is not initialized")
+    }
+    
+    let userDocRef;
     try {
-      if (!this.db) {
-        throw new Error("Firestore is not initialized")
+      userDocRef = doc(this.db, "users", uid)
+    } catch (docError) {
+      console.error("API: Error creating document reference:", docError)
+      throw new Error("Failed to create document reference")
+    }
+    
+    const userDoc = await getDoc(userDocRef)
+    
+    if (userDoc.exists()) {
+      // 🔧 修正: uid フィールドを確実に含める
+      const userData = { 
+        id: userDoc.id, 
+        uid: uid,  // 🔧 重要: uid を明示的に設定
+        ...userDoc.data() 
       }
       
-      let userDocRef;
-      try {
-        userDocRef = doc(this.db, "users", uid)
-      } catch (docError) {
-        console.error("API: Error creating document reference:", docError)
-        throw new Error("Failed to create document reference")
-      }
-      
-      const userDoc = await getDoc(userDocRef)
-      
-      if (userDoc.exists()) {
-        const userData = { id: userDoc.id, ...userDoc.data() }
+      // 🔧 修正: tenantId 自動修復
+      if ((!userData.tenantId || userData.tenantId === "null") && userData.role !== 'developer') {
+        console.warn("API: User has null tenantId, attempting to resolve:", uid)
         
-        // 🔧 修正: tenantId 自動修復
-        if ((!userData.tenantId || userData.tenantId === "null") && userData.role !== 'developer') {
-          console.warn("API: User has null tenantId, attempting to resolve:", uid)
-          
-          if (userData.role === 'admin') {
-            try {
-              const tenantsQuery = query(
-                collection(this.db, "tenants"),
-                where("adminId", "==", uid)
-              )
-              const tenantsSnapshot = await getDocs(tenantsQuery)
+        if (userData.role === 'admin') {
+          try {
+            const tenantsQuery = query(
+              collection(this.db, "tenants"),
+              where("adminId", "==", uid)
+            )
+            const tenantsSnapshot = await getDocs(tenantsQuery)
+            
+            if (!tenantsSnapshot.empty) {
+              const tenantData = tenantsSnapshot.docs[0]
+              const tenantId = tenantData.id
               
-              if (!tenantsSnapshot.empty) {
-                const tenantData = tenantsSnapshot.docs[0]
-                const tenantId = tenantData.id
-                
-                // ユーザーのtenantIdを更新
-                await updateDoc(userDocRef, {
-                  tenantId: tenantId,
-                  updatedAt: serverTimestamp()
-                })
-                
-                userData.tenantId = tenantId
-                console.log("API: Resolved tenantId for admin:", tenantId)
-                
-                // 🔧 新規追加: 管理者ログイン時に自動修復実行
-                setTimeout(() => {
-                  this.repairTenantData()
-                }, 1000) // 1秒後に実行
-              }
-            } catch (resolveError) {
-              console.error("API: Failed to resolve tenantId:", resolveError)
+              // ユーザーのtenantIdを更新
+              await updateDoc(userDocRef, {
+                tenantId: tenantId,
+                updatedAt: serverTimestamp()
+              })
+              
+              userData.tenantId = tenantId
+              console.log("API: Resolved tenantId for admin:", tenantId)
+              
+              // 🔧 修正: 管理者ログイン時に自動修復実行
+              setTimeout(() => {
+                this.repairTenantData()
+              }, 1000) // 1秒後に実行
             }
+          } catch (resolveError) {
+            console.error("API: Failed to resolve tenantId:", resolveError)
           }
         }
-        
-        console.log("API: User profile found:", userData)
-        return userData
       }
       
-      console.log("API: User profile not found for uid:", uid)
-      return null
-    } catch (error) {
-      this.handleError(error, `ユーザープロファイルの取得 (uid: ${uid})`)
+      console.log("API: User profile found:", userData)
+      console.log("API: User profile UID check:", userData.uid)  // 🔧 デバッグログ追加
+      return userData
     }
+    
+    console.log("API: User profile not found for uid:", uid)
+    return null
+  } catch (error) {
+    this.handleError(error, `ユーザープロファイルの取得 (uid: ${uid})`)
   }
+}
 
   async createUserProfile(uid, profileData) {
     try {
@@ -502,8 +510,6 @@ export class API {
   }
 
   // --- Settings ---
-  // api.js の getSettings メソッドを安全版に修正
-
 async getSettings() {
   try {
     const currentUser = this.app.currentUser
@@ -519,12 +525,21 @@ async getSettings() {
     }
     
     console.log("API: Current user data:", currentUser)
-    console.log("API: Current user UID:", currentUser.uid)
+    
+    // 🔧 修正: uid の安全な取得（複数の方法で試行）
+    let userUid = currentUser.uid || currentUser.id
+    
+    // 🔧 新規追加: Firebase Auth から直接取得を試行
+    if (!userUid && this.app.auth && this.app.auth.auth && this.app.auth.auth.currentUser) {
+      userUid = this.app.auth.auth.currentUser.uid
+      console.log("API: Got UID from Firebase Auth:", userUid)
+    }
+    
+    console.log("API: Resolved user UID:", userUid)
     console.log("API: Current user tenantId:", currentUser.tenantId)
     
-    // 🔧 修正: uid の安全性チェック追加
-    if (!currentUser.uid) {
-      console.error("API: currentUser.uid is undefined")
+    if (!userUid) {
+      console.error("API: Cannot resolve user UID")
       throw new Error("ユーザーIDが取得できません。再ログインしてください。")
     }
     
@@ -534,13 +549,13 @@ async getSettings() {
     // tenantId が null、"null"文字列、または未定義の場合の修復
     if (!tenantId || tenantId === "null" || tenantId === null || tenantId === undefined) {
       console.warn("API: tenantId is null/invalid, attempting to resolve from tenants collection")
-      console.log("API: Searching for adminId:", currentUser.uid)
+      console.log("API: Searching for adminId:", userUid)
       
       // tenantsコレクションから管理者のtenantIdを検索
       try {
         const tenantsQuery = query(
           collection(this.db, "tenants"),
-          where("adminId", "==", currentUser.uid)
+          where("adminId", "==", userUid)  // 🔧 修正: userUid を使用
         )
         
         console.log("API: Executing tenants query...")
@@ -556,7 +571,7 @@ async getSettings() {
           console.log("API: Resolved tenantId from tenants collection:", tenantId)
           
           // ユーザーのtenantIdを修復
-          const userRef = doc(this.db, "users", currentUser.uid)
+          const userRef = doc(this.db, "users", userUid)
           await updateDoc(userRef, {
             tenantId: tenantId,
             updatedAt: serverTimestamp()
@@ -568,7 +583,7 @@ async getSettings() {
           console.log("API: Updated user tenantId to:", tenantId)
           this.app.showSuccess("テナントIDを修復しました")
         } else {
-          console.error("API: No tenant found for adminId:", currentUser.uid)
+          console.error("API: No tenant found for adminId:", userUid)
           
           // 🔧 新規追加: テナントが見つからない場合の自動作成
           console.log("API: Creating new tenant for admin")
@@ -577,14 +592,14 @@ async getSettings() {
           tenantId = newTenantRef.id
           
           await setDoc(newTenantRef, {
-            adminId: currentUser.uid,
+            adminId: userUid,  // 🔧 修正: userUid を使用
             companyName: currentUser.companyName || "新しい会社",
             status: "active",
             createdAt: serverTimestamp(),
           })
           
           // ユーザーのtenantIdを設定
-          const userRef = doc(this.db, "users", currentUser.uid)
+          const userRef = doc(this.db, "users", userUid)
           await updateDoc(userRef, {
             tenantId: tenantId,
             updatedAt: serverTimestamp()
