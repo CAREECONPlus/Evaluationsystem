@@ -880,73 +880,176 @@ export class API {
     }
   }
 
-  async approveAdmin(userId) {
-    try {
-      if (!this.app.hasRole("developer")) throw new Error("開発者権限が必要です")
-      const userRef = doc(this.db, "users", userId)
-      const userDoc = await getDoc(userRef)
-      if (!userDoc.exists()) throw new Error("User not found")
+  // api.js の approveAdmin メソッドを修正
 
-      const companyName = userDoc.data()?.companyName || "名称未設定"
-      const tenantId = doc(collection(this.db, "tenants")).id
-      const tenantRef = doc(this.db, "tenants", tenantId)
-
-      const batch = writeBatch(this.db)
-      batch.update(userRef, {
+async approveAdmin(userId) {
+  try {
+    if (!this.app.hasRole("developer")) throw new Error("開発者権限が必要です")
+    
+    console.log("API: Starting admin approval process for userId:", userId)
+    
+    const userRef = doc(this.db, "users", userId)
+    const userDoc = await getDoc(userRef)
+    if (!userDoc.exists()) throw new Error("User not found")
+    
+    const userData = userDoc.data()
+    const companyName = userData?.companyName || "名称未設定"
+    
+    // 🔧 修正: テナントIDを先に生成
+    const tenantId = doc(collection(this.db, "tenants")).id
+    const tenantRef = doc(this.db, "tenants", tenantId)
+    
+    console.log("API: Generated tenantId:", tenantId)
+    console.log("API: User data:", userData)
+    
+    const batch = writeBatch(this.db)
+    
+    // 🔧 修正: ユーザーの更新（tenantIdを確実に設定）
+    batch.update(userRef, {
+      status: "active",
+      tenantId: tenantId,  // 明示的にtenantIdを設定
+      updatedAt: serverTimestamp(),
+    })
+    
+    // 🔧 修正: テナントの作成
+    batch.set(tenantRef, {
+      adminId: userId,
+      companyName: companyName,
+      status: "active",
+      createdAt: serverTimestamp(),
+    })
+    
+    // 🔧 新規追加: global_users にも登録（マルチテナント対応）
+    if (userData.email) {
+      const globalUserRef = doc(this.db, "global_users", userData.email)
+      batch.set(globalUserRef, {
+        uid: userId,
+        email: userData.email,
+        name: userData.name || "管理者",
+        companyName: companyName,
+        role: "admin",
         status: "active",
-        tenantId: tenantId,
+        tenantId: tenantId,  // global_usersにもtenantIdを設定
+        createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       })
-      batch.set(tenantRef, {
-        adminId: userId,
-        companyName: companyName,
-        status: "active",
-        createdAt: serverTimestamp(),
+    }
+    
+    await this.executeWithTimeout(
+      batch.commit(),
+      "管理者アカウントの承認"
+    )
+    
+    console.log("API: Admin approval completed successfully")
+    console.log("API: TenantId assigned:", tenantId)
+    
+  } catch (error) {
+    console.error("API: Error in approveAdmin:", error)
+    this.handleError(error, "管理者アカウントの承認")
+  }
+}
+
+// 🔧 新規追加: 招待処理でのtenantId設定修正
+async markInvitationAsUsed(invitationId, userId) {
+  try {
+    const invitationRef = doc(this.db, "invitations", invitationId)
+    const invitationDoc = await getDoc(invitationRef)
+    
+    if (!invitationDoc.exists()) {
+      throw new Error("Invitation not found")
+    }
+    
+    const invitationData = invitationDoc.data()
+    
+    // 🔧 修正: 招待データからtenantIdを取得してユーザーに設定
+    if (invitationData.tenantId) {
+      const userRef = doc(this.db, "users", userId)
+      const batch = writeBatch(this.db)
+      
+      // 招待の使用済みマーク
+      batch.update(invitationRef, {
+        used: true,
+        usedAt: serverTimestamp(),
+        usedBy: userId,
       })
-
+      
+      // ユーザーのtenantId更新
+      batch.update(userRef, {
+        tenantId: invitationData.tenantId,  // 招待からtenantIdを設定
+        companyName: invitationData.companyName,
+        updatedAt: serverTimestamp(),
+      })
+      
+      await batch.commit()
+    } else {
+      // フォールバック: 招待のみ更新
       await this.executeWithTimeout(
-        batch.commit(),
-        "管理者アカウントの承認"
-      )
-    } catch (error) {
-      this.handleError(error, "管理者アカウントの承認")
-    }
-  }
-
-  async updateTenantStatus(tenantId, status) {
-    try {
-      if (!this.app.hasRole("developer")) throw new Error("開発者権限が必要です")
-      await this.executeWithTimeout(
-        updateDoc(doc(this.db, "tenants", tenantId), {
-          status: status,
-          updatedAt: serverTimestamp(),
+        updateDoc(invitationRef, {
+          used: true,
+          usedAt: serverTimestamp(),
+          usedBy: userId,
         }),
-        `テナントステータスの更新 (tenantId: ${tenantId})`
+        "招待の使用済み更新"
       )
-    } catch (error) {
-      this.handleError(error, `テナントステータスの更新 (tenantId: ${tenantId})`)
     }
+    
+  } catch (error) {
+    this.handleError(error, "招待の使用済み更新")
   }
+}
 
-  // --- データバリデーション ---
-  validateEmail(email) {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return re.test(email)
-  }
-
-  validatePassword(password) {
-    return password && password.length >= 6
-  }
-
-  validateName(name) {
-    return name && name.trim().length >= 2
-  }
-
-  validateCompanyName(companyName) {
-    return companyName && companyName.trim().length >= 2
-  }
-
-  validateWeight(weight) {
-    return weight >= 0 && weight <= 100
+// 🔧 新規追加: ユーザープロファイル取得の改善
+async getUserProfile(uid) {
+  try {
+    if (!this.db) {
+      throw new Error("Firestore is not initialized")
+    }
+    
+    const userDocRef = doc(this.db, "users", uid)
+    const userDoc = await getDoc(userDocRef)
+    
+    if (userDoc.exists()) {
+      const userData = { id: userDoc.id, ...userDoc.data() }
+      
+      // 🔧 修正: tenantIdがnullの場合の処理
+      if (!userData.tenantId && userData.role !== 'developer') {
+        console.warn("API: User has null tenantId, attempting to resolve:", uid)
+        
+        // 管理者の場合、テナントを検索して設定
+        if (userData.role === 'admin') {
+          try {
+            const tenantsQuery = query(
+              collection(this.db, "tenants"),
+              where("adminId", "==", uid)
+            )
+            const tenantsSnapshot = await getDocs(tenantsQuery)
+            
+            if (!tenantsSnapshot.empty) {
+              const tenantData = tenantsSnapshot.docs[0]
+              const tenantId = tenantData.id
+              
+              // ユーザーのtenantIdを更新
+              await updateDoc(userDocRef, {
+                tenantId: tenantId,
+                updatedAt: serverTimestamp()
+              })
+              
+              userData.tenantId = tenantId
+              console.log("API: Resolved tenantId for admin:", tenantId)
+            }
+          } catch (resolveError) {
+            console.error("API: Failed to resolve tenantId:", resolveError)
+          }
+        }
+      }
+      
+      console.log("API: User profile found:", userData)
+      return userData
+    }
+    
+    console.log("API: User profile not found for uid:", uid)
+    return null
+  } catch (error) {
+    this.handleError(error, `ユーザープロファイルの取得 (uid: ${uid})`)
   }
 }
