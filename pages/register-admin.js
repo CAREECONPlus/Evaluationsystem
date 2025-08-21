@@ -164,6 +164,7 @@ export class RegisterAdminPage {
     };
     
     let userCredential = null;
+    let adminRequestId = null;
 
     try {
         console.log("RegisterAdmin: Starting registration process...");
@@ -175,7 +176,7 @@ export class RegisterAdminPage {
         // Step 2: Firestoreへのデータ保存
         const db = getFirestore(this.app.auth.firebaseApp);
         
-        // admin_requestsに申請を作成（公開申請）
+        // admin_requestsに申請を作成（最優先 - 認証不要で作成可能）
         const requestRef = doc(collection(db, "admin_requests"));
         await setDoc(requestRef, {
             requestId: requestRef.id,
@@ -194,9 +195,10 @@ export class RegisterAdminPage {
                 ip: 'client-side'
             }
         });
-        console.log("RegisterAdmin: Admin request created:", requestRef.id);
+        adminRequestId = requestRef.id;
+        console.log("RegisterAdmin: Admin request created:", adminRequestId);
         
-        // global_usersにも仮登録（メールベースの管理）
+        // Step 3: global_usersに作成（メールベースの管理）
         try {
             await setDoc(doc(db, "global_users", userData.email), {
                 uid: userCredential.user.uid,
@@ -207,88 +209,141 @@ export class RegisterAdminPage {
                 status: 'pending_approval',
                 tenantId: null,
                 plan: 'trial',
-                createdAt: serverTimestamp()
+                createdAt: serverTimestamp(),
+                registrationRequestId: adminRequestId
             });
-            console.log("RegisterAdmin: Global user created");
+            console.log("RegisterAdmin: Global user created successfully");
         } catch (globalError) {
-            console.log("RegisterAdmin: Global user creation failed (may already exist):", globalError);
+            console.warn("RegisterAdmin: Global user creation failed:", globalError);
+            // global_usersの作成失敗は致命的ではない（必須ではない）
         }
         
-        // レガシーusersコレクションにも保存を試みる（後方互換性）
+        // Step 4: usersコレクション（レガシー）への保存を改良
         try {
+            // 現在のFirebaseルールに対応するため、statusを調整
             await setDoc(doc(db, "users", userCredential.user.uid), {
                 uid: userCredential.user.uid,
                 email: userData.email,
                 name: userData.name,
                 companyName: userData.companyName,
                 role: 'admin',
-                status: 'developer_approval_pending',
+                status: 'developer_approval_pending', // ルールで許可されているstatus
                 tenantId: null,
-                createdAt: serverTimestamp()
+                createdAt: serverTimestamp(),
+                registrationRequestId: adminRequestId
             });
-            console.log("RegisterAdmin: Legacy user created");
+            console.log("RegisterAdmin: Legacy user created successfully");
         } catch (userError) {
-            console.log("RegisterAdmin: Legacy users write failed (expected):", userError);
+            console.warn("RegisterAdmin: Legacy users write failed:", userError);
+            // レガシーusersコレクションの書き込み失敗も重要ではない
         }
         
         // 成功画面表示
-        const container = document.getElementById('register-admin-container');
-        container.innerHTML = `
-            <div class="text-center">
-                <i class="fas fa-check-circle fa-5x text-success mb-4"></i>
-                <h3 class="mb-3">テナント登録申請完了</h3>
-                <div class="alert alert-success">
-                    <h5 class="alert-heading">申請を受け付けました</h5>
-                    <hr>
-                    <p class="mb-2"><strong>申請番号:</strong> ${requestRef.id.slice(0, 8).toUpperCase()}</p>
-                    <p class="mb-2"><strong>企業名:</strong> ${this.app.sanitizeHtml(userData.companyName)}</p>
-                    <p class="mb-0"><strong>管理者:</strong> ${this.app.sanitizeHtml(userData.name)}</p>
-                </div>
-                <div class="card bg-light mt-4">
-                    <div class="card-body">
-                        <h6 class="card-title">次のステップ</h6>
-                        <ol class="text-start mb-0">
-                            <li>システム管理者が申請内容を確認します（通常1-2営業日）</li>
-                            <li>承認後、登録メールアドレスに通知が送信されます</li>
-                            <li>通知メール内のリンクからログインしてください</li>
-                            <li>初回ログイン時に初期設定を行います</li>
-                        </ol>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <a href="#/login" class="btn btn-primary btn-lg" data-link>
-                        <i class="fas fa-arrow-left me-2"></i>ログインページに戻る
-                    </a>
-                </div>
-            </div>
-        `;
+        this.showSuccessScreen(adminRequestId, userData);
 
     } catch (err) {
         console.error("RegisterAdmin: Registration error:", err);
         
-        // エラー時のロールバック
-        if (userCredential?.user) {
-            try {
-                await userCredential.user.delete();
-                console.log("RegisterAdmin: Rolled back Firebase Auth user");
-            } catch (deleteError) {
-                console.error("RegisterAdmin: Failed to rollback user:", deleteError);
-            }
-        }
+        // エラー時の詳細ログ
+        console.error("Error details:", {
+            code: err.code,
+            message: err.message,
+            stack: err.stack
+        });
+        
+        // エラー時のロールバック処理
+        await this.handleRegistrationError(err, userCredential, adminRequestId);
         
         // エラーメッセージの表示
-        let errorMessage = "登録処理中にエラーが発生しました。";
-        if (err.code === 'auth/email-already-in-use') {
-            errorMessage = "このメールアドレスは既に使用されています。";
-        } else if (err.code === 'auth/weak-password') {
-            errorMessage = "パスワードは6文字以上で設定してください。";
-        } else if (err.code === 'auth/invalid-email') {
-            errorMessage = "有効なメールアドレスを入力してください。";
-        }
-        
+        const errorMessage = this.getErrorMessage(err);
         this.app.showError(errorMessage);
+        
+        // UI復旧
         spinner.classList.add('d-none');
         submitButton.disabled = false;
     }
+  }
+
+  showSuccessScreen(requestId, userData) {
+    const container = document.getElementById('register-admin-container');
+    container.innerHTML = `
+        <div class="text-center">
+            <i class="fas fa-check-circle fa-5x text-success mb-4"></i>
+            <h3 class="mb-3">テナント登録申請完了</h3>
+            <div class="alert alert-success">
+                <h5 class="alert-heading">申請を受け付けました</h5>
+                <hr>
+                <p class="mb-2"><strong>申請番号:</strong> ${requestId.slice(0, 8).toUpperCase()}</p>
+                <p class="mb-2"><strong>企業名:</strong> ${this.app.sanitizeHtml(userData.companyName)}</p>
+                <p class="mb-0"><strong>管理者:</strong> ${this.app.sanitizeHtml(userData.name)}</p>
+            </div>
+            <div class="card bg-light mt-4">
+                <div class="card-body">
+                    <h6 class="card-title">次のステップ</h6>
+                    <ol class="text-start mb-0">
+                        <li>システム管理者が申請内容を確認します（通常1-2営業日）</li>
+                        <li>承認後、登録メールアドレスに通知が送信されます</li>
+                        <li>通知メール内のリンクからログインしてください</li>
+                        <li>初回ログイン時に初期設定を行います</li>
+                    </ol>
+                </div>
+            </div>
+            <div class="mt-4">
+                <a href="#/login" class="btn btn-primary btn-lg" data-link>
+                    <i class="fas fa-arrow-left me-2"></i>ログインページに戻る
+                </a>
+            </div>
+        </div>
+    `;
+  }
+
+  async handleRegistrationError(err, userCredential, adminRequestId) {
+    console.log("RegisterAdmin: Starting error cleanup...");
+    
+    // Firebase Authユーザーのロールバック
+    if (userCredential?.user) {
+      try {
+        await userCredential.user.delete();
+        console.log("RegisterAdmin: Rolled back Firebase Auth user");
+      } catch (deleteError) {
+        console.error("RegisterAdmin: Failed to rollback Firebase Auth user:", deleteError);
+      }
+    }
+    
+    // 作成されたadmin_requestがあれば削除を試みる（ただし権限がない可能性が高い）
+    if (adminRequestId) {
+      try {
+        const db = getFirestore(this.app.auth.firebaseApp);
+        await deleteDoc(doc(db, "admin_requests", adminRequestId));
+        console.log("RegisterAdmin: Rolled back admin request");
+      } catch (deleteError) {
+        console.log("RegisterAdmin: Could not rollback admin request (expected):", deleteError);
+      }
+    }
+  }
+
+  getErrorMessage(err) {
+    // Firebase Auth エラー
+    if (err.code === 'auth/email-already-in-use') {
+      return "このメールアドレスは既に使用されています。";
+    } else if (err.code === 'auth/weak-password') {
+      return "パスワードは6文字以上で設定してください。";
+    } else if (err.code === 'auth/invalid-email') {
+      return "有効なメールアドレスを入力してください。";
+    } else if (err.code === 'auth/network-request-failed') {
+      return "ネットワークエラーが発生しました。インターネット接続を確認してください。";
+    }
+    
+    // Firestore エラー
+    if (err.code === 'permission-denied') {
+      return "アクセス権限がありません。システム管理者にお問い合わせください。";
+    } else if (err.code === 'unavailable') {
+      return "サービスが一時的に利用できません。しばらく待ってから再試行してください。";
+    } else if (err.code === 'deadline-exceeded') {
+      return "処理がタイムアウトしました。再試行してください。";
+    }
+    
+    // 一般的なエラー
+    return "登録処理中にエラーが発生しました。しばらく待ってから再試行してください。";
   }
 }
