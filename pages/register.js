@@ -246,6 +246,9 @@ export class RegisterPage {
     } catch (err) {
       console.error("Register: Registration error:", err);
       
+      // エラー時にFirebase Authユーザーが作成されている場合の削除は行わない
+      // 理由：招待承認プロセスで後から使用可能になる可能性があるため
+      
       let errorMessage = "登録処理中にエラーが発生しました。";
       
       if (err.code === 'auth/email-already-in-use') {
