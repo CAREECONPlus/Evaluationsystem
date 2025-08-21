@@ -502,189 +502,244 @@ export class API {
   }
 
   // --- Settings ---
-  async getSettings() {
-    try {
-      const currentUser = this.app.currentUser
+  // api.js の getSettings メソッドを安全版に修正
+
+async getSettings() {
+  try {
+    const currentUser = this.app.currentUser
+    
+    // ユーザー認証チェック
+    if (!currentUser) {
+      throw new Error("ユーザーが認証されていません")
+    }
+    
+    // 管理者権限チェック
+    if (currentUser.role !== 'admin') {
+      throw new Error("設定にアクセスする権限がありません")
+    }
+    
+    console.log("API: Current user data:", currentUser)
+    console.log("API: Current user UID:", currentUser.uid)
+    console.log("API: Current user tenantId:", currentUser.tenantId)
+    
+    // 🔧 修正: uid の安全性チェック追加
+    if (!currentUser.uid) {
+      console.error("API: currentUser.uid is undefined")
+      throw new Error("ユーザーIDが取得できません。再ログインしてください。")
+    }
+    
+    // 🔧 重要: tenantId の安全な取得と修復
+    let tenantId = currentUser.tenantId
+    
+    // tenantId が null、"null"文字列、または未定義の場合の修復
+    if (!tenantId || tenantId === "null" || tenantId === null || tenantId === undefined) {
+      console.warn("API: tenantId is null/invalid, attempting to resolve from tenants collection")
+      console.log("API: Searching for adminId:", currentUser.uid)
       
-      // ユーザー認証チェック
-      if (!currentUser) {
-        throw new Error("ユーザーが認証されていません")
-      }
-      
-      // 管理者権限チェック
-      if (currentUser.role !== 'admin') {
-        throw new Error("設定にアクセスする権限がありません")
-      }
-      
-      console.log("API: Current user data:", currentUser)
-      
-      // 🔧 重要: tenantId の安全な取得と修復
-      let tenantId = currentUser.tenantId
-      
-      // tenantId が null、"null"文字列、または未定義の場合の修復
-      if (!tenantId || tenantId === "null" || tenantId === null || tenantId === undefined) {
-        console.warn("API: tenantId is null/invalid, attempting to resolve from tenants collection")
+      // tenantsコレクションから管理者のtenantIdを検索
+      try {
+        const tenantsQuery = query(
+          collection(this.db, "tenants"),
+          where("adminId", "==", currentUser.uid)
+        )
         
-        // tenantsコレクションから管理者のtenantIdを検索
-        try {
-          const tenantsQuery = query(
-            collection(this.db, "tenants"),
-            where("adminId", "==", currentUser.uid)
-          )
-          const tenantsSnapshot = await getDocs(tenantsQuery)
+        console.log("API: Executing tenants query...")
+        const tenantsSnapshot = await getDocs(tenantsQuery)
+        console.log("API: Tenants query result - empty:", tenantsSnapshot.empty)
+        
+        if (!tenantsSnapshot.empty) {
+          const tenantDoc = tenantsSnapshot.docs[0]
+          tenantId = tenantDoc.id
+          const tenantData = tenantDoc.data()
           
-          if (!tenantsSnapshot.empty) {
-            const tenantDoc = tenantsSnapshot.docs[0]
-            tenantId = tenantDoc.id
-            
-            console.log("API: Resolved tenantId from tenants collection:", tenantId)
-            
-            // ユーザーのtenantIdを修復
-            const userRef = doc(this.db, "users", currentUser.uid)
-            await updateDoc(userRef, {
-              tenantId: tenantId,
-              updatedAt: serverTimestamp()
-            })
-            
-            // アプリのcurrentUserも更新
-            this.app.currentUser.tenantId = tenantId
-            
-            console.log("API: Updated user tenantId to:", tenantId)
-          } else {
-            throw new Error("テナント情報が見つかりません。管理者権限を確認してください。")
-          }
-        } catch (resolveError) {
-          console.error("API: Failed to resolve tenantId:", resolveError)
-          throw new Error("テナントIDの解決に失敗しました。システム管理者にお問い合わせください。")
+          console.log("API: Found tenant:", tenantId, tenantData)
+          console.log("API: Resolved tenantId from tenants collection:", tenantId)
+          
+          // ユーザーのtenantIdを修復
+          const userRef = doc(this.db, "users", currentUser.uid)
+          await updateDoc(userRef, {
+            tenantId: tenantId,
+            updatedAt: serverTimestamp()
+          })
+          
+          // アプリのcurrentUserも更新
+          this.app.currentUser.tenantId = tenantId
+          
+          console.log("API: Updated user tenantId to:", tenantId)
+          this.app.showSuccess("テナントIDを修復しました")
+        } else {
+          console.error("API: No tenant found for adminId:", currentUser.uid)
+          
+          // 🔧 新規追加: テナントが見つからない場合の自動作成
+          console.log("API: Creating new tenant for admin")
+          
+          const newTenantRef = doc(collection(this.db, "tenants"))
+          tenantId = newTenantRef.id
+          
+          await setDoc(newTenantRef, {
+            adminId: currentUser.uid,
+            companyName: currentUser.companyName || "新しい会社",
+            status: "active",
+            createdAt: serverTimestamp(),
+          })
+          
+          // ユーザーのtenantIdを設定
+          const userRef = doc(this.db, "users", currentUser.uid)
+          await updateDoc(userRef, {
+            tenantId: tenantId,
+            updatedAt: serverTimestamp()
+          })
+          
+          // アプリのcurrentUserも更新
+          this.app.currentUser.tenantId = tenantId
+          
+          console.log("API: Created new tenant:", tenantId)
+          this.app.showSuccess("新しいテナントを作成しました")
+        }
+      } catch (resolveError) {
+        console.error("API: Failed to resolve tenantId:", resolveError)
+        
+        // 🔧 修正: より具体的なエラーメッセージ
+        if (resolveError.code === "permission-denied") {
+          throw new Error("Firestoreへのアクセス権限がありません。セキュリティルールを確認してください。")
+        } else if (resolveError.message.includes("undefined")) {
+          throw new Error("ユーザー情報が不完全です。再ログインしてください。")
+        } else {
+          throw new Error(`テナントIDの解決に失敗しました: ${resolveError.message}`)
         }
       }
-      
-      // 最終チェック
-      if (!tenantId) {
-        throw new Error("テナントIDが設定されていません")
-      }
-
-      console.log("API: Loading settings for tenant:", tenantId)
-
-      const jobTypesQuery = query(
-        collection(this.db, "targetJobTypes"), 
-        where("tenantId", "==", tenantId)
-      )
-      
-      const periodsQuery = query(
-        collection(this.db, "evaluationPeriods"), 
-        where("tenantId", "==", tenantId)
-      )
-      
-      const structuresQuery = query(
-        collection(this.db, "evaluationStructures"), 
-        where("tenantId", "==", tenantId)
-      )
-
-      // タイムアウト付きでデータを取得
-      const [jobTypesSnap, periodsSnap, structuresSnap] = await this.executeWithTimeout(
-        Promise.all([
-          getDocs(jobTypesQuery),
-          getDocs(periodsQuery),
-          getDocs(structuresQuery),
-        ]),
-        "設定情報の取得"
-      )
-
-      const structures = {}
-      structuresSnap.docs.forEach((doc) => {
-        structures[doc.data().jobTypeId] = { id: doc.id, ...doc.data() }
-      })
-
-      const result = {
-        jobTypes: jobTypesSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
-        periods: periodsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
-        structures: structures,
-      }
-
-      console.log("API: Settings loaded successfully:", result)
-      
-      // 🔧 重要: 空のデータの場合はデフォルト構造を作成
-      if (result.jobTypes.length === 0 && result.periods.length === 0) {
-        console.log("API: No settings found, creating default structure")
-        
-        // デフォルト職種を作成
-        const defaultJobTypes = [
-          { name: "営業" },
-          { name: "作業員" },
-          { name: "管理職" }
-        ]
-        
-        // デフォルト評価期間を作成
-        const currentYear = new Date().getFullYear()
-        const defaultPeriods = [
-          { 
-            name: `${currentYear}年 上半期`,
-            startDate: `${currentYear}-04-01`,
-            endDate: `${currentYear}-09-30`
-          },
-          { 
-            name: `${currentYear}年 下半期`, 
-            startDate: `${currentYear}-10-01`,
-            endDate: `${currentYear+1}-03-31`
-          }
-        ]
-        
-        // デフォルトデータをFirestoreに保存
-        const batch = writeBatch(this.db)
-        
-        // 職種の作成
-        defaultJobTypes.forEach((jt) => {
-          const ref = doc(collection(this.db, "targetJobTypes"))
-          const id = ref.id
-          batch.set(ref, {
-            name: jt.name,
-            tenantId: tenantId,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          })
-          result.jobTypes.push({ id, name: jt.name, tenantId })
-        })
-        
-        // 評価期間の作成
-        defaultPeriods.forEach((period) => {
-          const ref = doc(collection(this.db, "evaluationPeriods"))
-          const id = ref.id
-          batch.set(ref, {
-            name: period.name,
-            startDate: period.startDate,
-            endDate: period.endDate,
-            tenantId: tenantId,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          })
-          result.periods.push({ id, ...period, tenantId })
-        })
-        
-        await batch.commit()
-        console.log("API: Default settings created successfully")
-        
-        // 成功メッセージ表示
-        this.app.showSuccess("初期設定を作成しました")
-      }
-      
-      return result
-      
-    } catch (error) {
-      console.error("API: Error in getSettings:", error)
-      
-      if (error.message.includes("timeout")) {
-        throw new Error("設定の読み込みがタイムアウトしました。ネットワーク接続を確認してください。")
-      }
-      
-      if (error.code === "permission-denied") {
-        throw new Error("設定データにアクセスする権限がありません。Firestoreのセキュリティルールを確認してください。")
-      }
-      
-      // 元のエラーをそのまま投げる（handleErrorは呼ばない）
-      throw error
     }
+    
+    // 最終チェック
+    if (!tenantId) {
+      throw new Error("テナントIDを設定できませんでした。システム管理者にお問い合わせください。")
+    }
+
+    console.log("API: Loading settings for tenant:", tenantId)
+
+    const jobTypesQuery = query(
+      collection(this.db, "targetJobTypes"), 
+      where("tenantId", "==", tenantId)
+    )
+    
+    const periodsQuery = query(
+      collection(this.db, "evaluationPeriods"), 
+      where("tenantId", "==", tenantId)
+    )
+    
+    const structuresQuery = query(
+      collection(this.db, "evaluationStructures"), 
+      where("tenantId", "==", tenantId)
+    )
+
+    // タイムアウト付きでデータを取得
+    console.log("API: Fetching settings data...")
+    const [jobTypesSnap, periodsSnap, structuresSnap] = await this.executeWithTimeout(
+      Promise.all([
+        getDocs(jobTypesQuery),
+        getDocs(periodsQuery),
+        getDocs(structuresQuery),
+      ]),
+      "設定情報の取得"
+    )
+
+    const structures = {}
+    structuresSnap.docs.forEach((doc) => {
+      structures[doc.data().jobTypeId] = { id: doc.id, ...doc.data() }
+    })
+
+    const result = {
+      jobTypes: jobTypesSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+      periods: periodsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+      structures: structures,
+    }
+
+    console.log("API: Settings loaded successfully:")
+    console.log("- Job types:", result.jobTypes.length)
+    console.log("- Periods:", result.periods.length)
+    console.log("- Structures:", Object.keys(result.structures).length)
+    
+    // 🔧 重要: 空のデータの場合はデフォルト構造を作成
+    if (result.jobTypes.length === 0 && result.periods.length === 0) {
+      console.log("API: No settings found, creating default structure")
+      
+      // デフォルト職種を作成
+      const defaultJobTypes = [
+        { name: "営業" },
+        { name: "作業員" },
+        { name: "管理職" }
+      ]
+      
+      // デフォルト評価期間を作成
+      const currentYear = new Date().getFullYear()
+      const defaultPeriods = [
+        { 
+          name: `${currentYear}年 上半期`,
+          startDate: `${currentYear}-04-01`,
+          endDate: `${currentYear}-09-30`
+        },
+        { 
+          name: `${currentYear}年 下半期`, 
+          startDate: `${currentYear}-10-01`,
+          endDate: `${currentYear+1}-03-31`
+        }
+      ]
+      
+      // デフォルトデータをFirestoreに保存
+      const batch = writeBatch(this.db)
+      
+      // 職種の作成
+      defaultJobTypes.forEach((jt) => {
+        const ref = doc(collection(this.db, "targetJobTypes"))
+        const id = ref.id
+        batch.set(ref, {
+          name: jt.name,
+          tenantId: tenantId,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        })
+        result.jobTypes.push({ id, name: jt.name, tenantId })
+      })
+      
+      // 評価期間の作成
+      defaultPeriods.forEach((period) => {
+        const ref = doc(collection(this.db, "evaluationPeriods"))
+        const id = ref.id
+        batch.set(ref, {
+          name: period.name,
+          startDate: period.startDate,
+          endDate: period.endDate,
+          tenantId: tenantId,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        })
+        result.periods.push({ id, ...period, tenantId })
+      })
+      
+      await batch.commit()
+      console.log("API: Default settings created successfully")
+      
+      // 成功メッセージ表示
+      this.app.showSuccess("初期設定を作成しました")
+    }
+    
+    return result
+    
+  } catch (error) {
+    console.error("API: Error in getSettings:", error)
+    
+    if (error.message.includes("timeout")) {
+      throw new Error("設定の読み込みがタイムアウトしました。ネットワーク接続を確認してください。")
+    }
+    
+    if (error.code === "permission-denied") {
+      throw new Error("設定データにアクセスする権限がありません。Firestoreのセキュリティルールを確認してください。")
+    }
+    
+    // 元のエラーをそのまま投げる（handleErrorは呼ばない）
+    throw error
   }
+}
 
   async getJobTypes() {
     try {
