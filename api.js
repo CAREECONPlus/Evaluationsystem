@@ -18,7 +18,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
 
 /**
- * API Service (修正版)
+ * API Service (完全修正版)
  * Firebase Firestoreとのすべての通信を処理します。
  */
 export class API {
@@ -77,6 +77,160 @@ export class API {
     throw error
   }
 
+  // 🔧 新規追加：tenantId安全取得関数
+  getTenantId() {
+    const currentUser = this.app.currentUser
+    if (!currentUser) return null
+    
+    let tenantId = currentUser.tenantId
+    
+    // "null" 文字列の場合はnullとして扱う
+    if (tenantId === "null" || tenantId === "undefined") {
+      return null
+    }
+    
+    return tenantId
+  }
+
+  // 🔧 新規追加：データ修復機能
+  async repairTenantData() {
+    try {
+      console.log("API: Starting tenant data repair process")
+      
+      const currentUser = this.app.currentUser
+      if (!currentUser || currentUser.role !== 'admin') {
+        return // 管理者以外は修復しない
+      }
+      
+      let needsRepair = false
+      let resolvedTenantId = null
+      
+      // Step 1: tenantId の修復
+      if (!currentUser.tenantId || currentUser.tenantId === "null") {
+        console.log("API: Repairing null tenantId")
+        needsRepair = true
+        
+        // tenantsコレクションから正しいtenantIdを取得
+        const tenantsQuery = query(
+          collection(this.db, "tenants"),
+          where("adminId", "==", currentUser.uid)
+        )
+        const tenantsSnapshot = await getDocs(tenantsQuery)
+        
+        if (!tenantsSnapshot.empty) {
+          resolvedTenantId = tenantsSnapshot.docs[0].id
+          
+          // ユーザーのtenantIdを修正
+          const userRef = doc(this.db, "users", currentUser.uid)
+          await updateDoc(userRef, {
+            tenantId: resolvedTenantId,
+            updatedAt: serverTimestamp()
+          })
+          
+          // アプリの currentUser を更新
+          this.app.currentUser.tenantId = resolvedTenantId
+          
+          console.log("API: Repaired tenantId:", resolvedTenantId)
+        }
+      } else {
+        resolvedTenantId = currentUser.tenantId
+      }
+      
+      if (!resolvedTenantId) {
+        console.error("API: Could not resolve tenantId")
+        return
+      }
+      
+      // Step 2: 他のコレクションの修復
+      await this.repairCollectionData(resolvedTenantId)
+      
+      if (needsRepair) {
+        this.app.showSuccess("データの修復が完了しました")
+        console.log("API: Tenant data repair completed")
+      }
+      
+    } catch (error) {
+      console.error("API: Error during tenant data repair:", error)
+      this.app.showWarning("データ修復中にエラーが発生しましたが、システムは動作します")
+    }
+  }
+
+  // 🔧 新規追加：コレクションデータの修復
+  async repairCollectionData(tenantId) {
+    try {
+      const batch = writeBatch(this.db)
+      let batchCount = 0
+      
+      // targetJobTypes の修復・作成
+      const jobTypesQuery = query(
+        collection(this.db, "targetJobTypes"),
+        where("tenantId", "==", tenantId)
+      )
+      const jobTypesSnapshot = await getDocs(jobTypesQuery)
+      
+      if (jobTypesSnapshot.empty) {
+        console.log("API: Creating default job types")
+        
+        const defaultJobTypes = ["営業", "作業員", "管理職", "技術職"]
+        defaultJobTypes.forEach((name) => {
+          const ref = doc(collection(this.db, "targetJobTypes"))
+          batch.set(ref, {
+            name: name,
+            tenantId: tenantId,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          })
+          batchCount++
+        })
+      }
+      
+      // evaluationPeriods の修復・作成
+      const periodsQuery = query(
+        collection(this.db, "evaluationPeriods"),
+        where("tenantId", "==", tenantId)
+      )
+      const periodsSnapshot = await getDocs(periodsQuery)
+      
+      if (periodsSnapshot.empty) {
+        console.log("API: Creating default evaluation periods")
+        
+        const currentYear = new Date().getFullYear()
+        const defaultPeriods = [
+          {
+            name: `${currentYear}年 上半期`,
+            startDate: `${currentYear}-04-01`,
+            endDate: `${currentYear}-09-30`
+          },
+          {
+            name: `${currentYear}年 下半期`,
+            startDate: `${currentYear}-10-01`,
+            endDate: `${currentYear + 1}-03-31`
+          }
+        ]
+        
+        defaultPeriods.forEach((period) => {
+          const ref = doc(collection(this.db, "evaluationPeriods"))
+          batch.set(ref, {
+            ...period,
+            tenantId: tenantId,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          })
+          batchCount++
+        })
+      }
+      
+      // バッチ実行
+      if (batchCount > 0) {
+        await batch.commit()
+        console.log("API: Repaired/created", batchCount, "documents")
+      }
+      
+    } catch (error) {
+      console.error("API: Error repairing collection data:", error)
+    }
+  }
+
   // --- User and Tenant Management ---
 
   async getUserProfile(uid) {
@@ -98,11 +252,10 @@ export class API {
       if (userDoc.exists()) {
         const userData = { id: userDoc.id, ...userDoc.data() }
         
-        // tenantIdがnullの場合の修復処理
-        if (!userData.tenantId && userData.role !== 'developer') {
+        // 🔧 修正: tenantId 自動修復
+        if ((!userData.tenantId || userData.tenantId === "null") && userData.role !== 'developer') {
           console.warn("API: User has null tenantId, attempting to resolve:", uid)
           
-          // 管理者の場合、テナントを検索して設定
           if (userData.role === 'admin') {
             try {
               const tenantsQuery = query(
@@ -123,6 +276,11 @@ export class API {
                 
                 userData.tenantId = tenantId
                 console.log("API: Resolved tenantId for admin:", tenantId)
+                
+                // 🔧 新規追加: 管理者ログイン時に自動修復実行
+                setTimeout(() => {
+                  this.repairTenantData()
+                }, 1000) // 1秒後に実行
               }
             } catch (resolveError) {
               console.error("API: Failed to resolve tenantId:", resolveError)
@@ -307,7 +465,7 @@ export class API {
       
       const invitationData = invitationDoc.data()
       
-      // 招待データからtenantIdを取得してユーザーに設定
+      // 🔧 修正: 招待データからtenantIdを取得してユーザーに設定
       if (invitationData.tenantId) {
         const userRef = doc(this.db, "users", userId)
         const batch = writeBatch(this.db)
@@ -344,200 +502,322 @@ export class API {
   }
 
   // --- Settings ---
-
   async getSettings() {
-  try {
-    const currentUser = this.app.currentUser
-    
-    // ユーザー認証チェック
-    if (!currentUser) {
-      throw new Error("ユーザーが認証されていません")
-    }
-    
-    // 管理者権限チェック
-    if (currentUser.role !== 'admin') {
-      throw new Error("設定にアクセスする権限がありません")
-    }
-    
-    console.log("API: Current user data:", currentUser)
-    
-    // 🔧 重要: tenantId の安全な取得と修復
-    let tenantId = currentUser.tenantId
-    
-    // tenantId が null、"null"文字列、または未定義の場合の修復
-    if (!tenantId || tenantId === "null" || tenantId === null || tenantId === undefined) {
-      console.warn("API: tenantId is null/invalid, attempting to resolve from tenants collection")
+    try {
+      const currentUser = this.app.currentUser
       
-      // tenantsコレクションから管理者のtenantIdを検索
-      try {
-        const tenantsQuery = query(
-          collection(this.db, "tenants"),
-          where("adminId", "==", currentUser.uid)
-        )
-        const tenantsSnapshot = await getDocs(tenantsQuery)
-        
-        if (!tenantsSnapshot.empty) {
-          const tenantDoc = tenantsSnapshot.docs[0]
-          tenantId = tenantDoc.id
-          
-          console.log("API: Resolved tenantId from tenants collection:", tenantId)
-          
-          // ユーザーのtenantIdを修復
-          const userRef = doc(this.db, "users", currentUser.uid)
-          await updateDoc(userRef, {
-            tenantId: tenantId,
-            updatedAt: serverTimestamp()
-          })
-          
-          // アプリのcurrentUserも更新
-          this.app.currentUser.tenantId = tenantId
-          
-          console.log("API: Updated user tenantId to:", tenantId)
-        } else {
-          throw new Error("テナント情報が見つかりません。管理者権限を確認してください。")
-        }
-      } catch (resolveError) {
-        console.error("API: Failed to resolve tenantId:", resolveError)
-        throw new Error("テナントIDの解決に失敗しました。システム管理者にお問い合わせください。")
+      // ユーザー認証チェック
+      if (!currentUser) {
+        throw new Error("ユーザーが認証されていません")
       }
-    }
-    
-    // 最終チェック
-    if (!tenantId) {
-      throw new Error("テナントIDが設定されていません")
-    }
-
-    console.log("API: Loading settings for tenant:", tenantId)
-
-    const jobTypesQuery = query(
-      collection(this.db, "targetJobTypes"), 
-      where("tenantId", "==", tenantId)
-    )
-    
-    const periodsQuery = query(
-      collection(this.db, "evaluationPeriods"), 
-      where("tenantId", "==", tenantId)
-    )
-    
-    const structuresQuery = query(
-      collection(this.db, "evaluationStructures"), 
-      where("tenantId", "==", tenantId)
-    )
-
-    // タイムアウト付きでデータを取得
-    const [jobTypesSnap, periodsSnap, structuresSnap] = await this.executeWithTimeout(
-      Promise.all([
-        getDocs(jobTypesQuery),
-        getDocs(periodsQuery),
-        getDocs(structuresQuery),
-      ]),
-      "設定情報の取得"
-    )
-
-    const structures = {}
-    structuresSnap.docs.forEach((doc) => {
-      structures[doc.data().jobTypeId] = { id: doc.id, ...doc.data() }
-    })
-
-    const result = {
-      jobTypes: jobTypesSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
-      periods: periodsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
-      structures: structures,
-    }
-
-    console.log("API: Settings loaded successfully:", result)
-    
-    // 🔧 重要: 空のデータの場合はデフォルト構造を作成
-    if (result.jobTypes.length === 0 && result.periods.length === 0) {
-      console.log("API: No settings found, creating default structure")
       
-      // デフォルト職種を作成
-      const defaultJobTypes = [
-        { name: "営業" },
-        { name: "作業員" },
-        { name: "管理職" }
-      ]
+      // 管理者権限チェック
+      if (currentUser.role !== 'admin') {
+        throw new Error("設定にアクセスする権限がありません")
+      }
       
-      // デフォルト評価期間を作成
-      const currentYear = new Date().getFullYear()
-      const defaultPeriods = [
-        { 
-          name: `${currentYear}年 上半期`,
-          startDate: `${currentYear}-04-01`,
-          endDate: `${currentYear}-09-30`
-        },
-        { 
-          name: `${currentYear}年 下半期`, 
-          startDate: `${currentYear}-10-01`,
-          endDate: `${currentYear+1}-03-31`
+      console.log("API: Current user data:", currentUser)
+      
+      // 🔧 重要: tenantId の安全な取得と修復
+      let tenantId = currentUser.tenantId
+      
+      // tenantId が null、"null"文字列、または未定義の場合の修復
+      if (!tenantId || tenantId === "null" || tenantId === null || tenantId === undefined) {
+        console.warn("API: tenantId is null/invalid, attempting to resolve from tenants collection")
+        
+        // tenantsコレクションから管理者のtenantIdを検索
+        try {
+          const tenantsQuery = query(
+            collection(this.db, "tenants"),
+            where("adminId", "==", currentUser.uid)
+          )
+          const tenantsSnapshot = await getDocs(tenantsQuery)
+          
+          if (!tenantsSnapshot.empty) {
+            const tenantDoc = tenantsSnapshot.docs[0]
+            tenantId = tenantDoc.id
+            
+            console.log("API: Resolved tenantId from tenants collection:", tenantId)
+            
+            // ユーザーのtenantIdを修復
+            const userRef = doc(this.db, "users", currentUser.uid)
+            await updateDoc(userRef, {
+              tenantId: tenantId,
+              updatedAt: serverTimestamp()
+            })
+            
+            // アプリのcurrentUserも更新
+            this.app.currentUser.tenantId = tenantId
+            
+            console.log("API: Updated user tenantId to:", tenantId)
+          } else {
+            throw new Error("テナント情報が見つかりません。管理者権限を確認してください。")
+          }
+        } catch (resolveError) {
+          console.error("API: Failed to resolve tenantId:", resolveError)
+          throw new Error("テナントIDの解決に失敗しました。システム管理者にお問い合わせください。")
         }
-      ]
+      }
       
-      // デフォルトデータをFirestoreに保存
-      const batch = writeBatch(this.db)
+      // 最終チェック
+      if (!tenantId) {
+        throw new Error("テナントIDが設定されていません")
+      }
+
+      console.log("API: Loading settings for tenant:", tenantId)
+
+      const jobTypesQuery = query(
+        collection(this.db, "targetJobTypes"), 
+        where("tenantId", "==", tenantId)
+      )
       
-      // 職種の作成
-      defaultJobTypes.forEach((jt) => {
-        const ref = doc(collection(this.db, "targetJobTypes"))
-        const id = ref.id
-        batch.set(ref, {
-          name: jt.name,
-          tenantId: tenantId,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        })
-        result.jobTypes.push({ id, name: jt.name, tenantId })
+      const periodsQuery = query(
+        collection(this.db, "evaluationPeriods"), 
+        where("tenantId", "==", tenantId)
+      )
+      
+      const structuresQuery = query(
+        collection(this.db, "evaluationStructures"), 
+        where("tenantId", "==", tenantId)
+      )
+
+      // タイムアウト付きでデータを取得
+      const [jobTypesSnap, periodsSnap, structuresSnap] = await this.executeWithTimeout(
+        Promise.all([
+          getDocs(jobTypesQuery),
+          getDocs(periodsQuery),
+          getDocs(structuresQuery),
+        ]),
+        "設定情報の取得"
+      )
+
+      const structures = {}
+      structuresSnap.docs.forEach((doc) => {
+        structures[doc.data().jobTypeId] = { id: doc.id, ...doc.data() }
       })
+
+      const result = {
+        jobTypes: jobTypesSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+        periods: periodsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+        structures: structures,
+      }
+
+      console.log("API: Settings loaded successfully:", result)
       
-      // 評価期間の作成
-      defaultPeriods.forEach((period) => {
-        const ref = doc(collection(this.db, "evaluationPeriods"))
-        const id = ref.id
-        batch.set(ref, {
-          name: period.name,
-          startDate: period.startDate,
-          endDate: period.endDate,
-          tenantId: tenantId,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
+      // 🔧 重要: 空のデータの場合はデフォルト構造を作成
+      if (result.jobTypes.length === 0 && result.periods.length === 0) {
+        console.log("API: No settings found, creating default structure")
+        
+        // デフォルト職種を作成
+        const defaultJobTypes = [
+          { name: "営業" },
+          { name: "作業員" },
+          { name: "管理職" }
+        ]
+        
+        // デフォルト評価期間を作成
+        const currentYear = new Date().getFullYear()
+        const defaultPeriods = [
+          { 
+            name: `${currentYear}年 上半期`,
+            startDate: `${currentYear}-04-01`,
+            endDate: `${currentYear}-09-30`
+          },
+          { 
+            name: `${currentYear}年 下半期`, 
+            startDate: `${currentYear}-10-01`,
+            endDate: `${currentYear+1}-03-31`
+          }
+        ]
+        
+        // デフォルトデータをFirestoreに保存
+        const batch = writeBatch(this.db)
+        
+        // 職種の作成
+        defaultJobTypes.forEach((jt) => {
+          const ref = doc(collection(this.db, "targetJobTypes"))
+          const id = ref.id
+          batch.set(ref, {
+            name: jt.name,
+            tenantId: tenantId,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          })
+          result.jobTypes.push({ id, name: jt.name, tenantId })
         })
-        result.periods.push({ id, ...period, tenantId })
-      })
+        
+        // 評価期間の作成
+        defaultPeriods.forEach((period) => {
+          const ref = doc(collection(this.db, "evaluationPeriods"))
+          const id = ref.id
+          batch.set(ref, {
+            name: period.name,
+            startDate: period.startDate,
+            endDate: period.endDate,
+            tenantId: tenantId,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          })
+          result.periods.push({ id, ...period, tenantId })
+        })
+        
+        await batch.commit()
+        console.log("API: Default settings created successfully")
+        
+        // 成功メッセージ表示
+        this.app.showSuccess("初期設定を作成しました")
+      }
       
-      await batch.commit()
-      console.log("API: Default settings created successfully")
+      return result
       
-      // 成功メッセージ表示
-      this.app.showSuccess("初期設定を作成しました")
+    } catch (error) {
+      console.error("API: Error in getSettings:", error)
+      
+      if (error.message.includes("timeout")) {
+        throw new Error("設定の読み込みがタイムアウトしました。ネットワーク接続を確認してください。")
+      }
+      
+      if (error.code === "permission-denied") {
+        throw new Error("設定データにアクセスする権限がありません。Firestoreのセキュリティルールを確認してください。")
+      }
+      
+      // 元のエラーをそのまま投げる（handleErrorは呼ばない）
+      throw error
     }
-    
-    return result
-    
-  } catch (error) {
-    console.error("API: Error in getSettings:", error)
-    
-    if (error.message.includes("timeout")) {
-      throw new Error("設定の読み込みがタイムアウトしました。ネットワーク接続を確認してください。")
-    }
-    
-    if (error.code === "permission-denied") {
-      throw new Error("設定データにアクセスする権限がありません。Firestoreのセキュリティルールを確認してください。")
-    }
-    
-    // 元のエラーをそのまま投げる（handleErrorは呼ばない）
-    throw error
   }
-}
+
+  async getJobTypes() {
+    try {
+      const tenantId = this.getTenantId()
+      if (!tenantId) {
+        throw new Error("テナントIDが設定されていません")
+      }
+      
+      const q = query(collection(this.db, "targetJobTypes"), where("tenantId", "==", tenantId))
+      const snapshot = await this.executeWithTimeout(
+        getDocs(q),
+        "職種リストの取得"
+      )
+      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+    } catch (error) {
+      this.handleError(error, "職種リストの取得")
+    }
+  }
+
+  async getEvaluationStructure(jobTypeId) {
+    try {
+      const tenantId = this.getTenantId()
+      if (!tenantId) {
+        throw new Error("テナントIDが設定されていません")
+      }
+      
+      const q = query(
+        collection(this.db, "evaluationStructures"),
+        where("jobTypeId", "==", jobTypeId),
+        where("tenantId", "==", tenantId),
+      )
+      const snapshot = await this.executeWithTimeout(
+        getDocs(q),
+        `評価構造の取得 (jobTypeId: ${jobTypeId})`
+      )
+      if (snapshot.empty) return null
+      return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() }
+    } catch (error) {
+      this.handleError(error, `評価構造の取得 (jobTypeId: ${jobTypeId})`)
+    }
+  }
+
+  async saveSettings(settings) {
+    const batch = writeBatch(this.db)
+    
+    // 🔧 修正：安全なtenantId取得
+    let tenantId = this.getTenantId()
+    
+    if (!tenantId) {
+      throw new Error("テナントIDが設定されていません。ページを再読み込みしてください。")
+    }
+
+    try {
+      // 職種の保存
+      settings.jobTypes.forEach((jt) => {
+        const ref =
+          jt.id && !jt.id.startsWith("jt_")
+            ? doc(this.db, "targetJobTypes", jt.id)
+            : doc(collection(this.db, "targetJobTypes"))
+        batch.set(
+          ref,
+          {
+            name: jt.name,
+            tenantId: tenantId,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true },
+        )
+      })
+
+      // 評価期間の保存
+      settings.periods.forEach((period) => {
+        const ref =
+          period.id && !period.id.startsWith("p_")
+            ? doc(this.db, "evaluationPeriods", period.id)
+            : doc(collection(this.db, "evaluationPeriods"))
+        batch.set(
+          ref,
+          {
+            name: period.name,
+            startDate: period.startDate,
+            endDate: period.endDate,
+            tenantId: tenantId,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true },
+        )
+      })
+
+      // 評価構造の保存
+      Object.keys(settings.structures).forEach((jobTypeId) => {
+        const structure = settings.structures[jobTypeId]
+        if (structure && structure.categories) {
+          const ref =
+            structure.id && !structure.id.startsWith("struct_")
+              ? doc(this.db, "evaluationStructures", structure.id)
+              : doc(collection(this.db, "evaluationStructures"))
+          batch.set(
+            ref,
+            {
+              jobTypeId: jobTypeId,
+              categories: structure.categories,
+              tenantId: tenantId,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true },
+          )
+        }
+      })
+
+      await this.executeWithTimeout(
+        batch.commit(),
+        "設定の保存"
+      )
+    } catch (error) {
+      this.handleError(error, "設定の保存")
+    }
+  }
 
   // --- Goals Management ---
 
   async getGoals(userId, periodId) {
     try {
+      const tenantId = this.getTenantId()
+      if (!tenantId) {
+        throw new Error("テナントIDが設定されていません")
+      }
+      
       const q = query(
         collection(this.db, "qualitativeGoals"),
         where("userId", "==", userId),
         where("periodId", "==", periodId),
-        where("tenantId", "==", this.app.currentUser.tenantId),
+        where("tenantId", "==", tenantId),
       )
       const snapshot = await this.executeWithTimeout(
         getDocs(q),
@@ -590,9 +870,14 @@ export class API {
 
   async getGoalsByStatus(status) {
     try {
+      const tenantId = this.getTenantId()
+      if (!tenantId) {
+        throw new Error("テナントIDが設定されていません")
+      }
+      
       const q = query(
         collection(this.db, "qualitativeGoals"),
-        where("tenantId", "==", this.app.currentUser.tenantId),
+        where("tenantId", "==", tenantId),
         where("status", "==", status),
       )
       const snapshot = await this.executeWithTimeout(
@@ -631,7 +916,12 @@ export class API {
 
   async getEvaluations(filters = {}) {
     try {
-      let q = query(collection(this.db, "evaluations"), where("tenantId", "==", this.app.currentUser.tenantId))
+      const tenantId = this.getTenantId()
+      if (!tenantId) {
+        throw new Error("テナントIDが設定されていません")
+      }
+      
+      let q = query(collection(this.db, "evaluations"), where("tenantId", "==", tenantId))
 
       // フィルターがある場合は追加
       if (filters.targetUserId) {
@@ -808,12 +1098,12 @@ export class API {
       }
 
       // 通常のユーザーの場合
-      if (!currentUser.tenantId) throw new Error("tenantId is missing")
+      const tenantId = this.getTenantId()
+      if (!tenantId) throw new Error("tenantId is missing")
 
       const usersRef = collection(this.db, "users")
       const evaluationsRef = collection(this.db, "evaluations")
 
-      const tenantId = currentUser.tenantId
       const totalUsersQuery = query(usersRef, where("tenantId", "==", tenantId), where("status", "==", "active"))
       const completedQuery = query(
         evaluationsRef,
@@ -857,9 +1147,10 @@ export class API {
         q = query(collection(this.db, "evaluations"), limit(20))
       } else {
         // 通常のユーザーの場合
-        if (!currentUser.tenantId) throw new Error("tenantId is missing")
+        const tenantId = this.getTenantId()
+        if (!tenantId) throw new Error("tenantId is missing")
 
-        q = query(collection(this.db, "evaluations"), where("tenantId", "==", currentUser.tenantId), limit(20))
+        q = query(collection(this.db, "evaluations"), where("tenantId", "==", tenantId), limit(20))
       }
 
       const snapshot = await this.executeWithTimeout(
@@ -964,7 +1255,7 @@ export class API {
       const userData = userDoc.data()
       const companyName = userData?.companyName || "名称未設定"
       
-      // テナントIDを先に生成
+      // 🔧 修正: テナントIDを先に生成
       const tenantId = doc(collection(this.db, "tenants")).id
       const tenantRef = doc(this.db, "tenants", tenantId)
       
@@ -973,14 +1264,14 @@ export class API {
       
       const batch = writeBatch(this.db)
       
-      // ユーザーの更新（tenantIdを確実に設定）
+      // 🔧 修正: ユーザーの更新（tenantIdを確実に設定）
       batch.update(userRef, {
         status: "active",
-        tenantId: tenantId,
+        tenantId: tenantId,  // 明示的にtenantIdを設定
         updatedAt: serverTimestamp(),
       })
       
-      // テナントの作成
+      // 🔧 修正: テナントの作成
       batch.set(tenantRef, {
         adminId: userId,
         companyName: companyName,
@@ -988,7 +1279,7 @@ export class API {
         createdAt: serverTimestamp(),
       })
       
-      // global_users にも登録（マルチテナント対応）
+      // 🔧 新規追加: global_users にも登録（マルチテナント対応）
       if (userData.email) {
         const globalUserRef = doc(this.db, "global_users", userData.email)
         batch.set(globalUserRef, {
@@ -998,7 +1289,7 @@ export class API {
           companyName: companyName,
           role: "admin",
           status: "active",
-          tenantId: tenantId,
+          tenantId: tenantId,  // global_usersにもtenantIdを設定
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         })
