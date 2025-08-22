@@ -237,10 +237,10 @@ export class API {
     }
   }
 
-  // ===== User Management =====
+// ===== User Management =====
 
-/**
-   * テナント内のユーザー一覧を取得（修正版 - フィルタ機能統合）
+  /**
+   * テナント内のユーザー一覧を取得
    */
   async getUsers(statusFilter = null) {
     try {
