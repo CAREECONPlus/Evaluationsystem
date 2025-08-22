@@ -19,9 +19,10 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
 
 export class API {
-  constructor(auth) {
-    this.auth = auth;
-    this.db = getFirestore(auth.firebaseApp);
+  constructor(app) {
+    this.app = app;
+    this.auth = app.auth;
+    this.db = getFirestore(app.auth.firebaseApp);
     console.log("API: Initialized with shared Firestore instance from Auth");
   }
 
@@ -640,6 +641,72 @@ export class API {
     } catch (error) {
       console.error("API: Error saving evaluation structure:", error);
       this.handleError(error, '評価構造の保存');
+      throw error;
+    }
+  }
+
+  // ===== Validation Methods =====
+
+  /**
+   * メールアドレスの検証
+   */
+  validateEmail(email) {
+    if (!email || typeof email !== 'string') {
+      return false;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+  }
+
+  /**
+   * パスワードの検証
+   */
+  validatePassword(password) {
+    if (!password || typeof password !== 'string') {
+      return false;
+    }
+    
+    return password.length >= 6;
+  }
+
+  /**
+   * ユーザープロファイルを取得（auth.jsで使用）
+   */
+  async getUserProfile(uid) {
+    try {
+      console.log("API: User profile found:", Object);
+      console.log("API: User profile UID check:", uid);
+      
+      // まずusersコレクションから取得を試みる
+      const userDoc = await getDoc(doc(this.db, "users", uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        return {
+          id: uid,
+          uid: uid,
+          ...userData
+        };
+      }
+
+      // global_usersからも検索（メールベースなのでcurrentUserからメール取得）
+      if (this.auth.currentUser && this.auth.currentUser.email) {
+        const globalUserDoc = await getDoc(doc(this.db, "global_users", this.auth.currentUser.email));
+        if (globalUserDoc.exists()) {
+          const userData = globalUserDoc.data();
+          return {
+            id: this.auth.currentUser.email,
+            uid: uid,
+            ...userData
+          };
+        }
+      }
+
+      console.log("API: User profile not found for uid:", uid);
+      return null;
+
+    } catch (error) {
+      console.error("API: Error getting user profile:", error);
       throw error;
     }
   }
