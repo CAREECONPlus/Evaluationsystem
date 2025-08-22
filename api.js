@@ -119,7 +119,15 @@ export class API {
    */
   async getCurrentUserData() {
     try {
+      // まずアプリに保存されている現在のユーザー情報を確認
+      if (this.app && this.app.currentUser) {
+        console.log("API: Using cached current user data:", this.app.currentUser);
+        return this.app.currentUser;
+      }
+
+      // フォールバック: Firebase Authから直接取得
       if (!this.auth.currentUser) {
+        console.log("API: No authenticated user");
         return null;
       }
 
@@ -535,7 +543,234 @@ export class API {
     }
   }
 
-  // ===== Settings Management =====
+  // ===== Dashboard Management =====
+
+  /**
+   * ダッシュボード統計データを取得
+   */
+  async getDashboardStats() {
+    try {
+      console.log("API: Loading dashboard stats...");
+      
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("ユーザー情報またはテナント情報が見つかりません");
+      }
+
+      const tenantId = currentUser.tenantId;
+      console.log("API: Loading dashboard stats for tenant:", tenantId);
+
+      // 各統計データを並行取得
+      const [usersSnapshot, evaluationsSnapshot, goalsSnapshot] = await Promise.all([
+        getDocs(query(collection(this.db, "users"), where("tenantId", "==", tenantId))),
+        getDocs(query(collection(this.db, "evaluations"), where("tenantId", "==", tenantId))),
+        getDocs(query(collection(this.db, "qualitativeGoals"), where("tenantId", "==", tenantId)))
+      ]);
+
+      // 統計を計算
+      const stats = {
+        totalUsers: usersSnapshot.size,
+        activeUsers: 0,
+        totalEvaluations: evaluationsSnapshot.size,
+        completedEvaluations: 0,
+        totalGoals: goalsSnapshot.size,
+        completedGoals: 0
+      };
+
+      // ユーザー統計
+      usersSnapshot.forEach(doc => {
+        const userData = doc.data();
+        if (userData.status === 'active') {
+          stats.activeUsers++;
+        }
+      });
+
+      // 評価統計
+      evaluationsSnapshot.forEach(doc => {
+        const evalData = doc.data();
+        if (evalData.status === 'completed') {
+          stats.completedEvaluations++;
+        }
+      });
+
+      // 目標統計
+      goalsSnapshot.forEach(doc => {
+        const goalData = doc.data();
+        if (goalData.status === 'completed') {
+          stats.completedGoals++;
+        }
+      });
+
+      console.log("API: Dashboard stats loaded:", stats);
+      return stats;
+
+    } catch (error) {
+      console.error("API: Error loading dashboard stats:", error);
+      this.handleError(error, 'ダッシュボード統計の読み込み');
+      throw error;
+    }
+  }
+
+  // ===== Evaluation Management =====
+
+  /**
+   * 評価一覧を取得
+   */
+  async getEvaluations() {
+    try {
+      console.log("API: Loading evaluations...");
+      
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("ユーザー情報またはテナント情報が見つかりません");
+      }
+
+      const tenantId = currentUser.tenantId;
+      console.log("API: Loading evaluations for tenant:", tenantId);
+
+      // テナント内の評価を取得
+      const evaluationsQuery = query(
+        collection(this.db, "evaluations"),
+        where("tenantId", "==", tenantId),
+        orderBy("createdAt", "desc")
+      );
+
+      const evaluationsSnapshot = await getDocs(evaluationsQuery);
+      const evaluations = [];
+
+      evaluationsSnapshot.forEach((doc) => {
+        evaluations.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+
+      console.log("API: Evaluations loaded:", evaluations.length);
+      return evaluations;
+
+    } catch (error) {
+      console.error("API: Error loading evaluations:", error);
+      this.handleError(error, '評価一覧の読み込み');
+      throw error;
+    }
+  }
+
+  /**
+   * 特定の評価を取得
+   */
+  async getEvaluation(evaluationId) {
+    try {
+      console.log("API: Loading evaluation:", evaluationId);
+      
+      const evaluationDoc = await getDoc(doc(this.db, "evaluations", evaluationId));
+      
+      if (!evaluationDoc.exists()) {
+        throw new Error("評価が見つかりません");
+      }
+
+      const evaluation = {
+        id: evaluationDoc.id,
+        ...evaluationDoc.data()
+      };
+
+      console.log("API: Evaluation loaded:", evaluation);
+      return evaluation;
+
+    } catch (error) {
+      console.error("API: Error loading evaluation:", error);
+      this.handleError(error, '評価情報の読み込み');
+      throw error;
+    }
+  }
+
+  /**
+   * 評価を作成
+   */
+  async createEvaluation(evaluationData) {
+    try {
+      console.log("API: Creating evaluation:", evaluationData);
+
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      // undefinedフィールドを除外
+      const cleanData = {};
+      for (const [key, value] of Object.entries(evaluationData)) {
+        if (value !== undefined && value !== null && value !== '') {
+          cleanData[key] = value;
+        }
+      }
+
+      const evaluation = {
+        ...cleanData,
+        tenantId: currentUser.tenantId,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      const docRef = doc(collection(this.db, "evaluations"));
+      await setDoc(docRef, { ...evaluation, id: docRef.id });
+      
+      console.log("API: Evaluation created successfully:", docRef.id);
+      return { success: true, id: docRef.id };
+
+    } catch (error) {
+      console.error("API: Error creating evaluation:", error);
+      this.handleError(error, '評価の作成');
+      throw error;
+    }
+  }
+
+  /**
+   * 評価を更新
+   */
+  async updateEvaluation(evaluationId, updateData) {
+    try {
+      console.log("API: Updating evaluation:", evaluationId, updateData);
+
+      // undefinedフィールドを除外
+      const cleanData = {};
+      for (const [key, value] of Object.entries(updateData)) {
+        if (value !== undefined && value !== null && value !== '') {
+          cleanData[key] = value;
+        }
+      }
+
+      await updateDoc(doc(this.db, "evaluations", evaluationId), {
+        ...cleanData,
+        updatedAt: serverTimestamp()
+      });
+
+      console.log("API: Evaluation updated successfully");
+      return { success: true };
+
+    } catch (error) {
+      console.error("API: Error updating evaluation:", error);
+      this.handleError(error, '評価の更新');
+      throw error;
+    }
+  }
+
+  /**
+   * 評価を削除
+   */
+  async deleteEvaluation(evaluationId) {
+    try {
+      console.log("API: Deleting evaluation:", evaluationId);
+      
+      await deleteDoc(doc(this.db, "evaluations", evaluationId));
+
+      console.log("API: Evaluation deleted successfully");
+      return { success: true };
+
+    } catch (error) {
+      console.error("API: Error deleting evaluation:", error);
+      this.handleError(error, '評価の削除');
+      throw error;
+    }
+  }
 
   /**
    * テナントの設定データを取得
