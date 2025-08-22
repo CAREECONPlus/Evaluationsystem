@@ -510,36 +510,3 @@ export class I18n {
     }));
   }
 }
-
-// i18n.js の ja オブジェクトに以下を追加
-
-users: {
-  title: "ユーザー管理",
-  subtitle: "組織内のユーザーを管理します", 
-  invite_user: "ユーザーを招待",
-  total_users: "総ユーザー数",
-  active_users: "アクティブ",
-  pending_users: "承認待ち", 
-  admin_users: "管理者",
-  all_status: "すべてのステータス",
-  all_roles: "すべての役割",
-  active: "アクティブ",
-  inactive: "非アクティブ",
-  pending: "承認待ち",
-  role: "役割",
-  status: "ステータス",
-  invitation_message: "招待メッセージ（任意）",
-  send_invitation: "招待を送信",
-  edit_user: "ユーザー編集"
-},
-common: {
-  retry: "再試行",
-  refresh: "更新",
-  save: "保存",
-  cancel: "キャンセル",
-  delete: "削除",
-  edit: "編集",
-  actions: "操作",
-  created_at: "作成日",
-  back_to_login: "ログインページに戻る"
-}
