@@ -1,5 +1,5 @@
 /**
- * API Module - Firestore operations (Complete Version)
+ * API Module - Firestore operations (Complete Version) - 修正版
  * API モジュール - Firestore操作（完全版）
  */
 import { 
@@ -240,11 +240,11 @@ export class API {
   // ===== User Management =====
 
   /**
-   * テナント内のユーザー一覧を取得
+   * テナント内のユーザー一覧を取得（修正版 - フィルタ機能統合）
    */
-  async getUsers() {
+  async getUsers(statusFilter = null) {
     try {
-      console.log("API: Loading users...");
+      console.log("API: Loading users...", statusFilter ? `with status filter: ${statusFilter}` : '');
       
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
@@ -264,10 +264,19 @@ export class API {
       const users = [];
 
       usersSnapshot.forEach((doc) => {
-        users.push({
+        const userData = {
           id: doc.id,
           ...doc.data()
-        });
+        };
+        
+        // ステータスフィルタが指定されている場合はフィルタリング
+        if (statusFilter) {
+          if (userData.status === statusFilter) {
+            users.push(userData);
+          }
+        } else {
+          users.push(userData);
+        }
       });
 
       // クライアント側でソート
@@ -283,6 +292,572 @@ export class API {
     } catch (error) {
       console.error("API: Error loading users:", error);
       this.handleError(error, 'ユーザー一覧の読み込み');
+      throw error;
+    }
+  }
+
+  /**
+   * アクティブユーザーのみ取得（便利メソッド）
+   */
+  async getActiveUsers() {
+    return await this.getUsers('active');
+  }
+
+  /**
+   * 部下ユーザーの取得（評価者用）
+   */
+  async getSubordinates() {
+    try {
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser) {
+        throw new Error("現在のユーザー情報が見つかりません");
+      }
+
+      const allUsers = await this.getUsers();
+      // 評価者IDが現在のユーザーのUIDと一致するユーザーを取得
+      const subordinates = allUsers.filter(user => user.evaluatorId === currentUser.uid);
+      
+      console.log("API: Subordinates loaded:", subordinates.length);
+      return subordinates;
+
+    } catch (error) {
+      console.error("API: Error loading subordinates:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 特定のユーザー情報を取得
+   */
+  async getUser(userId) {
+    try {
+      console.log("API: Loading user:", userId);
+      
+      const userDoc = await getDoc(doc(this.db, "users", userId));
+      
+      if (!userDoc.exists()) {
+        throw new Error("ユーザーが見つかりません");
+      }
+
+      const userData = {
+        id: userDoc.id,
+        ...userDoc.data()
+      };
+
+      console.log("API: User loaded:", userData);
+      return userData;
+
+    } catch (error) {
+      console.error("API: Error loading user:", error);
+      this.handleError(error, 'ユーザー情報の読み込み');
+      throw error;
+    }
+  }
+
+  /**
+   * ユーザー情報を更新
+   */
+  async updateUser(userId, updateData) {
+    try {
+      console.log("API: Updating user:", userId, updateData);
+      
+      const userRef = doc(this.db, "users", userId);
+      
+      // undefinedフィールドを除外
+      const cleanData = {};
+      for (const [key, value] of Object.entries(updateData)) {
+        if (value !== undefined && value !== null && value !== '') {
+          cleanData[key] = value;
+        }
+      }
+
+      await updateDoc(userRef, {
+        ...cleanData,
+        updatedAt: serverTimestamp()
+      });
+
+      // global_usersも更新（存在する場合）
+      const userDoc = await getDoc(userRef);
+      if (userDoc.exists() && userDoc.data().email) {
+        try {
+          const globalUserRef = doc(this.db, "global_users", userDoc.data().email);
+          await updateDoc(globalUserRef, {
+            ...cleanData,
+            updatedAt: serverTimestamp()
+          });
+        } catch (globalError) {
+          console.warn("API: Failed to update global_users:", globalError);
+        }
+      }
+
+      console.log("API: User updated successfully");
+      return { success: true };
+
+    } catch (error) {
+      console.error("API: Error updating user:", error);
+      this.handleError(error, 'ユーザー情報の更新');
+      throw error;
+    }
+  }
+
+  /**
+   * ユーザーを削除
+   */
+  async deleteUser(userId) {
+    try {
+      console.log("API: Deleting user:", userId);
+      
+      // ユーザー情報を取得してメールアドレスを確認
+      const userDoc = await getDoc(doc(this.db, "users", userId));
+      const userData = userDoc.exists() ? userDoc.data() : null;
+
+      // usersコレクションから削除
+      await deleteDoc(doc(this.db, "users", userId));
+
+      // global_usersからも削除（存在する場合）
+      if (userData && userData.email) {
+        try {
+          await deleteDoc(doc(this.db, "global_users", userData.email));
+        } catch (globalError) {
+          console.warn("API: Failed to delete from global_users:", globalError);
+        }
+      }
+
+      console.log("API: User deleted successfully");
+      return { success: true };
+
+    } catch (error) {
+      console.error("API: Error deleting user:", error);
+      this.handleError(error, 'ユーザーの削除');
+      throw error;
+    }
+  }
+
+  /**
+   * ユーザーのステータスを変更
+   */
+  async updateUserStatus(userId, status) {
+    try {
+      console.log("API: Updating user status:", userId, status);
+      
+      return await this.updateUser(userId, { status });
+
+    } catch (error) {
+      console.error("API: Error updating user status:", error);
+      this.handleError(error, 'ユーザーステータスの更新');
+      throw error;
+    }
+  }
+
+  /**
+   * ユーザーの役割を変更
+   */
+  async updateUserRole(userId, role) {
+    try {
+      console.log("API: Updating user role:", userId, role);
+      
+      return await this.updateUser(userId, { role });
+
+    } catch (error) {
+      console.error("API: Error updating user role:", error);
+      this.handleError(error, 'ユーザー役割の更新');
+      throw error;
+    }
+  }
+
+  // ===== Invitation Management =====
+
+  /**
+   * 招待を取得
+   */
+  async getInvitation(token) {
+    try {
+      console.log("API: Getting invitation:", token);
+      
+      const invitationDoc = await getDoc(doc(this.db, "invitations", token));
+      
+      if (!invitationDoc.exists()) {
+        return null;
+      }
+
+      const invitation = {
+        id: invitationDoc.id,
+        ...invitationDoc.data()
+      };
+
+      console.log("API: Invitation loaded:", invitation);
+      return invitation;
+
+    } catch (error) {
+      console.error("API: Error getting invitation:", error);
+      this.handleError(error, '招待情報の取得');
+      throw error;
+    }
+  }
+
+  /**
+   * 招待コードを検証
+   */
+  async validateInvitationCode(code) {
+    try {
+      console.log("API: Validating invitation code:", code);
+      
+      // 招待コードのクエリ
+      const invitationsQuery = query(
+        collection(this.db, "invitations"),
+        where("code", "==", code),
+        where("used", "==", false),
+        limit(1)
+      );
+
+      const invitationsSnapshot = await getDocs(invitationsQuery);
+      
+      if (invitationsSnapshot.empty) {
+        throw new Error("無効な招待コードです");
+      }
+
+      const invitationDoc = invitationsSnapshot.docs[0];
+      const invitation = {
+        id: invitationDoc.id,
+        ...invitationDoc.data()
+      };
+
+      // 有効期限チェック
+      if (new Date(invitation.expiresAt) < new Date()) {
+        throw new Error("招待コードの有効期限が切れています");
+      }
+
+      console.log("API: Invitation code validated:", invitation);
+      return invitation;
+
+    } catch (error) {
+      console.error("API: Error validating invitation code:", error);
+      this.handleError(error, '招待コードの検証');
+      throw error;
+    }
+  }
+
+  /**
+   * 招待を使用済みにマーク
+   */
+  async markInvitationAsUsed(invitationId, userId) {
+    try {
+      console.log("API: Marking invitation as used:", { invitationId, userId });
+
+      // 現在の招待データを取得
+      const invitationRef = doc(this.db, "invitations", invitationId);
+      const invitationDoc = await getDoc(invitationRef);
+      
+      if (!invitationDoc.exists()) {
+        throw new Error("招待が見つかりません");
+      }
+
+      const currentData = invitationDoc.data();
+      console.log("API: Current invitation data:", currentData);
+
+      // 最小限のフィールドのみ更新
+      const updateData = {
+        used: true,
+        usedBy: userId,
+        usedAt: serverTimestamp()
+      };
+
+      console.log("API: Updating with data:", updateData);
+
+      await updateDoc(invitationRef, updateData);
+      console.log("API: Invitation marked as used successfully");
+
+      return { success: true };
+
+    } catch (error) {
+      console.error("API: Error marking invitation as used:", error);
+      this.handleError(error, '招待の使用済み更新');
+      throw error;
+    }
+  }
+
+  /**
+   * 招待を作成
+   */
+  async createInvitation(invitationData) {
+    try {
+      console.log("API: Creating invitation:", invitationData);
+
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser) {
+        throw new Error("現在のユーザー情報が取得できません");
+      }
+
+      // undefinedフィールドを除外
+      const cleanData = {};
+      for (const [key, value] of Object.entries(invitationData)) {
+        if (value !== undefined && value !== null && value !== '') {
+          cleanData[key] = value;
+        }
+      }
+
+      // 招待IDを生成
+      const invitationRef = doc(collection(this.db, "invitations"));
+      
+      const invitation = {
+        id: invitationRef.id,
+        ...cleanData,
+        tenantId: currentUser.tenantId,
+        companyName: currentUser.companyName,
+        used: false,
+        createdAt: serverTimestamp(),
+        expiresAt: invitationData.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7日後
+      };
+
+      await setDoc(invitationRef, invitation);
+      
+      console.log("API: Invitation created successfully:", invitationRef.id);
+      return invitationRef.id; // トークンとしてIDを返す
+
+    } catch (error) {
+      console.error("API: Error creating invitation:", error);
+      this.handleError(error, '招待の作成');
+      throw error;
+    }
+  }
+
+  /**
+   * 管理者招待を作成（開発者用）
+   */
+  async createAdminInvitation(invitationData) {
+    try {
+      console.log("API: Creating admin invitation:", invitationData);
+
+      // 招待IDを生成
+      const invitationRef = doc(collection(this.db, "invitations"));
+      
+      const invitation = {
+        id: invitationRef.id,
+        ...invitationData,
+        type: 'admin',
+        used: false,
+        createdAt: serverTimestamp(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7日後
+      };
+
+      await setDoc(invitationRef, invitation);
+      
+      console.log("API: Admin invitation created successfully:", invitationRef.id);
+      return invitationRef.id;
+
+    } catch (error) {
+      console.error("API: Error creating admin invitation:", error);
+      this.handleError(error, '管理者招待の作成');
+      throw error;
+    }
+  }
+
+  // ===== Dashboard Management =====
+
+  /**
+   * ダッシュボード統計データを取得
+   */
+  async getDashboardStats() {
+    try {
+      console.log("API: Loading dashboard stats...");
+      
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("ユーザー情報またはテナント情報が見つかりません");
+      }
+
+      const tenantId = currentUser.tenantId;
+      console.log("API: Loading dashboard stats for tenant:", tenantId);
+
+      // 各統計データを並行取得
+      const [usersSnapshot, evaluationsSnapshot, goalsSnapshot] = await Promise.all([
+        getDocs(query(collection(this.db, "users"), where("tenantId", "==", tenantId))),
+        getDocs(query(collection(this.db, "evaluations"), where("tenantId", "==", tenantId))),
+        getDocs(query(collection(this.db, "qualitativeGoals"), where("tenantId", "==", tenantId)))
+      ]);
+
+      // 統計を計算
+      const stats = {
+        totalUsers: usersSnapshot.size,
+        activeUsers: 0,
+        totalEvaluations: evaluationsSnapshot.size,
+        completedEvaluations: 0,
+        totalGoals: goalsSnapshot.size,
+        completedGoals: 0
+      };
+
+      // ユーザー統計
+      usersSnapshot.forEach(doc => {
+        const userData = doc.data();
+        if (userData.status === 'active') {
+          stats.activeUsers++;
+        }
+      });
+
+      // 評価統計
+      evaluationsSnapshot.forEach(doc => {
+        const evalData = doc.data();
+        if (evalData.status === 'completed') {
+          stats.completedEvaluations++;
+        }
+      });
+
+      // 目標統計
+      goalsSnapshot.forEach(doc => {
+        const goalData = doc.data();
+        if (goalData.status === 'completed') {
+          stats.completedGoals++;
+        }
+      });
+
+      console.log("API: Dashboard stats loaded:", stats);
+      return stats;
+
+    } catch (error) {
+      console.error("API: Error loading dashboard stats:", error);
+      this.handleError(error, 'ダッシュボード統計の読み込み');
+      throw error;
+    }
+  }
+
+  /**
+   * 最近の評価を取得
+   */
+  async getRecentEvaluations() {
+    try {
+      console.log("API: Loading recent evaluations...");
+      
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("ユーザー情報またはテナント情報が見つかりません");
+      }
+
+      const tenantId = currentUser.tenantId;
+      
+      // 最近の評価を取得（最大10件）
+      const recentQuery = query(
+        collection(this.db, "evaluations"),
+        where("tenantId", "==", tenantId),
+        limit(10)
+      );
+
+      const recentSnapshot = await getDocs(recentQuery);
+      const recentEvaluations = [];
+
+      recentSnapshot.forEach((doc) => {
+        recentEvaluations.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+
+      // 更新日時でソート
+      recentEvaluations.sort((a, b) => {
+        const aTime = a.updatedAt ? (a.updatedAt.toDate ? a.updatedAt.toDate() : new Date(a.updatedAt)) : new Date(0);
+        const bTime = b.updatedAt ? (b.updatedAt.toDate ? b.updatedAt.toDate() : new Date(b.updatedAt)) : new Date(0);
+        return bTime - aTime; // 降順
+      });
+
+      console.log("API: Recent evaluations loaded:", recentEvaluations.length);
+      return recentEvaluations;
+
+    } catch (error) {
+      console.error("API: Error loading recent evaluations:", error);
+      return []; // エラー時は空配列を返す
+    }
+  }
+
+  /**
+   * 評価チャートデータを取得
+   */
+  async getEvaluationChartData() {
+    try {
+      console.log("API: Loading evaluation chart data...");
+      
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        return { labels: [], datasets: [] };
+      }
+
+      // サンプルチャートデータを生成（実際の実装では評価データから生成）
+      const chartData = {
+        labels: ['技術力', 'コミュニケーション', 'チームワーク', '問題解決', '安全意識'],
+        datasets: [{
+          label: 'あなたの評価',
+          data: [4.2, 3.8, 4.5, 3.9, 4.7],
+          borderColor: 'rgba(54, 162, 235, 1)',
+          backgroundColor: 'rgba(54, 162, 235, 0.2)'
+        }, {
+          label: '部署平均',
+          data: [3.8, 3.6, 4.1, 3.7, 4.3],
+          borderColor: 'rgba(255, 99, 132, 1)',
+          backgroundColor: 'rgba(255, 99, 132, 0.2)'
+        }]
+      };
+
+      console.log("API: Chart data loaded");
+      return chartData;
+
+    } catch (error) {
+      console.error("API: Error loading chart data:", error);
+      return { labels: [], datasets: [] };
+    }
+  }
+
+  // ===== Evaluation Management =====
+
+  /**
+   * 評価一覧を取得
+   */
+  async getEvaluations(filters = {}) {
+    try {
+      console.log("API: Loading evaluations...", filters);
+      
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("ユーザー情報またはテナント情報が見つかりません");
+      }
+
+      const tenantId = currentUser.tenantId;
+      console.log("API: Loading evaluations for tenant:", tenantId);
+
+      // クエリを構築
+      let evaluationsQuery = query(
+        collection(this.db, "evaluations"),
+        where("tenantId", "==", tenantId)
+      );
+
+      // フィルターを適用
+      if (filters.targetUserId) {
+        evaluationsQuery = query(evaluationsQuery, where("targetUserId", "==", filters.targetUserId));
+      }
+      if (filters.periodId) {
+        evaluationsQuery = query(evaluationsQuery, where("periodId", "==", filters.periodId));
+      }
+
+      const evaluationsSnapshot = await getDocs(evaluationsQuery);
+      const evaluations = [];
+
+      evaluationsSnapshot.forEach((doc) => {
+        evaluations.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+
+      // クライアント側でソート
+      evaluations.sort((a, b) => {
+        const aTime = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
+        const bTime = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
+        return bTime - aTime; // 降順
+      });
+
+      console.log("API: Evaluations loaded:", evaluations.length);
+      return evaluations;
+
+    } catch (error) {
+      console.error("API: Error loading evaluations:", error);
+      this.handleError(error, '評価一覧の読み込み');
       throw error;
     }
   }
