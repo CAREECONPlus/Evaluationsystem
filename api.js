@@ -228,11 +228,10 @@ export class API {
       const tenantId = currentUser.tenantId;
       console.log("API: Loading users for tenant:", tenantId);
 
-      // テナント内のユーザーを取得
+      // インデックス問題を回避するため、orderByを削除
       const usersQuery = query(
         collection(this.db, "users"),
-        where("tenantId", "==", tenantId),
-        orderBy("createdAt", "desc")
+        where("tenantId", "==", tenantId)
       );
 
       const usersSnapshot = await getDocs(usersQuery);
@@ -243,6 +242,13 @@ export class API {
           id: doc.id,
           ...doc.data()
         });
+      });
+
+      // クライアント側でソート
+      users.sort((a, b) => {
+        const aTime = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
+        const bTime = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
+        return bTime - aTime; // 降順
       });
 
       console.log("API: Users loaded:", users.length);
@@ -628,11 +634,10 @@ export class API {
       const tenantId = currentUser.tenantId;
       console.log("API: Loading evaluations for tenant:", tenantId);
 
-      // テナント内の評価を取得
+      // インデックス問題を回避するため、orderByを削除
       const evaluationsQuery = query(
         collection(this.db, "evaluations"),
-        where("tenantId", "==", tenantId),
-        orderBy("createdAt", "desc")
+        where("tenantId", "==", tenantId)
       );
 
       const evaluationsSnapshot = await getDocs(evaluationsQuery);
@@ -643,6 +648,13 @@ export class API {
           id: doc.id,
           ...doc.data()
         });
+      });
+
+      // クライアント側でソート
+      evaluations.sort((a, b) => {
+        const aTime = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
+        const bTime = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
+        return bTime - aTime; // 降順
       });
 
       console.log("API: Evaluations loaded:", evaluations.length);
