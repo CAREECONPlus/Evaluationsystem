@@ -244,15 +244,15 @@ class App {
     }
   }
 
-  async login(email, password) {
+async login(email, password) {
     try {
-      // バリデーション
-      if (!this.api?.validateEmail(email)) {
-        throw new Error("有効なメールアドレスを入力してください")
-      }
-      if (!this.api?.validatePassword(password)) {
-        throw new Error("パスワードは6文字以上で入力してください")
-      }
+      // Firebase Auth に直接委譲（バリデーションはFirebase側で実行）
+      await this.auth.login(email, password)
+    } catch (error) {
+      this.handleError(error, "Login")
+      throw error
+    }
+  }
 
       await this.auth.login(email, password)
     } catch (error) {
