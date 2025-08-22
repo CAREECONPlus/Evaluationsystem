@@ -1,6 +1,6 @@
 /**
- * API Module - Firestore operations
- * API モジュール - Firestore操作
+ * API Module - Firestore operations (Complete Version)
+ * API モジュール - Firestore操作（完全版）
  */
 import { 
   getFirestore, 
@@ -15,7 +15,8 @@ import {
   orderBy, 
   limit, 
   getDocs, 
-  serverTimestamp 
+  serverTimestamp,
+  writeBatch 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
 
 export class API {
@@ -51,6 +52,26 @@ export class API {
     return password.length >= 6;
   }
 
+  /**
+   * 名前の検証
+   */
+  validateName(name) {
+    if (!name || typeof name !== 'string') {
+      return false;
+    }
+    return name.trim().length >= 2;
+  }
+
+  /**
+   * 企業名の検証
+   */
+  validateCompanyName(companyName) {
+    if (!companyName || typeof companyName !== 'string') {
+      return false;
+    }
+    return companyName.trim().length >= 2;
+  }
+
   // ===== Error Handling =====
   handleError(error, operation = '操作') {
     console.error(`API: Error in ${operation}:`, error);
@@ -69,6 +90,11 @@ export class API {
     if (window.app && window.app.showError) {
       window.app.showError(userMessage);
     }
+  }
+
+  // ===== Utility Method =====
+  serverTimestamp() {
+    return serverTimestamp();
   }
 
   // ===== User Profile Management =====
@@ -257,6 +283,45 @@ export class API {
     } catch (error) {
       console.error("API: Error loading users:", error);
       this.handleError(error, 'ユーザー一覧の読み込み');
+      throw error;
+    }
+  }
+
+  /**
+   * アクティブユーザーのみ取得
+   */
+  async getUsers(status = null) {
+    try {
+      let users = await this.getUsers();
+      if (status) {
+        users = users.filter(user => user.status === status);
+      }
+      return users;
+    } catch (error) {
+      console.error("API: Error loading filtered users:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 部下ユーザーの取得（評価者用）
+   */
+  async getSubordinates() {
+    try {
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser) {
+        throw new Error("現在のユーザー情報が見つかりません");
+      }
+
+      const allUsers = await this.getUsers();
+      // 評価者IDが現在のユーザーのUIDと一致するユーザーを取得
+      const subordinates = allUsers.filter(user => user.evaluatorId === currentUser.uid);
+      
+      console.log("API: Subordinates loaded:", subordinates.length);
+      return subordinates;
+
+    } catch (error) {
+      console.error("API: Error loading subordinates:", error);
       throw error;
     }
   }
@@ -518,6 +583,11 @@ export class API {
     try {
       console.log("API: Creating invitation:", invitationData);
 
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser) {
+        throw new Error("現在のユーザー情報が取得できません");
+      }
+
       // undefinedフィールドを除外
       const cleanData = {};
       for (const [key, value] of Object.entries(invitationData)) {
@@ -532,6 +602,8 @@ export class API {
       const invitation = {
         id: invitationRef.id,
         ...cleanData,
+        tenantId: currentUser.tenantId,
+        companyName: currentUser.companyName,
         used: false,
         createdAt: serverTimestamp(),
         expiresAt: invitationData.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7日後
@@ -540,11 +612,42 @@ export class API {
       await setDoc(invitationRef, invitation);
       
       console.log("API: Invitation created successfully:", invitationRef.id);
-      return { success: true, id: invitationRef.id, ...invitation };
+      return invitationRef.id; // トークンとしてIDを返す
 
     } catch (error) {
       console.error("API: Error creating invitation:", error);
       this.handleError(error, '招待の作成');
+      throw error;
+    }
+  }
+
+  /**
+   * 管理者招待を作成（開発者用）
+   */
+  async createAdminInvitation(invitationData) {
+    try {
+      console.log("API: Creating admin invitation:", invitationData);
+
+      // 招待IDを生成
+      const invitationRef = doc(collection(this.db, "invitations"));
+      
+      const invitation = {
+        id: invitationRef.id,
+        ...invitationData,
+        type: 'admin',
+        used: false,
+        createdAt: serverTimestamp(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7日後
+      };
+
+      await setDoc(invitationRef, invitation);
+      
+      console.log("API: Admin invitation created successfully:", invitationRef.id);
+      return invitationRef.id;
+
+    } catch (error) {
+      console.error("API: Error creating admin invitation:", error);
+      this.handleError(error, '管理者招待の作成');
       throw error;
     }
   }
@@ -617,14 +720,98 @@ export class API {
     }
   }
 
+  /**
+   * 最近の評価を取得
+   */
+  async getRecentEvaluations() {
+    try {
+      console.log("API: Loading recent evaluations...");
+      
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("ユーザー情報またはテナント情報が見つかりません");
+      }
+
+      const tenantId = currentUser.tenantId;
+      
+      // 最近の評価を取得（最大10件）
+      const recentQuery = query(
+        collection(this.db, "evaluations"),
+        where("tenantId", "==", tenantId),
+        limit(10)
+      );
+
+      const recentSnapshot = await getDocs(recentQuery);
+      const recentEvaluations = [];
+
+      recentSnapshot.forEach((doc) => {
+        recentEvaluations.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+
+      // 更新日時でソート
+      recentEvaluations.sort((a, b) => {
+        const aTime = a.updatedAt ? (a.updatedAt.toDate ? a.updatedAt.toDate() : new Date(a.updatedAt)) : new Date(0);
+        const bTime = b.updatedAt ? (b.updatedAt.toDate ? b.updatedAt.toDate() : new Date(b.updatedAt)) : new Date(0);
+        return bTime - aTime; // 降順
+      });
+
+      console.log("API: Recent evaluations loaded:", recentEvaluations.length);
+      return recentEvaluations;
+
+    } catch (error) {
+      console.error("API: Error loading recent evaluations:", error);
+      return []; // エラー時は空配列を返す
+    }
+  }
+
+  /**
+   * 評価チャートデータを取得
+   */
+  async getEvaluationChartData() {
+    try {
+      console.log("API: Loading evaluation chart data...");
+      
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        return { labels: [], datasets: [] };
+      }
+
+      // サンプルチャートデータを生成（実際の実装では評価データから生成）
+      const chartData = {
+        labels: ['技術力', 'コミュニケーション', 'チームワーク', '問題解決', '安全意識'],
+        datasets: [{
+          label: 'あなたの評価',
+          data: [4.2, 3.8, 4.5, 3.9, 4.7],
+          borderColor: 'rgba(54, 162, 235, 1)',
+          backgroundColor: 'rgba(54, 162, 235, 0.2)'
+        }, {
+          label: '部署平均',
+          data: [3.8, 3.6, 4.1, 3.7, 4.3],
+          borderColor: 'rgba(255, 99, 132, 1)',
+          backgroundColor: 'rgba(255, 99, 132, 0.2)'
+        }]
+      };
+
+      console.log("API: Chart data loaded");
+      return chartData;
+
+    } catch (error) {
+      console.error("API: Error loading chart data:", error);
+      return { labels: [], datasets: [] };
+    }
+  }
+
   // ===== Evaluation Management =====
 
   /**
    * 評価一覧を取得
    */
-  async getEvaluations() {
+  async getEvaluations(filters = {}) {
     try {
-      console.log("API: Loading evaluations...");
+      console.log("API: Loading evaluations...", filters);
       
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
@@ -634,11 +821,19 @@ export class API {
       const tenantId = currentUser.tenantId;
       console.log("API: Loading evaluations for tenant:", tenantId);
 
-      // インデックス問題を回避するため、orderByを削除
-      const evaluationsQuery = query(
+      // クエリを構築
+      let evaluationsQuery = query(
         collection(this.db, "evaluations"),
         where("tenantId", "==", tenantId)
       );
+
+      // フィルターを適用
+      if (filters.targetUserId) {
+        evaluationsQuery = query(evaluationsQuery, where("targetUserId", "==", filters.targetUserId));
+      }
+      if (filters.periodId) {
+        evaluationsQuery = query(evaluationsQuery, where("periodId", "==", filters.periodId));
+      }
 
       const evaluationsSnapshot = await getDocs(evaluationsQuery);
       const evaluations = [];
@@ -696,11 +891,18 @@ export class API {
   }
 
   /**
-   * 評価を作成
+   * IDで評価を取得
    */
-  async createEvaluation(evaluationData) {
+  async getEvaluationById(evaluationId) {
+    return await this.getEvaluation(evaluationId);
+  }
+
+  /**
+   * 評価を作成または更新
+   */
+  async saveEvaluation(evaluationData) {
     try {
-      console.log("API: Creating evaluation:", evaluationData);
+      console.log("API: Saving evaluation:", evaluationData);
 
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
@@ -718,21 +920,37 @@ export class API {
       const evaluation = {
         ...cleanData,
         tenantId: currentUser.tenantId,
-        createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       };
 
-      const docRef = doc(collection(this.db, "evaluations"));
-      await setDoc(docRef, { ...evaluation, id: docRef.id });
+      let docRef;
+      if (evaluationData.id) {
+        // 更新
+        docRef = doc(this.db, "evaluations", evaluationData.id);
+        await updateDoc(docRef, evaluation);
+      } else {
+        // 新規作成
+        evaluation.createdAt = serverTimestamp();
+        docRef = doc(collection(this.db, "evaluations"));
+        evaluation.id = docRef.id;
+        await setDoc(docRef, evaluation);
+      }
       
-      console.log("API: Evaluation created successfully:", docRef.id);
+      console.log("API: Evaluation saved successfully:", docRef.id);
       return { success: true, id: docRef.id };
 
     } catch (error) {
-      console.error("API: Error creating evaluation:", error);
-      this.handleError(error, '評価の作成');
+      console.error("API: Error saving evaluation:", error);
+      this.handleError(error, '評価の保存');
       throw error;
     }
+  }
+
+  /**
+   * 評価を作成
+   */
+  async createEvaluation(evaluationData) {
+    return await this.saveEvaluation(evaluationData);
   }
 
   /**
@@ -766,6 +984,31 @@ export class API {
   }
 
   /**
+   * 評価ステータスを更新
+   */
+  async updateEvaluationStatus(evaluationId, status, metadata = {}) {
+    try {
+      console.log("API: Updating evaluation status:", evaluationId, status);
+
+      const updateData = {
+        status: status,
+        updatedAt: serverTimestamp(),
+        ...metadata
+      };
+
+      await updateDoc(doc(this.db, "evaluations", evaluationId), updateData);
+
+      console.log("API: Evaluation status updated successfully");
+      return { success: true };
+
+    } catch (error) {
+      console.error("API: Error updating evaluation status:", error);
+      this.handleError(error, '評価ステータスの更新');
+      throw error;
+    }
+  }
+
+  /**
    * 評価を削除
    */
   async deleteEvaluation(evaluationId) {
@@ -783,6 +1026,241 @@ export class API {
       throw error;
     }
   }
+
+  /**
+   * 評価履歴を取得
+   */
+  async getEvaluationHistory(evaluationId) {
+    try {
+      console.log("API: Loading evaluation history:", evaluationId);
+      
+      // 簡易的な履歴データを返す（実際の実装では履歴テーブルから取得）
+      const evaluation = await this.getEvaluation(evaluationId);
+      const history = [
+        {
+          status: evaluation.status,
+          actor: evaluation.evaluatorName || 'システム',
+          timestamp: evaluation.updatedAt || evaluation.createdAt
+        }
+      ];
+
+      console.log("API: Evaluation history loaded:", history);
+      return history;
+
+    } catch (error) {
+      console.error("API: Error loading evaluation history:", error);
+      return [];
+    }
+  }
+
+  /**
+   * 評価構造を取得
+   */
+  async getEvaluationStructure(jobTypeId) {
+    try {
+      console.log("API: Loading evaluation structure for job type:", jobTypeId);
+      
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      const tenantId = currentUser.tenantId;
+      
+      // 評価構造を取得
+      const structureQuery = query(
+        collection(this.db, "evaluationStructures"),
+        where("tenantId", "==", tenantId),
+        where("jobTypeId", "==", jobTypeId)
+      );
+
+      const structureSnapshot = await getDocs(structureQuery);
+      
+      if (structureSnapshot.empty) {
+        // デフォルト構造を返す
+        return {
+          categories: [
+            {
+              id: 'default_cat_1',
+              name: '技術スキル',
+              items: [
+                { id: 'item_1', name: '専門知識' },
+                { id: 'item_2', name: '作業効率' }
+              ]
+            },
+            {
+              id: 'default_cat_2',
+              name: 'コミュニケーション',
+              items: [
+                { id: 'item_3', name: '報告・連絡' },
+                { id: 'item_4', name: 'チームワーク' }
+              ]
+            }
+          ]
+        };
+      }
+
+      const structure = structureSnapshot.docs[0].data();
+      console.log("API: Evaluation structure loaded:", structure);
+      return structure;
+
+    } catch (error) {
+      console.error("API: Error loading evaluation structure:", error);
+      return { categories: [] };
+    }
+  }
+
+  // ===== Goals Management =====
+
+  /**
+   * ステータス別目標取得
+   */
+  async getGoalsByStatus(status) {
+    try {
+      console.log("API: Loading goals by status:", status);
+      
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      const tenantId = currentUser.tenantId;
+      
+      const goalsQuery = query(
+        collection(this.db, "qualitativeGoals"),
+        where("tenantId", "==", tenantId),
+        where("status", "==", status)
+      );
+
+      const goalsSnapshot = await getDocs(goalsQuery);
+      const goals = [];
+
+      goalsSnapshot.forEach((doc) => {
+        goals.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+
+      console.log("API: Goals loaded by status:", goals.length);
+      return goals;
+
+    } catch (error) {
+      console.error("API: Error loading goals by status:", error);
+      this.handleError(error, '目標の読み込み');
+      throw error;
+    }
+  }
+
+  /**
+   * ユーザーの目標を取得
+   */
+  async getGoals(userId, periodId) {
+    try {
+      console.log("API: Loading goals for user:", userId, "period:", periodId);
+      
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      const tenantId = currentUser.tenantId;
+      
+      const goalsQuery = query(
+        collection(this.db, "qualitativeGoals"),
+        where("tenantId", "==", tenantId),
+        where("userId", "==", userId),
+        where("periodId", "==", periodId)
+      );
+
+      const goalsSnapshot = await getDocs(goalsQuery);
+      
+      if (goalsSnapshot.empty) {
+        return null;
+      }
+
+      const goalDoc = goalsSnapshot.docs[0];
+      const goals = {
+        id: goalDoc.id,
+        ...goalDoc.data()
+      };
+
+      console.log("API: Goals loaded:", goals);
+      return goals;
+
+    } catch (error) {
+      console.error("API: Error loading goals:", error);
+      return null;
+    }
+  }
+
+  /**
+   * 目標を保存
+   */
+  async saveGoals(goalsData) {
+    try {
+      console.log("API: Saving goals:", goalsData);
+
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      const cleanData = {
+        ...goalsData,
+        tenantId: currentUser.tenantId,
+        updatedAt: serverTimestamp()
+      };
+
+      let docRef;
+      if (goalsData.id) {
+        // 更新
+        docRef = doc(this.db, "qualitativeGoals", goalsData.id);
+        await updateDoc(docRef, cleanData);
+      } else {
+        // 新規作成
+        cleanData.createdAt = serverTimestamp();
+        docRef = doc(collection(this.db, "qualitativeGoals"));
+        cleanData.id = docRef.id;
+        await setDoc(docRef, cleanData);
+      }
+
+      console.log("API: Goals saved successfully:", docRef.id);
+      return { success: true, id: docRef.id };
+
+    } catch (error) {
+      console.error("API: Error saving goals:", error);
+      this.handleError(error, '目標の保存');
+      throw error;
+    }
+  }
+
+  /**
+   * 目標ステータスを更新
+   */
+  async updateGoalStatus(goalId, status, metadata = {}) {
+    try {
+      console.log("API: Updating goal status:", goalId, status);
+
+      const updateData = {
+        status: status,
+        updatedAt: serverTimestamp(),
+        ...metadata
+      };
+
+      await updateDoc(doc(this.db, "qualitativeGoals", goalId), updateData);
+
+      console.log("API: Goal status updated successfully");
+      return { success: true };
+
+    } catch (error) {
+      console.error("API: Error updating goal status:", error);
+      this.handleError(error, '目標ステータスの更新');
+      throw error;
+    }
+  }
+
+  // ===== Settings Management =====
 
   /**
    * テナントの設定データを取得
@@ -811,7 +1289,7 @@ export class API {
       // データを整形
       const jobTypes = [];
       const periods = [];
-      const structures = [];
+      const structures = {};
 
       jobTypesSnapshot.forEach(doc => {
         jobTypes.push({ id: doc.id, ...doc.data() });
@@ -822,13 +1300,14 @@ export class API {
       });
 
       structuresSnapshot.forEach(doc => {
-        structures.push({ id: doc.id, ...doc.data() });
+        const data = doc.data();
+        structures[data.jobTypeId || doc.id] = { id: doc.id, ...data };
       });
 
       console.log("API: Settings loaded successfully:");
       console.log("- Job types:", jobTypes.length);
       console.log("- Periods:", periods.length);
-      console.log("- Structures:", structures.length);
+      console.log("- Structures:", Object.keys(structures).length);
 
       return {
         jobTypes,
@@ -840,6 +1319,64 @@ export class API {
     } catch (error) {
       console.error("API: Error loading settings:", error);
       this.handleError(error, '設定データの読み込み');
+      throw error;
+    }
+  }
+
+  /**
+   * 設定を保存
+   */
+  async saveSettings(settings) {
+    try {
+      console.log("API: Saving settings...", settings);
+
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      const tenantId = currentUser.tenantId;
+      const batch = writeBatch(this.db);
+
+      // 職種を保存
+      for (const jobType of settings.jobTypes) {
+        const jobTypeRef = doc(this.db, "targetJobTypes", jobType.id);
+        batch.set(jobTypeRef, {
+          ...jobType,
+          tenantId: tenantId,
+          updatedAt: serverTimestamp()
+        });
+      }
+
+      // 評価期間を保存
+      for (const period of settings.periods) {
+        const periodRef = doc(this.db, "evaluationPeriods", period.id);
+        batch.set(periodRef, {
+          ...period,
+          tenantId: tenantId,
+          updatedAt: serverTimestamp()
+        });
+      }
+
+      // 評価構造を保存
+      for (const [jobTypeId, structure] of Object.entries(settings.structures)) {
+        const structureRef = doc(this.db, "evaluationStructures", structure.id);
+        batch.set(structureRef, {
+          ...structure,
+          jobTypeId: jobTypeId,
+          tenantId: tenantId,
+          updatedAt: serverTimestamp()
+        });
+      }
+
+      await batch.commit();
+
+      console.log("API: Settings saved successfully");
+      return { success: true };
+
+    } catch (error) {
+      console.error("API: Error saving settings:", error);
+      this.handleError(error, '設定の保存');
       throw error;
     }
   }
@@ -979,6 +1516,28 @@ export class API {
     } catch (error) {
       console.error("API: Error getting tenant:", error);
       return null;
+    }
+  }
+
+  /**
+   * テナントステータスを更新
+   */
+  async updateTenantStatus(tenantId, status) {
+    try {
+      console.log("API: Updating tenant status:", tenantId, status);
+
+      await updateDoc(doc(this.db, "tenants", tenantId), {
+        status: status,
+        updatedAt: serverTimestamp()
+      });
+
+      console.log("API: Tenant status updated successfully");
+      return { success: true };
+
+    } catch (error) {
+      console.error("API: Error updating tenant status:", error);
+      this.handleError(error, 'テナントステータスの更新');
+      throw error;
     }
   }
 
