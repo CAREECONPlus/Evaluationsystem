@@ -866,7 +866,6 @@ export class API {
    * アクティブユーザーのみ取得
    */
   async getUsers(status = null) {
-async getusers（status = null）{
     try {
       let users = await this.getUsers();  // ← この行が無限再帰の原因
       if (status) {
