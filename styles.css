@@ -49,15 +49,17 @@ body {
     z-index: 1000;
 }
 
-/* === サイドバー === */
+/* === サイドバー改善版 === */
 .sidebar {
     position: fixed;
     top: var(--header-height);
     left: 0;
     width: var(--sidebar-width);
     height: calc(100vh - var(--header-height));
-    background: white;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(180deg, #2c3e50 0%, #3498db 100%);
+    color: #ffffff;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
     transition: transform var(--animation-duration) var(--animation-easing);
     z-index: 999;
     overflow-y: auto;
@@ -67,6 +69,157 @@ body {
     transform: translateX(-100%);
 }
 
+/* サイドバーヘッダー */
+.sidebar-header {
+    padding: 1.5rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-user-info {
+    color: #ffffff;
+}
+
+.sidebar-user-info .user-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 0.25rem;
+}
+
+.sidebar-user-info .user-role .badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+/* サイドバーナビゲーション */
+.sidebar-nav {
+    padding: 0.5rem 0;
+}
+
+.sidebar .nav-pills .nav-link {
+    color: rgba(255, 255, 255, 0.85);
+    padding: 0.75rem 1.25rem;
+    margin: 0.125rem 0.75rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    border-left: none;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.sidebar .nav-pills .nav-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar .nav-pills .nav-link.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-left: 3px solid #ffffff;
+}
+
+.sidebar .nav-pills .nav-link.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: linear-gradient(180deg, #ffffff, rgba(255, 255, 255, 0.7));
+    border-radius: 0 2px 2px 0;
+}
+
+/* ナビゲーションアイコン */
+.sidebar .nav-link .nav-icon {
+    width: 20px;
+    margin-right: 0.75rem;
+    text-align: center;
+    font-size: 1rem;
+    opacity: 0.9;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar .nav-link:hover .nav-icon,
+.sidebar .nav-link.active .nav-icon {
+    opacity: 1;
+}
+
+/* 区切り線 */
+.sidebar .nav-divider hr {
+    border-color: rgba(255, 255, 255, 0.2);
+    margin: 0.75rem 0;
+}
+
+/* サイドバーフッター */
+.sidebar-footer {
+    padding: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.05);
+    margin-top: auto;
+}
+
+.sidebar-footer .btn-outline-light {
+    border-color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.sidebar-footer .btn-outline-light:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.8);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.sidebar-footer .btn-danger {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    border: none;
+    color: #ffffff;
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.sidebar-footer .btn-danger:hover {
+    background: linear-gradient(135deg, #c0392b, #a93226);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(231, 76, 60, 0.4);
+}
+
+.sidebar-footer .text-muted {
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-size: 0.75rem;
+}
+
+/* モバイル用閉じるボタン */
+.sidebar-close-btn {
+    color: rgba(255, 255, 255, 0.8) !important;
+    padding: 0.25rem !important;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+}
+
+.sidebar-close-btn:hover {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+
+/* サイドバーバックドロップ */
 .sidebar-backdrop {
     position: fixed;
     top: 0;
@@ -84,25 +237,28 @@ body {
     opacity: 1;
 }
 
-.sidebar .nav-link {
-    color: #333;
-    padding: 12px 20px;
-    transition: all var(--animation-duration) var(--animation-easing);
-    border-left: 3px solid transparent;
-    text-decoration: none;
+/* スクロールバーのカスタマイズ */
+.sidebar::-webkit-scrollbar {
+    width: 4px;
 }
 
-.sidebar .nav-link:hover {
-    background: #f8f9fa;
-    border-left-color: var(--primary-color);
-    color: var(--primary-color);
+.sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
 }
 
-.sidebar .nav-link.active {
-    background: #e7f3ff;
-    color: var(--primary-color);
-    border-left-color: var(--primary-color);
-    font-weight: 600;
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Firefox用スクロールバー */
+.sidebar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
 }
 
 /* === メインコンテンツ === */
@@ -145,6 +301,32 @@ body {
     font-weight: 500;
     border-radius: 20px;
     font-size: 0.85em;
+}
+
+/* 役割バッジの色の改善 */
+.badge.bg-danger {
+    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+    color: #ffffff !important;
+}
+
+.badge.bg-info {
+    background: linear-gradient(135deg, #3498db, #2980b9) !important;
+    color: #ffffff !important;
+}
+
+.badge.bg-warning {
+    background: linear-gradient(135deg, #f39c12, #e67e22) !important;
+    color: #ffffff !important;
+}
+
+.badge.bg-secondary {
+    background: linear-gradient(135deg, #95a5a6, #7f8c8d) !important;
+    color: #ffffff !important;
+}
+
+.badge.bg-light {
+    background: rgba(255, 255, 255, 0.8) !important;
+    color: #2c3e50 !important;
 }
 
 /* === フォーム === */
@@ -292,40 +474,6 @@ body {
     border-radius: 0 0 12px 12px;
 }
 
-/* === モバイル対応 === */
-@media (max-width: 991px) {
-    .sidebar {
-        transform: translateX(-100%);
-    }
-    
-    .sidebar.show {
-        transform: translateX(0);
-    }
-    
-    .content {
-        margin-left: 0;
-        padding: 15px;
-    }
-}
-
-@media (max-width: 576px) {
-    .content {
-        padding: 10px;
-    }
-    
-    .card-body {
-        padding: 1rem;
-    }
-    
-    .btn {
-        padding: 8px 16px;
-    }
-    
-    .table-responsive {
-        border-radius: 8px;
-    }
-}
-
 /* === アクセシビリティ対応スタイル === */
 
 /* スキップリンク */
@@ -362,6 +510,19 @@ body {
 
 .keyboard-nav .btn:focus {
     outline-color: white;
+}
+
+/* アクセシビリティ改善 */
+.sidebar .nav-link:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
+}
+
+/* フォーカス時のアクセシビリティ改善 */
+.sidebar .nav-link:focus-visible {
+    outline: 3px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
+    background: rgba(255, 255, 255, 0.1);
 }
 
 /* ハイコントラストモード */
@@ -538,6 +699,48 @@ button, a, input, select, textarea, [role="button"] {
         transform: scale(4);
         opacity: 0;
     }
+}
+
+/* ホバー効果のアニメーション */
+@keyframes slideIn {
+    from {
+        transform: translateX(-4px);
+        opacity: 0.8;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.sidebar .nav-link:hover {
+    animation: slideIn 0.3s ease;
+}
+
+/* サイドバーアニメーション効果 */
+.sidebar .nav-link {
+    position: relative;
+}
+
+.sidebar .nav-link::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    width: 0;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.6);
+    transition: width 0.3s ease;
+    transform: translateY(-50%);
+}
+
+.sidebar .nav-link:hover::after {
+    width: 4px;
+}
+
+.sidebar .nav-link.active::after {
+    width: 6px;
+    background: #ffffff;
 }
 
 /* アニメーションクラス */
@@ -725,52 +928,74 @@ button, a, input, select, textarea, [role="button"] {
     color: white;
 }
 
-/* === カスタムスクロールバー === */
-.sidebar::-webkit-scrollbar {
-    width: 6px;
-}
-
-.sidebar::-webkit-scrollbar-track {
-    background: #f1f1f1;
-}
-
-.sidebar::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 3px;
-}
-
-.sidebar::-webkit-scrollbar-thumb:hover {
-    background: #a1a1a1;
-}
-
-/* === プリント対応 === */
-@media print {
-    .sidebar,
-    #header-container,
-    .btn,
-    .toast-container,
-    .sidebar-backdrop {
-        display: none !important;
+/* === モバイル対応 === */
+@media (max-width: 991px) {
+    .sidebar {
+        transform: translateX(-100%);
+        background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+        width: 280px;
+    }
+    
+    .sidebar.show {
+        transform: translateX(0);
+    }
+    
+    .sidebar-header {
+        padding: 1rem;
+    }
+    
+    .sidebar .nav-pills .nav-link {
+        margin: 0.125rem 0.5rem;
+        padding: 0.875rem 1rem;
+        font-size: 0.95rem;
     }
     
     .content {
-        margin: 0 !important;
-        padding: 0 !important;
+        margin-left: 0;
+        padding: 15px;
+    }
+}
+
+@media (max-width: 576px) {
+    .sidebar {
+        width: 260px;
     }
     
-    .card {
-        box-shadow: none !important;
-        page-break-inside: avoid;
-        border: 1px solid #ddd !important;
+    .sidebar .nav-pills .nav-link {
+        padding: 1rem 0.875rem;
     }
     
-    .table {
-        border-collapse: collapse !important;
+    .sidebar-user-info .user-name {
+        font-size: 0.9rem;
     }
     
-    .table th,
-    .table td {
-        border: 1px solid #ddd !important;
+    .content {
+        padding: 10px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+    }
+    
+    .table-responsive {
+        border-radius: 8px;
+    }
+}
+
+/* タッチデバイス用のタップターゲット拡大 */
+@media (hover: none) and (pointer: coarse) {
+    .sidebar .nav-pills .nav-link {
+        min-height: 48px;
+        padding: 1rem 1.25rem;
+    }
+    
+    .sidebar-footer .btn {
+        min-height: 48px;
+        padding: 0.75rem 1rem;
     }
 }
 
@@ -804,6 +1029,18 @@ button, a, input, select, textarea, [role="button"] {
         border-color: var(--border-color);
         color: var(--text-color);
     }
+    
+    .dark-mode-enabled .sidebar {
+        background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
+    }
+    
+    .dark-mode-enabled .sidebar .nav-pills .nav-link {
+        color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .dark-mode-enabled .sidebar .nav-pills .nav-link.active {
+        background: rgba(255, 255, 255, 0.15);
+    }
 }
 
 /* === レスポンシブタイポグラフィ === */
@@ -821,4 +1058,35 @@ button, a, input, select, textarea, [role="button"] {
     h3 { font-size: 1.25rem; }
     h4 { font-size: 1.1rem; }
     h5 { font-size: 1rem; }
+}
+
+/* === プリント対応 === */
+@media print {
+    .sidebar,
+    #header-container,
+    .btn,
+    .toast-container,
+    .sidebar-backdrop {
+        display: none !important;
+    }
+    
+    .content {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .card {
+        box-shadow: none !important;
+        page-break-inside: avoid;
+        border: 1px solid #ddd !important;
+    }
+    
+    .table {
+        border-collapse: collapse !important;
+    }
+    
+    .table th,
+    .table td {
+        border: 1px solid #ddd !important;
+    }
 }
