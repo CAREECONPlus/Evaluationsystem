@@ -1,12 +1,12 @@
 /**
- * Internationalization (i18n) Module - Complete Version with Built-in Translations
- * 国際化対応モジュール - 内蔵翻訳データ付き完全版（JSONエラー回避）
+ * Internationalization (i18n) Module - Complete Fixed Version
+ * 国際化対応モジュール - 完全修正版（日本語翻訳強化・JSONエラー回避）
  */
 
 // JSONファイル読み込み回避モード（trueでJSONファイルを無視して内蔵データを使用）
 const BYPASS_JSON_FILES = true;
 
-// 内蔵翻訳データ（JSONエラー完全回避）
+// 内蔵翻訳データ（完全な日本語翻訳付き）
 const BUILT_IN_TRANSLATIONS = {
   ja: {
     "app": {
@@ -17,6 +17,43 @@ const BUILT_IN_TRANSLATIONS = {
       "version": "バージョン",
       "copyright": "著作権"
     },
+    
+    // ===== ナビゲーション翻訳 =====
+    "nav": {
+      "dashboard": "ダッシュボード",
+      "evaluations": "評価一覧",
+      "evaluation": "評価入力",
+      "goal_approvals": "目標承認",
+      "users": "ユーザー管理",
+      "settings": "設定",
+      "logout": "ログアウト",
+      "home": "ホーム",
+      "profile": "プロフィール",
+      "help": "ヘルプ",
+      "about": "このシステムについて"
+    },
+    
+    // ===== ダッシュボード翻訳 =====
+    "dashboard": {
+      "title": "ダッシュボード",
+      "overview": "システム概要",
+      "total_users": "総ユーザー数",
+      "active_users": "アクティブユーザー",
+      "completed_evaluations": "完了済み評価",
+      "pending_evaluations": "保留中評価",
+      "recent_evaluations": "最近の評価",
+      "no_recent_evaluations": "最近の評価はありません",
+      "performance_chart": "パフォーマンスチャート",
+      "statistics": "統計情報",
+      "user_activity": "ユーザー活動",
+      "system_status": "システム状況",
+      "evaluation_progress": "評価進捗",
+      "monthly_stats": "月間統計",
+      "total_goals": "総目標数",
+      "completed_goals": "完了済み目標"
+    },
+
+    // ===== 認証関連翻訳 =====
     "auth": {
       "login": "ログイン",
       "logout": "ログアウト",
@@ -29,6 +66,8 @@ const BUILT_IN_TRANSLATIONS = {
       "sign_out": "サインアウト",
       "sign_up": "サインアップ"
     },
+    
+    // ===== エラーメッセージ翻訳 =====
     "errors": {
       "login_failed": "ログインに失敗しました",
       "invalid_email_password": "メールアドレスまたはパスワードが正しくありません",
@@ -47,6 +86,8 @@ const BUILT_IN_TRANSLATIONS = {
       "unauthorized": "認証が必要です",
       "forbidden": "アクセスが拒否されました"
     },
+    
+    // ===== ボタン翻訳 =====
     "buttons": {
       "login": "ログイン",
       "logout": "ログアウト",
@@ -89,6 +130,8 @@ const BUILT_IN_TRANSLATIONS = {
       "preview": "プレビュー",
       "print": "印刷"
     },
+    
+    // ===== ページ翻訳 =====
     "pages": {
       "dashboard": "ダッシュボード",
       "users": "ユーザー管理",
@@ -110,6 +153,33 @@ const BUILT_IN_TRANSLATIONS = {
       "history": "履歴",
       "logs": "ログ"
     },
+    
+    // ===== 共通翻訳 =====
+    "common": {
+      "language": "言語",
+      "account": "アカウント",
+      "demo_account": "デモアカウント",
+      "administrator": "管理者",
+      "management": "管理",
+      "system": "システム",
+      "profile": "プロフィール",
+      "settings": "設定",
+      "support": "サポート"
+    },
+
+    // ===== ユーザー関連翻訳 =====
+    "user": {
+      "profile": "プロフィール",
+      "account_info": "アカウント情報",
+      "demo_account": "デモアカウント",
+      "administrator": "管理者",
+      "evaluator": "評価者",
+      "worker": "作業員",
+      "manager": "管理者",
+      "supervisor": "監督者"
+    },
+
+    // ===== ナビゲーション翻訳 =====
     "navigation": {
       "home": "ホーム",
       "menu": "メニュー",
@@ -126,6 +196,8 @@ const BUILT_IN_TRANSLATIONS = {
       "main": "メイン",
       "content": "コンテンツ"
     },
+    
+    // ===== フォーム翻訳 =====
     "forms": {
       "name": "名前",
       "first_name": "名",
@@ -165,6 +237,8 @@ const BUILT_IN_TRANSLATIONS = {
       "image": "画像",
       "document": "文書"
     },
+    
+    // ===== ステータス翻訳 =====
     "statuses": {
       "active": "アクティブ",
       "inactive": "非アクティブ",
@@ -189,6 +263,8 @@ const BUILT_IN_TRANSLATIONS = {
       "resolved": "解決済み",
       "unresolved": "未解決"
     },
+    
+    // ===== メッセージ翻訳 =====
     "messages": {
       "success": "操作が正常に完了しました",
       "error": "エラーが発生しました",
@@ -220,6 +296,8 @@ const BUILT_IN_TRANSLATIONS = {
       "welcome_back": "おかえりなさい",
       "goodbye": "ありがとうございました"
     },
+    
+    // ===== バリデーション翻訳 =====
     "validation": {
       "required": "この項目は必須です",
       "email_invalid": "正しいメールアドレスを入力してください",
@@ -242,6 +320,8 @@ const BUILT_IN_TRANSLATIONS = {
       "date_invalid": "正しい日付を入力してください",
       "time_invalid": "正しい時刻を入力してください"
     },
+    
+    // ===== 日付・時刻翻訳 =====
     "date": {
       "today": "今日",
       "yesterday": "昨日",
@@ -275,6 +355,7 @@ const BUILT_IN_TRANSLATIONS = {
       "saturday": "土曜日",
       "sunday": "日曜日"
     },
+    
     "time": {
       "morning": "午前",
       "afternoon": "午後",
@@ -292,21 +373,8 @@ const BUILT_IN_TRANSLATIONS = {
       "later": "後",
       "duration": "期間"
     },
-    "units": {
-      "byte": "バイト",
-      "kb": "KB",
-      "mb": "MB",
-      "gb": "GB",
-      "tb": "TB",
-      "percent": "パーセント",
-      "degree": "度",
-      "celsius": "摂氏",
-      "fahrenheit": "華氏",
-      "meter": "メートル",
-      "kilometer": "キロメートル",
-      "centimeter": "センチメートル",
-      "millimeter": "ミリメートル"
-    },
+
+    // ===== 役割翻訳 =====
     "roles": {
       "admin": "管理者",
       "user": "ユーザー",
@@ -321,44 +389,43 @@ const BUILT_IN_TRANSLATIONS = {
       "manager": "管理者"
     }
   },
+  
+  // 英語翻訳
   en: {
     "app": {
       "title": "Evaluation Management System",
       "system_name": "Construction Industry Evaluation Management System",
       "loading": "Loading...",
-      "welcome": "Welcome",
-      "version": "Version",
-      "copyright": "Copyright"
+      "welcome": "Welcome"
+    },
+    "nav": {
+      "dashboard": "Dashboard",
+      "evaluations": "Evaluations",
+      "evaluation": "Evaluation Form",
+      "goal_approvals": "Goal Approvals",
+      "users": "User Management",
+      "settings": "Settings",
+      "logout": "Logout"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "total_users": "Total Users",
+      "completed_evaluations": "Completed Evaluations",
+      "pending_evaluations": "Pending Evaluations",
+      "recent_evaluations": "Recent Evaluations",
+      "no_recent_evaluations": "No recent evaluations",
+      "performance_chart": "Performance Chart"
     },
     "auth": {
       "login": "Login",
       "logout": "Logout",
       "email": "Email Address",
-      "password": "Password",
-      "remember_me": "Remember Me",
-      "forgot_password": "Forgot Password?",
-      "register": "Register",
-      "sign_in": "Sign In",
-      "sign_out": "Sign Out",
-      "sign_up": "Sign Up"
+      "password": "Password"
     },
     "errors": {
       "login_failed": "Login failed",
       "invalid_email_password": "Invalid email or password",
-      "account_inactive": "Account is inactive",
-      "email_already_in_use": "Email address is already in use",
-      "weak_password": "Password is too weak",
-      "login_failed_generic": "Login failed",
-      "network_error": "Network error occurred",
-      "permission_denied": "Permission denied",
-      "not_found": "Data not found",
-      "validation_failed": "Validation failed",
-      "server_error": "Server error occurred",
-      "timeout": "Request timed out",
-      "connection_failed": "Connection failed",
-      "invalid_data": "Invalid data",
-      "unauthorized": "Authentication required",
-      "forbidden": "Access denied"
+      "account_inactive": "Account is inactive"
     },
     "buttons": {
       "login": "Login",
@@ -366,272 +433,18 @@ const BUILT_IN_TRANSLATIONS = {
       "save": "Save",
       "cancel": "Cancel",
       "edit": "Edit",
-      "delete": "Delete",
-      "add": "Add",
-      "create": "Create",
-      "update": "Update",
-      "remove": "Remove",
-      "close": "Close",
-      "submit": "Submit",
-      "reset": "Reset",
-      "clear": "Clear",
-      "search": "Search",
-      "filter": "Filter",
-      "sort": "Sort",
-      "export": "Export",
-      "import": "Import",
-      "download": "Download",
-      "upload": "Upload",
-      "back": "Back",
-      "next": "Next",
-      "previous": "Previous",
-      "first": "First",
-      "last": "Last",
-      "confirm": "Confirm",
-      "ok": "OK",
-      "yes": "Yes",
-      "no": "No",
-      "apply": "Apply",
-      "refresh": "Refresh",
-      "reload": "Reload",
-      "copy": "Copy",
-      "paste": "Paste",
-      "cut": "Cut",
-      "select_all": "Select All",
-      "view": "View",
-      "preview": "Preview",
-      "print": "Print"
+      "delete": "Delete"
     },
     "pages": {
       "dashboard": "Dashboard",
       "users": "User Management",
       "evaluations": "Evaluations",
-      "settings": "Settings",
-      "reports": "Reports",
-      "profile": "Profile",
-      "help": "Help",
-      "about": "About",
-      "home": "Home",
-      "admin": "Admin",
-      "user_management": "User Management",
-      "evaluation_management": "Evaluation Management",
-      "system_settings": "System Settings",
+      "settings": "Settings"
+    },
+    "common": {
+      "language": "Language",
       "account": "Account",
-      "security": "Security",
-      "notifications": "Notifications",
-      "preferences": "Preferences",
-      "history": "History",
-      "logs": "Logs"
-    },
-    "navigation": {
-      "home": "Home",
-      "menu": "Menu",
-      "back": "Back",
-      "next": "Next",
-      "previous": "Previous",
-      "first": "First",
-      "last": "Last",
-      "goto": "Go to",
-      "breadcrumb": "Breadcrumb",
-      "sidebar": "Sidebar",
-      "header": "Header",
-      "footer": "Footer",
-      "main": "Main",
-      "content": "Content"
-    },
-    "forms": {
-      "name": "Name",
-      "first_name": "First Name",
-      "last_name": "Last Name",
-      "email": "Email",
-      "phone": "Phone",
-      "company": "Company",
-      "department": "Department",
-      "position": "Position",
-      "role": "Role",
-      "status": "Status",
-      "created_at": "Created At",
-      "updated_at": "Updated At",
-      "description": "Description",
-      "notes": "Notes",
-      "comments": "Comments",
-      "address": "Address",
-      "city": "City",
-      "state": "State",
-      "postal_code": "Postal Code",
-      "country": "Country",
-      "date": "Date",
-      "time": "Time",
-      "datetime": "Date Time",
-      "category": "Category",
-      "type": "Type",
-      "priority": "Priority",
-      "tags": "Tags",
-      "keywords": "Keywords",
-      "title": "Title",
-      "subject": "Subject",
-      "message": "Message",
-      "content": "Content",
-      "url": "URL",
-      "link": "Link",
-      "file": "File",
-      "image": "Image",
-      "document": "Document"
-    },
-    "statuses": {
-      "active": "Active",
-      "inactive": "Inactive",
-      "enabled": "Enabled",
-      "disabled": "Disabled",
-      "online": "Online",
-      "offline": "Offline",
-      "pending": "Pending",
-      "approved": "Approved",
-      "rejected": "Rejected",
-      "draft": "Draft",
-      "published": "Published",
-      "completed": "Completed",
-      "in_progress": "In Progress",
-      "cancelled": "Cancelled",
-      "suspended": "Suspended",
-      "archived": "Archived",
-      "deleted": "Deleted",
-      "new": "New",
-      "open": "Open",
-      "closed": "Closed",
-      "resolved": "Resolved",
-      "unresolved": "Unresolved"
-    },
-    "messages": {
-      "success": "Operation completed successfully",
-      "error": "An error occurred",
-      "warning": "Warning",
-      "info": "Information",
-      "confirm": "Are you sure you want to perform this action?",
-      "confirm_delete": "Are you sure you want to delete this item? This action cannot be undone.",
-      "confirm_save": "Do you want to save the changes?",
-      "confirm_cancel": "Do you want to discard the changes?",
-      "no_data": "No data available",
-      "loading": "Loading...",
-      "saving": "Saving...",
-      "deleting": "Deleting...",
-      "processing": "Processing...",
-      "uploading": "Uploading...",
-      "downloading": "Downloading...",
-      "connecting": "Connecting...",
-      "searching": "Searching...",
-      "updating": "Updating...",
-      "creating": "Creating...",
-      "please_wait": "Please wait...",
-      "operation_completed": "Operation completed",
-      "operation_failed": "Operation failed",
-      "changes_saved": "Changes saved",
-      "changes_discarded": "Changes discarded",
-      "item_created": "Item created",
-      "item_updated": "Item updated",
-      "item_deleted": "Item deleted",
-      "welcome_back": "Welcome back",
-      "goodbye": "Thank you"
-    },
-    "validation": {
-      "required": "This field is required",
-      "email_invalid": "Please enter a valid email address",
-      "password_min_length": "Password must be at least 6 characters long",
-      "password_max_length": "Password must be no more than 128 characters long",
-      "name_min_length": "Name must be at least 2 characters long",
-      "name_max_length": "Name must be no more than 50 characters long",
-      "phone_invalid": "Please enter a valid phone number",
-      "url_invalid": "Please enter a valid URL",
-      "numeric_only": "Please enter numbers only",
-      "alpha_only": "Please enter letters only",
-      "alphanumeric_only": "Please enter letters and numbers only",
-      "min_length": "Must be at least {{min}} characters long",
-      "max_length": "Must be no more than {{max}} characters long",
-      "min_value": "Must be at least {{min}}",
-      "max_value": "Must be no more than {{max}}",
-      "password_mismatch": "Passwords do not match",
-      "file_too_large": "File size is too large",
-      "file_type_invalid": "File type is not supported",
-      "date_invalid": "Please enter a valid date",
-      "time_invalid": "Please enter a valid time"
-    },
-    "date": {
-      "today": "Today",
-      "yesterday": "Yesterday",
-      "tomorrow": "Tomorrow",
-      "this_week": "This Week",
-      "last_week": "Last Week",
-      "next_week": "Next Week",
-      "this_month": "This Month",
-      "last_month": "Last Month",
-      "next_month": "Next Month",
-      "this_year": "This Year",
-      "last_year": "Last Year",
-      "next_year": "Next Year",
-      "january": "January",
-      "february": "February",
-      "march": "March",
-      "april": "April",
-      "may": "May",
-      "june": "June",
-      "july": "July",
-      "august": "August",
-      "september": "September",
-      "october": "October",
-      "november": "November",
-      "december": "December",
-      "monday": "Monday",
-      "tuesday": "Tuesday",
-      "wednesday": "Wednesday",
-      "thursday": "Thursday",
-      "friday": "Friday",
-      "saturday": "Saturday",
-      "sunday": "Sunday"
-    },
-    "time": {
-      "morning": "Morning",
-      "afternoon": "Afternoon",
-      "evening": "Evening",
-      "night": "Night",
-      "hour": "Hour",
-      "minute": "Minute",
-      "second": "Second",
-      "millisecond": "Millisecond",
-      "am": "AM",
-      "pm": "PM",
-      "timezone": "Time Zone",
-      "now": "Now",
-      "ago": "ago",
-      "later": "later",
-      "duration": "Duration"
-    },
-    "units": {
-      "byte": "Byte",
-      "kb": "KB",
-      "mb": "MB",
-      "gb": "GB",
-      "tb": "TB",
-      "percent": "Percent",
-      "degree": "Degree",
-      "celsius": "Celsius",
-      "fahrenheit": "Fahrenheit",
-      "meter": "Meter",
-      "kilometer": "Kilometer",
-      "centimeter": "Centimeter",
-      "millimeter": "Millimeter"
-    },
-    "roles": {
-      "admin": "Administrator",
-      "user": "User",
-      "moderator": "Moderator",
-      "editor": "Editor",
-      "viewer": "Viewer",
-      "guest": "Guest",
-      "developer": "Developer",
-      "evaluator": "Evaluator",
-      "worker": "Worker",
-      "supervisor": "Supervisor",
-      "manager": "Manager"
+      "profile": "Profile"
     }
   }
 };
@@ -759,182 +572,22 @@ export class I18n {
       return this.translations[lang];
     }
 
-    // 同じ言語の読み込みが進行中の場合は待機
-    if (this.loadPromises.has(lang)) {
-      console.log(`I18n: Waiting for existing load of ${lang}`);
-      return await this.loadPromises.get(lang);
-    }
-
-    // 読み込みプロミスを作成してキャッシュ
-    const loadPromise = this.loadTranslationFile(lang);
-    this.loadPromises.set(lang, loadPromise);
-
+    // JSONファイルモード（フォールバック）
     try {
-      const result = await loadPromise;
-      return result;
-    } finally {
-      this.loadPromises.delete(lang);
-    }
-  }
-
-  /**
-   * 翻訳ファイルの実際の読み込み処理
-   */
-  async loadTranslationFile(lang) {
-    // 内蔵翻訳モードでは外部ファイルを読み込まない
-    if (BYPASS_JSON_FILES) {
-      return this.translations[lang] || BUILT_IN_TRANSLATIONS[lang] || BUILT_IN_TRANSLATIONS[this.fallbackLang];
-    }
-
-    try {
-      console.log(`I18n: Loading translation file for language: ${lang}`);
-      
-      const possiblePaths = [
-        `./lang/${lang}.json`,
-        `./translations/${lang}.json`,
-        `./i18n/${lang}.json`,
-        `./locales/${lang}.json`
-      ];
-
-      let response = null;
-      let usedPath = null;
-
-      for (const path of possiblePaths) {
-        try {
-          response = await fetch(path);
-          if (response.ok) {
-            usedPath = path;
-            break;
-          }
-        } catch (fetchError) {
-          console.warn(`I18n: Failed to fetch from ${path}:`, fetchError.message);
-        }
+      const response = await fetch(`./lang/${lang}.json`);
+      if (response.ok) {
+        const translations = await response.json();
+        this.translations[lang] = translations;
+        return translations;
       }
-
-      if (!response || !response.ok) {
-        throw new Error(`Failed to fetch translation file for ${lang} from any path`);
-      }
-
-      console.log(`I18n: Successfully fetched ${lang} from ${usedPath}`);
-
-      const text = await response.text();
-      console.log(`I18n: Translation file loaded, size: ${text.length} characters`);
-      
-      if (!text.trim()) {
-        throw new Error(`Translation file for ${lang} is empty`);
-      }
-
-      // JSONパースを安全に実行
-      let translations;
-      try {
-        translations = this.parseJSON(text, lang);
-        
-        if (!translations || typeof translations !== 'object') {
-          throw new Error(`Translation file for ${lang} does not contain valid object`);
-        }
-        
-        console.log(`I18n: Successfully parsed translation file for ${lang}`);
-        
-      } catch (parseError) {
-        console.error(`I18n: JSON parse error for ${lang}:`, parseError);
-        
-        // パースエラーの詳細情報を表示
-        this.logParseError(parseError, text);
-        
-        // フォールバック処理：内蔵翻訳を使用
-        console.log(`I18n: Using built-in translations as fallback for ${lang}`);
-        translations = BUILT_IN_TRANSLATIONS[lang] || BUILT_IN_TRANSLATIONS[this.fallbackLang];
-      }
-      
-      this.translations[lang] = translations;
-      return translations;
-      
     } catch (error) {
-      console.error(`I18n: Could not load translation file for ${lang}:`, error);
-      
-      // 最終フォールバック：内蔵翻訳を使用
-      console.log(`I18n: Using built-in translations as final fallback for ${lang}`);
-      const fallbackTranslations = BUILT_IN_TRANSLATIONS[lang] || BUILT_IN_TRANSLATIONS[this.fallbackLang];
-      this.translations[lang] = fallbackTranslations;
-      return fallbackTranslations;
-    }
-  }
-
-  /**
-   * 安全なJSONパース
-   */
-  parseJSON(text, lang) {
-    let cleanText = text.trim();
-    
-    cleanText = cleanText
-      .replace(/,(\s*[}\]])/g, '$1')
-      .replace(/([}\]]),*\s*([{\[])/g, '$1$2') 
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      .replace(/\/\/.*$/gm, '')
-      .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
-      .replace(/^\uFEFF/, '');
-
-    if (!cleanText.startsWith('{') || !cleanText.endsWith('}')) {
-      throw new Error('JSON must start with { and end with }');
+      console.warn(`I18n: Failed to load JSON file for ${lang}, using built-in`);
     }
 
-    return JSON.parse(cleanText);
-  }
-
-  /**
-   * パースエラーの詳細ログ
-   */
-  logParseError(error, text) {
-    try {
-      if (error.message && error.message.includes('position')) {
-        const match = error.message.match(/position (\d+)/);
-        if (match) {
-          const position = parseInt(match[1]);
-          const lines = text.split('\n');
-          let currentPos = 0;
-          let lineNum = 0;
-          let colNum = 0;
-
-          for (let i = 0; i < lines.length; i++) {
-            if (currentPos + lines[i].length >= position) {
-              lineNum = i + 1;
-              colNum = position - currentPos + 1;
-              break;
-            }
-            currentPos += lines[i].length + 1;
-          }
-
-          console.error(`Parse error at line ${lineNum}, column ${colNum}:`);
-          
-          const contextStart = Math.max(0, position - 100);
-          const contextEnd = Math.min(text.length, position + 100);
-          const context = text.substring(contextStart, contextEnd);
-          
-          console.error('Context around error:');
-          console.error('---START CONTEXT---');
-          console.error(context);
-          console.error('---END CONTEXT---');
-
-          const startLine = Math.max(0, lineNum - 3);
-          const endLine = Math.min(lines.length, lineNum + 2);
-          
-          console.error('Lines around error:');
-          for (let i = startLine; i < endLine; i++) {
-            const marker = i === lineNum - 1 ? ' >>> ' : '     ';
-            console.error(`${i + 1}:${marker}${lines[i]}`);
-          }
-        }
-      }
-    } catch (logError) {
-      console.warn('Could not provide detailed parse error info:', logError);
-    }
-  }
-
-  /**
-   * 緊急用翻訳データ（レガシー互換性）
-   */
-  getEmergencyTranslations() {
-    return BUILT_IN_TRANSLATIONS.ja;
+    // 最終フォールバック：内蔵翻訳を使用
+    const fallbackTranslations = BUILT_IN_TRANSLATIONS[lang] || BUILT_IN_TRANSLATIONS[this.fallbackLang];
+    this.translations[lang] = fallbackTranslations;
+    return fallbackTranslations;
   }
 
   /**
@@ -1111,26 +764,10 @@ export class I18n {
       const keys = Object.keys(this.translations[this.lang]);
       console.log(`Translation sections for ${this.lang}:`, keys);
       console.log('Sample translations:');
-      console.log('  app.title:', this.t('app.title'));
-      console.log('  auth.login:', this.t('auth.login'));
-      console.log('  buttons.save:', this.t('buttons.save'));
+      console.log('  nav.dashboard:', this.t('nav.dashboard'));
+      console.log('  dashboard.total_users:', this.t('dashboard.total_users'));
+      console.log('  dashboard.pending_evaluations:', this.t('dashboard.pending_evaluations'));
     }
-  }
-
-  /**
-   * 内蔵翻訳モードの切り替え
-   */
-  setBuiltInMode(enabled) {
-    const oldMode = BYPASS_JSON_FILES;
-    // Note: BYPASS_JSON_FILES is const, but this method is for future extensibility
-    console.log(`I18n: Built-in mode change requested: ${oldMode} -> ${enabled}`);
-    
-    if (enabled && !oldMode) {
-      this.loadBuiltInTranslations();
-      console.log('I18n: Switched to built-in mode');
-    }
-    
-    return enabled;
   }
 
   /**
