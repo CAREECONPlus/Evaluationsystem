@@ -239,8 +239,8 @@ export class API {
 
 // ===== User Management =====
 
-  /**
-   * テナント内のユーザー一覧を取得
+/**
+   * テナント内のユーザー一覧を取得（無限再帰修正版）
    */
   async getUsers(statusFilter = null) {
     try {
@@ -254,7 +254,7 @@ export class API {
       const tenantId = currentUser.tenantId;
       console.log("API: Loading users for tenant:", tenantId);
 
-      // インデックス問題を回避するため、orderByを削除
+      // Firestoreクエリを構築（無限再帰を避けるため直接クエリ実行）
       const usersQuery = query(
         collection(this.db, "users"),
         where("tenantId", "==", tenantId)
@@ -269,7 +269,7 @@ export class API {
           ...doc.data()
         };
         
-        // ステータスフィルタが指定されている場合はフィルタリング
+        // ステータスフィルタリング（無限再帰を避けるためここで直接実行）
         if (statusFilter) {
           if (userData.status === statusFilter) {
             users.push(userData);
@@ -286,7 +286,7 @@ export class API {
         return bTime - aTime; // 降順
       });
 
-      console.log("API: Users loaded:", users.length);
+      console.log("API: Users loaded successfully:", users.length);
       return users;
 
     } catch (error) {
@@ -297,10 +297,17 @@ export class API {
   }
 
   /**
-   * アクティブユーザーのみ取得（便利メソッド）
+   * アクティブユーザーのみ取得（安全なラッパーメソッド）
    */
   async getActiveUsers() {
     return await this.getUsers('active');
+  }
+
+  /**
+   * 全ユーザー取得（明示的メソッド）
+   */
+  async getAllUsers() {
+    return await this.getUsers(null);
   }
 
   /**
@@ -313,8 +320,8 @@ export class API {
         throw new Error("現在のユーザー情報が見つかりません");
       }
 
-      const allUsers = await this.getUsers();
-      // 評価者IDが現在のユーザーのUIDと一致するユーザーを取得
+      // 直接getAllUsers()を呼んで無限再帰を避ける
+      const allUsers = await this.getAllUsers();
       const subordinates = allUsers.filter(user => user.evaluatorId === currentUser.uid);
       
       console.log("API: Subordinates loaded:", subordinates.length);
@@ -862,21 +869,78 @@ export class API {
     }
   }
 
-/**
-   * アクティブユーザーのみ取得
-   */
-  async getUsers(status = null) {
-    try {
-      let users = await this.getUsers();  // ← この行が無限再帰の原因
-      if (status) {
-        users = users.filter(user => user.status === status);
-      }
-      return users;
-    } catch (error) {
-      console.error("API: Error loading filtered users:", error);
-      throw error;
+**
+ * テナント内のユーザー一覧を取得（修正版）
+ */
+async getUsers(statusFilter = null) {
+  try {
+    console.log("API: Loading users...", statusFilter ? `with status filter: ${statusFilter}` : '');
+    
+    const currentUser = await this.getCurrentUserData();
+    if (!currentUser || !currentUser.tenantId) {
+      throw new Error("ユーザー情報またはテナント情報が見つかりません");
     }
+
+    const tenantId = currentUser.tenantId;
+    console.log("API: Loading users for tenant:", tenantId);
+
+    // Firestoreクエリを構築
+    const usersQuery = query(
+      collection(this.db, "users"),
+      where("tenantId", "==", tenantId)
+    );
+
+    const usersSnapshot = await getDocs(usersQuery);
+    const users = [];
+
+    usersSnapshot.forEach((doc) => {
+      const userData = {
+        id: doc.id,
+        ...doc.data()
+      };
+      
+      // ステータスフィルタリング
+      if (statusFilter) {
+        if (userData.status === statusFilter) {
+          users.push(userData);
+        }
+      } else {
+        users.push(userData);
+      }
+    });
+
+    // クライアント側でソート
+    users.sort((a, b) => {
+      const aTime = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
+      const bTime = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
+      return bTime - aTime; // 降順
+    });
+
+    console.log("API: Users loaded successfully:", users.length);
+    return users;
+
+  } catch (error) {
+    console.error("API: Error loading users:", error);
+    this.handleError(error, 'ユーザー一覧の読み込み');
+    throw error;
   }
+}
+
+// ✅ 便利メソッドの追加（オプション）
+
+/**
+ * アクティブユーザーのみ取得
+ */
+async getActiveUsers() {
+  return await this.getUsers('active');
+}
+
+/**
+ * 全ユーザー取得（明示的）
+ */
+async getAllUsers() {
+  return await this.getUsers(null);
+}
 
   /**
    * 部下ユーザーの取得（評価者用）
