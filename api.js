@@ -240,7 +240,7 @@ export class API {
 // ===== User Management =====
 
 /**
-   * テナント内のユーザー一覧を取得（無限再帰修正版）
+   * テナント内のユーザー一覧を取得（修正版）
    */
   async getUsers(statusFilter = null) {
     try {
@@ -254,7 +254,6 @@ export class API {
       const tenantId = currentUser.tenantId;
       console.log("API: Loading users for tenant:", tenantId);
 
-      // Firestoreクエリを構築（無限再帰を避けるため直接クエリ実行）
       const usersQuery = query(
         collection(this.db, "users"),
         where("tenantId", "==", tenantId)
@@ -269,7 +268,6 @@ export class API {
           ...doc.data()
         };
         
-        // ステータスフィルタリング（無限再帰を避けるためここで直接実行）
         if (statusFilter) {
           if (userData.status === statusFilter) {
             users.push(userData);
@@ -279,11 +277,10 @@ export class API {
         }
       });
 
-      // クライアント側でソート
       users.sort((a, b) => {
         const aTime = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
         const bTime = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
-        return bTime - aTime; // 降順
+        return bTime - aTime;
       });
 
       console.log("API: Users loaded successfully:", users.length);
@@ -297,7 +294,7 @@ export class API {
   }
 
   /**
-   * アクティブユーザーのみ取得（安全なラッパーメソッド）
+   * アクティブユーザーのみ取得
    */
   async getActiveUsers() {
     return await this.getUsers('active');
