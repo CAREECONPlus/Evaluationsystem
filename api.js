@@ -866,7 +866,7 @@ export class API {
     }
   }
 
-
+/**　
  * テナント内のユーザー一覧を取得（修正版）
  */
 async getUsers(statusFilter = null) {
