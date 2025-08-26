@@ -1,6 +1,6 @@
 /**
- * Internationalization (i18n) Module - Complete Fixed Version
- * 国際化対応モジュール - 完全修正版（日本語翻訳強化・JSONエラー回避）
+ * Internationalization (i18n) Module - Enhanced Fixed Version
+ * 国際化対応モジュール - 強化修正版
  */
 
 // JSONファイル読み込み回避モード（trueでJSONファイルを無視して内蔵データを使用）
@@ -24,13 +24,16 @@ const BUILT_IN_TRANSLATIONS = {
       "evaluations": "評価一覧",
       "evaluation": "評価入力",
       "goal_approvals": "目標承認",
+      "goal_setting": "目標設定",
       "users": "ユーザー管理",
       "settings": "設定",
       "logout": "ログアウト",
       "home": "ホーム",
       "profile": "プロフィール",
       "help": "ヘルプ",
-      "about": "このシステムについて"
+      "about": "このシステムについて",
+      "reports": "レポート",
+      "developer": "開発者管理"
     },
     
     // ===== ダッシュボード翻訳 =====
@@ -65,6 +68,43 @@ const BUILT_IN_TRANSLATIONS = {
       "sign_in": "サインイン",
       "sign_out": "サインアウト",
       "sign_up": "サインアップ"
+    },
+    
+    // ===== 評価関連翻訳 =====
+    "evaluations": {
+      "title": "評価一覧",
+      "form_title": "評価フォーム",
+      "new_evaluation": "新規評価",
+      "total_score": "総合スコア",
+      "target_user": "評価対象者",
+      "period": "評価期間",
+      "evaluation_period": "評価期間",
+      "target_info": "評価対象情報",
+      "confirm_submit": "評価を提出しますか？提出後は編集できません。",
+      "evaluator": "評価者"
+    },
+
+    "evaluation": {
+      "title": "評価入力",
+      "self_assessment": "自己評価",
+      "evaluator_assessment": "評価者評価",
+      "score": "スコア",
+      "comment": "コメント",
+      "submit": "提出",
+      "period": "評価期間",
+      "target": "評価対象者",
+      "evaluator": "評価者",
+      "category": "カテゴリ",
+      "item": "評価項目",
+      "job_type": "職種",
+      "target_info": "評価対象情報",
+      "select_target_user": "評価対象者を選択してください",
+      "select_period": "評価期間を選択してください",
+      "goal_achievement": "目標達成度評価",
+      "no_goals_set": "評価対象の目標が設定されていません。",
+      "confirm_submit": "評価を提出しますか？提出後は編集できません。",
+      "self_assessment_score": "自己評価点",
+      "evaluator_assessment_score": "評価者評価点"
     },
     
     // ===== エラーメッセージ翻訳 =====
@@ -164,7 +204,27 @@ const BUILT_IN_TRANSLATIONS = {
       "system": "システム",
       "profile": "プロフィール",
       "settings": "設定",
-      "support": "サポート"
+      "support": "サポート",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "delete": "削除",
+      "edit": "編集",
+      "add": "追加",
+      "search": "検索",
+      "loading": "読み込み中...",
+      "error": "エラー",
+      "success": "成功",
+      "confirm": "確認",
+      "yes": "はい",
+      "no": "いいえ",
+      "close": "閉じる",
+      "submit": "送信",
+      "reset": "リセット",
+      "back": "戻る",
+      "next": "次へ",
+      "previous": "前へ",
+      "select": "選択してください",
+      "clear": "クリア"
     },
 
     // ===== ユーザー関連翻訳 =====
@@ -179,214 +239,63 @@ const BUILT_IN_TRANSLATIONS = {
       "supervisor": "監督者"
     },
 
-    // ===== ナビゲーション翻訳 =====
-    "navigation": {
-      "home": "ホーム",
-      "menu": "メニュー",
-      "back": "戻る",
-      "next": "次へ",
-      "previous": "前へ",
-      "first": "最初",
-      "last": "最後",
-      "goto": "移動",
-      "breadcrumb": "パンくずリスト",
-      "sidebar": "サイドバー",
-      "header": "ヘッダー",
-      "footer": "フッター",
-      "main": "メイン",
-      "content": "コンテンツ"
-    },
-    
-    // ===== フォーム翻訳 =====
-    "forms": {
-      "name": "名前",
-      "first_name": "名",
-      "last_name": "姓",
-      "email": "メールアドレス",
-      "phone": "電話番号",
-      "company": "会社名",
-      "department": "部署",
-      "position": "役職",
+    // ===== ユーザー管理 =====
+    "users": {
+      "title": "ユーザー管理",
+      "invite": "新規ユーザー招待",
       "role": "役割",
       "status": "ステータス",
-      "created_at": "作成日",
-      "updated_at": "更新日",
-      "description": "説明",
-      "notes": "備考",
-      "comments": "コメント",
-      "address": "住所",
-      "city": "市区町村",
-      "state": "都道府県",
-      "postal_code": "郵便番号",
-      "country": "国",
-      "date": "日付",
-      "time": "時刻",
-      "datetime": "日時",
-      "category": "カテゴリ",
-      "type": "種類",
-      "priority": "優先度",
-      "tags": "タグ",
-      "keywords": "キーワード",
-      "title": "タイトル",
-      "subject": "件名",
-      "message": "メッセージ",
-      "content": "内容",
-      "url": "URL",
-      "link": "リンク",
-      "file": "ファイル",
-      "image": "画像",
-      "document": "文書"
-    },
-    
-    // ===== ステータス翻訳 =====
-    "statuses": {
-      "active": "アクティブ",
-      "inactive": "非アクティブ",
-      "enabled": "有効",
-      "disabled": "無効",
-      "online": "オンライン",
-      "offline": "オフライン",
-      "pending": "保留中",
-      "approved": "承認済み",
-      "rejected": "拒否",
-      "draft": "下書き",
-      "published": "公開済み",
-      "completed": "完了",
-      "in_progress": "進行中",
-      "cancelled": "キャンセル",
-      "suspended": "停止中",
-      "archived": "アーカイブ済み",
-      "deleted": "削除済み",
-      "new": "新規",
-      "open": "開く",
-      "closed": "閉じる",
-      "resolved": "解決済み",
-      "unresolved": "未解決"
-    },
-    
-    // ===== メッセージ翻訳 =====
-    "messages": {
-      "success": "操作が正常に完了しました",
-      "error": "エラーが発生しました",
-      "warning": "注意が必要です",
-      "info": "情報",
-      "confirm": "この操作を実行してもよろしいですか？",
-      "confirm_delete": "本当に削除してもよろしいですか？この操作は取り消せません。",
-      "confirm_save": "変更を保存しますか？",
-      "confirm_cancel": "変更を破棄してもよろしいですか？",
-      "no_data": "データがありません",
-      "loading": "読み込み中...",
-      "saving": "保存中...",
-      "deleting": "削除中...",
-      "processing": "処理中...",
-      "uploading": "アップロード中...",
-      "downloading": "ダウンロード中...",
-      "connecting": "接続中...",
-      "searching": "検索中...",
-      "updating": "更新中...",
-      "creating": "作成中...",
-      "please_wait": "お待ちください...",
-      "operation_completed": "操作が完了しました",
-      "operation_failed": "操作が失敗しました",
-      "changes_saved": "変更が保存されました",
-      "changes_discarded": "変更が破棄されました",
-      "item_created": "項目が作成されました",
-      "item_updated": "項目が更新されました",
-      "item_deleted": "項目が削除されました",
-      "welcome_back": "おかえりなさい",
-      "goodbye": "ありがとうございました"
-    },
-    
-    // ===== バリデーション翻訳 =====
-    "validation": {
-      "required": "この項目は必須です",
-      "email_invalid": "正しいメールアドレスを入力してください",
-      "password_min_length": "パスワードは6文字以上で入力してください",
-      "password_max_length": "パスワードは128文字以下で入力してください",
-      "name_min_length": "名前は2文字以上で入力してください",
-      "name_max_length": "名前は50文字以下で入力してください",
-      "phone_invalid": "正しい電話番号を入力してください",
-      "url_invalid": "正しいURLを入力してください",
-      "numeric_only": "数字のみ入力してください",
-      "alpha_only": "文字のみ入力してください",
-      "alphanumeric_only": "英数字のみ入力してください",
-      "min_length": "{{min}}文字以上で入力してください",
-      "max_length": "{{max}}文字以下で入力してください",
-      "min_value": "{{min}}以上の値を入力してください",
-      "max_value": "{{max}}以下の値を入力してください",
-      "password_mismatch": "パスワードが一致しません",
-      "file_too_large": "ファイルサイズが大きすぎます",
-      "file_type_invalid": "対応していないファイル形式です",
-      "date_invalid": "正しい日付を入力してください",
-      "time_invalid": "正しい時刻を入力してください"
-    },
-    
-    // ===== 日付・時刻翻訳 =====
-    "date": {
-      "today": "今日",
-      "yesterday": "昨日",
-      "tomorrow": "明日",
-      "this_week": "今週",
-      "last_week": "先週",
-      "next_week": "来週",
-      "this_month": "今月",
-      "last_month": "先月",
-      "next_month": "来月",
-      "this_year": "今年",
-      "last_year": "昨年",
-      "next_year": "来年",
-      "january": "1月",
-      "february": "2月",
-      "march": "3月",
-      "april": "4月",
-      "may": "5月",
-      "june": "6月",
-      "july": "7月",
-      "august": "8月",
-      "september": "9月",
-      "october": "10月",
-      "november": "11月",
-      "december": "12月",
-      "monday": "月曜日",
-      "tuesday": "火曜日",
-      "wednesday": "水曜日",
-      "thursday": "木曜日",
-      "friday": "金曜日",
-      "saturday": "土曜日",
-      "sunday": "日曜日"
-    },
-    
-    "time": {
-      "morning": "午前",
-      "afternoon": "午後",
-      "evening": "夕方",
-      "night": "夜",
-      "hour": "時",
-      "minute": "分",
-      "second": "秒",
-      "millisecond": "ミリ秒",
-      "am": "午前",
-      "pm": "午後",
-      "timezone": "タイムゾーン",
-      "now": "現在",
-      "ago": "前",
-      "later": "後",
-      "duration": "期間"
+      "created_at": "登録日",
+      "actions": "操作"
     },
 
-    // ===== 役割翻訳 =====
+    // ===== 目標管理 =====
+    "goals": {
+      "title": "目標設定",
+      "approvals_title": "目標承認"
+    },
+
+    // ===== 設定 =====
+    "settings": {
+      "title": "設定"
+    },
+
+    // ===== 開発者管理 =====
+    "developer": {
+      "title": "開発者管理"
+    },
+
+    // ===== ステータス =====
+    "status": {
+      "active": "アクティブ",
+      "inactive": "非アクティブ",
+      "pending": "保留中",
+      "completed": "完了"
+    },
+
+    // ===== 役割 =====
     "roles": {
       "admin": "管理者",
       "user": "ユーザー",
-      "moderator": "モデレーター",
-      "editor": "編集者",
-      "viewer": "閲覧者",
-      "guest": "ゲスト",
       "developer": "開発者",
       "evaluator": "評価者",
-      "worker": "作業員",
-      "supervisor": "監督者",
-      "manager": "管理者"
+      "worker": "作業員"
+    },
+
+    // ===== メッセージ =====
+    "messages": {
+      "success": "操作が正常に完了しました",
+      "error": "エラーが発生しました",
+      "loading": "読み込み中...",
+      "no_data": "データがありません"
+    },
+
+    // ===== フォーム =====
+    "forms": {
+      "name": "名前",
+      "email": "メールアドレス",
+      "password": "パスワード",
+      "confirm_password": "パスワード確認"
     }
   },
   
@@ -453,16 +362,15 @@ export class I18n {
   constructor() {
     this.translations = {};
     this.lang = this.getDefaultLanguage();
-    this.fallbackLang = 'en';
+    this.fallbackLang = 'ja'; // 日本語をデフォルトに
     this.isLoading = false;
     this.loadPromises = new Map();
+    this.observers = []; // UIの更新を監視するオブザーバー
     
     console.log("I18n: Initialized with language:", this.lang, "(Built-in mode:", BYPASS_JSON_FILES, ")");
     
     // 内蔵翻訳データを即座に読み込み
-    if (BYPASS_JSON_FILES) {
-      this.loadBuiltInTranslations();
-    }
+    this.loadBuiltInTranslations();
   }
 
   /**
@@ -473,10 +381,41 @@ export class I18n {
     
     Object.keys(BUILT_IN_TRANSLATIONS).forEach(lang => {
       this.translations[lang] = BUILT_IN_TRANSLATIONS[lang];
-      console.log(`I18n: Built-in translations loaded for ${lang}`);
+      console.log(`I18n: Built-in translations loaded for ${lang}`, 
+        Object.keys(this.translations[lang]).length, "sections");
     });
     
     console.log("I18n: All built-in translations loaded successfully");
+  }
+
+  /**
+   * UIの更新オブザーバーを追加
+   */
+  addObserver(callback) {
+    this.observers.push(callback);
+  }
+
+  /**
+   * UIの更新オブザーバーを削除
+   */
+  removeObserver(callback) {
+    const index = this.observers.indexOf(callback);
+    if (index > -1) {
+      this.observers.splice(index, 1);
+    }
+  }
+
+  /**
+   * すべてのオブザーバーに通知
+   */
+  notifyObservers() {
+    this.observers.forEach(callback => {
+      try {
+        callback();
+      } catch (error) {
+        console.warn("I18n: Observer callback error:", error);
+      }
+    });
   }
 
   /**
@@ -489,6 +428,10 @@ export class I18n {
       if (BYPASS_JSON_FILES) {
         // 内蔵翻訳を使用
         this.loadBuiltInTranslations();
+        
+        // 初期化後にUIを更新
+        this.updateUI();
+        
         console.log("I18n: Initialization completed (built-in mode)");
         return true;
       } else {
@@ -498,6 +441,9 @@ export class I18n {
         if (this.lang !== this.fallbackLang) {
           await this.loadTranslations(this.fallbackLang);
         }
+        
+        // 初期化後にUIを更新
+        this.updateUI();
         
         console.log("I18n: Initialization completed (file mode)");
         return true;
@@ -509,6 +455,7 @@ export class I18n {
       // 緊急時の処理
       console.log("I18n: Falling back to built-in translations");
       this.loadBuiltInTranslations();
+      this.updateUI();
       return false;
     }
   }
@@ -614,6 +561,9 @@ export class I18n {
       // UIを更新
       this.updateUI();
       
+      // オブザーバーに通知
+      this.notifyObservers();
+      
       console.log(`I18n: Language successfully set to ${lang}`);
       return true;
       
@@ -624,10 +574,13 @@ export class I18n {
   }
 
   /**
-   * 翻訳の取得
+   * 翻訳の取得（改良版）
    */
   t(key, params = {}) {
-    if (!key) return key;
+    if (!key) {
+      console.warn("I18n: Empty translation key provided");
+      return key;
+    }
 
     try {
       // 現在の言語から取得を試行
@@ -636,6 +589,11 @@ export class I18n {
       // 見つからない場合はフォールバック言語から取得
       if (translation === key && this.lang !== this.fallbackLang) {
         translation = this.getTranslationFromLang(key, this.fallbackLang);
+        
+        // フォールバックでも見つからない場合は警告
+        if (translation === key) {
+          console.warn(`I18n: Translation key not found: '${key}'`);
+        }
       }
       
       // パラメータの置換
@@ -652,21 +610,25 @@ export class I18n {
   }
 
   /**
-   * 指定言語から翻訳を取得
+   * 指定言語から翻訳を取得（改良版）
    */
   getTranslationFromLang(key, lang) {
     const translations = this.translations[lang];
     if (!translations) {
+      console.warn(`I18n: No translations loaded for language '${lang}'`);
       return key;
     }
 
     const keys = key.split('.');
     let value = translations;
 
-    for (const k of keys) {
+    for (let i = 0; i < keys.length; i++) {
+      const k = keys[i];
       if (value && typeof value === 'object' && k in value) {
         value = value[k];
       } else {
+        // デバッグ用：どこで失敗したかを記録
+        console.debug(`I18n: Translation path broken at '${keys.slice(0, i + 1).join('.')}' for key '${key}'`);
         return key;
       }
     }
@@ -686,42 +648,82 @@ export class I18n {
   }
 
   /**
-   * UI要素の更新
+   * UI要素の更新（改良版）
    */
   updateUI(container = document) {
     try {
+      // data-i18n属性を持つ要素を検索
       const elements = container.querySelectorAll('[data-i18n]');
+      let updatedCount = 0;
       
       elements.forEach(element => {
         const key = element.getAttribute('data-i18n');
         if (key) {
           const translation = this.t(key);
           
-          if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-            if (element.type === 'submit' || element.type === 'button') {
-              element.value = translation;
+          // 翻訳が見つかった場合のみ更新
+          if (translation !== key) {
+            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+              if (element.type === 'submit' || element.type === 'button') {
+                element.value = translation;
+              } else {
+                element.placeholder = translation;
+              }
             } else {
-              element.placeholder = translation;
+              element.textContent = translation;
             }
+            updatedCount++;
           } else {
-            element.textContent = translation;
+            // 翻訳が見つからない場合はデバッグログを出力
+            console.debug(`I18n: No translation found for element with key '${key}'`);
           }
         }
       });
 
+      // data-i18n-title属性を持つ要素を検索
       const titleElements = container.querySelectorAll('[data-i18n-title]');
       titleElements.forEach(element => {
         const key = element.getAttribute('data-i18n-title');
         if (key) {
-          element.title = this.t(key);
+          const translation = this.t(key);
+          if (translation !== key) {
+            element.title = translation;
+            updatedCount++;
+          }
         }
       });
 
-      console.log(`I18n: Updated ${elements.length + titleElements.length} UI elements`);
+      console.log(`I18n: Updated ${updatedCount} UI elements out of ${elements.length + titleElements.length} found`);
+      
+      // ページタイトルも更新
+      this.updatePageTitle();
       
     } catch (error) {
       console.error('I18n: Error updating UI:', error);
     }
+  }
+
+  /**
+   * ページタイトルの更新
+   */
+  updatePageTitle() {
+    const titleElement = document.querySelector('title');
+    if (titleElement && titleElement.dataset.i18n) {
+      const key = titleElement.dataset.i18n;
+      const translation = this.t(key);
+      if (translation !== key) {
+        titleElement.textContent = translation;
+      }
+    }
+  }
+
+  /**
+   * 動的に追加された要素の翻訳を更新
+   */
+  updateElement(element) {
+    if (!element) return;
+    
+    this.updateUI(element);
   }
 
   /**
@@ -750,6 +752,43 @@ export class I18n {
   }
 
   /**
+   * 自動翻訳の有効化（MutationObserver使用）
+   */
+  enableAutoTranslation() {
+    if (this.observer) {
+      this.observer.disconnect();
+    }
+
+    this.observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            this.updateUI(node);
+          }
+        });
+      });
+    });
+
+    this.observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+
+    console.log("I18n: Auto translation enabled");
+  }
+
+  /**
+   * 自動翻訳の無効化
+   */
+  disableAutoTranslation() {
+    if (this.observer) {
+      this.observer.disconnect();
+      this.observer = null;
+      console.log("I18n: Auto translation disabled");
+    }
+  }
+
+  /**
    * デバッグ用：読み込まれている翻訳データを表示
    */
   debug() {
@@ -766,7 +805,8 @@ export class I18n {
       console.log('Sample translations:');
       console.log('  nav.dashboard:', this.t('nav.dashboard'));
       console.log('  dashboard.total_users:', this.t('dashboard.total_users'));
-      console.log('  dashboard.pending_evaluations:', this.t('dashboard.pending_evaluations'));
+      console.log('  evaluations.form_title:', this.t('evaluations.form_title'));
+      console.log('  evaluations.target_info:', this.t('evaluations.target_info'));
     }
   }
 
@@ -774,7 +814,12 @@ export class I18n {
    * クリーンアップ
    */
   cleanup() {
+    this.disableAutoTranslation();
     this.loadPromises.clear();
+    this.observers = [];
     console.log('I18n: Cleaned up');
   }
 }
+
+// グローバルに公開
+window.I18n = I18n;
