@@ -175,20 +175,42 @@ export class HeaderComponent {
     console.log("Header: Initialized with mobile support");
   }
 
-  /**
-   * モバイルメニューの設定
-   */
-  setupMobileMenu() {
-    // CSS スタイルを追加
-    this.addMobileStyles();
-    
-    // 要素を取得
+ /**
+ * モバイルメニューの設定（修正版）
+ */
+setupMobileMenu() {
+  console.log("Header: Setting up mobile menu...");
+  
+  // CSS スタイルを追加
+  this.addMobileStyles();
+  
+  // DOM要素の取得を安全に行う
+  const findElements = () => {
     const hamburgerBtn = document.getElementById('sidebarToggle');
     const sidebar = document.getElementById('sidebar-container') || document.querySelector('.sidebar');
     const backdrop = document.getElementById('sidebar-backdrop');
+    
+    console.log("Header: Elements found:", {
+      hamburgerBtn: !!hamburgerBtn,
+      sidebar: !!sidebar, 
+      backdrop: !!backdrop
+    });
+    
+    return { hamburgerBtn, sidebar, backdrop };
+  };
+
+  // 要素が見つからない場合は少し待って再試行
+  const setupWithRetry = (retryCount = 0) => {
+    if (retryCount > 10) {
+      console.error("Header: Failed to find required elements after multiple attempts");
+      return;
+    }
+
+    const { hamburgerBtn, sidebar, backdrop } = findElements();
 
     if (!hamburgerBtn || !sidebar) {
-      console.warn("Header: Required elements for mobile menu not found");
+      console.warn(`Header: Required elements not found, retrying... (${retryCount + 1}/10)`);
+      setTimeout(() => setupWithRetry(retryCount + 1), 100);
       return;
     }
 
@@ -196,12 +218,14 @@ export class HeaderComponent {
     hamburgerBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      console.log("Header: Hamburger button clicked");
       this.toggleMobileMenu();
     });
 
     // バックドロップのクリック・キーボードイベント
     if (backdrop) {
       backdrop.addEventListener('click', () => {
+        console.log("Header: Backdrop clicked");
         this.closeMobileMenu();
       });
       
@@ -216,36 +240,12 @@ export class HeaderComponent {
     // グローバルイベント設定
     this.setupGlobalEvents();
     
-    console.log("Header: Mobile menu events configured");
-  }
+    console.log("Header: Mobile menu events configured successfully");
+  };
 
-  /**
-   * グローバルイベントの設定
-   */
-  setupGlobalEvents() {
-    // ESCキーでメニューを閉じる
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.isMobileMenuOpen) {
-        this.closeMobileMenu();
-      }
-    });
-
-    // ウィンドウリサイズ時にメニューを閉じる
-    window.addEventListener('resize', () => {
-      if (window.innerWidth >= 992 && this.isMobileMenuOpen) {
-        this.closeMobileMenu();
-      }
-    });
-
-    // メニュー外クリックで閉じる
-    document.addEventListener('click', (e) => {
-      if (this.isMobileMenuOpen && 
-          !e.target.closest('#sidebar-container') && 
-          !e.target.closest('#sidebarToggle')) {
-        this.closeMobileMenu();
-      }
-    });
-  }
+  // 初回セットアップ開始
+  setupWithRetry();
+}
 
   /**
    * キーボードナビゲーションの設定
