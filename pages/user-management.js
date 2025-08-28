@@ -510,15 +510,88 @@ export class UserManagementPage {
         this.saveUser();
       });
     }
+
+    // モーダルイベントリスナーを追加
+    const inviteModal = document.getElementById('inviteUserModal');
+    if (inviteModal) {
+      inviteModal.addEventListener('hidden.bs.modal', () => {
+        console.log('Invite modal hidden');
+        // フォームをクリア
+        const form = document.getElementById('invite-user-form');
+        if (form) {
+          form.reset();
+          form.classList.remove('was-validated');
+        }
+        // ボタン状態をリセット
+        const submitBtn = document.getElementById('send-invitation-btn');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          const spinner = submitBtn.querySelector('.spinner-border');
+          if (spinner) {
+            spinner.classList.add('d-none');
+          }
+        }
+      });
+
+      inviteModal.addEventListener('show.bs.modal', () => {
+        console.log('Invite modal showing');
+      });
+    }
+
+    const editModal = document.getElementById('editUserModal');
+    if (editModal) {
+      editModal.addEventListener('hidden.bs.modal', () => {
+        console.log('Edit modal hidden');
+        const form = document.getElementById('edit-user-form');
+        if (form) {
+          form.reset();
+          form.classList.remove('was-validated');
+        }
+        const submitBtn = document.getElementById('save-user-btn');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          const spinner = submitBtn.querySelector('.spinner-border');
+          if (spinner) {
+            spinner.classList.add('d-none');
+          }
+        }
+      });
+    }
   }
 
   showInviteModal() {
-    // フォームをリセット
-    document.getElementById('invite-user-form').reset();
-    
-    // モーダルを表示
-    const modal = new bootstrap.Modal(document.getElementById('inviteUserModal'));
-    modal.show();
+    try {
+      // 既存のモーダルが開いている場合は閉じる
+      this.forceCloseModal('inviteUserModal');
+      
+      // フォームをリセット
+      const form = document.getElementById('invite-user-form');
+      if (form) {
+        form.reset();
+        form.classList.remove('was-validated');
+      }
+      
+      // 送信ボタンの状態をリセット
+      const submitBtn = document.getElementById('send-invitation-btn');
+      const spinner = submitBtn?.querySelector('.spinner-border');
+      if (spinner) {
+        spinner.classList.add('d-none');
+      }
+      if (submitBtn) {
+        submitBtn.disabled = false;
+      }
+      
+      // モーダルを表示
+      const modal = new bootstrap.Modal(document.getElementById('inviteUserModal'), {
+        backdrop: 'static',  // 背景クリックで閉じないように
+        keyboard: false      // ESCキーで閉じないように
+      });
+      modal.show();
+      
+    } catch (error) {
+      console.error('Failed to show invite modal:', error);
+      this.app.showError('招待フォームの表示に失敗しました');
+    }
   }
 
   async sendInvitation() {
@@ -536,6 +609,7 @@ export class UserManagementPage {
     const message = document.getElementById('invite-message').value;
 
     try {
+      console.log('招待送信開始...');
       spinner.classList.remove('d-none');
       submitBtn.disabled = true;
 
@@ -546,19 +620,30 @@ export class UserManagementPage {
         type: role
       });
 
-      // モーダルを閉じる
-      const modal = bootstrap.Modal.getInstance(document.getElementById('inviteUserModal'));
-      modal.hide();
-
+      console.log('招待送信完了');
+      
+      // 成功メッセージを先に表示
       this.app.showSuccess('招待を送信しました');
+
+      // モーダルを確実に閉じる
+      this.closeModal('inviteUserModal');
 
       // リストを更新
       await this.loadData();
 
     } catch (error) {
       console.error('Failed to send invitation:', error);
-      this.app.showError('招待の送信に失敗しました');
+      let errorMessage = '招待の送信に失敗しました';
+      
+      // エラーの詳細に基づいてメッセージを調整
+      if (error.message) {
+        errorMessage += ': ' + error.message;
+      }
+      
+      this.app.showError(errorMessage);
     } finally {
+      // 必ず実行される処理
+      console.log('招待送信処理完了');
       spinner.classList.add('d-none');
       submitBtn.disabled = false;
     }
@@ -606,8 +691,7 @@ export class UserManagementPage {
       });
 
       // モーダルを閉じる
-      const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
-      modal.hide();
+      this.closeModal('editUserModal');
 
       this.app.showSuccess('ユーザー情報を更新しました');
 
@@ -643,11 +727,68 @@ export class UserManagementPage {
     }
   }
 
+  // モーダル関連のユーティリティメソッド
+  closeModal(modalId) {
+    try {
+      const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
+      if (modal) {
+        modal.hide();
+      } else {
+        this.forceCloseModal(modalId);
+      }
+    } catch (error) {
+      console.error('Modal close error:', error);
+      this.forceCloseModal(modalId);
+    }
+  }
+
+  forceCloseModal(modalId) {
+    const modalElement = document.getElementById(modalId);
+    if (modalElement) {
+      modalElement.classList.remove('show');
+      modalElement.style.display = 'none';
+      modalElement.setAttribute('aria-hidden', 'true');
+    }
+    
+    // backdrop を削除
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => backdrop.remove());
+    
+    // body の状態をリセット
+    document.body.classList.remove('modal-open');
+    document.body.style.paddingRight = '';
+    document.body.style.overflow = '';
+  }
+
+  // デバッグ用: モーダル状態確認メソッド
+  checkModalState() {
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    const openModals = document.querySelectorAll('.modal.show');
+    const bodyHasModalOpen = document.body.classList.contains('modal-open');
+    
+    console.log('Modal debug info:', {
+      backdrops: backdrops.length,
+      openModals: openModals.length,
+      bodyHasModalOpen: bodyHasModalOpen,
+      bodyStyle: document.body.style.paddingRight
+    });
+    
+    return {
+      backdrops: backdrops.length,
+      openModals: openModals.length,
+      bodyHasModalOpen
+    };
+  }
+
   cleanup() {
     // グローバル参照をクリーンアップ
     if (window.userManagement === this) {
       delete window.userManagement;
     }
+    
+    // モーダル関連のクリーンアップ
+    this.forceCloseModal('inviteUserModal');
+    this.forceCloseModal('editUserModal');
     
     console.log("UserManagement: Cleanup completed");
   }
