@@ -1090,3 +1090,292 @@ button, a, input, select, textarea, [role="button"] {
         border: 1px solid #ddd !important;
     }
 }
+
+/* サイドバーコンテナの基本設定 */
+#sidebar-container {
+    position: relative;
+    z-index: 1050;
+    transition: all 0.3s ease-in-out;
+}
+
+/* バックドロップの基本スタイル */
+#sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    cursor: pointer;
+}
+
+#sidebar-backdrop.show {
+    display: block !important;
+    opacity: 1 !important;
+}
+
+/* バックドロップのフォーカス表示 */
+#sidebar-backdrop:focus {
+    outline: 3px solid #007bff;
+    outline-offset: -3px;
+}
+
+/* ========================================
+   📱 モバイル対応（991px以下）
+   ======================================== */
+@media (max-width: 991.98px) {
+    /* サイドバーを画面外に配置 */
+    #sidebar-container {
+        position: fixed !important;
+        top: 0;
+        left: -100%;
+        width: 280px;
+        height: 100vh;
+        z-index: 1050;
+        transition: left 0.3s ease-in-out;
+        background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+        overflow-y: auto;
+        overflow-x: hidden;
+        box-shadow: 2px 0 15px rgba(0, 0, 0, 0.3);
+        border-right: 1px solid #495057;
+    }
+    
+    /* メニューが表示された時 */
+    #sidebar-container.show {
+        left: 0 !important;
+        transform: translateX(0) !important;
+    }
+    
+    /* メニューが開いている時のbody */
+    body.mobile-menu-open {
+        overflow: hidden !important;
+        position: relative;
+        height: 100vh;
+    }
+    
+    /* コンテンツエリアの調整 */
+    .content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding-left: 10px;
+        padding-right: 10px;
+        transition: none;
+    }
+    
+    /* サイドバー内の要素調整 */
+    .sidebar .nav-link {
+        min-height: 48px !important;
+        display: flex !important;
+        align-items: center !important;
+        padding: 0.75rem 1.25rem !important;
+        margin: 0.125rem 0.5rem !important;
+        border-radius: 8px !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .sidebar .nav-link:hover {
+        background: rgba(255, 255, 255, 0.15) !important;
+        transform: translateX(4px) !important;
+    }
+    
+    .sidebar .nav-link.active {
+        background: rgba(255, 255, 255, 0.25) !important;
+        font-weight: 600 !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+    }
+}
+
+/* ========================================
+   📱 タブレット対応（768px-991px）
+   ======================================== */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    #sidebar-container {
+        width: 320px !important;
+    }
+}
+
+/* ========================================
+   🖥️ デスクトップ対応（992px以上）
+   ======================================== */
+@media (min-width: 992px) {
+    /* デスクトップでは通常のサイドバー表示 */
+    #sidebar-container {
+        position: relative !important;
+        left: 0 !important;
+        width: 250px !important;
+        height: auto !important;
+        transform: none !important;
+    }
+    
+    /* バックドロップは非表示 */
+    #sidebar-backdrop {
+        display: none !important;
+    }
+    
+    /* コンテンツエリア */
+    .content {
+        margin-left: 250px !important;
+    }
+}
+
+/* ========================================
+   🍔 ハンバーガーボタンの改善
+   ======================================== */
+
+/* ボタンの基本スタイル */
+.navbar-toggler {
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    transition: all 0.3s ease !important;
+    min-width: 44px;
+    min-height: 44px;
+}
+
+/* ホバー効果 */
+.navbar-toggler:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    transform: scale(1.05);
+}
+
+/* フォーカス効果 */
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3) !important;
+    outline: none !important;
+}
+
+/* アイコンのスタイル */
+.navbar-toggler-icon i {
+    color: white !important;
+    font-size: 1.2rem !important;
+    transition: transform 0.3s ease !important;
+}
+
+/* メニューが開いている時のアイコン回転 */
+.navbar-toggler[aria-expanded="true"] .navbar-toggler-icon i {
+    transform: rotate(180deg) !important;
+}
+
+/* ========================================
+   🎯 アクセシビリティ改善
+   ======================================== */
+
+/* キーボードフォーカスの改善 */
+.sidebar .nav-link:focus {
+    outline: 3px solid rgba(255, 255, 255, 0.8) !important;
+    outline-offset: 2px !important;
+}
+
+.sidebar .nav-link:focus-visible {
+    outline: 3px solid rgba(255, 255, 255, 0.8) !important;
+    outline-offset: 2px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* タッチターゲットのサイズ確保 */
+.sidebar .nav-link,
+.sidebar .btn {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* ========================================
+   🎨 アニメーション改善
+   ======================================== */
+
+/* スムーズなアニメーション */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS Safari対応 */
+@supports (-webkit-touch-callout: none) {
+    #sidebar-container {
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+    }
+}
+
+/* 高解像度ディスプレイ対応 */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .navbar-toggler-icon i {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
+
+/* ========================================
+   🔧 追加の修正（元のCSSとの競合回避）
+   ======================================== */
+
+/* 既存のsidebarスタイルを上書き */
+@media (max-width: 991px) {
+    .sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: -100% !important;
+        width: 280px !important;
+        height: 100vh !important;
+        z-index: 1050 !important;
+        transition: left 0.3s ease-in-out !important;
+    }
+    
+    .sidebar.show {
+        left: 0 !important;
+    }
+}
+
+/* メニューが開いている時の追加調整 */
+body.mobile-menu-open .content {
+    pointer-events: none;
+}
+
+body.mobile-menu-open #sidebar-container {
+    pointer-events: auto;
+}
+
+body.mobile-menu-open #sidebar-backdrop {
+    pointer-events: auto;
+}
+
+/* ========================================
+   📱 小画面対応（576px以下）
+   ======================================== */
+@media (max-width: 576px) {
+    #sidebar-container {
+        width: 260px !important;
+    }
+    
+    .sidebar .nav-link {
+        padding: 1rem 0.875rem !important;
+    }
+    
+    .sidebar-user-info .user-name {
+        font-size: 0.9rem;
+    }
+}
+
+/* ========================================
+   🔧 Z-index調整（モーダルとの競合回避）
+   ======================================== */
+#sidebar-container {
+    z-index: 1050 !important;
+}
+
+#sidebar-backdrop {
+    z-index: 1040 !important;
+}
+
+.modal {
+    z-index: 1060 !important;
+}
+
+.modal-backdrop {
+    z-index: 1055 !important;
+}
