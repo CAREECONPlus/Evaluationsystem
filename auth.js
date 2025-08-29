@@ -13,36 +13,46 @@ import {
   setDoc,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+import environment from "./env.js"
 
 export class Auth {
   constructor(app) {
     this.app = app
-    
-    // 🚨 緊急修正：process.env を削除してブラウザ対応
-    // 本番環境では実際のFirebase設定に置き換えてください
-    const firebaseConfig = {
-      apiKey: "AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk",
-      authDomain: "hyouka-db.firebaseapp.com",
-      projectId: "hyouka-db",
-      storageBucket: "hyouka-db.appspot.com",
-      messagingSenderId: "861016804589",
-      appId: "1:861016804589:web:d911d516d6c79aa73690e4",
-    }
-    
-    // Firebase初期化
-    this.firebaseApp = initializeApp(firebaseConfig)
-    this.auth = getAuth(this.firebaseApp)
-    this.db = getFirestore(this.firebaseApp) // Firestoreも初期化
+    this.firebaseApp = null
+    this.auth = null
+    this.db = null
     this.authStateUnsubscribe = null
     this.isInitialized = false
     
-    console.log("Auth: Firebase initialized with app:", this.firebaseApp)
+    console.log("Auth: Constructor completed, waiting for initialization")
   }
 
   async init() {
-    console.log("Auth: Module initialized.")
-    this.isInitialized = true
-    return Promise.resolve()
+    try {
+      console.log("Auth: Starting Firebase initialization...")
+      
+      // 環境変数からFirebase設定を取得
+      const firebaseConfig = await environment.getFirebaseConfig()
+      
+      console.log("Auth: Firebase config loaded, initializing Firebase...")
+      
+      // Firebase初期化
+      this.firebaseApp = initializeApp(firebaseConfig)
+      this.auth = getAuth(this.firebaseApp)
+      this.db = getFirestore(this.firebaseApp)
+      
+      this.isInitialized = true
+      
+      console.log("Auth: Firebase initialized successfully")
+      console.log("Auth: Environment:", environment.getEnvironment())
+      
+      return Promise.resolve()
+      
+    } catch (error) {
+      console.error("Auth: Firebase initialization failed:", error)
+      this.isInitialized = false
+      throw error
+    }
   }
 
   listenForAuthChanges() {

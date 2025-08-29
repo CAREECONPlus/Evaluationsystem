@@ -237,6 +237,106 @@ export class API {
     }
   }
 
+  /**
+   * ユーザープロファイル更新
+   */
+  async updateUserProfile(uid, profileData) {
+    try {
+      console.log("API: Updating user profile:", uid, profileData);
+
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser) {
+        throw new Error("認証が必要です");
+      }
+
+      // 権限チェック（自分のプロファイルのみ更新可能）
+      if (uid !== this.auth.currentUser?.uid && !this.app.hasRole('admin')) {
+        throw new Error("このプロファイルを更新する権限がありません");
+      }
+
+      // 更新データのクリーンアップ
+      const cleanData = {};
+      for (const [key, value] of Object.entries(profileData)) {
+        if (value !== undefined && value !== null && value !== '') {
+          cleanData[key] = value;
+        }
+      }
+
+      const updateData = {
+        ...cleanData,
+        updatedAt: serverTimestamp()
+      };
+
+      // usersコレクションの更新
+      const userRef = doc(this.db, "users", uid);
+      await updateDoc(userRef, updateData);
+
+      // global_usersの更新（メールが存在する場合）
+      if (this.auth.currentUser?.email) {
+        const globalUserRef = doc(this.db, "global_users", this.auth.currentUser.email);
+        const globalUserDoc = await getDoc(globalUserRef);
+        if (globalUserDoc.exists()) {
+          await updateDoc(globalUserRef, updateData);
+        }
+      }
+
+      console.log("API: User profile updated successfully");
+      return { success: true };
+
+    } catch (error) {
+      console.error("API: Error updating user profile:", error);
+      this.handleError(error, 'プロファイル更新');
+      throw error;
+    }
+  }
+
+  /**
+   * パスワード変更
+   */
+  async changePassword(currentPassword, newPassword) {
+    try {
+      console.log("API: Changing password for user");
+
+      if (!this.auth.currentUser) {
+        throw new Error("認証が必要です");
+      }
+
+      // Firebase Authのパスワード変更機能を使用
+      const { updatePassword, reauthenticateWithCredential, EmailAuthProvider } = await import(
+        "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"
+      );
+
+      // 現在のパスワードで再認証
+      const credential = EmailAuthProvider.credential(
+        this.auth.currentUser.email,
+        currentPassword
+      );
+      
+      await reauthenticateWithCredential(this.auth.currentUser, credential);
+
+      // 新しいパスワードに変更
+      await updatePassword(this.auth.currentUser, newPassword);
+
+      console.log("API: Password changed successfully");
+      return { success: true };
+
+    } catch (error) {
+      console.error("API: Error changing password:", error);
+      
+      // Firebase Authのエラーコードに応じたメッセージ
+      if (error.code === 'auth/wrong-password') {
+        throw new Error("現在のパスワードが正しくありません");
+      } else if (error.code === 'auth/weak-password') {
+        throw new Error("新しいパスワードが弱すぎます");
+      } else if (error.code === 'auth/requires-recent-login') {
+        throw new Error("セキュリティのため、再ログインが必要です");
+      }
+      
+      this.handleError(error, 'パスワード変更');
+      throw error;
+    }
+  }
+
 // ===== User Management =====
 
 /**

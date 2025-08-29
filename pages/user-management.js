@@ -9,6 +9,7 @@ export class UserManagementPage {
     this.filteredUsers = [];
     this.currentFilter = 'all';
     this.searchTerm = '';
+    this.jobTypes = [];
   }
 
   async render() {
@@ -208,6 +209,13 @@ export class UserManagementPage {
                     <option value="pending" data-i18n="users.pending">承認待ち</option>
                   </select>
                 </div>
+                <div class="mb-3">
+                  <label for="edit-user-job-types" class="form-label">担当職種</label>
+                  <div id="edit-user-job-types" class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                    <div class="text-muted">職種を読み込み中...</div>
+                  </div>
+                  <small class="form-text text-muted">ユーザーが評価可能な職種を選択してください</small>
+                </div>
               </form>
             </div>
             <div class="modal-footer">
@@ -253,12 +261,17 @@ export class UserManagementPage {
       // ローディング表示
       this.showLoading();
 
-      // ユーザー一覧を取得
-      const users = await this.app.api.getUsers();
+      // ユーザー一覧と職種一覧を並行取得
+      const [users, jobTypes] = await Promise.all([
+        this.app.api.getUsers(),
+        this.app.api.getJobTypes ? this.app.api.getJobTypes() : Promise.resolve([])
+      ]);
       console.log("UserManagement: Users loaded:", users);
+      console.log("UserManagement: Job types loaded:", jobTypes);
 
       // データを保存
       this.users = users || [];
+      this.jobTypes = jobTypes || [];
 
       // UI を更新
       this.renderUsersList();
@@ -342,6 +355,7 @@ export class UserManagementPage {
               <th data-i18n="auth.name">氏名</th>
               <th data-i18n="auth.email">メールアドレス</th>
               <th data-i18n="users.role">役割</th>
+              <th>担当職種</th>
               <th data-i18n="users.status">ステータス</th>
               <th data-i18n="common.created_at">作成日</th>
               <th data-i18n="common.actions">操作</th>
@@ -369,6 +383,7 @@ export class UserManagementPage {
           </td>
           <td>${this.app.sanitizeHtml(user.email || '')}</td>
           <td>${roleBadge}</td>
+          <td>${this.getJobTypesBadges(user.jobTypeIds || [])}</td>
           <td>${statusBadge}</td>
           <td>${createdAt}</td>
           <td>
@@ -660,6 +675,9 @@ export class UserManagementPage {
     document.getElementById('edit-user-role').value = user.role || 'worker';
     document.getElementById('edit-user-status').value = user.status || 'active';
 
+    // 職種選択を読み込み
+    this.loadJobTypesForEdit(user.jobTypeIds || []);
+
     // モーダルを表示
     const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
     modal.show();
@@ -679,6 +697,7 @@ export class UserManagementPage {
     const name = document.getElementById('edit-user-name').value;
     const role = document.getElementById('edit-user-role').value;
     const status = document.getElementById('edit-user-status').value;
+    const jobTypeIds = this.getSelectedJobTypeIds();
 
     try {
       spinner.classList.remove('d-none');
@@ -687,7 +706,8 @@ export class UserManagementPage {
       await this.app.api.updateUser(userId, {
         name: name,
         role: role,
-        status: status
+        status: status,
+        jobTypeIds: jobTypeIds
       });
 
       // モーダルを閉じる
@@ -791,5 +811,55 @@ export class UserManagementPage {
     this.forceCloseModal('editUserModal');
     
     console.log("UserManagement: Cleanup completed");
+  }
+
+  // 職種バッジを生成
+  getJobTypesBadges(jobTypeIds) {
+    if (!jobTypeIds || jobTypeIds.length === 0) {
+      return '<span class="text-muted">未設定</span>';
+    }
+
+    const badges = jobTypeIds.map(id => {
+      const jobType = this.jobTypes.find(jt => jt.id === id);
+      const name = jobType ? jobType.name : id;
+      return `<span class="badge bg-secondary me-1">${this.app.sanitizeHtml(name)}</span>`;
+    });
+
+    return badges.join('');
+  }
+
+  // 編集モーダルで職種一覧を表示
+  async loadJobTypesForEdit(selectedJobTypeIds = []) {
+    const container = document.getElementById('edit-user-job-types');
+    if (!container) return;
+
+    if (this.jobTypes.length === 0) {
+      container.innerHTML = '<div class="text-muted">職種データがありません</div>';
+      return;
+    }
+
+    let html = '';
+    this.jobTypes.forEach(jobType => {
+      const isChecked = selectedJobTypeIds.includes(jobType.id);
+      html += `
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" 
+                 value="${jobType.id}" id="jobtype-${jobType.id}"
+                 ${isChecked ? 'checked' : ''}>
+          <label class="form-check-label" for="jobtype-${jobType.id}">
+            ${this.app.sanitizeHtml(jobType.name)}
+            ${jobType.description ? `<small class="text-muted d-block">${this.app.sanitizeHtml(jobType.description)}</small>` : ''}
+          </label>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  // 選択された職種IDを取得
+  getSelectedJobTypeIds() {
+    const checkboxes = document.querySelectorAll('#edit-user-job-types input[type="checkbox"]:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
   }
 }

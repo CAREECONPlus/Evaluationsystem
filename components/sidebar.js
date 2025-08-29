@@ -93,6 +93,21 @@ export class SidebarComponent {
                 <span data-i18n="nav.users">ユーザー管理</span>
               </a>
             </li>
+
+            <!-- 職種管理（管理者のみ） -->
+            <li class="nav-item" role="none">
+              <a 
+                class="nav-link text-white d-flex align-items-center ${this.isActive('/job-types') ? 'active' : ''}" 
+                href="#/job-types" 
+                data-link
+                role="menuitem"
+                aria-current="${this.isActive('/job-types') ? 'page' : 'false'}"
+                tabindex="0"
+              >
+                <i class="fas fa-briefcase nav-icon me-3" aria-hidden="true"></i>
+                <span>職種管理</span>
+              </a>
+            </li>
             ` : ''}
 
             <!-- 評価一覧 -->

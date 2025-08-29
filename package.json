@@ -5,10 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "firebase serve",
-    "build": "echo 'No build step required'",
-    "deploy": "firebase deploy",
-    "deploy:hosting": "firebase deploy --only hosting",
+    "build": "tsc --noEmit",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint . --ext .js,.ts",
+    "deploy": "npm run build && firebase deploy",
+    "deploy:hosting": "npm run build && firebase deploy --only hosting",
     "deploy:rules": "firebase deploy --only firestore:rules",
     "deploy:indexes": "firebase deploy --only firestore:indexes"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0"
   }
 }

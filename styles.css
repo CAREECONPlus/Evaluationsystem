@@ -690,16 +690,6 @@ button, a, input, select, textarea, [role="button"] {
     }
 }
 
-@keyframes ripple {
-    0% {
-        transform: scale(0);
-        opacity: 0.5;
-    }
-    100% {
-        transform: scale(4);
-        opacity: 0;
-    }
-}
 
 /* ホバー効果のアニメーション */
 @keyframes slideIn {
@@ -743,43 +733,12 @@ button, a, input, select, textarea, [role="button"] {
     background: #ffffff;
 }
 
-/* アニメーションクラス */
-.animate-fadeIn {
-    animation: fadeIn var(--animation-duration) var(--animation-easing);
-}
-
-.animate-fadeOut {
-    animation: fadeOut var(--animation-duration) var(--animation-easing);
-}
-
-.animate-slideInLeft {
-    animation: slideInLeft var(--animation-duration) var(--animation-easing);
-}
-
-.animate-slideInRight {
-    animation: slideInRight var(--animation-duration) var(--animation-easing);
-}
-
-.animate-slideInUp {
-    animation: slideInUp var(--animation-duration) var(--animation-easing);
-}
-
-.animate-slideInDown {
-    animation: slideInDown var(--animation-duration) var(--animation-easing);
-}
 
 .animate-pulse {
     animation: pulse 1s var(--animation-easing) infinite;
 }
 
-.animate-bounce {
-    animation: bounce 1s var(--animation-easing);
-}
 
-/* スケルトンローディング */
-.skeleton-container {
-    animation: pulse 1.5s ease-in-out infinite;
-}
 
 .skeleton-line {
     height: 20px;
@@ -799,15 +758,6 @@ button, a, input, select, textarea, [role="button"] {
     }
 }
 
-/* リップルエフェクト */
-.ripple {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.6);
-    transform: scale(0);
-    animation: ripple 0.6s ease-out;
-    pointer-events: none;
-}
 
 /* トランジション */
 .transition-all {

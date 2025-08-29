@@ -11,6 +11,9 @@ import { GoalApprovalsPage } from "./pages/goal-approvals.js"
 import { DeveloperPage } from "./pages/developer.js"
 import { RegisterAdminPage } from "./pages/register-admin.js"
 import { RegisterPage } from "./pages/register.js"
+import { JobTypeManagementPage } from "./pages/job-type-management.js"
+import { InvitationAcceptPage } from "./pages/invitation-accept.js"
+import { ProfilePage } from "./pages/profile.js"
 
 export class Router {
   constructor(app) {
@@ -71,6 +74,12 @@ export class Router {
         roles: ["developer"],
         title: "開発者管理",
       },
+      "/job-types": {
+        component: JobTypeManagementPage,
+        auth: true,
+        roles: ["admin"],
+        title: "職種管理",
+      },
       "/register-admin": {
         component: RegisterAdminPage,
         auth: false,
@@ -80,6 +89,16 @@ export class Router {
         component: RegisterPage,
         auth: false,
         title: "ユーザー登録",
+      },
+      "/invitation-accept": {
+        component: InvitationAcceptPage,
+        auth: false,
+        title: "招待受諾",
+      },
+      "/profile": {
+        component: ProfilePage,
+        auth: true,
+        title: "プロフィール",
       },
     }
 
