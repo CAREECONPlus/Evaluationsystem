@@ -9,8 +9,9 @@ export class JobTypeManagementPage {
     this.selectedJobType = null;
     this.isLoading = false;
   }
-async render() {
-return `
+
+  async render() {
+    return `
 <div class="job-type-management-page p-4">
 <div class="d-flex justify-content-between align-items-center mb-4">
 <div>
@@ -120,19 +121,25 @@ return `
     </div>
   </div>
 `;
-}
-async init() {
-this.app.currentPage = this;
-if (!this.app.isAuthenticated() || !this.app.hasRole('admin')) {
-  this.app.navigate('#/dashboard');
-  return;
-}
+  }
 
-await this.loadJobTypes();
-}
-async loadJobTypes() {
-const listContainer = document.getElementById('jobTypesList');
-listContainer.innerHTML =       <div class="text-center p-3">         <div class="spinner-border text-primary" role="status"></div>       </div>    ;
+  async init() {
+    this.app.currentPage = this;
+    if (!this.app.isAuthenticated() || !this.app.hasRole('admin')) {
+      this.app.navigate('#/dashboard');
+      return;
+    }
+
+    await this.loadJobTypes();
+  }
+
+  async loadJobTypes() {
+    const listContainer = document.getElementById('jobTypesList');
+listContainer.innerHTML = `
+      <div class="text-center p-3">
+        <div class="spinner-border text-primary" role="status"></div>
+      </div>
+    `;
 try {
   this.jobTypes = await this.app.api.getJobTypes();
   this.renderJobTypesList();
@@ -144,10 +151,11 @@ try {
       <p>職種の読み込みに失敗しました</p>
     </div>
   `;
-}
-}
-renderJobTypesList() {
-const listContainer = document.getElementById('jobTypesList');
+  }
+  }
+
+  renderJobTypesList() {
+    const listContainer = document.getElementById('jobTypesList');
 if (this.jobTypes.length === 0) {
   listContainer.innerHTML = `
     <div class="text-center text-muted p-3">
@@ -309,81 +317,30 @@ try {
       ユーザーの読み込みに失敗しました
     </div>
   `;
-}try {
-  // この職種を持つユーザーを取得
-  const users = await this.app.api.getUsers();
-  const filteredUsers = users.filter(user => 
-    user.jobTypeIds && user.jobTypeIds.includes(this.selectedJobType.id)
-  );
-
-  if (filteredUsers.length === 0) {
-    usersContainer.innerHTML = `
-      
-        
-        この職種を持つユーザーはまだいません
-      
-    `;
-    return;
   }
 
-  usersContainer.innerHTML = `
-    
-      
-          ${filteredUsers.map(user => `
-            
-          `).join('')}
-        
-        
-          
-            名前
-            メールアドレス
-            役割
-            ステータス
-          
-        
-        
-              ${this.app.sanitizeHtml(user.name)}
-              ${this.app.sanitizeHtml(user.email)}
-              ${user.role}
-              ${user.status}
-            
-      
-    
-  `;
+  showAddJobTypeModal() {
+    const modal = new bootstrap.Modal(document.getElementById('addJobTypeModal'));
+    document.getElementById('addJobTypeForm').reset();
+    modal.show();
+  }
 
-  // ユーザー数を更新
-  this.selectedJobType.userCount = filteredUsers.length;
-  this.renderJobTypesList();
-} catch (error) {
-  console.error('Error loading job type users:', error);
-  usersContainer.innerHTML = `
-    
-      
-      ユーザーの読み込みに失敗しました
-    
-  `;
-}
-}
-showAddJobTypeModal() {
-const modal = new bootstrap.Modal(document.getElementById('addJobTypeModal'));
-document.getElementById('addJobTypeForm').reset();
-modal.show();
-}
-showEditJobTypeModal() {
-if (!this.selectedJobType) return;
-const modal = new bootstrap.Modal(document.getElementById('editJobTypeModal'));
-document.getElementById('editJobTypeId').value = this.selectedJobType.id;
-document.getElementById('editJobTypeName').value = this.selectedJobType.name;
-document.getElementById('editJobTypeDescription').value = this.selectedJobType.description || '';
-modal.show();
-}
-async addJobType() {
-const name = document.getElementById('jobTypeName').value.trim();
-const description = document.getElementById('jobTypeDescription').value.trim();
-if (!name) {
-  this.app.showError('職種名を入力してください');
-  return;
-}
+  showEditJobTypeModal() {
+    if (!this.selectedJobType) return;
+    const modal = new bootstrap.Modal(document.getElementById('editJobTypeModal'));
+    document.getElementById('editJobTypeId').value = this.selectedJobType.id;
+    document.getElementById('editJobTypeName').value = this.selectedJobType.name;
+    document.getElementById('editJobTypeDescription').value = this.selectedJobType.description || '';
+    modal.show();
+  }
+
+  async addJobType() {
+    const name = document.getElementById('jobTypeName').value.trim();
+    const description = document.getElementById('jobTypeDescription').value.trim();
+    if (!name) {
+      this.app.showError('職種名を入力してください');
+      return;
+    }
 
 // 重複チェック
 if (this.jobTypes.some(jt => jt.name === name)) {
@@ -483,12 +440,12 @@ try {
   return '不明';
 }
 }
-setLoading(isLoading) {
-this.isLoading = isLoading;
-// ボタンの無効化
-const buttons = document.querySelectorAll('.modal button, .btn-group button');
-buttons.forEach(btn => {
-  btn.disabled = isLoading;
-});
-}
+  setLoading(isLoading) {
+    this.isLoading = isLoading;
+    // ボタンの無効化
+    const buttons = document.querySelectorAll('.modal button, .btn-group button');
+    buttons.forEach(btn => {
+      btn.disabled = isLoading;
+    });
+  }
 }
