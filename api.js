@@ -2307,203 +2307,27 @@ async getAllUsers() {
       return false;
     }
   }
-}
 
-/**
-
-評価職種の取得
-*/
-async getJobTypes() {
-try {
-const tenantId = await this.getCurrentTenantId();
-const snapshot = await getDocs(
-query(
-collection(db, 'targetJobTypes'),
-where('tenantId', '==', tenantId),
-orderBy('name')
-)
-);
-return snapshot.docs.map(doc => ({
-id: doc.id,
-...doc.data()
-}));
-} catch (error) {
-console.error('Error fetching job types:', error);
-throw new Error('職種の取得に失敗しました');
+  /**
+   * 評価職種の取得
+   */
+  async getJobTypes() {
+    try {
+      const tenantId = await this.getCurrentTenantId();
+      const snapshot = await getDocs(
+        query(
+          collection(this.db, 'targetJobTypes'),
+          where('tenantId', '==', tenantId),
+          orderBy('name')
+        )
+      );
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    } catch (error) {
+      console.error('Error fetching job types:', error);
+      throw new Error('職種の取得に失敗しました');
+    }
+  }
 }
-}
-
-/**
-
-評価職種の作成
-*/
-async createJobType(jobTypeData) {
-try {
-const tenantId = await this.getCurrentTenantId();
-const currentUser = auth.currentUser;
-const docRef = await addDoc(collection(db, 'targetJobTypes'), {
-...jobTypeData,
-tenantId,
-createdAt: serverTimestamp(),
-createdBy: currentUser.uid,
-updatedAt: serverTimestamp()
-});
-// 評価構造の初期化（空のカテゴリで作成）
-await this.initializeEvaluationStructure(docRef.id);
-return docRef.id;
-} catch (error) {
-console.error('Error creating job type:', error);
-throw new Error('職種の作成に失敗しました');
-}
-}
-
-/**
-
-評価職種の更新
-*/
-async updateJobType(jobTypeId, updates) {
-try {
-const tenantId = await this.getCurrentTenantId();
-// 権限チェック
-const jobTypeDoc = await getDoc(doc(db, 'targetJobTypes', jobTypeId));
-if (!jobTypeDoc.exists() || jobTypeDoc.data().tenantId !== tenantId) {
-throw new Error('権限がありません');
-}
-await updateDoc(doc(db, 'targetJobTypes', jobTypeId), {
-...updates,
-updatedAt: serverTimestamp()
-});
-return true;
-} catch (error) {
-console.error('Error updating job type:', error);
-throw new Error('職種の更新に失敗しました');
-}
-}
-
-/**
-
-評価職種の削除
-*/
-async deleteJobType(jobTypeId) {
-try {
-const tenantId = await this.getCurrentTenantId();
-// 権限チェック
-const jobTypeDoc = await getDoc(doc(db, 'targetJobTypes', jobTypeId));
-if (!jobTypeDoc.exists() || jobTypeDoc.data().tenantId !== tenantId) {
-throw new Error('権限がありません');
-}
-// この職種を使用しているユーザーがいないかチェック
-const usersSnapshot = await getDocs(
-query(
-collection(db, 'users'),
-where('tenantId', '==', tenantId),
-where('jobTypeIds', 'array-contains', jobTypeId)
-)
-);
-if (!usersSnapshot.empty) {
-throw new Error('この職種は使用中のため削除できません');
-}
-// 関連する評価構造も削除
-const structureSnapshot = await getDocs(
-query(
-collection(db, 'evaluationStructures'),
-where('targetJobTypeId', '==', jobTypeId)
-)
-);
-const batch = writeBatch(db);
-structureSnapshot.docs.forEach(doc => {
-batch.delete(doc.ref);
-});
-batch.delete(doc(db, 'targetJobTypes', jobTypeId));
-await batch.commit();
-return true;
-} catch (error) {
-console.error('Error deleting job type:', error);
-throw new Error(error.message || '職種の削除に失敗しました');
-}
-}
-
-/**
-
-評価構造の初期化
-*/
-async initializeEvaluationStructure(jobTypeId) {
-try {
-const tenantId = await this.getCurrentTenantId();
-await addDoc(collection(db, 'evaluationStructures'), {
-targetJobTypeId: jobTypeId,
-tenantId,
-categories: [],
-createdAt: serverTimestamp(),
-updatedAt: serverTimestamp()
-});
-return true;
-} catch (error) {
-console.error('Error initializing evaluation structure:', error);
-throw new Error('評価構造の初期化に失敗しました');
-}
-}
-
-/**
-
-ユーザーに職種を設定（複数選択対応）
-*/
-async updateUserJobTypes(userId, jobTypeIds) {
-try {
-const tenantId = await this.getCurrentTenantId();
-// ユーザーの権限チェック
-const userDoc = await getDoc(doc(db, 'users', userId));
-if (!userDoc.exists() || userDoc.data().tenantId !== tenantId) {
-throw new Error('権限がありません');
-}
-// 職種IDの検証
-for (const jobTypeId of jobTypeIds) {
-const jobTypeDoc = await getDoc(doc(db, 'targetJobTypes', jobTypeId));
-if (!jobTypeDoc.exists() || jobTypeDoc.data().tenantId !== tenantId) {
-throw new Error(無効な職種ID: ${jobTypeId});
-}
-}
-await updateDoc(doc(db, 'users', userId), {
-jobTypeIds: jobTypeIds,
-updatedAt: serverTimestamp()
-});
-return true;
-} catch (error) {
-console.error('Error updating user job types:', error);
-throw new Error('ユーザーの職種設定に失敗しました');
-}
-}
-
-/**
-
-ユーザーの職種情報を取得
-*/
-async getUserJobTypes(userId) {
-try {
-const userDoc = await getDoc(doc(db, 'users', userId));
-if (!userDoc.exists()) {
-throw new Error('ユーザーが見つかりません');
-}
-const userData = userDoc.data();
-const jobTypeIds = userData.jobTypeIds || [];
-if (jobTypeIds.length === 0) {
-return [];
-}
-// 職種の詳細情報を取得
-const jobTypes = [];
-for (const jobTypeId of jobTypeIds) {
-const jobTypeDoc = await getDoc(doc(db, 'targetJobTypes', jobTypeId));
-if (jobTypeDoc.exists()) {
-jobTypes.push({
-id: jobTypeDoc.id,
-...jobTypeDoc.data()
-});
-}
-}
-return jobTypes;
-} catch (error) {
-console.error('Error fetching user job types:', error);
-throw new Error('ユーザーの職種情報の取得に失敗しました');
-}
-}
-</artifact>
