@@ -1,4 +1,3 @@
-<artifact identifier="job-type-management-page" type="application/vnd.ant.code" language="javascript" title="pages/job-type-management.js（新規作成）">
 /**
  * Job Type Management Page
  * 評価職種管理ページ
@@ -493,4 +492,3 @@ buttons.forEach(btn => {
 });
 }
 }
-</artifact>
