@@ -1,6 +1,8 @@
 /**
  * Header Component - Complete Mobile Support Version
  * ヘッダーコンポーネント - モバイル完全対応版
+ * 
+ * 🔧 修正点: setupMobileMenu メソッドの要素取得タイミング改善
  */
 
 export class HeaderComponent {
@@ -175,77 +177,105 @@ export class HeaderComponent {
     console.log("Header: Initialized with mobile support");
   }
 
- /**
- * モバイルメニューの設定（修正版）
- */
-setupMobileMenu() {
-  console.log("Header: Setting up mobile menu...");
-  
-  // CSS スタイルを追加
-  this.addMobileStyles();
-  
-  // DOM要素の取得を安全に行う
-  const findElements = () => {
-    const hamburgerBtn = document.getElementById('sidebarToggle');
-    const sidebar = document.getElementById('sidebar-container') || document.querySelector('.sidebar');
-    const backdrop = document.getElementById('sidebar-backdrop');
+  /**
+   * 🔧 修正済み: モバイルメニューの設定（要素取得タイミング改善）
+   */
+  setupMobileMenu() {
+    console.log("Header: Setting up mobile menu...");
     
-    console.log("Header: Elements found:", {
-      hamburgerBtn: !!hamburgerBtn,
-      sidebar: !!sidebar, 
-      backdrop: !!backdrop
-    });
+    // CSS スタイルを追加
+    this.addMobileStyles();
     
-    return { hamburgerBtn, sidebar, backdrop };
-  };
-
-  // 要素が見つからない場合は少し待って再試行
-  const setupWithRetry = (retryCount = 0) => {
-    if (retryCount > 10) {
-      console.error("Header: Failed to find required elements after multiple attempts");
-      return;
-    }
-
-    const { hamburgerBtn, sidebar, backdrop } = findElements();
-
-    if (!hamburgerBtn || !sidebar) {
-      console.warn(`Header: Required elements not found, retrying... (${retryCount + 1}/10)`);
-      setTimeout(() => setupWithRetry(retryCount + 1), 100);
-      return;
-    }
-
-    // ハンバーガーボタンのクリックイベント
-    hamburgerBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log("Header: Hamburger button clicked");
-      this.toggleMobileMenu();
-    });
-
-    // バックドロップのクリック・キーボードイベント
-    if (backdrop) {
-      backdrop.addEventListener('click', () => {
-        console.log("Header: Backdrop clicked");
-        this.closeMobileMenu();
+    // DOM要素の取得を安全に行う
+    const findElements = () => {
+      const hamburgerBtn = document.getElementById('sidebarToggle');
+      const sidebar = document.getElementById('sidebar-container') || document.querySelector('.sidebar');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      
+      console.log("Header: Elements found:", {
+        hamburgerBtn: !!hamburgerBtn,
+        sidebar: !!sidebar, 
+        backdrop: !!backdrop
       });
       
-      backdrop.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          this.closeMobileMenu();
-        }
+      return { hamburgerBtn, sidebar, backdrop };
+    };
+
+    // 要素が見つからない場合は少し待って再試行
+    const setupWithRetry = (retryCount = 0) => {
+      if (retryCount > 10) {
+        console.error("Header: Failed to find required elements after multiple attempts");
+        return;
+      }
+
+      const { hamburgerBtn, sidebar, backdrop } = findElements();
+
+      if (!hamburgerBtn || !sidebar) {
+        console.warn(`Header: Required elements not found, retrying... (${retryCount + 1}/10)`);
+        setTimeout(() => setupWithRetry(retryCount + 1), 100);
+        return;
+      }
+
+      // ハンバーガーボタンのクリックイベント
+      hamburgerBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log("Header: Hamburger button clicked");
+        this.toggleMobileMenu();
       });
-    }
 
-    // グローバルイベント設定
-    this.setupGlobalEvents();
-    
-    console.log("Header: Mobile menu events configured successfully");
-  };
+      // バックドロップのクリック・キーボードイベント
+      if (backdrop) {
+        backdrop.addEventListener('click', () => {
+          console.log("Header: Backdrop clicked");
+          this.closeMobileMenu();
+        });
+        
+        backdrop.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            this.closeMobileMenu();
+          }
+        });
+      }
 
-  // 初回セットアップ開始
-  setupWithRetry();
-}
+      // グローバルイベント設定
+      this.setupGlobalEvents();
+      
+      console.log("Header: Mobile menu events configured successfully");
+    };
+
+    // 初回セットアップ開始
+    setupWithRetry();
+  }
+
+  /**
+   * グローバルイベントの設定
+   */
+  setupGlobalEvents() {
+    // ESCキーでメニューを閉じる
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.isMobileMenuOpen) {
+        this.closeMobileMenu();
+      }
+    });
+
+    // ウィンドウリサイズ時にメニューを閉じる
+    window.addEventListener('resize', () => {
+      if (window.innerWidth >= 992 && this.isMobileMenuOpen) {
+        this.closeMobileMenu();
+      }
+    });
+
+    // メニュー外クリックで閉じる
+    document.addEventListener('click', (e) => {
+      if (this.isMobileMenuOpen && 
+          !e.target.closest('#sidebar-container') && 
+          !e.target.closest('#sidebarToggle')) {
+        this.closeMobileMenu();
+      }
+    });
+  }
 
   /**
    * キーボードナビゲーションの設定
@@ -443,85 +473,6 @@ setupMobileMenu() {
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
-        }
-      }
-      
-      /* タブレット表示 */
-      @media (min-width: 768px) and (max-width: 991.98px) {
-        .navbar-brand span {
-          font-size: 0.9rem;
-        }
-        
-        #sidebar-container {
-          width: 320px;
-        }
-      }
-      
-      /* デスクトップ表示 */
-      @media (min-width: 992px) {
-        .navbar-toggler {
-          display: none !important;
-        }
-        
-        #sidebar-backdrop {
-          display: none !important;
-        }
-        
-        #sidebar-container {
-          position: relative !important;
-          left: auto !important;
-          width: auto !important;
-          height: auto !important;
-          background: transparent !important;
-          box-shadow: none !important;
-          border: none !important;
-        }
-      }
-      
-      /* ドロップダウンメニューの改善 */
-      .dropdown-menu {
-        border: none;
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-        border-radius: 0.5rem;
-        padding: 0.5rem 0;
-        min-width: 200px;
-      }
-      
-      .dropdown-item {
-        padding: 0.5rem 1rem;
-        transition: all 0.2s ease;
-        border-radius: 0;
-      }
-      
-      .dropdown-item:hover,
-      .dropdown-item:focus {
-        background-color: #f8f9fa;
-        transform: translateX(2px);
-      }
-      
-      .dropdown-header {
-        font-weight: 600;
-        color: #6c757d;
-        padding: 0.5rem 1rem 0.25rem;
-      }
-      
-      /* アクセシビリティの改善 */
-      .btn:focus,
-      .dropdown-item:focus,
-      .navbar-toggler:focus {
-        outline: 2px solid #007bff;
-        outline-offset: 2px;
-      }
-      
-      /* ユーザー名の表示調整 */
-      @media (max-width: 576px) {
-        .navbar-nav .dropdown-toggle {
-          font-size: 0.875rem;
-          padding: 0.375rem 0.75rem;
-        }
-        
-        .badge {
-          font-size: 0.75rem;
         }
       }
     `;
