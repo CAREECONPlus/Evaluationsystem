@@ -1,6 +1,8 @@
 /**
  * Sidebar Component - Enhanced Mobile Support Version
  * サイドバーコンポーネント - 改善版モバイル完全対応
+ * 
+ * 🔧 修正点: render メソッドでのユーザー情報取得を強化
  */
 
 export class SidebarComponent {
@@ -10,14 +12,22 @@ export class SidebarComponent {
   }
 
   render() {
-    const user = this.app.currentUser;
-    if (!user) return '';
+    // 🔧 修正: ユーザー情報の取得を強化
+    const user = this.app.currentUser || null;
+    console.log("Sidebar: Rendering with user:", user);
+    
+    if (!user) {
+      console.warn("Sidebar: No user found, rendering empty sidebar");
+      return '<div class="sidebar h-100 d-flex align-items-center justify-content-center"><p class="text-white">Loading...</p></div>';
+    }
 
     const userName = user.name || user.email || 'ユーザー';
     const userRole = user.role || 'user';
     const isAdmin = userRole === 'admin';
     const isDeveloper = userRole === 'developer';
     const isEvaluator = userRole === 'evaluator';
+
+    console.log("Sidebar: User details:", { userName, userRole, isAdmin, isDeveloper, isEvaluator });
 
     return `
       <div class="sidebar h-100 d-flex flex-column" role="navigation" aria-label="メインナビゲーション">
@@ -263,24 +273,31 @@ export class SidebarComponent {
    * サイドバーコンポーネントの初期化
    */
   init() {
-    // ルート変更の監視
-    this.setupRouteListener();
+    console.log("Sidebar: Starting initialization...");
     
-    // アクセシビリティの設定
-    this.setupAccessibility();
-    
-    // キーボードナビゲーションの設定
-    this.setupKeyboardNavigation();
+    // 🔧 修正: 初期化の順序を調整
+    try {
+      // ルート変更の監視
+      this.setupRouteListener();
+      
+      // アクセシビリティの設定
+      this.setupAccessibility();
+      
+      // キーボードナビゲーションの設定
+      this.setupKeyboardNavigation();
 
-    // フォーカス管理の設定
-    this.setupFocusManagement();
-    
-    // 翻訳を適用
-    if (this.app.i18n) {
-      this.app.i18n.updateUI();
+      // フォーカス管理の設定
+      this.setupFocusManagement();
+      
+      // 翻訳を適用
+      if (this.app.i18n) {
+        this.app.i18n.updateUI();
+      }
+      
+      console.log("Sidebar: Initialized with enhanced mobile support and accessibility");
+    } catch (error) {
+      console.error("Sidebar: Initialization error:", error);
     }
-    
-    console.log("Sidebar: Initialized with enhanced mobile support and accessibility");
   }
 
   /**
@@ -390,7 +407,6 @@ export class SidebarComponent {
     };
 
     initFocus();
-
     console.log("Sidebar: Focus management configured");
   }
 
