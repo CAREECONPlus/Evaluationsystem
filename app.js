@@ -281,30 +281,54 @@ async login(email, password) {
     }
   }
 
-  updateUIForAuthState(user) {
-    this.currentUser = user
+ updateUIForAuthState(user) {
+    this.currentUser = user;
 
-    console.log("App: updateUIForAuthState called with user:", user ? user.email : 'null')
+    console.log("App: updateUIForAuthState called with user:", user ? user.email : 'null');
 
     // ログイン状態に応じてヘッダーとサイドバーの表示を制御
     if (user) {
       // ログイン済みの場合
-      console.log("App: User authenticated, updating header and sidebar")
-      this.header.update()
-      this.sidebar.update()
+      console.log("App: User authenticated, updating header and sidebar");
+      
+      // ヘッダーとサイドバーのHTMLを挿入
+      const headerContainer = document.getElementById("header-container");
+      const sidebarContainer = document.getElementById("sidebar-container");
+      
+      if (headerContainer) {
+        console.log("App: Rendering header...");
+        headerContainer.innerHTML = this.header.render();
+        // DOM要素が確実に存在するまで少し待ってから初期化
+        setTimeout(() => {
+          console.log("App: Initializing header...");
+          this.header.init();
+        }, 100);
+      }
+      
+      if (sidebarContainer) {
+        console.log("App: Rendering sidebar...");
+        sidebarContainer.innerHTML = this.sidebar.render();
+        // DOM要素が確実に存在するまで少し待ってから初期化
+        setTimeout(() => {
+          console.log("App: Initializing sidebar...");
+          this.sidebar.init();
+        }, 100);
+      }
+      
       // ログインページのクリーンアップ
-      const loginPageElements = document.querySelectorAll(".login-page")
-      loginPageElements.forEach((el) => el.remove())
+      const loginPageElements = document.querySelectorAll(".login-page");
+      loginPageElements.forEach((el) => el.remove());
     } else {
       // 未ログインの場合
-      console.log("App: User not authenticated, clearing header and sidebar")
+      console.log("App: User not authenticated, clearing header and sidebar");
       // ヘッダーとサイドバーをクリア
-      const headerContainer = document.getElementById("header-container")
-      const sidebarContainer = document.getElementById("sidebar-container")
-      if (headerContainer) headerContainer.innerHTML = ""
-      if (sidebarContainer) sidebarContainer.innerHTML = ""
+      const headerContainer = document.getElementById("header-container");
+      const sidebarContainer = document.getElementById("sidebar-container");
+      if (headerContainer) headerContainer.innerHTML = "";
+      if (sidebarContainer) sidebarContainer.innerHTML = "";
     }
   }
+
 
   isAuthenticated() {
     return !!this.currentUser
