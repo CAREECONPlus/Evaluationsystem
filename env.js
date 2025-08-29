@@ -1,53 +1,53 @@
 /**
- * 環境変数管理システム
- * ブラウザ環境で環境変数を安全に管理するためのモジュール
+ * Environment Configuration Manager
+ * 環境設定管理モジュール
  */
 
 export class Environment {
   constructor() {
     this.config = null;
     this.isLoaded = false;
-    this.environment = this.detectEnvironment();
     
-    console.log(`Environment: 検出された環境: ${this.environment}`);
-  }
-
-  /**
-   * 実行環境を検出
-   */
-  detectEnvironment() {
-    const hostname = window.location.hostname;
-    const port = window.location.port;
-    const protocol = window.location.protocol;
-
-    // 開発環境の判定
-    if (
-      hostname === 'localhost' || 
-      hostname === '127.0.0.1' || 
-      hostname.includes('local') ||
-      port === '3000' ||
-      port === '5000' ||
-      port === '8000' ||
-      protocol === 'file:'
-    ) {
-      return 'development';
-    }
-
-    // ステージング環境の判定
-    if (
-      hostname.includes('staging') ||
-      hostname.includes('test') ||
-      hostname.includes('dev')
-    ) {
-      return 'staging';
-    }
-
-    // 本番環境
-    return 'production';
+    // デフォルト設定
+    this.defaultConfig = {
+      firebase: {
+        apiKey: "AIzaSyDEMOCRATIC_API_KEY_HERE",
+        authDomain: "demo-project.firebaseapp.com",
+        projectId: "demo-project",
+        storageBucket: "demo-project.appspot.com",
+        messagingSenderId: "123456789012",
+        appId: "1:123456789012:web:abcdef123456",
+        measurementId: "G-XXXXXXXXXX"
+      },
+      api: {
+        baseUrl: "/api",
+        timeout: 30000
+      },
+      app: {
+        name: "建設業評価管理システム",
+        version: "1.0.0",
+        environment: "development",
+        debug: true
+      },
+      features: {
+        enableNotifications: true,
+        enableOfflineMode: false,
+        enableAnalytics: false,
+        maxFileUploadSize: 10485760, // 10MB
+        sessionTimeout: 3600000 // 1時間
+      },
+      ui: {
+        theme: "light",
+        language: "ja",
+        dateFormat: "YYYY-MM-DD",
+        timeFormat: "HH:mm:ss"
+      }
+    };
   }
 
   /**
    * 環境設定を読み込み
+   * @returns {Promise<Object>} 設定オブジェクト
    */
   async loadConfig() {
     if (this.isLoaded) {
@@ -55,211 +55,284 @@ export class Environment {
     }
 
     try {
-      console.log('Environment: 環境設定を読み込み中...');
-
-      // 開発環境では現在の設定を使用（後で削除予定）
-      if (this.environment === 'development') {
-        this.config = {
-          FIREBASE_API_KEY: "AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk",
-          FIREBASE_AUTH_DOMAIN: "hyouka-db.firebaseapp.com",
-          FIREBASE_PROJECT_ID: "hyouka-db",
-          FIREBASE_STORAGE_BUCKET: "hyouka-db.appspot.com",
-          FIREBASE_MESSAGING_SENDER_ID: "861016804589",
-          FIREBASE_APP_ID: "1:861016804589:web:d911d516d6c79aa73690e4",
-          ENVIRONMENT: this.environment
-        };
-      } else {
-        // 本番環境では環境変数から読み込み
-        this.config = await this.loadFromServer();
-      }
-
-      this.isLoaded = true;
-      console.log('Environment: 環境設定の読み込み完了');
+      // 1. サーバーから設定を読み込み
+      await this.loadFromServer();
+    } catch (serverError) {
+      console.warn('Environment: サーバー設定読み込みエラー:', serverError.message);
       
-      return this.config;
-
-    } catch (error) {
-      console.error('Environment: 設定読み込みエラー:', error);
-      throw new Error('環境設定の読み込みに失敗しました');
+      try {
+        // 2. メタタグから設定を読み込み
+        this.loadFromMetaTags();
+      } catch (metaError) {
+        console.warn('Environment: メタタグ読み込みエラー:', metaError.message);
+        
+        // 3. デフォルト設定を使用（開発環境用）
+        console.warn('Environment: デフォルト設定を使用します（開発環境）');
+        this.config = { ...this.defaultConfig };
+        
+        // 開発環境の警告を表示
+        if (this.isDevelopment()) {
+          console.warn('⚠️ Firebase設定がデフォルト値です。本番環境では必ず実際の設定を使用してください。');
+        }
+      }
     }
+
+    this.isLoaded = true;
+    console.log('Environment: 設定読み込み完了', this.config);
+    return this.config;
   }
 
   /**
-   * サーバーから環境設定を読み込み（本番環境用）
+   * サーバーから設定を読み込み
+   * @returns {Promise<void>}
    */
   async loadFromServer() {
-    try {
-      // 本番環境では環境設定APIエンドポイントから取得
-      const response = await fetch('/.well-known/config.json');
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+    console.log('Environment: サーバーから設定を読み込み中...');
+    
+    const response = await fetch('/.well-known/config.json', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-cache'
+    });
 
-      const serverConfig = await response.json();
-      
-      // 必要な環境変数が存在するかチェック
-      const requiredVars = [
-        'FIREBASE_API_KEY',
-        'FIREBASE_AUTH_DOMAIN', 
-        'FIREBASE_PROJECT_ID',
-        'FIREBASE_STORAGE_BUCKET',
-        'FIREBASE_MESSAGING_SENDER_ID',
-        'FIREBASE_APP_ID'
-      ];
-
-      const missing = requiredVars.filter(key => !serverConfig[key]);
-      if (missing.length > 0) {
-        throw new Error(`必要な環境変数が不足: ${missing.join(', ')}`);
-      }
-
-      return {
-        ...serverConfig,
-        ENVIRONMENT: this.environment
-      };
-
-    } catch (error) {
-      console.error('Environment: サーバー設定読み込みエラー:', error);
-      
-      // フォールバック: メタタグから読み込み
-      return this.loadFromMetaTags();
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
+
+    const data = await response.json();
+    
+    // 必須項目の検証
+    this.validateConfig(data);
+    
+    this.config = data;
+    console.log('Environment: サーバー設定読み込み成功');
   }
 
   /**
-   * HTMLメタタグから環境変数を読み込み（フォールバック）
+   * メタタグから設定を読み込み
    */
   loadFromMetaTags() {
-    try {
-      console.log('Environment: メタタグから設定を読み込み中...');
+    console.log('Environment: メタタグから設定を読み込み中...');
+    
+    const getMetaContent = (name) => {
+      const meta = document.querySelector(`meta[name="${name}"]`);
+      return meta ? meta.content : null;
+    };
 
-      const getMetaContent = (name) => {
-        const meta = document.querySelector(`meta[name="${name}"]`);
-        return meta ? meta.getAttribute('content') : null;
-      };
-
-      const config = {
-        FIREBASE_API_KEY: getMetaContent('firebase-api-key'),
-        FIREBASE_AUTH_DOMAIN: getMetaContent('firebase-auth-domain'),
-        FIREBASE_PROJECT_ID: getMetaContent('firebase-project-id'),
-        FIREBASE_STORAGE_BUCKET: getMetaContent('firebase-storage-bucket'),
-        FIREBASE_MESSAGING_SENDER_ID: getMetaContent('firebase-messaging-sender-id'),
-        FIREBASE_APP_ID: getMetaContent('firebase-app-id'),
-        ENVIRONMENT: this.environment
-      };
-
-      // 必須項目のチェック
-      const missing = Object.entries(config)
-        .filter(([key, value]) => key !== 'ENVIRONMENT' && !value)
-        .map(([key]) => key);
-
-      if (missing.length > 0) {
-        throw new Error(`必要なメタタグが不足: ${missing.join(', ')}`);
+    const config = {
+      firebase: {
+        apiKey: getMetaContent('firebase-api-key'),
+        authDomain: getMetaContent('firebase-auth-domain'),
+        projectId: getMetaContent('firebase-project-id'),
+        storageBucket: getMetaContent('firebase-storage-bucket'),
+        messagingSenderId: getMetaContent('firebase-messaging-sender-id'),
+        appId: getMetaContent('firebase-app-id'),
+        measurementId: getMetaContent('firebase-measurement-id')
+      },
+      api: {
+        baseUrl: getMetaContent('api-base-url') || '/api',
+        timeout: parseInt(getMetaContent('api-timeout')) || 30000
+      },
+      app: {
+        name: getMetaContent('app-name') || '建設業評価管理システム',
+        version: getMetaContent('app-version') || '1.0.0',
+        environment: getMetaContent('app-environment') || 'production',
+        debug: getMetaContent('app-debug') === 'true'
+      },
+      features: {
+        enableNotifications: getMetaContent('feature-notifications') !== 'false',
+        enableOfflineMode: getMetaContent('feature-offline') === 'true',
+        enableAnalytics: getMetaContent('feature-analytics') === 'true',
+        maxFileUploadSize: parseInt(getMetaContent('feature-max-upload')) || 10485760,
+        sessionTimeout: parseInt(getMetaContent('feature-session-timeout')) || 3600000
+      },
+      ui: {
+        theme: getMetaContent('ui-theme') || 'light',
+        language: getMetaContent('ui-language') || 'ja',
+        dateFormat: getMetaContent('ui-date-format') || 'YYYY-MM-DD',
+        timeFormat: getMetaContent('ui-time-format') || 'HH:mm:ss'
       }
+    };
 
-      console.log('Environment: メタタグから設定を読み込み完了');
-      return config;
+    // 必須項目の検証
+    this.validateConfig(config);
+    
+    this.config = config;
+    console.log('Environment: メタタグ設定読み込み成功');
+  }
 
-    } catch (error) {
-      console.error('Environment: メタタグ読み込みエラー:', error);
-      throw error;
+  /**
+   * 設定の検証
+   * @param {Object} config - 検証する設定
+   */
+  validateConfig(config) {
+    const requiredFields = [
+      'firebase.apiKey',
+      'firebase.authDomain',
+      'firebase.projectId',
+      'firebase.storageBucket',
+      'firebase.messagingSenderId',
+      'firebase.appId'
+    ];
+
+    const missing = [];
+    
+    for (const field of requiredFields) {
+      const keys = field.split('.');
+      let value = config;
+      
+      for (const key of keys) {
+        value = value?.[key];
+      }
+      
+      if (!value) {
+        missing.push(field.split('.').pop().replace(/([A-Z])/g, '_$1').toUpperCase());
+      }
+    }
+
+    if (missing.length > 0) {
+      // 開発環境では警告のみ
+      if (this.isDevelopment()) {
+        console.warn(`Environment: 設定項目が不足していますが、開発環境のため続行します: ${missing.join(', ')}`);
+      } else {
+        throw new Error(`必要な設定項目が不足: ${missing.join(', ')}`);
+      }
     }
   }
 
   /**
-   * Firebase設定オブジェクトを取得
+   * Firebase設定を取得
+   * @returns {Promise<Object>} Firebase設定
    */
   async getFirebaseConfig() {
-    const config = await this.loadConfig();
+    if (!this.isLoaded) {
+      await this.loadConfig();
+    }
+    return this.config.firebase;
+  }
+
+  /**
+   * API設定を取得
+   * @returns {Promise<Object>} API設定
+   */
+  async getApiConfig() {
+    if (!this.isLoaded) {
+      await this.loadConfig();
+    }
+    return this.config.api;
+  }
+
+  /**
+   * アプリ設定を取得
+   * @returns {Promise<Object>} アプリ設定
+   */
+  async getAppConfig() {
+    if (!this.isLoaded) {
+      await this.loadConfig();
+    }
+    return this.config.app;
+  }
+
+  /**
+   * 機能設定を取得
+   * @returns {Promise<Object>} 機能設定
+   */
+  async getFeatureConfig() {
+    if (!this.isLoaded) {
+      await this.loadConfig();
+    }
+    return this.config.features;
+  }
+
+  /**
+   * UI設定を取得
+   * @returns {Promise<Object>} UI設定
+   */
+  async getUiConfig() {
+    if (!this.isLoaded) {
+      await this.loadConfig();
+    }
+    return this.config.ui;
+  }
+
+  /**
+   * 開発環境かどうか
+   * @returns {boolean}
+   */
+  isDevelopment() {
+    // URLベースで判定
+    const hostname = window.location.hostname;
+    return hostname === 'localhost' || 
+           hostname === '127.0.0.1' || 
+           hostname.includes('dev.') ||
+           this.config?.app?.environment === 'development';
+  }
+
+  /**
+   * 本番環境かどうか
+   * @returns {boolean}
+   */
+  isProduction() {
+    return !this.isDevelopment() && this.config?.app?.environment === 'production';
+  }
+
+  /**
+   * デバッグモードかどうか
+   * @returns {boolean}
+   */
+  isDebugMode() {
+    return this.config?.app?.debug === true || this.isDevelopment();
+  }
+
+  /**
+   * 設定を更新（ランタイム）
+   * @param {string} path - 設定パス（例: 'ui.theme'）
+   * @param {any} value - 新しい値
+   */
+  updateConfig(path, value) {
+    if (!this.config) {
+      console.error('Environment: 設定が読み込まれていません');
+      return;
+    }
+
+    const keys = path.split('.');
+    let target = this.config;
     
-    return {
-      apiKey: config.FIREBASE_API_KEY,
-      authDomain: config.FIREBASE_AUTH_DOMAIN,
-      projectId: config.FIREBASE_PROJECT_ID,
-      storageBucket: config.FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: config.FIREBASE_MESSAGING_SENDER_ID,
-      appId: config.FIREBASE_APP_ID
-    };
+    for (let i = 0; i < keys.length - 1; i++) {
+      const key = keys[i];
+      if (!target[key]) {
+        target[key] = {};
+      }
+      target = target[key];
+    }
+    
+    target[keys[keys.length - 1]] = value;
+    console.log(`Environment: 設定更新 ${path} = ${value}`);
   }
 
   /**
    * 環境変数を取得
+   * @param {string} key - 環境変数キー
+   * @param {any} defaultValue - デフォルト値
+   * @returns {any}
    */
-  async get(key, defaultValue = null) {
-    const config = await this.loadConfig();
-    return config[key] || defaultValue;
-  }
-
-  /**
-   * 現在の環境名を取得
-   */
-  getEnvironment() {
-    return this.environment;
-  }
-
-  /**
-   * 開発環境かどうか判定
-   */
-  isDevelopment() {
-    return this.environment === 'development';
-  }
-
-  /**
-   * ステージング環境かどうか判定
-   */
-  isStaging() {
-    return this.environment === 'staging';
-  }
-
-  /**
-   * 本番環境かどうか判定
-   */
-  isProduction() {
-    return this.environment === 'production';
-  }
-
-  /**
-   * 設定情報をデバッグ出力（機密情報は隠す）
-   */
-  debug() {
-    if (!this.isLoaded) {
-      console.log('Environment: まだ設定が読み込まれていません');
-      return;
-    }
-
-    const safeConfig = { ...this.config };
+  getEnv(key, defaultValue = null) {
+    // 設定から取得
+    const keys = key.toLowerCase().replace(/_/g, '.').split('.');
+    let value = this.config;
     
-    // 機密情報を隠す
-    Object.keys(safeConfig).forEach(key => {
-      if (key.includes('KEY') || key.includes('SECRET')) {
-        const value = safeConfig[key];
-        if (value && value.length > 8) {
-          safeConfig[key] = value.slice(0, 4) + '*'.repeat(value.length - 8) + value.slice(-4);
-        }
+    for (const k of keys) {
+      value = value?.[k];
+      if (value === undefined) {
+        return defaultValue;
       }
-    });
-
-    console.log('Environment Debug Info:');
-    console.log('- Environment:', this.environment);
-    console.log('- Config loaded:', this.isLoaded);
-    console.log('- Safe config:', safeConfig);
-  }
-
-  /**
-   * 設定のリロード
-   */
-  async reload() {
-    this.isLoaded = false;
-    this.config = null;
-    return await this.loadConfig();
+    }
+    
+    return value;
   }
 }
 
-// シングルトンインスタンス
-const environment = new Environment();
-
-// グローバルに公開
-window.Environment = Environment;
-window.env = environment;
-
-export default environment;
+// シングルトンインスタンスをエクスポート
+export const env = new Environment();
