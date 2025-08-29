@@ -281,7 +281,7 @@ async login(email, password) {
     }
   }
 
- updateUIForAuthState(user) {
+updateUIForAuthState(user) {
     this.currentUser = user;
 
     console.log("App: updateUIForAuthState called with user:", user ? user.email : 'null');
@@ -290,6 +290,11 @@ async login(email, password) {
     if (user) {
       // ログイン済みの場合
       console.log("App: User authenticated, updating header and sidebar");
+      console.log("App: Current user details:", { 
+        name: user.name, 
+        email: user.email, 
+        role: user.role 
+      });
       
       // ヘッダーとサイドバーのHTMLを挿入
       const headerContainer = document.getElementById("header-container");
@@ -301,23 +306,48 @@ async login(email, password) {
         // DOM要素が確実に存在するまで少し待ってから初期化
         setTimeout(() => {
           console.log("App: Initializing header...");
-          this.header.init();
+          try {
+            this.header.init();
+          } catch (error) {
+            console.error("App: Header initialization error:", error);
+          }
         }, 100);
       }
       
       if (sidebarContainer) {
         console.log("App: Rendering sidebar...");
-        sidebarContainer.innerHTML = this.sidebar.render();
-        // DOM要素が確実に存在するまで少し待ってから初期化
-        setTimeout(() => {
-          console.log("App: Initializing sidebar...");
-          this.sidebar.init();
-        }, 100);
+        try {
+          // サイドバーのレンダリング前にユーザー情報を再確認
+          console.log("App: Sidebar rendering with user:", this.currentUser);
+          const sidebarHtml = this.sidebar.render();
+          console.log("App: Sidebar HTML generated, length:", sidebarHtml.length);
+          sidebarContainer.innerHTML = sidebarHtml;
+          
+          // サイドバーの初期化をより確実に
+          setTimeout(() => {
+            console.log("App: Initializing sidebar...");
+            try {
+              this.sidebar.init();
+              console.log("App: Sidebar initialization completed");
+              
+              // 初期化後の内容確認
+              const navLinks = sidebarContainer.querySelectorAll('.nav-link');
+              console.log("App: Sidebar nav links found:", navLinks.length);
+              
+            } catch (error) {
+              console.error("App: Sidebar initialization error:", error);
+            }
+          }, 150); // サイドバーはヘッダーより少し遅らせる
+          
+        } catch (error) {
+          console.error("App: Sidebar rendering error:", error);
+        }
       }
       
       // ログインページのクリーンアップ
       const loginPageElements = document.querySelectorAll(".login-page");
       loginPageElements.forEach((el) => el.remove());
+      
     } else {
       // 未ログインの場合
       console.log("App: User not authenticated, clearing header and sidebar");
