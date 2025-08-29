@@ -1091,14 +1091,7 @@ button, a, input, select, textarea, [role="button"] {
     }
 }
 
-/* サイドバーコンテナの基本設定（強制適用） */
-#sidebar-container {
-    position: relative !important;
-    z-index: 1050 !important;
-    transition: all 0.3s ease-in-out !important;
-}
-
-/* バックドロップの基本スタイル */
+/* バックドロップスタイル */
 #sidebar-backdrop {
     position: fixed !important;
     top: 0 !important;
@@ -1118,85 +1111,34 @@ button, a, input, select, textarea, [role="button"] {
     opacity: 1 !important;
 }
 
-/* サイドバー内のテキスト強制表示 */
-.sidebar .nav-link,
-.sidebar .nav-link span,
-.sidebar .nav-link i,
-.sidebar .user-name,
-.sidebar .user-role,
-.sidebar .badge,
-.sidebar .btn,
-.sidebar .btn span,
-.sidebar .btn i,
-.sidebar small,
-.sidebar hr {
-    color: white !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    display: inherit !important;
-}
-
-/* サイドバーナビリンクのスタイル強制適用 */
-.sidebar .nav-link {
-    min-height: 48px !important;
-    display: flex !important;
-    align-items: center !important;
-    padding: 0.75rem 1.25rem !important;
-    margin: 0.125rem 0.5rem !important;
-    border-radius: 8px !important;
-    transition: all 0.3s ease !important;
-    text-decoration: none !important;
-    color: rgba(255, 255, 255, 0.9) !important;
-    font-weight: 500 !important;
-}
-
-.sidebar .nav-link:hover {
-    background: rgba(255, 255, 255, 0.15) !important;
-    color: white !important;
-    transform: translateX(4px) !important;
-}
-
-.sidebar .nav-link.active {
-    background: rgba(255, 255, 255, 0.25) !important;
-    color: white !important;
-    font-weight: 600 !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-}
-
-/* アイコンのスタイル強制 */
-.sidebar .nav-link i,
-.sidebar .nav-icon {
-    color: white !important;
-    opacity: 1 !important;
-    margin-right: 0.75rem !important;
-    width: 20px !important;
-    text-align: center !important;
-}
-
-/* ========================================
-   🖥️ デスクトップ表示修正（992px以上）
-   ======================================== */
+/* 🖥️ デスクトップ対応（992px以上） */
 @media (min-width: 992px) {
-    /* サイドバーの幅とポジション強制設定 */
+    /* サイドバーコンテナ */
     #sidebar-container {
         position: fixed !important;
-        top: 56px !important; /* ヘッダー高さ分 */
+        top: 56px !important;
         left: 0 !important;
         width: 250px !important;
         height: calc(100vh - 56px) !important;
-        transform: none !important;
+        z-index: 999 !important;
         background: linear-gradient(180deg, #2c3e50 0%, #3498db 100%) !important;
         overflow-y: auto !important;
         box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15) !important;
-        z-index: 999 !important;
     }
     
-    /* バックドロップは非表示 */
-    #sidebar-backdrop {
-        display: none !important;
+    /* サイドバー内の.sidebar要素 */
+    #sidebar-container .sidebar {
+        position: static !important;
+        top: auto !important;
+        left: auto !important;
+        width: 100% !important;
+        height: 100% !important;
+        transform: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
     }
     
-    /* コンテンツエリアのマージン強制設定 */
+    /* コンテンツエリア */
     .content {
         margin-left: 250px !important;
         margin-top: 56px !important;
@@ -1205,18 +1147,15 @@ button, a, input, select, textarea, [role="button"] {
         padding: 20px !important;
     }
     
-    /* サイドバー内要素のデスクトップ表示調整 */
-    .sidebar .nav-link {
-        margin: 0.125rem 0.75rem !important;
-        padding: 0.75rem 1.25rem !important;
+    /* バックドロップ非表示 */
+    #sidebar-backdrop {
+        display: none !important;
     }
 }
 
-/* ========================================
-   📱 モバイル対応（991px以下）
-   ======================================== */
+/* 📱 モバイル対応（991px以下） */
 @media (max-width: 991.98px) {
-    /* サイドバーを画面外に配置 */
+    /* サイドバーコンテナ */
     #sidebar-container {
         position: fixed !important;
         top: 0 !important;
@@ -1227,24 +1166,33 @@ button, a, input, select, textarea, [role="button"] {
         transition: left 0.3s ease-in-out !important;
         background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%) !important;
         overflow-y: auto !important;
-        overflow-x: hidden !important;
         box-shadow: 2px 0 15px rgba(0, 0, 0, 0.3) !important;
     }
     
-    /* メニューが表示された時 */
-    #sidebar-container.show {
-        left: 0 !important;
-        transform: translateX(0) !important;
+    /* モバイル時のサイドバー内.sidebar要素 */
+    #sidebar-container .sidebar {
+        position: static !important;
+        top: auto !important;
+        left: auto !important;
+        width: 100% !important;
+        height: 100% !important;
+        transform: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
     }
     
-    /* メニューが開いている時のbody */
+    /* メニュー表示時 */
+    #sidebar-container.show {
+        left: 0 !important;
+    }
+    
+    /* メニュー開時のbody */
     body.mobile-menu-open {
         overflow: hidden !important;
-        position: relative !important;
         height: 100vh !important;
     }
     
-    /* コンテンツエリアの調整 */
+    /* コンテンツエリア */
     .content {
         margin-left: 0 !important;
         margin-top: 56px !important;
@@ -1253,10 +1201,122 @@ button, a, input, select, textarea, [role="button"] {
     }
 }
 
-/* ========================================
-   🍔 ハンバーガーボタンの改善
-   ======================================== */
+/* 🎯 サイドバー内要素の強制スタイル */
+#sidebar-container .sidebar .nav-link,
+#sidebar-container .sidebar .nav-link span,
+#sidebar-container .sidebar .nav-link i,
+#sidebar-container .sidebar .user-name,
+#sidebar-container .sidebar .user-role,
+#sidebar-container .sidebar .badge,
+#sidebar-container .sidebar .btn,
+#sidebar-container .sidebar .btn span,
+#sidebar-container .sidebar .btn i,
+#sidebar-container .sidebar small,
+#sidebar-container .sidebar hr {
+    color: white !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
 
+/* ナビリンクスタイル */
+#sidebar-container .sidebar .nav-link {
+    min-height: 48px !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 0.75rem 1.25rem !important;
+    margin: 0.125rem 0.75rem !important;
+    border-radius: 8px !important;
+    text-decoration: none !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+}
+
+#sidebar-container .sidebar .nav-link:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: white !important;
+    transform: translateX(4px) !important;
+}
+
+#sidebar-container .sidebar .nav-link.active {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* アイコン */
+#sidebar-container .sidebar .nav-link i,
+#sidebar-container .sidebar .nav-icon {
+    color: white !important;
+    opacity: 1 !important;
+    margin-right: 0.75rem !important;
+    width: 20px !important;
+    text-align: center !important;
+}
+
+/* ユーザー情報 */
+#sidebar-container .sidebar-user-info,
+#sidebar-container .sidebar-user-info .user-name,
+#sidebar-container .sidebar-user-info .user-details,
+#sidebar-container .sidebar-user-info .badge {
+    color: white !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* バッジの色 */
+#sidebar-container .sidebar .badge.bg-danger {
+    background: #e74c3c !important;
+    color: white !important;
+}
+
+#sidebar-container .sidebar .badge.bg-info {
+    background: #3498db !important;
+    color: white !important;
+}
+
+#sidebar-container .sidebar .badge.bg-warning {
+    background: #f39c12 !important;
+    color: white !important;
+}
+
+#sidebar-container .sidebar .badge.bg-secondary {
+    background: #95a5a6 !important;
+    color: white !important;
+}
+
+/* ボタンスタイル */
+#sidebar-container .sidebar .btn-outline-light {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    color: white !important;
+    background: transparent !important;
+}
+
+#sidebar-container .sidebar .btn-outline-light:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.8) !important;
+    color: white !important;
+}
+
+#sidebar-container .sidebar .btn-danger {
+    background: #e74c3c !important;
+    border: none !important;
+    color: white !important;
+}
+
+#sidebar-container .sidebar .btn-danger:hover {
+    background: #c0392b !important;
+    color: white !important;
+}
+
+/* 区切り線 */
+#sidebar-container .sidebar hr {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    opacity: 1 !important;
+}
+
+/* 🍔 ハンバーガーボタン改善 */
 .navbar-toggler {
     border: 2px solid rgba(255, 255, 255, 0.3) !important;
     border-radius: 8px !important;
@@ -1288,184 +1348,20 @@ button, a, input, select, textarea, [role="button"] {
     transform: rotate(180deg) !important;
 }
 
-/* ========================================
-   👤 ユーザー情報表示の強制
-   ======================================== */
-
-.sidebar-user-info,
-.sidebar-user-info .user-name,
-.sidebar-user-info .user-details,
-.sidebar-user-info .badge {
-    color: white !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
-
-.sidebar-user-info .user-name {
-    font-size: 0.95rem !important;
-    font-weight: 600 !important;
-    color: white !important;
-    margin-bottom: 0.25rem !important;
-}
-
-.sidebar-user-info .badge {
-    font-size: 0.75rem !important;
-    padding: 0.25rem 0.5rem !important;
-    border-radius: 12px !important;
-    font-weight: 500 !important;
-}
-
-/* ========================================
-   🎯 バッジとボタンの色修正
-   ======================================== */
-
-.sidebar .badge.bg-danger {
-    background: #e74c3c !important;
-    color: white !important;
-}
-
-.sidebar .badge.bg-info {
-    background: #3498db !important;
-    color: white !important;
-}
-
-.sidebar .badge.bg-warning {
-    background: #f39c12 !important;
-    color: white !important;
-}
-
-.sidebar .badge.bg-secondary {
-    background: #95a5a6 !important;
-    color: white !important;
-}
-
-.sidebar .btn-outline-light {
-    border-color: rgba(255, 255, 255, 0.5) !important;
-    color: white !important;
-    background: transparent !important;
-}
-
-.sidebar .btn-outline-light:hover {
-    background: rgba(255, 255, 255, 0.1) !important;
-    border-color: rgba(255, 255, 255, 0.8) !important;
-    color: white !important;
-}
-
-.sidebar .btn-danger {
-    background: #e74c3c !important;
-    border: none !important;
-    color: white !important;
-}
-
-.sidebar .btn-danger:hover {
-    background: #c0392b !important;
-    color: white !important;
-}
-
-/* ========================================
-   🎯 アクセシビリティ改善
-   ======================================== */
-
-/* キーボードフォーカスの改善 */
-.sidebar .nav-link:focus {
-    outline: 3px solid rgba(255, 255, 255, 0.8) !important;
-    outline-offset: 2px !important;
-}
-
-.sidebar .nav-link:focus-visible {
-    outline: 3px solid rgba(255, 255, 255, 0.8) !important;
-    outline-offset: 2px !important;
-    background: rgba(255, 255, 255, 0.1) !important;
-}
-
-/* タッチターゲットのサイズ確保 */
-.sidebar .nav-link,
-.sidebar .btn {
-    min-height: 44px;
-    min-width: 44px;
-}
-
-/* ========================================
-   🎨 アニメーション改善
-   ======================================== */
-
-/* スムーズなアニメーション */
-* {
-    -webkit-tap-highlight-color: transparent;
-}
-
-/* iOS Safari対応 */
-@supports (-webkit-touch-callout: none) {
-    #sidebar-container {
-        -webkit-transform: translateZ(0);
-        transform: translateZ(0);
-    }
-}
-
-/* 高解像度ディスプレイ対応 */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    .navbar-toggler-icon i {
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-    }
-}
-
-/* ========================================
-   🔧 追加の修正（元のCSSとの競合回避）
-   ======================================== */
-
-/* すべてのテキストを強制表示 */
-.sidebar * {
-    color: inherit !important;
-}
-
-.sidebar .text-white,
-.sidebar .text-white-50 {
-    color: white !important;
-    opacity: 1 !important;
-}
-
-/* 区切り線の表示 */
-.sidebar hr {
-    border-color: rgba(255, 255, 255, 0.3) !important;
-    opacity: 1 !important;
-}
-
-/* スクロールバーのスタイル */
-.sidebar::-webkit-scrollbar {
-    width: 4px !important;
-}
-
-.sidebar::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1) !important;
-}
-
-.sidebar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3) !important;
-    border-radius: 2px !important;
-}
-
-/* ========================================
-   📱 タブレット対応（768px-991px）
-   ======================================== */
+/* 📱 タブレット・小画面対応 */
 @media (min-width: 768px) and (max-width: 991.98px) {
     #sidebar-container {
         width: 320px !important;
     }
 }
 
-/* ========================================
-   📱 小画面対応（576px以下）
-   ======================================== */
 @media (max-width: 576px) {
     #sidebar-container {
         width: 260px !important;
     }
 }
 
-/* ========================================
-   🔧 Z-index調整（モーダルとの競合回避）
-   ======================================== */
+/* Z-index調整 */
 #sidebar-container {
     z-index: 1050 !important;
 }
