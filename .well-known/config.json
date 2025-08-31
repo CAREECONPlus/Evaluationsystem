@@ -1,9 +1,9 @@
 {
   "firebase": {
-    "apiKey": "AlzaSyAK3wAWIZCutlkSQfyse8L8Z-JNMEVK5Wk",
+    "apiKey": "AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk",
     "authDomain": "hyouka-db.firebaseapp.com",
     "projectId": "hyouka-db",
-    "storageBucket": "hyouka-db.appspot.com",
+    "storageBucket": "hyouka-db.firebasestorage.app",
     "messagingSenderId": "861016804589",
     "appId": "1:861016804589:web:d911d516d6c79aa73690e4"
   },
