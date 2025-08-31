@@ -649,18 +649,74 @@ export class API {
   async validateInvitationCode(code) {
     try {
       console.log("API: Validating invitation code:", code);
+      console.log("API: Code type:", typeof code);
+      console.log("API: Code length:", code ? code.length : 0);
+      
+      if (!code || typeof code !== 'string' || code.trim() === '') {
+        console.log("API: Invalid code format");
+        throw new Error("招待コードが無効です");
+      }
+      
+      const trimmedCode = code.trim();
+      console.log("API: Trimmed code:", trimmedCode);
+      
+      // まず、招待コレクション全体を確認
+      console.log("API: Checking invitations collection...");
+      const allInvitationsQuery = query(collection(this.db, "invitations"));
+      const allInvitationsSnapshot = await getDocs(allInvitationsQuery);
+      
+      console.log("API: Total invitations in database:", allInvitationsSnapshot.size);
+      
+      // 全ての招待を表示（デバッグ用）
+      allInvitationsSnapshot.forEach((doc, index) => {
+        const data = doc.data();
+        console.log(`API: Invitation ${index + 1}:`, {
+          id: doc.id,
+          code: data.code,
+          email: data.email,
+          used: data.used,
+          tenantId: data.tenantId,
+          expiresAt: data.expiresAt
+        });
+      });
       
       // 招待コードのクエリ
+      console.log("API: Querying for specific code:", trimmedCode);
       const invitationsQuery = query(
         collection(this.db, "invitations"),
-        where("code", "==", code),
+        where("code", "==", trimmedCode),
         where("used", "==", false),
         limit(1)
       );
 
       const invitationsSnapshot = await getDocs(invitationsQuery);
       
+      console.log("API: Query result size:", invitationsSnapshot.size);
+      
       if (invitationsSnapshot.empty) {
+        console.log("API: No invitation found for code:", trimmedCode);
+        
+        // より柔軟な検索を試す（usedフィルターなし）
+        console.log("API: Trying without 'used' filter...");
+        const flexibleQuery = query(
+          collection(this.db, "invitations"),
+          where("code", "==", trimmedCode),
+          limit(1)
+        );
+        
+        const flexibleSnapshot = await getDocs(flexibleQuery);
+        console.log("API: Flexible query result size:", flexibleSnapshot.size);
+        
+        if (flexibleSnapshot.size > 0) {
+          const doc = flexibleSnapshot.docs[0];
+          const data = doc.data();
+          console.log("API: Found invitation but it may be used:", data);
+          
+          if (data.used) {
+            throw new Error("この招待コードは既に使用されています");
+          }
+        }
+        
         throw new Error("無効な招待コードです");
       }
 
@@ -670,56 +726,27 @@ export class API {
         ...invitationDoc.data()
       };
 
+      console.log("API: Found invitation:", invitation);
+
       // 有効期限チェック
-      if (new Date(invitation.expiresAt) < new Date()) {
+      const expiresAt = new Date(invitation.expiresAt);
+      const now = new Date();
+      console.log("API: Expires at:", expiresAt);
+      console.log("API: Current time:", now);
+      console.log("API: Is expired:", expiresAt < now);
+      
+      if (expiresAt < now) {
+        console.log("API: Invitation expired");
         throw new Error("招待コードの有効期限が切れています");
       }
 
-      console.log("API: Invitation code validated:", invitation);
+      console.log("API: Invitation code validated successfully");
       return invitation;
 
     } catch (error) {
       console.error("API: Error validating invitation code:", error);
+      console.error("API: Error stack:", error.stack);
       this.handleError(error, '招待コードの検証');
-      throw error;
-    }
-  }
-
-  /**
-   * 招待を使用済みにマーク
-   */
-  async markInvitationAsUsed(invitationId, userId) {
-    try {
-      console.log("API: Marking invitation as used:", { invitationId, userId });
-
-      // 現在の招待データを取得
-      const invitationRef = doc(this.db, "invitations", invitationId);
-      const invitationDoc = await getDoc(invitationRef);
-      
-      if (!invitationDoc.exists()) {
-        throw new Error("招待が見つかりません");
-      }
-
-      const currentData = invitationDoc.data();
-      console.log("API: Current invitation data:", currentData);
-
-      // 最小限のフィールドのみ更新
-      const updateData = {
-        used: true,
-        usedBy: userId,
-        usedAt: serverTimestamp()
-      };
-
-      console.log("API: Updating with data:", updateData);
-
-      await updateDoc(invitationRef, updateData);
-      console.log("API: Invitation marked as used successfully");
-
-      return { success: true };
-
-    } catch (error) {
-      console.error("API: Error marking invitation as used:", error);
-      this.handleError(error, '招待の使用済み更新');
       throw error;
     }
   }
