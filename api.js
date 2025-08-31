@@ -618,6 +618,9 @@ export class API {
   /**
    * 招待を取得
    */
+ /**
+   * 招待を取得
+   */
   async getInvitation(token) {
     try {
       console.log("API: Getting invitation:", token);
@@ -641,6 +644,18 @@ export class API {
       this.handleError(error, '招待情報の取得');
       throw error;
     }
+  }
+
+  /**
+   * 招待コードを生成
+   */
+  generateInvitationCode(length = 8) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
   }
 
   /**
@@ -994,6 +1009,119 @@ async validateInvitationCode(code) {
     } catch (error) {
       console.error("API: Error creating admin invitation:", error);
       this.handleError(error, '管理者招待の作成');
+      throw error;
+    }
+  }
+
+  /**
+   * 招待を使用済みにマーク
+   */
+  async markInvitationAsUsed(invitationId, userId) {
+    try {
+      console.log("API: Marking invitation as used:", { invitationId, userId });
+
+      // 現在の招待データを取得
+      const invitationRef = doc(this.db, "invitations", invitationId);
+      const invitationDoc = await getDoc(invitationRef);
+      
+      if (!invitationDoc.exists()) {
+        throw new Error("招待が見つかりません");
+      }
+
+      const currentData = invitationDoc.data();
+      console.log("API: Current invitation data:", currentData);
+
+      // 既に使用済みかチェック
+      if (currentData.used) {
+        console.log("API: Invitation already used");
+        throw new Error("この招待は既に使用されています");
+      }
+
+      // 最小限のフィールドのみ更新
+      const updateData = {
+        used: true,
+        usedBy: userId,
+        usedAt: serverTimestamp()
+      };
+
+      console.log("API: Updating with data:", updateData);
+
+      await updateDoc(invitationRef, updateData);
+      console.log("API: Invitation marked as used successfully");
+
+      return { success: true };
+
+    } catch (error) {
+      console.error("API: Error marking invitation as used:", error);
+      this.handleError(error, '招待の使用済み更新');
+      throw error;
+    }
+  }
+
+  /**
+   * 招待一覧を取得
+   */
+  async getInvitations() {
+    try {
+      console.log("API: Loading invitations...");
+      
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      const tenantId = currentUser.tenantId;
+      
+      const invitationsQuery = query(
+        collection(this.db, "invitations"),
+        where("tenantId", "==", tenantId)
+      );
+
+      const invitationsSnapshot = await getDocs(invitationsQuery);
+      const invitations = [];
+
+      invitationsSnapshot.forEach((doc) => {
+        const data = doc.data();
+        invitations.push({
+          id: doc.id,
+          ...data,
+          // 招待URLを再生成
+          url: `${window.location.origin}${window.location.pathname}#/register?code=${data.code}`
+        });
+      });
+
+      // 作成日時でソート（新しい順）
+      invitations.sort((a, b) => {
+        const aTime = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
+        const bTime = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
+        return bTime - aTime;
+      });
+
+      console.log("API: Invitations loaded:", invitations.length);
+      return invitations;
+
+    } catch (error) {
+      console.error("API: Error loading invitations:", error);
+      this.handleError(error, '招待一覧の読み込み');
+      throw error;
+    }
+  }
+
+  /**
+   * 招待を削除
+   */
+  async deleteInvitation(invitationId) {
+    try {
+      console.log("API: Deleting invitation:", invitationId);
+      
+      await deleteDoc(doc(this.db, "invitations", invitationId));
+
+      console.log("API: Invitation deleted successfully");
+      return { success: true };
+
+    } catch (error) {
+      console.error("API: Error deleting invitation:", error);
+      this.handleError(error, '招待の削除');
       throw error;
     }
   }
