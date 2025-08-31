@@ -13,7 +13,7 @@ import {
   setDoc,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
-import environment from "./env.js"
+import { env as environment } from "./env.js"
 
 export class Auth {
   constructor(app) {
@@ -44,7 +44,7 @@ export class Auth {
       this.isInitialized = true
       
       console.log("Auth: Firebase initialized successfully")
-      console.log("Auth: Environment:", environment.getEnvironment())
+      console.log("Auth: Environment:", environment.isDevelopment() ? "development" : "production")
       
       return Promise.resolve()
       
