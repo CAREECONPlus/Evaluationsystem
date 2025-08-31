@@ -581,7 +581,7 @@ export class UserManagementPage {
     modal.show();
   }
 
-  async sendInvitation() {
+async sendInvitation() {
     const form = document.getElementById('inviteForm');
     if (!form.checkValidity()) {
       form.classList.add('was-validated');
@@ -595,14 +595,16 @@ export class UserManagementPage {
     };
     
     try {
-      this.app.showLoading('招待を送信中...');
+      this.app.showLoading('招待を作成中...');
       
-      await this.app.api.createInvitation(invitationData);
-      
-      this.app.showSuccess('招待メールを送信しました');
+      // 修正：createInvitationの結果を受け取る
+      const invitationResult = await this.app.api.createInvitation(invitationData);
       
       // モーダルを閉じる
       bootstrap.Modal.getInstance(document.getElementById('inviteModal')).hide();
+      
+      // 招待URLを表示するモーダルを表示
+      this.showInvitationUrlModal(invitationResult);
       
     } catch (error) {
       console.error('UserManagement: Error sending invitation:', error);
@@ -610,6 +612,116 @@ export class UserManagementPage {
     } finally {
       this.app.hideLoading();
     }
+  }
+
+  // 新規追加：招待URL表示モーダル
+  showInvitationUrlModal(invitationResult) {
+    const modalHtml = `
+      <div class="modal fade" id="invitationUrlModal" tabindex="-1" aria-labelledby="invitationUrlModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="invitationUrlModalLabel">
+                <i class="fas fa-link me-2"></i>招待URL作成完了
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="alert alert-success" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                招待URLが正常に作成されました！
+              </div>
+              
+              <div class="mb-3">
+                <label for="invitationUrl" class="form-label">招待URL</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="invitationUrl" value="${invitationResult.url}" readonly>
+                  <button class="btn btn-outline-secondary" type="button" id="copyUrlBtn">
+                    <i class="fas fa-copy"></i> コピー
+                  </button>
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6">
+                  <label class="form-label">招待コード</label>
+                  <div class="input-group">
+                    <input type="text" class="form-control" value="${invitationResult.code}" readonly>
+                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="navigator.clipboard?.writeText('${invitationResult.code}')">
+                      <i class="fas fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">有効期限</label>
+                  <input type="text" class="form-control" value="${new Date(invitationResult.expiresAt).toLocaleDateString('ja-JP')}" readonly>
+                </div>
+              </div>
+              
+              <div class="mt-4">
+                <h6>使用方法：</h6>
+                <ol class="small text-muted">
+                  <li>上記のURLを招待したい方にお送りください</li>
+                  <li>相手がURLにアクセスし、必要事項を入力して登録完了します</li>
+                  <li>招待コードは${new Date(invitationResult.expiresAt).toLocaleDateString('ja-JP')}まで有効です</li>
+                </ol>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-primary" id="emailInviteBtn">
+                <i class="fas fa-envelope me-2"></i>メールで送信
+              </button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // 既存のモーダルがあれば削除
+    const existingModal = document.getElementById('invitationUrlModal');
+    if (existingModal) {
+      existingModal.remove();
+    }
+    
+    // モーダルを追加
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // イベントリスナーを設定
+    document.getElementById('copyUrlBtn').addEventListener('click', () => {
+      const urlInput = document.getElementById('invitationUrl');
+      urlInput.select();
+      navigator.clipboard?.writeText(invitationResult.url).then(() => {
+        this.app.showSuccess('URLをクリップボードにコピーしました');
+      }).catch(() => {
+        // フォールバック
+        document.execCommand('copy');
+        this.app.showSuccess('URLをクリップボードにコピーしました');
+      });
+    });
+    
+    document.getElementById('emailInviteBtn').addEventListener('click', () => {
+      const subject = encodeURIComponent('システムへの招待');
+      const body = encodeURIComponent(
+        `こんにちは、\n\n` +
+        `評価管理システムへの招待をお送りします。\n\n` +
+        `以下のURLにアクセスして登録を完了してください：\n` +
+        `${invitationResult.url}\n\n` +
+        `招待コード: ${invitationResult.code}\n` +
+        `有効期限: ${new Date(invitationResult.expiresAt).toLocaleDateString('ja-JP')}\n\n` +
+        `ご不明な点がございましたらお気軽にお問い合わせください。`
+      );
+      window.open(`mailto:?subject=${subject}&body=${body}`);
+    });
+    
+    // モーダルを表示
+    const modal = new bootstrap.Modal(document.getElementById('invitationUrlModal'));
+    modal.show();
+    
+    // モーダルが閉じられた時のクリーンアップ
+    document.getElementById('invitationUrlModal').addEventListener('hidden.bs.modal', () => {
+      document.getElementById('invitationUrlModal').remove();
+    });
   }
 
   updateStatistics() {
