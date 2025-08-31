@@ -11,13 +11,12 @@ export class Environment {
     // デフォルト設定
     this.defaultConfig = {
       firebase: {
-        apiKey: "AIzaSyDEMOCRATIC_API_KEY_HERE",
-        authDomain: "demo-project.firebaseapp.com",
-        projectId: "demo-project",
-        storageBucket: "demo-project.appspot.com",
-        messagingSenderId: "123456789012",
-        appId: "1:123456789012:web:abcdef123456",
-        measurementId: "G-XXXXXXXXXX"
+        apiKey: "AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk",
+        authDomain: "hyouka-db.firebaseapp.com",
+        projectId: "hyouka-db",
+        storageBucket: "hyouka-db.firebasestorage.app",
+        messagingSenderId: "861016804589",
+        appId: "1:861016804589:web:d911d516d6c79aa73690e4"
       },
       api: {
         baseUrl: "/api",
@@ -59,10 +58,10 @@ export class Environment {
       console.log('Environment: 開発環境のため、実際のFirebase設定を使用します');
       this.config = {
         firebase: {
-          apiKey: "YOUR_CORRECT_API_KEY_HERE", // ← Firebase Console から正確なAPI キーをコピーしてください
+          apiKey: "AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk",
           authDomain: "hyouka-db.firebaseapp.com",
           projectId: "hyouka-db",
-          storageBucket: "hyouka-db.appspot.com",
+          storageBucket: "hyouka-db.firebasestorage.app",
           messagingSenderId: "861016804589",
           appId: "1:861016804589:web:d911d516d6c79aa73690e4"
         },
