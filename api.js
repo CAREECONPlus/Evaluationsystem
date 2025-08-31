@@ -27,8 +27,8 @@ export class API {
     this.currentTenantId = null;  // 追加
     this.currentCompanyId = null;  // 追加
     console.log("API: Initialized with shared Firestore instance from Auth");
-console.log（ "API：Authから共有Firestoreインスタンスで初期化"）;  }
-
+console.log("API：Authから共有Firestoreインスタンスで初期化");
+    
   // ===== Tenant Management Methods ===== 追加
   /**
    * 現在のテナントIDを取得
