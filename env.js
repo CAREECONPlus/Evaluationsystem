@@ -59,7 +59,7 @@ export class Environment {
       console.log('Environment: 開発環境のため、実際のFirebase設定を使用します');
       this.config = {
         firebase: {
-          apiKey: "AlzaSyAK3wAWIZCutlkSQfyse8L8Z-JNMEVK5Wk",
+          apiKey: "YOUR_CORRECT_API_KEY_HERE", // ← Firebase Console から正確なAPI キーをコピーしてください
           authDomain: "hyouka-db.firebaseapp.com",
           projectId: "hyouka-db",
           storageBucket: "hyouka-db.appspot.com",
