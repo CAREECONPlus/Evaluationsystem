@@ -755,72 +755,88 @@ export class API {
    * 招待を作成
    */
   async createInvitation(invitationData) {
-  try {
-    console.log("API: Creating invitation:", invitationData);
+    try {
+      console.log("API: Creating invitation:", invitationData);
 
-    const currentUser = await this.getCurrentUserData();
-    if (!currentUser) {
-      throw new Error("現在のユーザー情報が取得できません");
-    }
-
-    // undefinedフィールドを除外
-    const cleanData = {};
-    for (const [key, value] of Object.entries(invitationData)) {
-      if (value !== undefined && value !== null && value !== '') {
-        cleanData[key] = value;
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser) {
+        throw new Error("現在のユーザー情報が取得できません");
       }
+      
+      console.log("API: Current user:", currentUser);
+
+      // undefinedフィールドを除外
+      const cleanData = {};
+      for (const [key, value] of Object.entries(invitationData)) {
+        if (value !== undefined && value !== null && value !== '') {
+          cleanData[key] = value;
+        }
+      }
+      
+      console.log("API: Clean data:", cleanData);
+
+      // 招待IDを生成
+      const invitationRef = doc(collection(this.db, "invitations"));
+      
+      // 招待コードを生成（8文字の英数字）
+      const invitationCode = this.generateInvitationCode();
+      
+      console.log("API: Generated invitation code:", invitationCode);
+      console.log("API: Invitation ID:", invitationRef.id);
+      
+      const expiresAt = invitationData.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      
+      const invitation = {
+        id: invitationRef.id,
+        code: invitationCode,
+        ...cleanData,
+        tenantId: currentUser.tenantId,
+        companyName: currentUser.companyName,
+        inviterName: currentUser.name,
+        inviterEmail: currentUser.email,
+        used: false,
+        createdAt: serverTimestamp(),
+        expiresAt: expiresAt
+      };
+
+      console.log("API: Invitation data to save:", invitation);
+
+      // Firestoreに保存
+      await setDoc(invitationRef, invitation);
+      console.log("API: Invitation saved to Firestore");
+      
+      // 保存後に確認のため再取得
+      const savedDoc = await getDoc(invitationRef);
+      if (savedDoc.exists()) {
+        console.log("API: Verified saved invitation:", savedDoc.data());
+      } else {
+        console.error("API: Failed to verify saved invitation");
+      }
+      
+      // 招待URLを生成
+      const invitationUrl = `${window.location.origin}${window.location.pathname}#/register?code=${invitationCode}`;
+      
+      console.log("API: Invitation created successfully:", invitationRef.id);
+      console.log("API: Invitation URL:", invitationUrl);
+      
+      const result = {
+        id: invitationRef.id,
+        code: invitationCode,
+        url: invitationUrl,
+        expiresAt: expiresAt
+      };
+      
+      console.log("API: Returning result:", result);
+      
+      return result;
+
+    } catch (error) {
+      console.error("API: Error creating invitation:", error);
+      console.error("API: Error stack:", error.stack);
+      this.handleError(error, '招待の作成');
+      throw error;
     }
-
-    // 招待IDを生成
-    const invitationRef = doc(collection(this.db, "invitations"));
-    
-    // 招待コードを生成（8文字の英数字）
-    const invitationCode = this.generateInvitationCode();
-    
-    console.log("API: Generated invitation code:", invitationCode); // デバッグログ追加
-    console.log("API: Invitation ID:", invitationRef.id); // デバッグログ追加
-    
-    const invitation = {
-      id: invitationRef.id,
-      code: invitationCode,
-      ...cleanData,
-      tenantId: currentUser.tenantId,
-      companyName: currentUser.companyName,
-      inviterName: currentUser.name,
-      inviterEmail: currentUser.email,
-      used: false,
-      createdAt: serverTimestamp(),
-      expiresAt: invitationData.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-    };
-
-    console.log("API: Saving invitation data:", invitation); // デバッグログ追加
-
-    await setDoc(invitationRef, invitation);
-    
-    // 招待URLを生成
-    const invitationUrl = `${window.location.origin}${window.location.pathname}#/register?code=${invitationCode}`;
-    
-    console.log("API: Invitation created successfully:", invitationRef.id);
-    console.log("API: Invitation URL:", invitationUrl);
-    
-    const result = {
-      id: invitationRef.id,
-      code: invitationCode,
-      url: invitationUrl,
-      expiresAt: invitation.expiresAt
-    };
-    
-    console.log("API: Returning result:", result); // デバッグログ追加
-    
-    return result;
-
-  } catch (error) {
-    console.error("API: Error creating invitation:", error);
-    this.handleError(error, '招待の作成');
-    throw error;
   }
-}
-
 // validateInvitationCode メソッドも修正
 async validateInvitationCode(code) {
   try {
