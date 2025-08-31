@@ -83,6 +83,17 @@ export class Auth {
               const userProfile = await this.app.api.getUserProfile(user.uid)
               if (userProfile && userProfile.status === "active") {
                 console.log("Auth state changed: User is signed in and active.", user.email)
+                
+                // テナントIDを設定（修正追加）
+                if (userProfile.tenantId) {
+                  console.log("Auth: Setting tenant ID:", userProfile.tenantId)
+                  this.app.api.setCurrentTenantId(userProfile.tenantId)
+                } else if (userProfile.companyId) {
+                  // 後方互換性のためcompanyIdも確認
+                  console.log("Auth: Setting tenant ID from companyId:", userProfile.companyId)
+                  this.app.api.setCurrentTenantId(userProfile.companyId)
+                }
+                
                 this.app.updateUIForAuthState(userProfile)
 
                 // ログイン直後の場合、ダッシュボードへ遷移
@@ -111,6 +122,12 @@ export class Auth {
             }
           } else {
             console.log("Auth state changed: User is signed out.")
+            
+            // ログアウト時にテナントIDをクリア（修正追加）
+            if (this.app.api) {
+              this.app.api.setCurrentTenantId(null)
+            }
+            
             this.app.updateUIForAuthState(null)
             // ログアウト時はログインページへ
             if (
@@ -184,7 +201,22 @@ export class Auth {
 
   async login(email, password) {
     try {
-      await signInWithEmailAndPassword(this.auth, email, password)
+      const userCredential = await signInWithEmailAndPassword(this.auth, email, password)
+      
+      // ログイン成功時にユーザー情報を取得してテナントIDを設定（修正追加）
+      if (userCredential.user && this.app.api) {
+        try {
+          const userProfile = await this.app.api.getUserProfile(userCredential.user.uid)
+          if (userProfile && userProfile.tenantId) {
+            console.log("Auth: Setting tenant ID after login:", userProfile.tenantId)
+            this.app.api.setCurrentTenantId(userProfile.tenantId)
+          }
+        } catch (error) {
+          console.warn("Auth: Could not set tenant ID after login:", error)
+        }
+      }
+      
+      return userCredential
     } catch (error) {
       console.error("Auth: Login error:", error)
       throw error
@@ -193,6 +225,11 @@ export class Auth {
 
   async logout() {
     try {
+      // ログアウト前にテナントIDをクリア（修正追加）
+      if (this.app.api) {
+        this.app.api.setCurrentTenantId(null)
+      }
+      
       await signOut(this.auth)
     } catch (error) {
       console.error("Auth: Logout error:", error)
@@ -229,6 +266,12 @@ export class Auth {
       }
 
       await setDoc(doc(this.db, "users", user.uid), userProfile)
+      
+      // 登録成功時にテナントIDを設定（修正追加）
+      if (userData.tenantId && this.app.api) {
+        this.app.api.setCurrentTenantId(userData.tenantId)
+      }
+      
       return userCredential
     } catch (error) {
       console.error("Auth: Registration and profile creation error:", error)
