@@ -54,26 +54,65 @@ export class Environment {
       return this.config;
     }
 
+    // GitHub Pagesや開発環境では直接実際の設定を使用
+    if (this.isDevelopment()) {
+      console.log('Environment: 開発環境のため、実際のFirebase設定を使用します');
+      this.config = {
+        firebase: {
+          apiKey: "AlzaSyAK3wAWIZCutlkSQfyse8L8Z-JNMEVK5Wk",
+          authDomain: "hyouka-db.firebaseapp.com",
+          projectId: "hyouka-db",
+          storageBucket: "hyouka-db.appspot.com",
+          messagingSenderId: "861016804589",
+          appId: "1:861016804589:web:d911d516d6c79aa73690e4"
+        },
+        api: {
+          baseUrl: "/api",
+          timeout: 30000
+        },
+        app: {
+          name: "建設業評価管理システム",
+          version: "1.0.0",
+          environment: "development",
+          debug: true
+        },
+        features: {
+          enableNotifications: true,
+          enableOfflineMode: false,
+          enableAnalytics: false,
+          maxFileUploadSize: 10485760,
+          sessionTimeout: 3600000
+        },
+        ui: {
+          theme: "light",
+          language: "ja",
+          dateFormat: "YYYY-MM-DD",
+          timeFormat: "HH:mm:ss"
+        }
+      };
+      
+      this.isLoaded = true;
+      console.log('Environment: 開発環境設定読み込み完了');
+      return this.config;
+    }
+
     try {
-      // 1. サーバーから設定を読み込み
+      // 本番環境でのみサーバーから設定を読み込み
       await this.loadFromServer();
+      console.log('Environment: サーバー設定読み込み成功');
     } catch (serverError) {
       console.warn('Environment: サーバー設定読み込みエラー:', serverError.message);
       
       try {
         // 2. メタタグから設定を読み込み
         this.loadFromMetaTags();
+        console.log('Environment: メタタグ設定読み込み成功');
       } catch (metaError) {
         console.warn('Environment: メタタグ読み込みエラー:', metaError.message);
         
-        // 3. デフォルト設定を使用（開発環境用）
-        console.warn('Environment: デフォルト設定を使用します（開発環境）');
+        // 3. デフォルト設定を使用
+        console.warn('Environment: デフォルト設定を使用します');
         this.config = { ...this.defaultConfig };
-        
-        // 開発環境の警告を表示
-        if (this.isDevelopment()) {
-          console.warn('⚠️ Firebase設定がデフォルト値です。本番環境では必ず実際の設定を使用してください。');
-        }
       }
     }
 
@@ -89,25 +128,31 @@ export class Environment {
   async loadFromServer() {
     console.log('Environment: サーバーから設定を読み込み中...');
     
-    const response = await fetch('/.well-known/config.json', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-cache'
-    });
+    try {
+      const response = await fetch('/.well-known/config.json', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-cache'
+      });
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (!response.ok) {
+        throw new Error(`設定ファイルが見つかりません (HTTP ${response.status})`);
+      }
+
+      const data = await response.json();
+      
+      // 必須項目の検証
+      this.validateConfig(data);
+      
+      this.config = data;
+      
+    } catch (error) {
+      // ネットワークエラーや404エラーを適切にハンドリング
+      console.warn('Environment: サーバー設定の読み込みに失敗:', error.message);
+      throw new Error(`サーバー設定読み込み失敗: ${error.message}`);
     }
-
-    const data = await response.json();
-    
-    // 必須項目の検証
-    this.validateConfig(data);
-    
-    this.config = data;
-    console.log('Environment: サーバー設定読み込み成功');
   }
 
   /**
@@ -156,11 +201,17 @@ export class Environment {
       }
     };
 
+    // メタタグの設定が空の場合はエラーを投げる
+    const hasAnyFirebaseConfig = Object.values(config.firebase).some(value => value !== null);
+    
+    if (!hasAnyFirebaseConfig) {
+      throw new Error('Firebase設定のメタタグが見つかりません');
+    }
+
     // 必須項目の検証
     this.validateConfig(config);
     
     this.config = config;
-    console.log('Environment: メタタグ設定読み込み成功');
   }
 
   /**
@@ -267,6 +318,7 @@ export class Environment {
     return hostname === 'localhost' || 
            hostname === '127.0.0.1' || 
            hostname.includes('dev.') ||
+           hostname.includes('github.io') || // GitHub Pages を開発環境として扱う
            this.config?.app?.environment === 'development';
   }
 
