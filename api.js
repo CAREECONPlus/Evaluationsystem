@@ -747,11 +747,17 @@ export class API {
       // 招待IDを生成
       const invitationRef = doc(collection(this.db, "invitations"));
       
+      // 招待コードを生成（8文字の英数字）
+      const invitationCode = this.generateInvitationCode();
+      
       const invitation = {
         id: invitationRef.id,
+        code: invitationCode,
         ...cleanData,
         tenantId: currentUser.tenantId,
         companyName: currentUser.companyName,
+        inviterName: currentUser.name,
+        inviterEmail: currentUser.email,
         used: false,
         createdAt: serverTimestamp(),
         expiresAt: invitationData.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7日後
@@ -759,12 +765,102 @@ export class API {
 
       await setDoc(invitationRef, invitation);
       
+      // 招待URLを生成
+      const invitationUrl = `${window.location.origin}${window.location.pathname}#/register?code=${invitationCode}`;
+      
       console.log("API: Invitation created successfully:", invitationRef.id);
-      return invitationRef.id; // トークンとしてIDを返す
+      console.log("API: Invitation URL:", invitationUrl);
+      
+      return {
+        id: invitationRef.id,
+        code: invitationCode,
+        url: invitationUrl,
+        expiresAt: invitation.expiresAt
+      };
 
     } catch (error) {
       console.error("API: Error creating invitation:", error);
       this.handleError(error, '招待の作成');
+      throw error;
+    }
+  }
+
+  /**
+   * 招待コードを生成
+   */
+  generateInvitationCode(length = 8) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
+  /**
+   * 招待一覧を取得
+   */
+  async getInvitations() {
+    try {
+      console.log("API: Loading invitations...");
+      
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      const tenantId = currentUser.tenantId;
+      
+      const invitationsQuery = query(
+        collection(this.db, "invitations"),
+        where("tenantId", "==", tenantId)
+      );
+
+      const invitationsSnapshot = await getDocs(invitationsQuery);
+      const invitations = [];
+
+      invitationsSnapshot.forEach((doc) => {
+        const data = doc.data();
+        invitations.push({
+          id: doc.id,
+          ...data,
+          // 招待URLを再生成
+          url: `${window.location.origin}${window.location.pathname}#/register?code=${data.code}`
+        });
+      });
+
+      // 作成日時でソート（新しい順）
+      invitations.sort((a, b) => {
+        const aTime = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
+        const bTime = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
+        return bTime - aTime;
+      });
+
+      console.log("API: Invitations loaded:", invitations.length);
+      return invitations;
+
+    } catch (error) {
+      console.error("API: Error loading invitations:", error);
+      this.handleError(error, '招待一覧の読み込み');
+      throw error;
+    }
+  }
+
+  /**
+   * 招待を削除
+   */
+  async deleteInvitation(invitationId) {
+    try {
+      console.log("API: Deleting invitation:", invitationId);
+      
+      await deleteDoc(doc(this.db, "invitations", invitationId));
+
+      console.log("API: Invitation deleted successfully");
+      return { success: true };
+
+    } catch (error) {
+      console.error("API: Error deleting invitation:", error);
+      this.handleError(error, '招待の削除');
       throw error;
     }
   }
