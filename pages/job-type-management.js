@@ -1,37 +1,130 @@
 /**
- * Job Type Management Page
- * 評価職種管理ページ
+ * User Management Page
+ * ユーザー管理ページ
  */
-export class JobTypeManagementPage {
+
+export class UserManagementPage {
   constructor(app) {
     this.app = app;
+    this.users = [];
+    this.filteredUsers = [];
     this.jobTypes = [];
-    this.selectedJobType = null;
+    this.currentEditingUser = null;
     this.isLoading = false;
+    this.currentFilter = 'all';
+    this.searchTerm = '';
   }
 
   async render() {
     return `
-<div class="job-type-management-page p-4">
-<div class="d-flex justify-content-between align-items-center mb-4">
-<div>
-<h1 class="h3 mb-2">評価職種管理</h1>
-<p class="text-muted">評価に使用する職種を管理します</p>
-</div>
-<button class="btn btn-primary" onclick="window.app.currentPage.showAddJobTypeModal()">
-<i class="fas fa-plus me-2"></i>職種を追加
-</button>
-</div>
-    <div class="row">
-      <!-- 職種リスト -->
-      <div class="col-md-4">
+      <div class="container-fluid">
+        <!-- ページヘッダー -->
+        <div class="row mb-4">
+          <div class="col">
+            <h1 class="h3 mb-3">
+              <i class="fas fa-users me-2"></i>
+              ユーザー管理
+            </h1>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                  <a href="#/dashboard" data-link>ダッシュボード</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">ユーザー管理</li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+
+        <!-- 統計カード -->
+        <div class="row mb-4">
+          <div class="col-md-3 mb-3">
+            <div class="card border-primary">
+              <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">総ユーザー数</h6>
+                <h3 class="card-title mb-0">
+                  <span id="totalUsers">0</span>
+                </h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="card border-success">
+              <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">アクティブ</h6>
+                <h3 class="card-title mb-0 text-success">
+                  <span id="activeUsers">0</span>
+                </h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="card border-warning">
+              <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">保留中</h6>
+                <h3 class="card-title mb-0 text-warning">
+                  <span id="pendingUsers">0</span>
+                </h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="card border-danger">
+              <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">無効</h6>
+                <h3 class="card-title mb-0 text-danger">
+                  <span id="inactiveUsers">0</span>
+                </h3>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- フィルターとアクション -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-4 mb-3 mb-md-0">
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                  </span>
+                  <input type="text" 
+                         class="form-control" 
+                         id="userSearchInput" 
+                         placeholder="名前、メールで検索...">
+                </div>
+              </div>
+              <div class="col-md-4 mb-3 mb-md-0">
+                <select class="form-select" id="userStatusFilter">
+                  <option value="all">すべてのステータス</option>
+                  <option value="active">アクティブ</option>
+                  <option value="pending">保留中</option>
+                  <option value="suspended">無効</option>
+                </select>
+              </div>
+              <div class="col-md-4 text-md-end">
+                <button class="btn btn-primary" id="inviteUserBtn">
+                  <i class="fas fa-user-plus me-2"></i>
+                  ユーザー招待
+                </button>
+                <button class="btn btn-outline-secondary ms-2" id="exportUsersBtn">
+                  <i class="fas fa-download me-2"></i>
+                  エクスポート
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ユーザーリスト -->
         <div class="card">
           <div class="card-header">
-            <h5 class="mb-0">職種一覧</h5>
+            <h5 class="card-title mb-0">ユーザー一覧</h5>
           </div>
-          <div class="card-body p-0">
-            <div class="list-group list-group-flush" id="jobTypesList">
-              <div class="text-center p-3">
+          <div class="card-body">
+            <div id="userTableContainer">
+              <div class="text-center py-5">
                 <div class="spinner-border text-primary" role="status">
                   <span class="visually-hidden">読み込み中...</span>
                 </div>
@@ -41,421 +134,590 @@ export class JobTypeManagementPage {
         </div>
       </div>
 
-      <!-- 職種詳細 -->
-      <div class="col-md-8">
-        <div class="card">
-          <div class="card-header">
-            <h5 class="mb-0">職種詳細</h5>
-          </div>
-          <div class="card-body" id="jobTypeDetails">
-            <div class="text-center text-muted py-5">
-              <i class="fas fa-briefcase fa-3x mb-3"></i>
-              <p>左のリストから職種を選択してください</p>
+      <!-- ユーザー編集モーダル -->
+      <div class="modal fade" id="userEditModal" tabindex="-1" aria-labelledby="userEditModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="userEditModalLabel">ユーザー編集</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 職種追加モーダル -->
-    <div class="modal fade" id="addJobTypeModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">新規職種追加</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <form id="addJobTypeForm">
-              <div class="mb-3">
-                <label for="jobTypeName" class="form-label">職種名 <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="jobTypeName" required 
-                       placeholder="例: エンジニア、営業、マーケティング">
-              </div>
-              <div class="mb-3">
-                <label for="jobTypeDescription" class="form-label">説明</label>
-                <textarea class="form-control" id="jobTypeDescription" rows="3" 
-                          placeholder="この職種の説明を入力してください"></textarea>
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-            <button type="button" class="btn btn-primary" onclick="window.app.currentPage.addJobType()">
-              <i class="fas fa-plus me-1"></i>追加
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 職種編集モーダル -->
-    <div class="modal fade" id="editJobTypeModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">職種編集</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <form id="editJobTypeForm">
-              <input type="hidden" id="editJobTypeId">
-              <div class="mb-3">
-                <label for="editJobTypeName" class="form-label">職種名 <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="editJobTypeName" required>
-              </div>
-              <div class="mb-3">
-                <label for="editJobTypeDescription" class="form-label">説明</label>
-                <textarea class="form-control" id="editJobTypeDescription" rows="3"></textarea>
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-            <button type="button" class="btn btn-primary" onclick="window.app.currentPage.updateJobType()">
-              <i class="fas fa-save me-1"></i>更新
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-`;
-  }
-
-  async init() {
-    this.app.currentPage = this;
-    if (!this.app.isAuthenticated() || !this.app.hasRole('admin')) {
-      this.app.navigate('#/dashboard');
-      return;
-    }
-
-    await this.loadJobTypes();
-  }
-
-  async loadJobTypes() {
-    const listContainer = document.getElementById('jobTypesList');
-    listContainer.innerHTML = `
-      <div class="text-center p-3">
-        <div class="spinner-border text-primary" role="status"></div>
-      </div>
-    `;
-    
-    try {
-      this.jobTypes = await this.app.api.getJobTypes();
-      this.renderJobTypesList();
-    } catch (error) {
-      console.error('Error loading job types:', error);
-      listContainer.innerHTML = `
-        <div class="text-center text-danger p-3">
-          <i class="fas fa-exclamation-triangle mb-2"></i>
-          <p>職種の読み込みに失敗しました</p>
-        </div>
-      `;
-    }
-  }
-
-  renderJobTypesList() {
-    const listContainer = document.getElementById('jobTypesList');
-    if (this.jobTypes.length === 0) {
-      listContainer.innerHTML = `
-        <div class="text-center text-muted p-3">
-          <i class="fas fa-briefcase mb-2"></i>
-          <p>職種が登録されていません</p>
-        </div>
-      `;
-      return;
-    }
-
-    listContainer.innerHTML = this.jobTypes.map(jobType => `
-      <a href="#" class="list-group-item list-group-item-action ${this.selectedJobType?.id === jobType.id ? 'active' : ''}"
-         onclick="window.app.currentPage.selectJobType('${jobType.id}'); return false;">
-        <div class="d-flex w-100 justify-content-between align-items-center">
-          <div>
-            <h6 class="mb-1">${this.app.sanitizeHtml(jobType.name)}</h6>
-            ${jobType.description ? `<small class="text-muted">${this.app.sanitizeHtml(jobType.description)}</small>` : ''}
-          </div>
-          <span class="badge bg-secondary">${jobType.userCount || 0} 人</span>
-        </div>
-      </a>
-    `).join('');
-  }
-
-  async selectJobType(jobTypeId) {
-    this.selectedJobType = this.jobTypes.find(jt => jt.id === jobTypeId);
-    this.renderJobTypesList();
-    this.renderJobTypeDetails();
-    // ユーザー数を取得
-    await this.loadJobTypeUsers();
-  }
-
-  renderJobTypeDetails() {
-    const detailsContainer = document.getElementById('jobTypeDetails');
-    if (!this.selectedJobType) {
-      detailsContainer.innerHTML = `
-        <div class="text-center text-muted py-5">
-          <i class="fas fa-briefcase fa-3x mb-3"></i>
-          <p>左のリストから職種を選択してください</p>
-        </div>
-      `;
-      return;
-    }
-
-    detailsContainer.innerHTML = `
-      <div class="mb-4">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-          <div>
-            <h4>${this.app.sanitizeHtml(this.selectedJobType.name)}</h4>
-            ${this.selectedJobType.description ? 
-              `<p class="text-muted">${this.app.sanitizeHtml(this.selectedJobType.description)}</p>` : 
-              '<p class="text-muted">説明なし</p>'
-            }
-          </div>
-          <div class="btn-group">
-            <button class="btn btn-outline-primary btn-sm" onclick="window.app.currentPage.showEditJobTypeModal()">
-              <i class="fas fa-edit"></i> 編集
-            </button>
-            <button class="btn btn-outline-danger btn-sm" onclick="window.app.currentPage.deleteJobType()">
-              <i class="fas fa-trash"></i> 削除
-            </button>
-          </div>
-        </div>
-        
-        <div class="row">
-          <div class="col-md-6">
-            <div class="card bg-light">
-              <div class="card-body">
-                <h6 class="card-title">基本情報</h6>
-                <dl class="row mb-0">
-                  <dt class="col-sm-4">ID:</dt>
-                  <dd class="col-sm-8"><code>${this.selectedJobType.id}</code></dd>
-                  <dt class="col-sm-4">作成日:</dt>
-                  <dd class="col-sm-8">${this.formatDate(this.selectedJobType.createdAt)}</dd>
-                  <dt class="col-sm-4">更新日:</dt>
-                  <dd class="col-sm-8">${this.formatDate(this.selectedJobType.updatedAt)}</dd>
-                </dl>
-              </div>
+            <div class="modal-body">
+              <form id="userEditForm">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="userName" class="form-label">氏名 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="userName" required>
+                    <div class="invalid-feedback">氏名を入力してください</div>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label for="userEmail" class="form-label">メールアドレス <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control" id="userEmail" required>
+                    <div class="invalid-feedback">有効なメールアドレスを入力してください</div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="userRole" class="form-label">役割</label>
+                    <select class="form-select" id="userRole">
+                      <option value="worker">一般ユーザー</option>
+                      <option value="evaluator">評価者</option>
+                      <option value="admin">管理者</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label for="userStatus" class="form-label">ステータス</label>
+                    <select class="form-select" id="userStatus">
+                      <option value="active">アクティブ</option>
+                      <option value="suspended">無効</option>
+                      <option value="pending">保留中</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="userJobType" class="form-label">職種</label>
+                    <select class="form-select" id="userJobType">
+                      <option value="">選択してください</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label for="userDepartment" class="form-label">部署</label>
+                    <input type="text" class="form-control" id="userDepartment" placeholder="例: 工事部">
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label for="userPhone" class="form-label">電話番号</label>
+                  <input type="tel" class="form-control" id="userPhone" placeholder="090-1234-5678">
+                </div>
+                <div class="mb-3">
+                  <label for="userNotes" class="form-label">備考</label>
+                  <textarea class="form-control" id="userNotes" rows="3"></textarea>
+                </div>
+              </form>
             </div>
-          </div>
-          <div class="col-md-6">
-            <div class="card bg-light">
-              <div class="card-body">
-                <h6 class="card-title">統計情報</h6>
-                <dl class="row mb-0">
-                  <dt class="col-sm-6">この職種のユーザー:</dt>
-                  <dd class="col-sm-6"><span class="badge bg-primary">${this.selectedJobType.userCount || 0} 人</span></dd>
-                  <dt class="col-sm-6">評価項目数:</dt>
-                  <dd class="col-sm-6"><span class="badge bg-info">${this.selectedJobType.itemCount || 0} 項目</span></dd>
-                </dl>
-              </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+              <button type="button" class="btn btn-primary" id="saveUserBtn">保存</button>
             </div>
           </div>
         </div>
       </div>
 
-      <div>
-        <h5 class="mb-3">この職種を持つユーザー</h5>
-        <div id="jobTypeUsersList">
-          <div class="text-center">
-            <div class="spinner-border spinner-border-sm" role="status"></div>
-            <span class="ms-2">読み込み中...</span>
+      <!-- 招待モーダル -->
+      <div class="modal fade" id="inviteModal" tabindex="-1" aria-labelledby="inviteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="inviteModalLabel">ユーザー招待</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <form id="inviteForm">
+                <div class="mb-3">
+                  <label for="inviteEmail" class="form-label">メールアドレス <span class="text-danger">*</span></label>
+                  <input type="email" class="form-control" id="inviteEmail" required>
+                  <div class="form-text">招待メールが送信されます</div>
+                </div>
+                <div class="mb-3">
+                  <label for="inviteRole" class="form-label">役割</label>
+                  <select class="form-select" id="inviteRole">
+                    <option value="worker">一般ユーザー</option>
+                    <option value="evaluator">評価者</option>
+                    <option value="admin">管理者</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label for="inviteMessage" class="form-label">メッセージ（任意）</label>
+                  <textarea class="form-control" id="inviteMessage" rows="3" 
+                          placeholder="招待メールに含めるメッセージ"></textarea>
+                </div>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+              <button type="button" class="btn btn-primary" id="sendInviteBtn">招待を送信</button>
+            </div>
           </div>
         </div>
       </div>
     `;
   }
 
-  async loadJobTypeUsers() {
-    const usersContainer = document.getElementById('jobTypeUsersList');
-    if (!usersContainer) return;
+  async init(params) {
+    console.log('UserManagement: Initializing...');
+    
+    // イベントリスナーの設定
+    this.setupEventListeners();
+    
+    // データの読み込み
+    await this.loadData();
+    
+    // 統計情報の更新
+    this.updateStatistics();
+  }
+
+  setupEventListeners() {
+    // 検索
+    const searchInput = document.getElementById('userSearchInput');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => this.handleSearch(e.target.value));
+    }
+
+    // ステータスフィルター
+    const statusFilter = document.getElementById('userStatusFilter');
+    if (statusFilter) {
+      statusFilter.addEventListener('change', (e) => this.handleStatusFilter(e.target.value));
+    }
+
+    // 招待ボタン
+    const inviteBtn = document.getElementById('inviteUserBtn');
+    if (inviteBtn) {
+      inviteBtn.addEventListener('click', () => this.showInviteModal());
+    }
+
+    // エクスポートボタン
+    const exportBtn = document.getElementById('exportUsersBtn');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => this.exportUsers());
+    }
+
+    // 保存ボタン（ユーザー編集）
+    const saveUserBtn = document.getElementById('saveUserBtn');
+    if (saveUserBtn) {
+      saveUserBtn.addEventListener('click', () => this.saveUser());
+    }
+
+    // 招待送信ボタン
+    const sendInviteBtn = document.getElementById('sendInviteBtn');
+    if (sendInviteBtn) {
+      sendInviteBtn.addEventListener('click', () => this.sendInvitation());
+    }
+  }
+
+  async loadData() {
+    this.isLoading = true;
     
     try {
-      // この職種を持つユーザーを取得
-      const users = await this.app.api.getUsers();
-      const filteredUsers = users.filter(user => 
-        user.jobTypeIds && user.jobTypeIds.includes(this.selectedJobType.id)
-      );
-
-      if (filteredUsers.length === 0) {
-        usersContainer.innerHTML = `
-          <div class="alert alert-info">
-            <i class="fas fa-info-circle me-2"></i>
-            この職種を持つユーザーはまだいません
-          </div>
-        `;
-        return;
+      console.log('UserManagement: Loading data...');
+      
+      // 職種データを取得（修正版）
+      try {
+        const jobTypesResponse = await this.app.api.getJobTypes();
+        if (jobTypesResponse && jobTypesResponse.data) {
+          this.jobTypes = jobTypesResponse.data;
+        } else if (Array.isArray(jobTypesResponse)) {
+          this.jobTypes = jobTypesResponse;
+        } else {
+          this.jobTypes = [];
+        }
+      } catch (jobTypeError) {
+        console.warn('UserManagement: Could not load job types:', jobTypeError);
+        this.jobTypes = [];
       }
-
-      usersContainer.innerHTML = `
-        <div class="table-responsive">
-          <table class="table table-sm">
-            <thead>
-              <tr>
-                <th>名前</th>
-                <th>メールアドレス</th>
-                <th>役割</th>
-                <th>ステータス</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${filteredUsers.map(user => `
-                <tr>
-                  <td>${this.app.sanitizeHtml(user.name)}</td>
-                  <td>${this.app.sanitizeHtml(user.email)}</td>
-                  <td><span class="badge bg-secondary">${user.role}</span></td>
-                  <td><span class="badge ${user.status === 'active' ? 'bg-success' : 'bg-warning'}">${user.status}</span></td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      `;
-
-      // ユーザー数を更新
-      this.selectedJobType.userCount = filteredUsers.length;
-      this.renderJobTypesList();
-    } catch (error) {
-      console.error('Error loading job type users:', error);
-      usersContainer.innerHTML = `
-        <div class="alert alert-danger">
-          <i class="fas fa-exclamation-triangle me-2"></i>
-          ユーザーの読み込みに失敗しました
-        </div>
-      `;
-    }
-  }
-
-  showAddJobTypeModal() {
-    const modal = new bootstrap.Modal(document.getElementById('addJobTypeModal'));
-    document.getElementById('addJobTypeForm').reset();
-    modal.show();
-  }
-
-  showEditJobTypeModal() {
-    if (!this.selectedJobType) return;
-    const modal = new bootstrap.Modal(document.getElementById('editJobTypeModal'));
-    document.getElementById('editJobTypeId').value = this.selectedJobType.id;
-    document.getElementById('editJobTypeName').value = this.selectedJobType.name;
-    document.getElementById('editJobTypeDescription').value = this.selectedJobType.description || '';
-    modal.show();
-  }
-
-  async addJobType() {
-    const name = document.getElementById('jobTypeName').value.trim();
-    const description = document.getElementById('jobTypeDescription').value.trim();
-    if (!name) {
-      this.app.showError('職種名を入力してください');
-      return;
-    }
-
-    // 重複チェック
-    if (this.jobTypes.some(jt => jt.name === name)) {
-      this.app.showError('同じ名前の職種が既に存在します');
-      return;
-    }
-
-    try {
-      this.setLoading(true);
       
-      await this.app.api.createJobType({
-        name,
-        description,
-        userCount: 0,
-        itemCount: 0
-      });
-
-      this.app.showSuccess('職種を追加しました');
-      bootstrap.Modal.getInstance(document.getElementById('addJobTypeModal')).hide();
-      await this.loadJobTypes();
+      // ユーザーデータを取得
+      this.users = await this.app.api.getUsers();
+      this.filteredUsers = [...this.users];
+      
+      console.log('UserManagement: Data loaded');
+      console.log('- Users:', this.users.length);
+      console.log('- Job types:', this.jobTypes.length);
+      
+      // 職種セレクトボックスを更新
+      this.updateJobTypeSelect();
+      
+      // テーブルを更新
+      this.renderUserTable();
+      
     } catch (error) {
-      this.app.showError(error.message);
+      console.error('UserManagement: Failed to load users:', error);
+      this.app.showError('ユーザーデータの読み込みに失敗しました');
+      
+      // エラー時は空のデータで続行
+      this.users = [];
+      this.filteredUsers = [];
+      this.renderUserTable();
+      
     } finally {
-      this.setLoading(false);
+      this.isLoading = false;
     }
   }
 
-  async updateJobType() {
-    const jobTypeId = document.getElementById('editJobTypeId').value;
-    const name = document.getElementById('editJobTypeName').value.trim();
-    const description = document.getElementById('editJobTypeDescription').value.trim();
-    if (!name) {
-      this.app.showError('職種名を入力してください');
-      return;
+  updateJobTypeSelect() {
+    const select = document.getElementById('userJobType');
+    if (!select) return;
+    
+    // 既存のオプションをクリア（最初のオプションは残す）
+    while (select.options.length > 1) {
+      select.remove(1);
     }
-
-    // 重複チェック（自分以外）
-    if (this.jobTypes.some(jt => jt.id !== jobTypeId && jt.name === name)) {
-      this.app.showError('同じ名前の職種が既に存在します');
-      return;
-    }
-
-    try {
-      this.setLoading(true);
-      
-      await this.app.api.updateJobType(jobTypeId, {
-        name,
-        description
-      });
-
-      this.app.showSuccess('職種を更新しました');
-      bootstrap.Modal.getInstance(document.getElementById('editJobTypeModal')).hide();
-      await this.loadJobTypes();
-      
-      // 選択中の職種を再選択
-      if (this.selectedJobType?.id === jobTypeId) {
-        await this.selectJobType(jobTypeId);
-      }
-    } catch (error) {
-      this.app.showError(error.message);
-    } finally {
-      this.setLoading(false);
-    }
-  }
-
-  async deleteJobType() {
-    if (!this.selectedJobType) return;
-    if (!confirm(`「${this.selectedJobType.name}」を削除しますか？\nこの操作は取り消せません。`)) {
-      return;
-    }
-
-    try {
-      this.setLoading(true);
-      
-      await this.app.api.deleteJobType(this.selectedJobType.id);
-      
-      this.app.showSuccess('職種を削除しました');
-      this.selectedJobType = null;
-      await this.loadJobTypes();
-      this.renderJobTypeDetails();
-    } catch (error) {
-      this.app.showError(error.message);
-    } finally {
-      this.setLoading(false);
-    }
-  }
-
-  formatDate(timestamp) {
-    if (!timestamp) return '不明';
-    try {
-      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-      return date.toLocaleDateString('ja-JP', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch {
-      return '不明';
-    }
-  }
-
-  setLoading(isLoading) {
-    this.isLoading = isLoading;
-    // ボタンの無効化
-    const buttons = document.querySelectorAll('.modal button, .btn-group button');
-    buttons.forEach(btn => {
-      btn.disabled = isLoading;
+    
+    // 職種オプションを追加
+    this.jobTypes.forEach(jobType => {
+      const option = document.createElement('option');
+      option.value = jobType.id;
+      option.textContent = jobType.name;
+      select.appendChild(option);
     });
+  }
+
+  renderUserTable() {
+    const container = document.getElementById('userTableContainer');
+    if (!container) return;
+
+    if (this.filteredUsers.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-5">
+          <i class="fas fa-users-slash fa-3x text-muted mb-3"></i>
+          <p class="text-muted">ユーザーが見つかりません</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>氏名</th>
+              <th>メールアドレス</th>
+              <th>役割</th>
+              <th>職種</th>
+              <th>ステータス</th>
+              <th>最終ログイン</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${this.filteredUsers.map(user => `
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <div class="avatar-sm me-2">
+                      <span class="avatar-title rounded-circle bg-primary">
+                        ${this.getInitials(user.name)}
+                      </span>
+                    </div>
+                    <div>
+                      <strong>${this.app.sanitizeHtml(user.name)}</strong>
+                      ${user.department ? `<br><small class="text-muted">${this.app.sanitizeHtml(user.department)}</small>` : ''}
+                    </div>
+                  </div>
+                </td>
+                <td>${this.app.sanitizeHtml(user.email)}</td>
+                <td>
+                  <span class="badge ${this.app.getRoleBadgeClass(user.role)}">
+                    ${this.getRoleLabel(user.role)}
+                  </span>
+                </td>
+                <td>
+                  ${user.jobTypeId ? this.getJobTypeName(user.jobTypeId) : '-'}
+                </td>
+                <td>
+                  <span class="badge ${this.app.getStatusBadgeClass(user.status)}">
+                    ${this.getStatusLabel(user.status)}
+                  </span>
+                </td>
+                <td>${user.lastLogin ? this.app.formatDate(user.lastLogin, true) : '未ログイン'}</td>
+                <td>
+                  <button class="btn btn-sm btn-outline-primary me-1" 
+                          onclick="window.app.router.currentPageInstance.editUser('${user.id}')">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger" 
+                          onclick="window.app.router.currentPageInstance.deleteUser('${user.id}')">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  handleSearch(searchTerm) {
+    this.searchTerm = searchTerm.toLowerCase().trim();
+    this.applyFilters();
+  }
+
+  handleStatusFilter(status) {
+    this.currentFilter = status;
+    this.applyFilters();
+  }
+
+  applyFilters() {
+    this.filteredUsers = this.users.filter(user => {
+      // ステータスフィルター
+      if (this.currentFilter !== 'all' && user.status !== this.currentFilter) {
+        return false;
+      }
+      
+      // 検索フィルター
+      if (this.searchTerm) {
+        const searchableText = [
+          user.name,
+          user.email,
+          user.department,
+          this.getRoleLabel(user.role)
+        ].join(' ').toLowerCase();
+        
+        if (!searchableText.includes(this.searchTerm)) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+    
+    this.renderUserTable();
+  }
+
+  editUser(userId) {
+    const user = this.users.find(u => u.id === userId);
+    if (!user) return;
+    
+    this.currentEditingUser = user;
+    
+    // フォームに値を設定
+    document.getElementById('userName').value = user.name || '';
+    document.getElementById('userEmail').value = user.email || '';
+    document.getElementById('userRole').value = user.role || 'worker';
+    document.getElementById('userStatus').value = user.status || 'active';
+    document.getElementById('userJobType').value = user.jobTypeId || '';
+    document.getElementById('userDepartment').value = user.department || '';
+    document.getElementById('userPhone').value = user.phone || '';
+    document.getElementById('userNotes').value = user.notes || '';
+    
+    document.getElementById('userEditModalLabel').textContent = 'ユーザー編集';
+    
+    // モーダルを表示
+    const modal = new bootstrap.Modal(document.getElementById('userEditModal'));
+    modal.show();
+  }
+
+  async saveUser() {
+    const form = document.getElementById('userEditForm');
+    if (!form.checkValidity()) {
+      form.classList.add('was-validated');
+      return;
+    }
+    
+    const userData = {
+      name: document.getElementById('userName').value.trim(),
+      email: document.getElementById('userEmail').value.trim(),
+      role: document.getElementById('userRole').value,
+      status: document.getElementById('userStatus').value,
+      jobTypeId: document.getElementById('userJobType').value,
+      department: document.getElementById('userDepartment').value.trim(),
+      phone: document.getElementById('userPhone').value.trim(),
+      notes: document.getElementById('userNotes').value.trim()
+    };
+    
+    try {
+      this.app.showLoading('保存中...');
+      
+      if (this.currentEditingUser) {
+        // 更新
+        await this.app.api.updateUser(this.currentEditingUser.id, userData);
+        this.app.showSuccess('ユーザー情報を更新しました');
+      }
+      
+      // モーダルを閉じる
+      bootstrap.Modal.getInstance(document.getElementById('userEditModal')).hide();
+      
+      // データを再読み込み
+      await this.loadData();
+      this.updateStatistics();
+      
+    } catch (error) {
+      console.error('UserManagement: Error saving user:', error);
+      this.app.showError('ユーザー情報の保存に失敗しました');
+    } finally {
+      this.app.hideLoading();
+    }
+  }
+
+  async deleteUser(userId) {
+    const user = this.users.find(u => u.id === userId);
+    if (!user) return;
+    
+    const confirmed = await this.app.confirm(
+      `「${user.name}」を削除してもよろしいですか？この操作は取り消せません。`,
+      'ユーザーの削除'
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      this.app.showLoading('削除中...');
+      
+      await this.app.api.deleteUser(userId);
+      
+      // ローカルデータから削除
+      this.users = this.users.filter(u => u.id !== userId);
+      this.applyFilters();
+      this.updateStatistics();
+      
+      this.app.showSuccess('ユーザーを削除しました');
+      
+    } catch (error) {
+      console.error('UserManagement: Error deleting user:', error);
+      this.app.showError('ユーザーの削除に失敗しました');
+    } finally {
+      this.app.hideLoading();
+    }
+  }
+
+  showInviteModal() {
+    // フォームをリセット
+    document.getElementById('inviteForm').reset();
+    
+    // モーダルを表示
+    const modal = new bootstrap.Modal(document.getElementById('inviteModal'));
+    modal.show();
+  }
+
+  async sendInvitation() {
+    const form = document.getElementById('inviteForm');
+    if (!form.checkValidity()) {
+      form.classList.add('was-validated');
+      return;
+    }
+    
+    const invitationData = {
+      email: document.getElementById('inviteEmail').value.trim(),
+      role: document.getElementById('inviteRole').value,
+      message: document.getElementById('inviteMessage').value.trim()
+    };
+    
+    try {
+      this.app.showLoading('招待を送信中...');
+      
+      await this.app.api.createInvitation(invitationData);
+      
+      this.app.showSuccess('招待メールを送信しました');
+      
+      // モーダルを閉じる
+      bootstrap.Modal.getInstance(document.getElementById('inviteModal')).hide();
+      
+    } catch (error) {
+      console.error('UserManagement: Error sending invitation:', error);
+      this.app.showError('招待の送信に失敗しました');
+    } finally {
+      this.app.hideLoading();
+    }
+  }
+
+  updateStatistics() {
+    // 総ユーザー数
+    document.getElementById('totalUsers').textContent = this.users.length;
+    
+    // アクティブユーザー数
+    const activeCount = this.users.filter(u => u.status === 'active').length;
+    document.getElementById('activeUsers').textContent = activeCount;
+    
+    // 保留中ユーザー数
+    const pendingCount = this.users.filter(u => u.status === 'pending').length;
+    document.getElementById('pendingUsers').textContent = pendingCount;
+    
+    // 無効ユーザー数
+    const inactiveCount = this.users.filter(u => u.status === 'suspended').length;
+    document.getElementById('inactiveUsers').textContent = inactiveCount;
+  }
+
+  exportUsers() {
+    try {
+      // CSVデータを作成
+      const headers = ['氏名', 'メールアドレス', '役割', '職種', '部署', 'ステータス'];
+      const rows = this.filteredUsers.map(user => [
+        user.name,
+        user.email,
+        this.getRoleLabel(user.role),
+        user.jobTypeId ? this.getJobTypeName(user.jobTypeId) : '',
+        user.department || '',
+        this.getStatusLabel(user.status)
+      ]);
+      
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+      
+      // ダウンロード
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `ユーザー一覧_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      this.app.showSuccess('エクスポートが完了しました');
+      
+    } catch (error) {
+      console.error('UserManagement: Export error:', error);
+      this.app.showError('エクスポートに失敗しました');
+    }
+  }
+
+  // ヘルパーメソッド
+  getInitials(name) {
+    if (!name) return '?';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return parts[0][0] + parts[parts.length - 1][0];
+    }
+    return name.substring(0, 2).toUpperCase();
+  }
+
+  getRoleLabel(role) {
+    const labels = {
+      admin: '管理者',
+      evaluator: '評価者',
+      worker: '一般ユーザー',
+      developer: '開発者'
+    };
+    return labels[role] || role;
+  }
+
+  getStatusLabel(status) {
+    const labels = {
+      active: 'アクティブ',
+      suspended: '無効',
+      pending: '保留中'
+    };
+    return labels[status] || status;
+  }
+
+  getJobTypeName(jobTypeId) {
+    const jobType = this.jobTypes.find(jt => jt.id === jobTypeId);
+    return jobType ? jobType.name : '-';
+  }
+
+  cleanup() {
+    // イベントリスナーのクリーンアップ
+    const searchInput = document.getElementById('userSearchInput');
+    if (searchInput) {
+      searchInput.removeEventListener('input', this.handleSearch);
+    }
+    
+    // モーダルのクリーンアップ
+    ['userEditModal', 'inviteModal'].forEach(modalId => {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        const bsModal = bootstrap.Modal.getInstance(modal);
+        if (bsModal) {
+          bsModal.dispose();
+        }
+      }
+    });
+    
+    console.log('UserManagement: Cleanup completed');
   }
 }
