@@ -132,34 +132,75 @@ class App {
     });
   }
 
-  // グローバルエラーハンドラーの設定
-  setupGlobalErrorHandlers() {
-    // 未処理のPromiseエラーをキャッチ
-    window.addEventListener("unhandledrejection", (event) => {
-      if (this.isOperationCancelledError(event.reason)) {
-        console.log("[App] Firebase operation cancelled - likely due to page reload, ignoring error")
-        event.preventDefault()
-        return
-      }
-
-      console.error("Unhandled promise rejection:", event.reason)
-      this.handleError(event.reason, "Promise rejection")
+// グローバルエラーハンドラーの設定
+setupGlobalErrorHandlers() {
+  // 未処理のPromiseエラーをキャッチ
+  window.addEventListener("unhandledrejection", (event) => {
+    if (this.isOperationCancelledError(event.reason)) {
+      console.log("[App] Firebase operation cancelled - likely due to page reload, ignoring error")
       event.preventDefault()
-    })
+      return
+    }
 
-    // 一般的なJavaScriptエラーをキャッチ
-    window.addEventListener("error", (event) => {
-      if (this.isOperationCancelledError(event.error)) {
-        console.log("[App] Firebase timer operation cancelled - likely due to page reload, ignoring error")
-        event.preventDefault()
-        return
-      }
-
-      console.error("Global error:", event.error)
-      this.handleError(event.error, "JavaScript error")
+    // Modal関連のエラーを無視
+    if (this.isModalError(event.reason)) {
+      console.log("[App] Modal operation error ignored:", event.reason.message)
       event.preventDefault()
-    })
-  }
+      return
+    }
+
+    console.error("Unhandled promise rejection:", event.reason)
+    this.handleError(event.reason, "Promise rejection")
+    event.preventDefault()
+  })
+
+  // 一般的なJavaScriptエラーをキャッチ
+  window.addEventListener("error", (event) => {
+    if (this.isOperationCancelledError(event.error)) {
+      console.log("[App] Firebase timer operation cancelled - likely due to page reload, ignoring error")
+      event.preventDefault()
+      return
+    }
+
+    // Modal関連のエラーを無視
+    if (this.isModalError(event.error)) {
+      console.log("[App] Modal operation error ignored:", event.error.message)
+      event.preventDefault()
+      return
+    }
+
+    // DOM関連エラーを無視
+    if (this.isDOMError(event.error)) {
+      console.log("[App] DOM operation error ignored:", event.error.message)
+      event.preventDefault()
+      return
+    }
+
+    console.error("Global error:", event.error)
+    this.handleError(event.error, "JavaScript error")
+    event.preventDefault()
+  })
+}
+
+// Modal関連エラーの判定
+isModalError(error) {
+  return error && error.message && (
+    error.message.includes("Cannot read properties of null") ||
+    error.message.includes("_hideModal") ||
+    error.message.includes("modal.js") ||
+    error.message.includes("bootstrap") ||
+    error.stack && error.stack.includes("modal")
+  )
+}
+
+// DOM関連エラーの判定  
+isDOMError(error) {
+  return error && error.message && (
+    error.message.includes("Cannot read properties of null (reading 'style')") ||
+    error.message.includes("Cannot read properties of undefined (reading 'style')") ||
+    (error.stack && error.stack.includes("style"))
+  )
+}
 
   // Operation cancelled エラーの判定
   isOperationCancelledError(error) {
