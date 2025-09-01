@@ -542,8 +542,11 @@ async confirm(message, title = "確認") {
     })
   }
 
-  // ローディング表示
-  showLoading(message = "処理中...") {
+showLoading(message = "処理中...") {
+  try {
+    // 既存のローディングを削除
+    this.hideLoading();
+    
     const loadingHTML = `
       <div id="global-loading" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(0,0,0,0.5); z-index: 9999;">
         <div class="card">
@@ -553,14 +556,28 @@ async confirm(message, title = "確認") {
           </div>
         </div>
       </div>
-    `
-    document.body.insertAdjacentHTML("beforeend", loadingHTML)
+    `;
+    
+    if (document.body) {
+      document.body.insertAdjacentHTML("beforeend", loadingHTML);
+    } else {
+      console.warn("App: Cannot show loading - document.body not available");
+    }
+  } catch (error) {
+    console.error("App: Error showing loading:", error);
   }
+}
 
-  hideLoading() {
-    const loading = document.getElementById("global-loading")
-    if (loading) loading.remove()
+hideLoading() {
+  try {
+    const loading = document.getElementById("global-loading");
+    if (loading && loading.parentNode) {
+      loading.remove();
+    }
+  } catch (error) {
+    console.error("App: Error hiding loading:", error);
   }
+}
 
   // デバッグモード
   enableDebugMode() {
