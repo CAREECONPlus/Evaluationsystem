@@ -1,4 +1,4 @@
-// router.js - 修正版（シンプル化）
+// router.js - 修正版（シンプル化）+ 自己評価ルート追加
 import { LoginPage } from "./pages/login.js"
 import { DashboardPage } from "./pages/dashboard.js"
 import { UserManagementPage } from "./pages/user-management.js"
@@ -14,6 +14,7 @@ import { RegisterPage } from "./pages/register.js"
 import { JobTypeManagementPage } from "./pages/job-type-management.js"
 import { InvitationAcceptPage } from "./pages/invitation-accept.js"
 import { ProfilePage } from "./pages/profile.js"
+import { SelfEvaluationPage } from "./pages/self-evaluation.js"
 
 export class Router {
   constructor(app) {
@@ -55,6 +56,12 @@ export class Router {
         component: EvaluationFormPage,
         auth: true,
         title: "評価入力",
+      },
+      "/self-evaluation": {
+        component: SelfEvaluationPage,
+        auth: true,
+        roles: ["worker"],
+        title: "自己評価入力",
       },
       "/goal-setting": {
         component: GoalSettingPage,
@@ -206,8 +213,27 @@ export class Router {
       const backdrops = document.querySelectorAll(".modal-backdrop")
       backdrops.forEach((backdrop) => backdrop.remove())
 
+      // Offcanvas のクリーンアップ
+      const offcanvases = document.querySelectorAll(".offcanvas")
+      offcanvases.forEach((offcanvas) => {
+        try {
+          const bsOffcanvas = window.bootstrap?.Offcanvas?.getInstance(offcanvas)
+          if (bsOffcanvas) {
+            bsOffcanvas.dispose()
+          }
+        } catch (e) {
+          console.warn("Offcanvas cleanup error:", e)
+        }
+      })
+
+      // サイドバーバックドロップのクリーンアップ
+      const sidebarBackdrop = document.getElementById('sidebar-backdrop')
+      if (sidebarBackdrop) {
+        sidebarBackdrop.classList.remove('show')
+      }
+
       // bodyスタイルのリセット
-      document.body.classList.remove("modal-open")
+      document.body.classList.remove("modal-open", "mobile-menu-open")
       document.body.style.overflow = ""
       document.body.style.paddingRight = ""
 
@@ -238,7 +264,9 @@ export class Router {
       }
 
       // 多言語対応の更新
-      this.app.i18n.updateUI(contentContainer)
+      if (this.app.i18n && typeof this.app.i18n.updateUI === "function") {
+        this.app.i18n.updateUI(contentContainer)
+      }
 
     } catch (error) {
       console.error("Router: Page rendering failed:", error)
@@ -248,7 +276,7 @@ export class Router {
 
   updatePageTitle(title) {
     try {
-      const systemName = this.app.i18n.t("app.system_name") || "評価管理システム"
+      const systemName = this.app.i18n?.t ? this.app.i18n.t("app.system_name") || "評価管理システム" : "評価管理システム"
       document.title = title ? `${title} - ${systemName}` : systemName
     } catch (error) {
       console.warn("Router: Title update failed:", error)
@@ -283,6 +311,16 @@ export class Router {
               問題が解決しない場合は、システム管理者に連絡してください。
             </small>
           </div>
+          
+          ${window.DEBUG ? `
+          <div class="mt-3 p-3 bg-light rounded text-start">
+            <small class="text-muted">
+              <strong>デバッグ情報:</strong><br>
+              ${error.message}<br>
+              ${error.stack ? error.stack.substring(0, 500) + '...' : ''}
+            </small>
+          </div>
+          ` : ''}
         </div>
       </div>
     `
@@ -309,5 +347,136 @@ export class Router {
 
   getCurrentRoute() {
     return this.currentRoute
+  }
+
+  // ルート存在チェック
+  routeExists(path) {
+    return this.routes.hasOwnProperty(path)
+  }
+
+  // 現在のページインスタンスを取得
+  getCurrentPageInstance() {
+    return this.currentPageInstance
+  }
+
+  // ルート設定を取得
+  getRouteConfig(path) {
+    return this.routes[path] || null
+  }
+
+  // 認証が必要なルートかチェック
+  requiresAuth(path) {
+    const routeConfig = this.getRouteConfig(path)
+    return routeConfig ? routeConfig.auth : true
+  }
+
+  // 特定の役割が必要なルートかチェック
+  requiresRoles(path) {
+    const routeConfig = this.getRouteConfig(path)
+    return routeConfig ? routeConfig.roles || [] : []
+  }
+
+  // ユーザーがルートにアクセス可能かチェック
+  canAccessRoute(path, user = null) {
+    const routeConfig = this.getRouteConfig(path)
+    if (!routeConfig) return false
+
+    // 認証チェック
+    if (routeConfig.auth && !user) {
+      return false
+    }
+
+    // 役割チェック
+    if (routeConfig.roles && user) {
+      return routeConfig.roles.includes(user.role)
+    }
+
+    return true
+  }
+
+  // ユーザーの役割に基づいてデフォルトルートを取得
+  getDefaultRouteForUser(user) {
+    if (!user) return "/login"
+
+    // 役割に基づいたデフォルトルート
+    switch (user.role) {
+      case 'admin':
+        return "/dashboard"
+      case 'developer':
+        return "/dashboard"
+      case 'evaluator':
+        return "/dashboard"
+      case 'worker':
+        return "/dashboard"
+      default:
+        return "/dashboard"
+    }
+  }
+
+  // ブレッドクラム用のルート情報を取得
+  getBreadcrumb(path) {
+    const routeConfig = this.getRouteConfig(path)
+    if (!routeConfig) return null
+
+    return {
+      path: path,
+      title: routeConfig.title,
+      icon: this.getRouteIcon(path)
+    }
+  }
+
+  // ルートに対応するアイコンを取得
+  getRouteIcon(path) {
+    const icons = {
+      "/dashboard": "fas fa-tachometer-alt",
+      "/users": "fas fa-users",
+      "/evaluations": "fas fa-clipboard-list",
+      "/evaluation-form": "fas fa-edit",
+      "/self-evaluation": "fas fa-user-edit",
+      "/goal-setting": "fas fa-bullseye",
+      "/goal-approvals": "fas fa-check-circle",
+      "/report": "fas fa-chart-bar",
+      "/settings": "fas fa-cog",
+      "/job-types": "fas fa-briefcase",
+      "/developer": "fas fa-code",
+      "/profile": "fas fa-user",
+      "/login": "fas fa-sign-in-alt",
+      "/register": "fas fa-user-plus",
+      "/register-admin": "fas fa-user-shield"
+    }
+    return icons[path] || "fas fa-file"
+  }
+
+  // ナビゲーションメニュー用のルート一覧を取得
+  getNavigationRoutes(user) {
+    if (!user) return []
+
+    const routes = []
+    for (const [path, config] of Object.entries(this.routes)) {
+      if (config.auth && this.canAccessRoute(path, user)) {
+        // システム内部のルートのみを含める（login, registerなどは除外）
+        if (!path.includes("login") && !path.includes("register") && !path.includes("invitation")) {
+          routes.push({
+            path: path,
+            title: config.title,
+            icon: this.getRouteIcon(path),
+            roles: config.roles
+          })
+        }
+      }
+    }
+
+    return routes.sort((a, b) => a.title.localeCompare(b.title))
+  }
+
+  // ルーターの統計情報を取得（デバッグ用）
+  getStats() {
+    return {
+      totalRoutes: Object.keys(this.routes).length,
+      authRequiredRoutes: Object.values(this.routes).filter(r => r.auth).length,
+      publicRoutes: Object.values(this.routes).filter(r => !r.auth).length,
+      currentRoute: this.currentRoute,
+      currentPageInstance: this.currentPageInstance ? this.currentPageInstance.constructor.name : null
+    }
   }
 }
