@@ -597,6 +597,130 @@ export class SidebarComponent {
   }
 
   /**
+   * サイドバーの表示/非表示を切り替え
+   */
+  toggle() {
+    try {
+      const sidebarContainer = document.getElementById('sidebar-container');
+      const backdrop = document.getElementById('sidebar-backdrop') || this.createBackdrop();
+      
+      if (sidebarContainer) {
+        const isVisible = sidebarContainer.classList.contains('show');
+        
+        if (isVisible) {
+          // 非表示にする
+          sidebarContainer.classList.remove('show');
+          backdrop.classList.remove('show');
+          document.body.style.overflow = '';
+          document.body.classList.remove('mobile-menu-open');
+          console.log('Sidebar: Hidden');
+        } else {
+          // 表示する
+          sidebarContainer.classList.add('show');
+          backdrop.classList.add('show');
+          document.body.style.overflow = 'hidden';
+          document.body.classList.add('mobile-menu-open');
+          console.log('Sidebar: Shown');
+        }
+      } else {
+        console.warn('Sidebar: Container not found for toggle');
+      }
+    } catch (error) {
+      console.error('Sidebar: Error toggling sidebar:', error);
+    }
+  }
+
+  /**
+   * サイドバーを表示
+   */
+  show() {
+    try {
+      const sidebarContainer = document.getElementById('sidebar-container');
+      const backdrop = document.getElementById('sidebar-backdrop') || this.createBackdrop();
+      
+      if (sidebarContainer) {
+        sidebarContainer.classList.add('show');
+        backdrop.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        document.body.classList.add('mobile-menu-open');
+      }
+    } catch (error) {
+      console.error('Sidebar: Error showing sidebar:', error);
+    }
+  }
+
+  /**
+   * サイドバーを非表示
+   */
+  hide() {
+    try {
+      const sidebarContainer = document.getElementById('sidebar-container');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      
+      if (sidebarContainer) {
+        sidebarContainer.classList.remove('show');
+        if (backdrop) {
+          backdrop.classList.remove('show');
+        }
+        document.body.style.overflow = '';
+        document.body.classList.remove('mobile-menu-open');
+      }
+    } catch (error) {
+      console.error('Sidebar: Error hiding sidebar:', error);
+    }
+  }
+
+  /**
+   * モバイル用背景を作成
+   */
+  createBackdrop() {
+    try {
+      let backdrop = document.getElementById('sidebar-backdrop');
+      if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'sidebar-backdrop';
+        backdrop.className = 'sidebar-backdrop';
+        backdrop.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.5);
+          z-index: 998;
+          opacity: 0;
+          visibility: hidden;
+          transition: opacity 0.3s ease, visibility 0.3s ease;
+        `;
+        
+        // クリックで閉じる
+        backdrop.addEventListener('click', () => this.hide());
+        
+        document.body.appendChild(backdrop);
+      }
+      
+      // show クラス用のスタイルを追加
+      const style = document.createElement('style');
+      style.textContent = `
+        .sidebar-backdrop.show {
+          opacity: 1 !important;
+          visibility: visible !important;
+        }
+      `;
+      
+      if (!document.querySelector('style[data-sidebar-backdrop]')) {
+        style.setAttribute('data-sidebar-backdrop', '');
+        document.head.appendChild(style);
+      }
+      
+      return backdrop;
+    } catch (error) {
+      console.error('Sidebar: Error creating backdrop:', error);
+      return null;
+    }
+  }
+
+  /**
    * クリーンアップ
    */
   cleanup() {
