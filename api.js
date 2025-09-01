@@ -2450,22 +2450,24 @@ async createNotification(notificationData) {
 }
 
 /**
- * ユーザーの通知を取得（エラー回避版）
+ * ユーザーの通知を取得（完全修正版）
  */
 async getNotifications(userId = null) {
   try {
     console.log("API: Loading notifications for user:", userId);
     
+    const currentUser = await this.getCurrentUserData();
+    if (!currentUser || !currentUser.tenantId) {
+      console.log("API: No user or tenant info for notifications");
+      return [];
+    }
+
     // 一時的に通知機能を無効化
     console.log("API: Notifications temporarily disabled due to permissions");
     return [];
 
-  } catch (error) {
-    console.error("API: Error loading notifications:", error);
-    return [];
-  }
-}
-
+    // 通知機能を有効にする場合は、上のreturn文を削除して以下のコメントを外す
+    /*
     const targetUserId = userId || currentUser.uid || currentUser.id;
     const tenantId = currentUser.tenantId;
     
@@ -2489,6 +2491,7 @@ async getNotifications(userId = null) {
 
     console.log("API: Notifications loaded:", notifications.length);
     return notifications;
+    */
 
   } catch (error) {
     console.error("API: Error loading notifications:", error);
