@@ -484,34 +484,48 @@ updateUIForAuthState(user) {
     }
   }
 
-  // 確認ダイアログの表示
-  async confirm(message, title = "確認") {
-    return new Promise((resolve) => {
-      // カスタム確認ダイアログのHTMLを作成
-      const modalHTML = `
-        <div class="modal fade" id="confirmModal" tabindex="-1">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">${this.sanitizeHtml(title)}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-              </div>
-              <div class="modal-body">
-                <p>${this.sanitizeHtml(message)}</p>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-                <button type="button" class="btn btn-primary" id="confirmBtn">確認</button>
-              </div>
+// 確認ダイアログの表示
+async confirm(message, title = "確認") {
+  return new Promise((resolve) => {
+    // 既存のconfirmModalを削除
+    const existingModal = document.getElementById("confirmModal");
+    if (existingModal) {
+      existingModal.remove();
+    }
+
+    // カスタム確認ダイアログのHTMLを作成
+    const modalHTML = `
+      <div class="modal fade" id="confirmModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">${this.sanitizeHtml(title)}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <p>${this.sanitizeHtml(message)}</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+              <button type="button" class="btn btn-primary" id="confirmBtn">確認</button>
             </div>
           </div>
         </div>
-      `
+      </div>
+    `;
 
-      // モーダルを追加
-      document.body.insertAdjacentHTML("beforeend", modalHTML)
-      const modalElement = document.getElementById("confirmModal")
-      const modal = new window.bootstrap.Modal(modalElement)
+    // モーダルを追加
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
+    const modalElement = document.getElementById("confirmModal");
+    
+    // Bootstrap modal の存在確認
+    if (!window.bootstrap || !window.bootstrap.Modal) {
+      console.error("Bootstrap Modal not available");
+      resolve(false);
+      return;
+    }
+    
+    const modal = new window.bootstrap.Modal(modalElement);
 
       // イベントリスナー設定
       document.getElementById("confirmBtn").addEventListener("click", () => {
