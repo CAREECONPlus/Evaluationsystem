@@ -48,14 +48,14 @@ export class SidebarComponent {
               </div>
             </div>
             <!-- モバイル用閉じるボタン -->
-            <button 
-              class="btn btn-link text-white p-1 d-lg-none sidebar-close-btn"
-              onclick="document.querySelector('#sidebar-backdrop')?.click()"
-              aria-label="メニューを閉じる"
-              title="メニューを閉じる"
-            >
-              <i class="fas fa-times fa-lg" aria-hidden="true"></i>
-            </button>
+           <button 
+            class="btn btn-link text-white p-1 d-lg-none sidebar-close-btn"
+            id="sidebarCloseBtn"
+            aria-label="メニューを閉じる"
+            title="メニューを閉じる"
+    >
+           <i class="fas fa-times fa-lg" aria-hidden="true"></i>
+         </button>
           </div>
         </div>
 
@@ -304,33 +304,49 @@ ${userRole === 'worker' ? `
   /**
    * サイドバーコンポーネントの初期化
    */
-  init() {
-    console.log("Sidebar: Starting initialization...");
+ init() {
+  console.log("Sidebar: Starting initialization...");
+  
+  try {
+    // イベントリスナーの設定
+    this.setupEventListeners();
     
-    // 🔧 修正: 初期化の順序を調整
-    try {
-      // ルート変更の監視
-      this.setupRouteListener();
-      
-      // アクセシビリティの設定
-      this.setupAccessibility();
-      
-      // キーボードナビゲーションの設定
-      this.setupKeyboardNavigation();
+    // ルート変更の監視
+    this.setupRouteListener();
+    
+    // アクセシビリティの設定
+    this.setupAccessibility();
+    
+    // キーボードナビゲーションの設定
+    this.setupKeyboardNavigation();
 
-      // フォーカス管理の設定
-      this.setupFocusManagement();
-      
-      // 翻訳を適用
-      if (this.app.i18n) {
-        this.app.i18n.updateUI();
-      }
-      
-      console.log("Sidebar: Initialized with enhanced mobile support and accessibility");
-    } catch (error) {
-      console.error("Sidebar: Initialization error:", error);
+    // フォーカス管理の設定
+    this.setupFocusManagement();
+    
+    // 翻訳を適用
+    if (this.app.i18n) {
+      this.app.i18n.updateUI();
     }
+    
+    console.log("Sidebar: Initialized with enhanced mobile support and accessibility");
+  } catch (error) {
+    console.error("Sidebar: Initialization error:", error);
   }
+}
+
+/**
+ * イベントリスナーの設定
+ */
+setupEventListeners() {
+  // 閉じるボタンのイベントリスナー
+  const closeBtn = document.getElementById('sidebarCloseBtn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.hide();
+    });
+  }
+}
 
   /**
    * ルート変更の監視
