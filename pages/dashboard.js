@@ -459,11 +459,16 @@ async loadData() {
         this.app.api.getEvaluatorStats()
       ]);
 
-      // 統計カードを更新
-      document.getElementById('totalUsers').textContent = stats.totalUsers || 0;
-      document.getElementById('completedEvaluations').textContent = stats.completedEvaluations || 0;
-      document.getElementById('pendingEvaluations').textContent = pendingStats.totalPending || 0;
-      document.getElementById('unassignedUsers').textContent = unassignedUsers.length || 0;
+     // 統計カードを更新
+const totalUsersEl = document.getElementById('totalUsers');
+const completedEvaluationsEl = document.getElementById('completedEvaluations');
+const pendingEvaluationsEl = document.getElementById('pendingEvaluations');
+const unassignedUsersEl = document.getElementById('unassignedUsers');
+
+if (totalUsersEl) totalUsersEl.textContent = stats.totalUsers || 0;
+if (completedEvaluationsEl) completedEvaluationsEl.textContent = stats.completedEvaluations || 0;
+if (pendingEvaluationsEl) pendingEvaluationsEl.textContent = pendingStats.totalPending || 0;
+if (unassignedUsersEl) unassignedUsersEl.textContent = unassignedUsers.length || 0;
 
       // 承認待ちアラートを表示
       if (pendingStats.totalPending > 0) {
@@ -489,10 +494,14 @@ async loadData() {
         this.app.api.getPendingEvaluationsForCurrentUser()
       ]);
 
-      // 統計カードを更新
-      document.getElementById('assignedUsers').textContent = workload.assignedUsers || 0;
-      document.getElementById('myPendingEvaluations').textContent = workload.pendingEvaluations || 0;
-      document.getElementById('completedThisMonth').textContent = workload.completedThisMonth || 0;
+     // 統計カードを更新
+const assignedUsersEl = document.getElementById('assignedUsers');
+const myPendingEvaluationsEl = document.getElementById('myPendingEvaluations');
+const completedThisMonthEl = document.getElementById('completedThisMonth');
+
+if (assignedUsersEl) assignedUsersEl.textContent = workload.assignedUsers || 0;
+if (myPendingEvaluationsEl) myPendingEvaluationsEl.textContent = workload.pendingEvaluations || 0;
+if (completedThisMonthEl) completedThisMonthEl.textContent = workload.completedThisMonth || 0;
 
       // 承認待ちアラートを表示
       if (workload.pendingEvaluations > 0) {
@@ -519,9 +528,13 @@ async loadData() {
       const completed = evaluations.filter(e => e.status === 'completed').length || 0;
 
       // 統計カードを更新
-      document.getElementById('myEvaluations').textContent = myEvaluations;
-      document.getElementById('inProgressEvaluations').textContent = inProgress;
-      document.getElementById('userCompletedEvaluations').textContent = completed;
+const myEvaluationsEl = document.getElementById('myEvaluations');
+const inProgressEvaluationsEl = document.getElementById('inProgressEvaluations');
+const userCompletedEvaluationsEl = document.getElementById('userCompletedEvaluations');
+
+if (myEvaluationsEl) myEvaluationsEl.textContent = myEvaluations;
+if (inProgressEvaluationsEl) inProgressEvaluationsEl.textContent = inProgress;
+if (userCompletedEvaluationsEl) userCompletedEvaluationsEl.textContent = completed;
 
       // 最近の評価活動を表示
       this.renderRecentEvaluations(evaluations.slice(0, 5));
@@ -536,12 +549,19 @@ async loadData() {
       const notifications = await this.app.api.getNotifications();
       this.notifications = notifications || [];
       
-      // 通知バッジを更新
-      const unreadCount = this.notifications.filter(n => !n.read).length;
-      document.getElementById('notificationBadge').textContent = unreadCount;
+ // 通知バッジを更新
+const notificationBadgeEl = document.getElementById('notificationBadge');
+if (notificationBadgeEl) {
+  notificationBadgeEl.textContent = unreadCount;
+}
 
-      // 通知リストを表示
-      this.renderNotifications();
+// 通知リストを表示
+const notificationsListEl = document.getElementById('notificationsList');
+if (notificationsListEl) {
+  this.renderNotifications();
+} else {
+  console.warn('Dashboard: notificationsList element not found');
+}
 
     } catch (error) {
       console.error('Dashboard: Error loading notifications:', error);
