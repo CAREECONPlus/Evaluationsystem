@@ -2106,4 +2106,526 @@ async validateInvitationCode(code) {
       };
     }
   }
+
+  /**
+ * 評価者一覧を取得
+ */
+async getEvaluators() {
+  try {
+    console.log("API: Loading evaluators...");
+    
+    const currentUser = await this.getCurrentUserData();
+    if (!currentUser || !currentUser.tenantId) {
+      throw new Error("ユーザー情報またはテナント情報が見つかりません");
+    }
+
+    const tenantId = currentUser.tenantId;
+    
+    const evaluatorsQuery = query(
+      collection(this.db, "users"),
+      where("tenantId", "==", tenantId),
+      where("role", "==", "evaluator"),
+      where("status", "==", "active")
+    );
+
+    const evaluatorsSnapshot = await getDocs(evaluatorsQuery);
+    const evaluators = [];
+
+    evaluatorsSnapshot.forEach((doc) => {
+      evaluators.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    // 名前でソート
+    evaluators.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    console.log("API: Evaluators loaded:", evaluators.length);
+    return evaluators;
+
+  } catch (error) {
+    console.error("API: Error loading evaluators:", error);
+    this.handleError(error, '評価者一覧の読み込み');
+    throw error;
+  }
+}
+
+/**
+ * 特定の評価者の担当ユーザー一覧を取得
+ */
+async getUsersByEvaluator(evaluatorId) {
+  try {
+    console.log("API: Loading users for evaluator:", evaluatorId);
+    
+    const currentUser = await this.getCurrentUserData();
+    if (!currentUser || !currentUser.tenantId) {
+      throw new Error("ユーザー情報またはテナント情報が見つかりません");
+    }
+
+    const tenantId = currentUser.tenantId;
+    
+    const usersQuery = query(
+      collection(this.db, "users"),
+      where("tenantId", "==", tenantId),
+      where("evaluatorId", "==", evaluatorId),
+      where("role", "==", "worker")
+    );
+
+    const usersSnapshot = await getDocs(usersQuery);
+    const users = [];
+
+    usersSnapshot.forEach((doc) => {
+      users.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    console.log("API: Users for evaluator loaded:", users.length);
+    return users;
+
+  } catch (error) {
+    console.error("API: Error loading users for evaluator:", error);
+    this.handleError(error, '担当ユーザー一覧の読み込み');
+    throw error;
+  }
+}
+
+/**
+ * 評価者の担当評価数を取得
+ */
+async getEvaluatorWorkload(evaluatorId) {
+  try {
+    console.log("API: Getting evaluator workload:", evaluatorId);
+    
+    const currentUser = await this.getCurrentUserData();
+    if (!currentUser || !currentUser.tenantId) {
+      throw new Error("テナント情報が見つかりません");
+    }
+
+    const tenantId = currentUser.tenantId;
+    
+    // 担当ユーザー数を取得
+    const assignedUsersQuery = query(
+      collection(this.db, "users"),
+      where("tenantId", "==", tenantId),
+      where("evaluatorId", "==", evaluatorId),
+      where("role", "==", "worker"),
+      where("status", "==", "active")
+    );
+    const assignedUsersSnapshot = await getDocs(assignedUsersQuery);
+    const assignedUsersCount = assignedUsersSnapshot.size;
+
+    // 承認待ち評価数を取得
+    const pendingEvaluationsQuery = query(
+      collection(this.db, "evaluations"),
+      where("tenantId", "==", tenantId),
+      where("evaluatorId", "==", evaluatorId),
+      where("status", "==", "pending_approval")
+    );
+    const pendingEvaluationsSnapshot = await getDocs(pendingEvaluationsQuery);
+    const pendingEvaluationsCount = pendingEvaluationsSnapshot.size;
+
+    // 今月完了した評価数
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    const completedEvaluationsQuery = query(
+      collection(this.db, "evaluations"),
+      where("tenantId", "==", tenantId),
+      where("evaluatorId", "==", evaluatorId),
+      where("status", "==", "completed"),
+      where("completedAt", ">=", startOfMonth)
+    );
+    const completedEvaluationsSnapshot = await getDocs(completedEvaluationsQuery);
+    const completedThisMonth = completedEvaluationsSnapshot.size;
+
+    const workload = {
+      assignedUsers: assignedUsersCount,
+      pendingEvaluations: pendingEvaluationsCount,
+      completedThisMonth: completedThisMonth,
+      evaluatorId: evaluatorId
+    };
+
+    console.log("API: Evaluator workload:", workload);
+    return workload;
+
+  } catch (error) {
+    console.error("API: Error getting evaluator workload:", error);
+    return {
+      assignedUsers: 0,
+      pendingEvaluations: 0,
+      completedThisMonth: 0,
+      evaluatorId: evaluatorId
+    };
+  }
+}
+
+/**
+ * 評価者割り当ての一括更新
+ */
+async bulkAssignEvaluator(userIds, evaluatorId) {
+  try {
+    console.log("API: Bulk assigning evaluator:", { userIds, evaluatorId });
+    
+    const currentUser = await this.getCurrentUserData();
+    if (!currentUser || !currentUser.tenantId) {
+      throw new Error("テナント情報が見つかりません");
+    }
+
+    const batch = writeBatch(this.db);
+    
+    for (const userId of userIds) {
+      const userRef = doc(this.db, "users", userId);
+      batch.update(userRef, {
+        evaluatorId: evaluatorId,
+        updatedAt: serverTimestamp()
+      });
+    }
+
+    await batch.commit();
+    
+    console.log("API: Bulk evaluator assignment completed");
+    return { success: true, count: userIds.length };
+
+  } catch (error) {
+    console.error("API: Error in bulk evaluator assignment:", error);
+    this.handleError(error, '評価者一括割り当て');
+    throw error;
+  }
+}
+
+/**
+ * 未割り当てユーザー一覧を取得
+ */
+async getUnassignedUsers() {
+  try {
+    console.log("API: Loading unassigned users...");
+    
+    const currentUser = await this.getCurrentUserData();
+    if (!currentUser || !currentUser.tenantId) {
+      throw new Error("テナント情報が見つかりません");
+    }
+
+    const tenantId = currentUser.tenantId;
+    
+    // 一般ユーザーで評価者が未割り当てのユーザーを取得
+    const unassignedQuery = query(
+      collection(this.db, "users"),
+      where("tenantId", "==", tenantId),
+      where("role", "==", "worker"),
+      where("status", "==", "active")
+    );
+
+    const unassignedSnapshot = await getDocs(unassignedQuery);
+    const unassignedUsers = [];
+
+    unassignedSnapshot.forEach((doc) => {
+      const userData = doc.data();
+      // evaluatorId が null、undefined、または空文字列の場合
+      if (!userData.evaluatorId) {
+        unassignedUsers.push({
+          id: doc.id,
+          ...userData
+        });
+      }
+    });
+
+    console.log("API: Unassigned users loaded:", unassignedUsers.length);
+    return unassignedUsers;
+
+  } catch (error) {
+    console.error("API: Error loading unassigned users:", error);
+    this.handleError(error, '未割り当てユーザー一覧の読み込み');
+    throw error;
+  }
+}
+
+/**
+ * 評価者の統計情報を取得
+ */
+async getEvaluatorStats() {
+  try {
+    console.log("API: Loading evaluator statistics...");
+    
+    const evaluators = await this.getEvaluators();
+    const stats = [];
+
+    for (const evaluator of evaluators) {
+      const workload = await this.getEvaluatorWorkload(evaluator.id);
+      stats.push({
+        ...evaluator,
+        ...workload
+      });
+    }
+
+    // 承認待ち件数の多い順にソート
+    stats.sort((a, b) => b.pendingEvaluations - a.pendingEvaluations);
+
+    console.log("API: Evaluator statistics loaded:", stats.length);
+    return stats;
+
+  } catch (error) {
+    console.error("API: Error loading evaluator statistics:", error);
+    this.handleError(error, '評価者統計の読み込み');
+    throw error;
+  }
+}
+
+/**
+ * 現在のユーザーが担当する承認待ち評価を取得
+ */
+async getPendingEvaluationsForCurrentUser() {
+  try {
+    console.log("API: Loading pending evaluations for current user...");
+    
+    const currentUser = await this.getCurrentUserData();
+    if (!currentUser) {
+      throw new Error("現在のユーザー情報が取得できません");
+    }
+
+    // 現在のユーザーが評価者として担当する承認待ち評価
+    const pendingQuery = query(
+      collection(this.db, "evaluations"),
+      where("tenantId", "==", currentUser.tenantId),
+      where("evaluatorId", "==", currentUser.uid || currentUser.id),
+      where("status", "==", "pending_approval")
+    );
+
+    const pendingSnapshot = await getDocs(pendingQuery);
+    const pendingEvaluations = [];
+
+    pendingSnapshot.forEach((doc) => {
+      pendingEvaluations.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    // 作成日時で新しい順にソート
+    pendingEvaluations.sort((a, b) => {
+      const aTime = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
+      const bTime = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
+      return bTime - aTime;
+    });
+
+    console.log("API: Pending evaluations loaded:", pendingEvaluations.length);
+    return pendingEvaluations;
+
+  } catch (error) {
+    console.error("API: Error loading pending evaluations:", error);
+    return [];
+  }
+}
+
+/**
+ * 全体の承認待ち評価統計を取得（管理者用）
+ */
+async getPendingEvaluationStats() {
+  try {
+    console.log("API: Loading pending evaluation statistics...");
+    
+    const currentUser = await this.getCurrentUserData();
+    if (!currentUser || !currentUser.tenantId) {
+      throw new Error("テナント情報が見つかりません");
+    }
+
+    const tenantId = currentUser.tenantId;
+    
+    // 承認待ち評価を評価者別に集計
+    const pendingQuery = query(
+      collection(this.db, "evaluations"),
+      where("tenantId", "==", tenantId),
+      where("status", "==", "pending_approval")
+    );
+
+    const pendingSnapshot = await getDocs(pendingQuery);
+    const evaluatorStats = {};
+    let totalPending = 0;
+
+    pendingSnapshot.forEach((doc) => {
+      const data = doc.data();
+      const evaluatorId = data.evaluatorId;
+      
+      if (evaluatorId) {
+        if (!evaluatorStats[evaluatorId]) {
+          evaluatorStats[evaluatorId] = {
+            evaluatorId: evaluatorId,
+            count: 0,
+            evaluations: []
+          };
+        }
+        evaluatorStats[evaluatorId].count++;
+        evaluatorStats[evaluatorId].evaluations.push({
+          id: doc.id,
+          ...data
+        });
+      }
+      totalPending++;
+    });
+
+    // 評価者情報を付与
+    const evaluators = await this.getEvaluators();
+    const statsArray = Object.values(evaluatorStats).map(stat => {
+      const evaluator = evaluators.find(e => e.id === stat.evaluatorId);
+      return {
+        ...stat,
+        evaluatorName: evaluator ? evaluator.name : '不明な評価者',
+        evaluatorEmail: evaluator ? evaluator.email : ''
+      };
+    });
+
+    // 件数の多い順にソート
+    statsArray.sort((a, b) => b.count - a.count);
+
+    const result = {
+      totalPending: totalPending,
+      byEvaluator: statsArray,
+      lastUpdated: new Date().toISOString()
+    };
+
+    console.log("API: Pending evaluation statistics:", result);
+    return result;
+
+  } catch (error) {
+    console.error("API: Error loading pending evaluation statistics:", error);
+    this.handleError(error, '承認待ち評価統計の読み込み');
+    throw error;
+  }
+}
+
+/**
+ * 評価ステータスを更新（通知機能付き）
+ */
+async updateEvaluationStatusWithNotification(evaluationId, status, metadata = {}) {
+  try {
+    console.log("API: Updating evaluation status with notification:", evaluationId, status);
+
+    // 評価ステータスを更新
+    await this.updateEvaluationStatus(evaluationId, status, metadata);
+
+    // 通知を作成（基本実装）
+    if (status === 'pending_approval') {
+      await this.createNotification({
+        type: 'evaluation_pending',
+        evaluationId: evaluationId,
+        message: '新しい評価が承認待ちです',
+        ...metadata
+      });
+    } else if (status === 'completed') {
+      await this.createNotification({
+        type: 'evaluation_completed',
+        evaluationId: evaluationId,
+        message: '評価が完了しました',
+        ...metadata
+      });
+    }
+
+    console.log("API: Evaluation status updated with notification");
+    return { success: true };
+
+  } catch (error) {
+    console.error("API: Error updating evaluation status with notification:", error);
+    this.handleError(error, '評価ステータス更新');
+    throw error;
+  }
+}
+
+/**
+ * 通知を作成（基本実装）
+ */
+async createNotification(notificationData) {
+  try {
+    console.log("API: Creating notification:", notificationData);
+
+    const currentUser = await this.getCurrentUserData();
+    if (!currentUser || !currentUser.tenantId) {
+      throw new Error("テナント情報が見つかりません");
+    }
+
+    const notification = {
+      ...notificationData,
+      tenantId: currentUser.tenantId,
+      createdAt: serverTimestamp(),
+      read: false,
+      createdBy: currentUser.uid || currentUser.id
+    };
+
+    const docRef = doc(collection(this.db, "notifications"));
+    await setDoc(docRef, { ...notification, id: docRef.id });
+
+    console.log("API: Notification created:", docRef.id);
+    return { success: true, id: docRef.id };
+
+  } catch (error) {
+    console.error("API: Error creating notification:", error);
+    // 通知作成エラーは致命的ではないので、ログのみ
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * ユーザーの通知を取得
+ */
+async getNotifications(userId = null) {
+  try {
+    console.log("API: Loading notifications for user:", userId);
+    
+    const currentUser = await this.getCurrentUserData();
+    if (!currentUser || !currentUser.tenantId) {
+      throw new Error("テナント情報が見つかりません");
+    }
+
+    const targetUserId = userId || currentUser.uid || currentUser.id;
+    const tenantId = currentUser.tenantId;
+    
+    const notificationsQuery = query(
+      collection(this.db, "notifications"),
+      where("tenantId", "==", tenantId),
+      where("targetUserId", "==", targetUserId),
+      orderBy("createdAt", "desc"),
+      limit(20)
+    );
+
+    const notificationsSnapshot = await getDocs(notificationsQuery);
+    const notifications = [];
+
+    notificationsSnapshot.forEach((doc) => {
+      notifications.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    console.log("API: Notifications loaded:", notifications.length);
+    return notifications;
+
+  } catch (error) {
+    console.error("API: Error loading notifications:", error);
+    return [];
+  }
+}
+
+/**
+ * 通知を既読にする
+ */
+async markNotificationAsRead(notificationId) {
+  try {
+    console.log("API: Marking notification as read:", notificationId);
+    
+    await updateDoc(doc(this.db, "notifications", notificationId), {
+      read: true,
+      readAt: serverTimestamp()
+    });
+
+    console.log("API: Notification marked as read");
+    return { success: true };
+
+  } catch (error) {
+    console.error("API: Error marking notification as read:", error);
+    this.handleError(error, '通知既読更新');
+    throw error;
+  }
+}
 }
