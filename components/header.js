@@ -192,21 +192,28 @@ export class HeaderComponent {
     }
 
     // ログアウト
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        
-        const confirmed = await this.app.confirm(
-          'ログアウトしてもよろしいですか？',
-          'ログアウト確認'
-        );
-        
-        if (confirmed) {
-          await this.app.logout();
-        }
-      });
+const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    
+    try {
+      const confirmed = await this.app.confirm(
+        'ログアウトしてもよろしいですか？',
+        'ログアウト確認'
+      );
+      
+      if (confirmed) {
+        console.log('Header: Logging out user...');
+        await this.app.logout();
+        console.log('Header: User logged out successfully');
+      }
+    } catch (error) {
+      console.error('Header: Error during logout:', error);
+      this.app.showError('ログアウト中にエラーが発生しました');
     }
+  });
+}
 
     // 通知全既読ボタン
     const markAllReadBtn = document.getElementById('markAllNotificationsRead');
