@@ -1,7 +1,4 @@
-/**
- * User Management Page
- * ユーザー管理ページ
- */
+// user-management.js の追加・修正部分
 
 export class UserManagementPage {
   constructor(app) {
@@ -9,6 +6,7 @@ export class UserManagementPage {
     this.users = [];
     this.filteredUsers = [];
     this.jobTypes = [];
+    this.evaluators = []; // 評価者一覧を追加
     this.currentEditingUser = null;
     this.isLoading = false;
     this.currentFilter = 'all';
@@ -59,21 +57,21 @@ export class UserManagementPage {
             </div>
           </div>
           <div class="col-md-3 mb-3">
-            <div class="card border-warning">
+            <div class="card border-info">
               <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">保留中</h6>
-                <h3 class="card-title mb-0 text-warning">
-                  <span id="pendingUsers">0</span>
+                <h6 class="card-subtitle mb-2 text-muted">評価者</h6>
+                <h3 class="card-title mb-0 text-info">
+                  <span id="evaluatorUsers">0</span>
                 </h3>
               </div>
             </div>
           </div>
           <div class="col-md-3 mb-3">
-            <div class="card border-danger">
+            <div class="card border-warning">
               <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">無効</h6>
-                <h3 class="card-title mb-0 text-danger">
-                  <span id="inactiveUsers">0</span>
+                <h6 class="card-subtitle mb-2 text-muted">未割り当て</h6>
+                <h3 class="card-title mb-0 text-warning">
+                  <span id="unassignedUsers">0</span>
                 </h3>
               </div>
             </div>
@@ -84,7 +82,7 @@ export class UserManagementPage {
         <div class="card mb-4">
           <div class="card-body">
             <div class="row">
-              <div class="col-md-4 mb-3 mb-md-0">
+              <div class="col-md-3 mb-3 mb-md-0">
                 <div class="input-group">
                   <span class="input-group-text">
                     <i class="fas fa-search"></i>
@@ -95,7 +93,7 @@ export class UserManagementPage {
                          placeholder="名前、メールで検索...">
                 </div>
               </div>
-              <div class="col-md-4 mb-3 mb-md-0">
+              <div class="col-md-3 mb-3 mb-md-0">
                 <select class="form-select" id="userStatusFilter">
                   <option value="all">すべてのステータス</option>
                   <option value="active">アクティブ</option>
@@ -103,7 +101,15 @@ export class UserManagementPage {
                   <option value="suspended">無効</option>
                 </select>
               </div>
-              <div class="col-md-4 text-md-end">
+              <div class="col-md-3 mb-3 mb-md-0">
+                <select class="form-select" id="roleFilter">
+                  <option value="all">すべての役割</option>
+                  <option value="worker">一般ユーザー</option>
+                  <option value="evaluator">評価者</option>
+                  <option value="admin">管理者</option>
+                </select>
+              </div>
+              <div class="col-md-3 text-md-end">
                 <button class="btn btn-primary" id="inviteUserBtn">
                   <i class="fas fa-user-plus me-2"></i>
                   ユーザー招待
@@ -134,7 +140,7 @@ export class UserManagementPage {
         </div>
       </div>
 
-      <!-- ユーザー編集モーダル -->
+      <!-- ユーザー編集モーダル（評価者割り当て機能追加） -->
       <div class="modal fade" id="userEditModal" tabindex="-1" aria-labelledby="userEditModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
           <div class="modal-content">
@@ -174,6 +180,23 @@ export class UserManagementPage {
                     </select>
                   </div>
                 </div>
+                
+                <!-- 評価者割り当て機能 -->
+                <div class="row" id="evaluatorAssignmentRow">
+                  <div class="col-12 mb-3">
+                    <label for="userEvaluator" class="form-label">
+                      <i class="fas fa-user-tie me-2"></i>担当評価者
+                    </label>
+                    <select class="form-select" id="userEvaluator">
+                      <option value="">評価者を選択してください</option>
+                    </select>
+                    <div class="form-text">
+                      <i class="fas fa-info-circle me-1"></i>
+                      一般ユーザーの場合、担当評価者を割り当てることができます
+                    </div>
+                  </div>
+                </div>
+                
                 <div class="row">
                   <div class="col-md-6 mb-3">
                     <label for="userJobType" class="form-label">職種</label>
@@ -227,6 +250,15 @@ export class UserManagementPage {
                     <option value="admin">管理者</option>
                   </select>
                 </div>
+                
+                <!-- 招待時の評価者割り当て -->
+                <div class="mb-3" id="inviteEvaluatorRow">
+                  <label for="inviteEvaluator" class="form-label">担当評価者（一般ユーザーの場合）</label>
+                  <select class="form-select" id="inviteEvaluator">
+                    <option value="">評価者を選択してください</option>
+                  </select>
+                </div>
+                
                 <div class="mb-3">
                   <label for="inviteMessage" class="form-label">メッセージ（任意）</label>
                   <textarea class="form-control" id="inviteMessage" rows="3" 
@@ -270,6 +302,24 @@ export class UserManagementPage {
       statusFilter.addEventListener('change', (e) => this.handleStatusFilter(e.target.value));
     }
 
+    // 役割フィルター（新規追加）
+    const roleFilter = document.getElementById('roleFilter');
+    if (roleFilter) {
+      roleFilter.addEventListener('change', (e) => this.handleRoleFilter(e.target.value));
+    }
+
+    // 役割変更時の評価者割り当て表示制御
+    const userRoleSelect = document.getElementById('userRole');
+    if (userRoleSelect) {
+      userRoleSelect.addEventListener('change', (e) => this.toggleEvaluatorAssignment(e.target.value));
+    }
+
+    // 招待時の役割変更
+    const inviteRoleSelect = document.getElementById('inviteRole');
+    if (inviteRoleSelect) {
+      inviteRoleSelect.addEventListener('change', (e) => this.toggleInviteEvaluatorAssignment(e.target.value));
+    }
+
     // 招待ボタン
     const inviteBtn = document.getElementById('inviteUserBtn');
     if (inviteBtn) {
@@ -301,7 +351,7 @@ export class UserManagementPage {
     try {
       console.log('UserManagement: Loading data...');
       
-      // 職種データを取得（修正版）
+      // 職種データを取得
       try {
         const jobTypesResponse = await this.app.api.getJobTypes();
         if (jobTypesResponse && jobTypesResponse.data) {
@@ -320,12 +370,19 @@ export class UserManagementPage {
       this.users = await this.app.api.getUsers();
       this.filteredUsers = [...this.users];
       
+      // 評価者一覧を作成
+      this.evaluators = this.users.filter(user => 
+        user.role === 'evaluator' && user.status === 'active'
+      );
+      
       console.log('UserManagement: Data loaded');
       console.log('- Users:', this.users.length);
+      console.log('- Evaluators:', this.evaluators.length);
       console.log('- Job types:', this.jobTypes.length);
       
-      // 職種セレクトボックスを更新
+      // セレクトボックスを更新
       this.updateJobTypeSelect();
+      this.updateEvaluatorSelects();
       
       // テーブルを更新
       this.renderUserTable();
@@ -337,6 +394,7 @@ export class UserManagementPage {
       // エラー時は空のデータで続行
       this.users = [];
       this.filteredUsers = [];
+      this.evaluators = [];
       this.renderUserTable();
       
     } finally {
@@ -344,22 +402,93 @@ export class UserManagementPage {
     }
   }
 
-  updateJobTypeSelect() {
-    const select = document.getElementById('userJobType');
-    if (!select) return;
+  // 評価者セレクトボックスを更新
+  updateEvaluatorSelects() {
+    const evaluatorSelects = [
+      document.getElementById('userEvaluator'),
+      document.getElementById('inviteEvaluator')
+    ];
     
-    // 既存のオプションをクリア（最初のオプションは残す）
-    while (select.options.length > 1) {
-      select.remove(1);
-    }
-    
-    // 職種オプションを追加
-    this.jobTypes.forEach(jobType => {
-      const option = document.createElement('option');
-      option.value = jobType.id;
-      option.textContent = jobType.name;
-      select.appendChild(option);
+    evaluatorSelects.forEach(select => {
+      if (!select) return;
+      
+      // 既存のオプションをクリア（最初のオプションは残す）
+      while (select.options.length > 1) {
+        select.remove(1);
+      }
+      
+      // 評価者オプションを追加
+      this.evaluators.forEach(evaluator => {
+        const option = document.createElement('option');
+        option.value = evaluator.id;
+        option.textContent = `${evaluator.name} (${evaluator.department || '部署未設定'})`;
+        select.appendChild(option);
+      });
     });
+  }
+
+  // 役割に応じて評価者割り当て表示を制御
+  toggleEvaluatorAssignment(role) {
+    const evaluatorRow = document.getElementById('evaluatorAssignmentRow');
+    if (!evaluatorRow) return;
+    
+    if (role === 'worker') {
+      evaluatorRow.style.display = 'block';
+    } else {
+      evaluatorRow.style.display = 'none';
+      document.getElementById('userEvaluator').value = '';
+    }
+  }
+
+  // 招待時の評価者割り当て表示制御
+  toggleInviteEvaluatorAssignment(role) {
+    const evaluatorRow = document.getElementById('inviteEvaluatorRow');
+    if (!evaluatorRow) return;
+    
+    if (role === 'worker') {
+      evaluatorRow.style.display = 'block';
+    } else {
+      evaluatorRow.style.display = 'none';
+      document.getElementById('inviteEvaluator').value = '';
+    }
+  }
+
+  // 役割フィルター処理
+  handleRoleFilter(role) {
+    this.currentRoleFilter = role;
+    this.applyFilters();
+  }
+
+  applyFilters() {
+    this.filteredUsers = this.users.filter(user => {
+      // ステータスフィルター
+      if (this.currentFilter !== 'all' && user.status !== this.currentFilter) {
+        return false;
+      }
+      
+      // 役割フィルター
+      if (this.currentRoleFilter && this.currentRoleFilter !== 'all' && user.role !== this.currentRoleFilter) {
+        return false;
+      }
+      
+      // 検索フィルター
+      if (this.searchTerm) {
+        const searchableText = [
+          user.name,
+          user.email,
+          user.department,
+          this.getRoleLabel(user.role)
+        ].join(' ').toLowerCase();
+        
+        if (!searchableText.includes(this.searchTerm)) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+    
+    this.renderUserTable();
   }
 
   renderUserTable() {
@@ -385,6 +514,7 @@ export class UserManagementPage {
               <th>メールアドレス</th>
               <th>役割</th>
               <th>職種</th>
+              <th>担当評価者</th>
               <th>ステータス</th>
               <th>最終ログイン</th>
               <th>操作</th>
@@ -416,6 +546,9 @@ export class UserManagementPage {
                   ${user.jobTypeId ? this.getJobTypeName(user.jobTypeId) : '-'}
                 </td>
                 <td>
+                  ${user.role === 'worker' ? this.getEvaluatorName(user.evaluatorId) : '-'}
+                </td>
+                <td>
                   <span class="badge ${this.app.getStatusBadgeClass(user.status)}">
                     ${this.getStatusLabel(user.status)}
                   </span>
@@ -439,43 +572,6 @@ export class UserManagementPage {
     `;
   }
 
-  handleSearch(searchTerm) {
-    this.searchTerm = searchTerm.toLowerCase().trim();
-    this.applyFilters();
-  }
-
-  handleStatusFilter(status) {
-    this.currentFilter = status;
-    this.applyFilters();
-  }
-
-  applyFilters() {
-    this.filteredUsers = this.users.filter(user => {
-      // ステータスフィルター
-      if (this.currentFilter !== 'all' && user.status !== this.currentFilter) {
-        return false;
-      }
-      
-      // 検索フィルター
-      if (this.searchTerm) {
-        const searchableText = [
-          user.name,
-          user.email,
-          user.department,
-          this.getRoleLabel(user.role)
-        ].join(' ').toLowerCase();
-        
-        if (!searchableText.includes(this.searchTerm)) {
-          return false;
-        }
-      }
-      
-      return true;
-    });
-    
-    this.renderUserTable();
-  }
-
   editUser(userId) {
     const user = this.users.find(u => u.id === userId);
     if (!user) return;
@@ -491,6 +587,10 @@ export class UserManagementPage {
     document.getElementById('userDepartment').value = user.department || '';
     document.getElementById('userPhone').value = user.phone || '';
     document.getElementById('userNotes').value = user.notes || '';
+    document.getElementById('userEvaluator').value = user.evaluatorId || '';
+    
+    // 役割に応じて評価者割り当て表示を制御
+    this.toggleEvaluatorAssignment(user.role);
     
     document.getElementById('userEditModalLabel').textContent = 'ユーザー編集';
     
@@ -514,7 +614,8 @@ export class UserManagementPage {
       jobTypeId: document.getElementById('userJobType').value,
       department: document.getElementById('userDepartment').value.trim(),
       phone: document.getElementById('userPhone').value.trim(),
-      notes: document.getElementById('userNotes').value.trim()
+      notes: document.getElementById('userNotes').value.trim(),
+      evaluatorId: document.getElementById('userEvaluator').value || null
     };
     
     try {
@@ -541,6 +642,169 @@ export class UserManagementPage {
     }
   }
 
+  showInviteModal() {
+    // フォームをリセット
+    document.getElementById('inviteForm').reset();
+    
+    // 初期状態で評価者割り当て行を表示
+    this.toggleInviteEvaluatorAssignment('worker');
+    
+    // モーダルを表示
+    const modal = new bootstrap.Modal(document.getElementById('inviteModal'));
+    modal.show();
+  }
+
+  async sendInvitation() {
+    const form = document.getElementById('inviteForm');
+    if (!form.checkValidity()) {
+      form.classList.add('was-validated');
+      return;
+    }
+    
+    const invitationData = {
+      email: document.getElementById('inviteEmail').value.trim(),
+      role: document.getElementById('inviteRole').value,
+      evaluatorId: document.getElementById('inviteEvaluator').value || null,
+      message: document.getElementById('inviteMessage').value.trim()
+    };
+    
+    try {
+      this.app.showLoading('招待を作成中...');
+      
+      const invitationResult = await this.app.api.createInvitation(invitationData);
+      
+      // モーダルを閉じる
+      bootstrap.Modal.getInstance(document.getElementById('inviteModal')).hide();
+      
+      // 招待URLを表示するモーダルを表示
+      this.showInvitationUrlModal(invitationResult);
+      
+    } catch (error) {
+      console.error('UserManagement: Error sending invitation:', error);
+      this.app.showError('招待の送信に失敗しました');
+    } finally {
+      this.app.hideLoading();
+    }
+  }
+
+  updateStatistics() {
+    // 総ユーザー数
+    document.getElementById('totalUsers').textContent = this.users.length;
+    
+    // アクティブユーザー数
+    const activeCount = this.users.filter(u => u.status === 'active').length;
+    document.getElementById('activeUsers').textContent = activeCount;
+    
+    // 評価者数
+    const evaluatorCount = this.users.filter(u => u.role === 'evaluator' && u.status === 'active').length;
+    document.getElementById('evaluatorUsers').textContent = evaluatorCount;
+    
+    // 未割り当てユーザー数（一般ユーザーで評価者が割り当てられていない）
+    const unassignedCount = this.users.filter(u => 
+      u.role === 'worker' && u.status === 'active' && !u.evaluatorId
+    ).length;
+    document.getElementById('unassignedUsers').textContent = unassignedCount;
+  }
+
+  // 評価者名を取得
+  getEvaluatorName(evaluatorId) {
+    if (!evaluatorId) return '<span class="text-muted">未割り当て</span>';
+    
+    const evaluator = this.evaluators.find(e => e.id === evaluatorId);
+    return evaluator ? `<span class="text-success">${evaluator.name}</span>` : '<span class="text-danger">評価者が見つかりません</span>';
+  }
+
+  // その他のヘルパーメソッドは既存のものをそのまま使用
+  getInitials(name) {
+    if (!name) return '?';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return parts[0][0] + parts[parts.length - 1][0];
+    }
+    return name.substring(0, 2).toUpperCase();
+  }
+
+  getRoleLabel(role) {
+    const labels = {
+      admin: '管理者',
+      evaluator: '評価者',
+      worker: '一般ユーザー',
+      developer: '開発者'
+    };
+    return labels[role] || role;
+  }
+
+  getStatusLabel(status) {
+    const labels = {
+      active: 'アクティブ',
+      suspended: '無効',
+      pending: '保留中'
+    };
+    return labels[status] || status;
+  }
+
+  getJobTypeName(jobTypeId) {
+    const jobType = this.jobTypes.find(jt => jt.id === jobTypeId);
+    return jobType ? jobType.name : '-';
+  }
+
+  updateJobTypeSelect() {
+    const select = document.getElementById('userJobType');
+    if (!select) return;
+    
+    // 既存のオプションをクリア（最初のオプションは残す）
+    while (select.options.length > 1) {
+      select.remove(1);
+    }
+    
+    // 職種オプションを追加
+    this.jobTypes.forEach(jobType => {
+      const option = document.createElement('option');
+      option.value = jobType.id;
+      option.textContent = jobType.name;
+      select.appendChild(option);
+    });
+  }
+
+  exportUsers() {
+    try {
+      // CSVデータを作成
+      const headers = ['氏名', 'メールアドレス', '役割', '職種', '部署', '担当評価者', 'ステータス'];
+      const rows = this.filteredUsers.map(user => [
+        user.name,
+        user.email,
+        this.getRoleLabel(user.role),
+        user.jobTypeId ? this.getJobTypeName(user.jobTypeId) : '',
+        user.department || '',
+        user.evaluatorId ? this.getEvaluatorName(user.evaluatorId).replace(/<[^>]*>/g, '') : '',
+        this.getStatusLabel(user.status)
+      ]);
+      
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+      
+      // ダウンロード
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `ユーザー一覧_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      this.app.showSuccess('エクスポートが完了しました');
+      
+    } catch (error) {
+      console.error('UserManagement: Export error:', error);
+      this.app.showError('エクスポートに失敗しました');
+    }
+  }
+
+  // 残りのメソッドは既存のものをそのまま使用...
   async deleteUser(userId) {
     const user = this.users.find(u => u.id === userId);
     if (!user) return;
@@ -572,49 +836,7 @@ export class UserManagementPage {
     }
   }
 
-  showInviteModal() {
-    // フォームをリセット
-    document.getElementById('inviteForm').reset();
-    
-    // モーダルを表示
-    const modal = new bootstrap.Modal(document.getElementById('inviteModal'));
-    modal.show();
-  }
-
-async sendInvitation() {
-    const form = document.getElementById('inviteForm');
-    if (!form.checkValidity()) {
-      form.classList.add('was-validated');
-      return;
-    }
-    
-    const invitationData = {
-      email: document.getElementById('inviteEmail').value.trim(),
-      role: document.getElementById('inviteRole').value,
-      message: document.getElementById('inviteMessage').value.trim()
-    };
-    
-    try {
-      this.app.showLoading('招待を作成中...');
-      
-      // 修正：createInvitationの結果を受け取る
-      const invitationResult = await this.app.api.createInvitation(invitationData);
-      
-      // モーダルを閉じる
-      bootstrap.Modal.getInstance(document.getElementById('inviteModal')).hide();
-      
-      // 招待URLを表示するモーダルを表示
-      this.showInvitationUrlModal(invitationResult);
-      
-    } catch (error) {
-      console.error('UserManagement: Error sending invitation:', error);
-      this.app.showError('招待の送信に失敗しました');
-    } finally {
-      this.app.hideLoading();
-    }
-  }
-
-  // 新規追加：招待URL表示モーダル
+  // 既存のshowInvitationUrlModalメソッドをそのまま使用
   showInvitationUrlModal(invitationResult) {
     const modalHtml = `
       <div class="modal fade" id="invitationUrlModal" tabindex="-1" aria-labelledby="invitationUrlModalLabel" aria-hidden="true">
@@ -722,94 +944,6 @@ async sendInvitation() {
     document.getElementById('invitationUrlModal').addEventListener('hidden.bs.modal', () => {
       document.getElementById('invitationUrlModal').remove();
     });
-  }
-
-  updateStatistics() {
-    // 総ユーザー数
-    document.getElementById('totalUsers').textContent = this.users.length;
-    
-    // アクティブユーザー数
-    const activeCount = this.users.filter(u => u.status === 'active').length;
-    document.getElementById('activeUsers').textContent = activeCount;
-    
-    // 保留中ユーザー数
-    const pendingCount = this.users.filter(u => u.status === 'pending').length;
-    document.getElementById('pendingUsers').textContent = pendingCount;
-    
-    // 無効ユーザー数
-    const inactiveCount = this.users.filter(u => u.status === 'suspended').length;
-    document.getElementById('inactiveUsers').textContent = inactiveCount;
-  }
-
-  exportUsers() {
-    try {
-      // CSVデータを作成
-      const headers = ['氏名', 'メールアドレス', '役割', '職種', '部署', 'ステータス'];
-      const rows = this.filteredUsers.map(user => [
-        user.name,
-        user.email,
-        this.getRoleLabel(user.role),
-        user.jobTypeId ? this.getJobTypeName(user.jobTypeId) : '',
-        user.department || '',
-        this.getStatusLabel(user.status)
-      ]);
-      
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-      ].join('\n');
-      
-      // ダウンロード
-      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `ユーザー一覧_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      this.app.showSuccess('エクスポートが完了しました');
-      
-    } catch (error) {
-      console.error('UserManagement: Export error:', error);
-      this.app.showError('エクスポートに失敗しました');
-    }
-  }
-
-  // ヘルパーメソッド
-  getInitials(name) {
-    if (!name) return '?';
-    const parts = name.split(' ');
-    if (parts.length >= 2) {
-      return parts[0][0] + parts[parts.length - 1][0];
-    }
-    return name.substring(0, 2).toUpperCase();
-  }
-
-  getRoleLabel(role) {
-    const labels = {
-      admin: '管理者',
-      evaluator: '評価者',
-      worker: '一般ユーザー',
-      developer: '開発者'
-    };
-    return labels[role] || role;
-  }
-
-  getStatusLabel(status) {
-    const labels = {
-      active: 'アクティブ',
-      suspended: '無効',
-      pending: '保留中'
-    };
-    return labels[status] || status;
-  }
-
-  getJobTypeName(jobTypeId) {
-    const jobType = this.jobTypes.find(jt => jt.id === jobTypeId);
-    return jobType ? jobType.name : '-';
   }
 
   cleanup() {
