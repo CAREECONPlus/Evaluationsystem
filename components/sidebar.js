@@ -346,6 +346,31 @@ setupEventListeners() {
       this.hide();
     });
   }
+
+  // サイドバーのログアウトボタン（onclick属性を置き換え）
+  const sidebarLogoutBtn = document.querySelector('.sidebar .btn-danger');
+  if (sidebarLogoutBtn) {
+    sidebarLogoutBtn.removeAttribute('onclick'); // onclick属性を削除
+    sidebarLogoutBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      
+      try {
+        const confirmed = await this.app.confirm(
+          'ログアウトしてもよろしいですか？',
+          'ログアウト確認'
+        );
+        
+        if (confirmed) {
+          console.log('Sidebar: Logging out user...');
+          await this.app.logout();
+          console.log('Sidebar: User logged out successfully');
+        }
+      } catch (error) {
+        console.error('Sidebar: Error during logout:', error);
+        this.app.showError('ログアウト中にエラーが発生しました');
+      }
+    });
+  }
 }
 
   /**
