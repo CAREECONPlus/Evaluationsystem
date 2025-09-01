@@ -406,6 +406,24 @@ updateUIForAuthState(user) {
     }
   }
 
+  /**
+   * 現在のユーザー情報を取得
+   */
+  getCurrentUser() {
+    return this.currentUser;
+  }
+
+  isAuthenticated() {
+    return !!this.currentUser
+  }
+
+  hasRole(role) {
+    return this.isAuthenticated() && this.currentUser.role === role
+  }
+
+  hasAnyRole(roles) {
+    return this.isAuthenticated() && roles.includes(this.currentUser.role)
+  }
 
   isAuthenticated() {
     return !!this.currentUser
