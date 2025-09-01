@@ -26,14 +26,101 @@ class App {
     this.setupGlobalNavigation()
   }
 
-  async init() {
-    console.log("Starting application initialization...")
-    this.showLoadingScreen()
+ async init() {
+  console.log("Starting application initialization...")
+  this.showLoadingScreen()
 
-    const initTimeout = setTimeout(() => {
-      console.error("Application initialization timeout")
-      this.showInitializationError("初期化がタイムアウトしました。ページを再読み込みしてください。")
-    }, 15000) // 15秒のタイムアウト
+  const initTimeout = setTimeout(() => {
+    console.error("Application initialization timeout")
+    this.showInitializationError("初期化がタイムアウトしました。ページを再読み込みしてください。")
+  }, 30000) // 30秒に延長
+
+  try {
+    console.log("Step 1: Initializing I18n...")
+    await this.i18n.init()
+    console.log("✓ I18n initialized")
+
+    console.log("Step 2: Initializing Auth module...")
+    await this.auth.init()
+    console.log("✓ Auth module initialized")
+
+    console.log("Step 3: Initializing API...")
+    this.api = new API(this)
+    console.log("✓ API initialized")
+
+    console.log("Step 4: Setting up and awaiting auth state listener...")
+    try {
+      await Promise.race([
+        this.auth.listenForAuthChanges(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Auth timeout")), 15000)) // Auth部分は15秒のまま
+      ])
+      console.log("✓ Auth state listener has completed its initial check.")
+    } catch (authError) {
+      if (authError.message === "Auth timeout") {
+        console.warn("⚠ Auth state check timed out, continuing with initialization")
+      } else if (authError.message && authError.message.includes("Operation cancelled")) {
+        console.warn("⚠ Auth operation cancelled, continuing with initialization")
+      } else {
+        console.warn("⚠ Auth error occurred, continuing with initialization:", authError.message)
+        // エラーを投げ直さずに継続
+      }
+    }
+
+    // タイムアウトをクリア（成功時）
+    clearTimeout(initTimeout)
+
+    console.log("Step 5: Showing app...")
+    this.showApp()
+
+    console.log("Step 6: Initial routing...")
+    await this.router.route()
+
+    // 以下の動的インポートを並列実行に変更して高速化
+    console.log("Step 7-9: Loading additional features...")
+    await Promise.allSettled([
+      // アクセシビリティ機能
+      import("./js/accessibility.js").then(({ AccessibilityHelper }) => {
+        this.accessibility = new AccessibilityHelper(this)
+        this.accessibility.init()
+        console.log("✓ Accessibility features initialized")
+      }).catch(error => {
+        console.warn("⚠ Accessibility features could not be loaded:", error)
+      }),
+      
+      // パフォーマンス最適化
+      import("./js/performance.js").then(({ PerformanceOptimizer }) => {
+        this.performance = new PerformanceOptimizer(this)
+        this.performance.init()
+        console.log("✓ Performance optimizations initialized")
+      }).catch(error => {
+        console.warn("⚠ Performance optimizations could not be loaded:", error)
+      }),
+      
+      // アニメーション
+      import("./js/animations.js").then(({ AnimationHelper }) => {
+        this.animations = new AnimationHelper(this)
+        this.animations.init()
+        console.log("✓ Animations initialized")
+      }).catch(error => {
+        console.warn("⚠ Animation features could not be loaded:", error)
+      })
+    ])
+
+    console.log("🎉 Application initialized successfully")
+  } catch (error) {
+    clearTimeout(initTimeout)
+    console.error("❌ Failed to initialize application:", error)
+    
+    // 重大なエラーの場合のみエラー画面を表示
+    if (!error.message.includes("timeout") && !error.message.includes("Operation cancelled")) {
+      this.showInitializationError("アプリケーションの起動中にエラーが発生しました。")
+    } else {
+      // タイムアウトや軽微なエラーの場合はアプリを表示して継続
+      console.warn("⚠ Non-critical initialization error, continuing...")
+      this.showApp()
+    }
+  }
+}
 
     try {
       console.log("Step 1: Initializing I18n...")
