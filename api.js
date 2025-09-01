@@ -843,8 +843,7 @@ export class API {
       
       console.log("API: Returning result:", result);
       
-      return result;
-
+  return result;
     } catch (error) {
       console.error("API: Error creating invitation:", error);
       console.error("API: Error stack:", error.stack);
@@ -852,24 +851,6 @@ export class API {
       throw error;
     }
   }
-
-    console.log("API: Found invitation:", invitation); // デバッグログ追加
-
-    // 有効期限チェック
-    if (new Date(invitation.expiresAt) < new Date()) {
-      console.log("API: Invitation expired:", invitation.expiresAt);
-      throw new Error("招待コードの有効期限が切れています");
-    }
-
-    console.log("API: Invitation code validated successfully");
-    return invitation;
-
-  } catch (error) {
-    console.error("API: Error validating invitation code:", error);
-    this.handleError(error, '招待コードの検証');
-    throw error;
-  }
-}
 
   /**
    * 招待コードを生成
