@@ -545,34 +545,46 @@ if (userCompletedEvaluationsEl) userCompletedEvaluationsEl.textContent = complet
   }
 
   async loadNotifications() {
-    try {
-      const notifications = await this.app.api.getNotifications();
-      this.notifications = notifications || [];
-      
- // 通知バッジを更新
-const notificationBadgeEl = document.getElementById('notificationBadge');
-if (notificationBadgeEl) {
-  notificationBadgeEl.textContent = unreadCount;
-}
+  try {
+    const notifications = await this.app.api.getNotifications();
+    this.notifications = notifications || [];
+    
+    // 未読通知数を計算
+    const unreadCount = this.notifications.filter(n => !n.read).length;
+    
+    // 通知バッジを更新
+    const notificationBadgeEl = document.getElementById('notificationBadge');
+    if (notificationBadgeEl) {
+      notificationBadgeEl.textContent = unreadCount;
+    }
 
-// 通知リストを表示
-const notificationsListEl = document.getElementById('notificationsList');
-if (notificationsListEl) {
-  this.renderNotifications();
-} else {
-  console.warn('Dashboard: notificationsList element not found');
-}
+    // 通知リストを表示
+    const notificationsListEl = document.getElementById('notificationsList');
+    if (notificationsListEl) {
+      this.renderNotifications();
+    } else {
+      console.warn('Dashboard: notificationsList element not found');
+    }
 
-    } catch (error) {
-      console.error('Dashboard: Error loading notifications:', error);
-      document.getElementById('notificationsList').innerHTML = `
+  } catch (error) {
+    console.error('Dashboard: Error loading notifications:', error);
+    const notificationsListEl = document.getElementById('notificationsList');
+    if (notificationsListEl) {
+      notificationsListEl.innerHTML = `
         <div class="text-center py-3 text-muted">
           <i class="fas fa-exclamation-triangle me-2"></i>
           通知の読み込みに失敗しました
         </div>
       `;
     }
+    
+    // エラー時も通知バッジを0に設定
+    const notificationBadgeEl = document.getElementById('notificationBadge');
+    if (notificationBadgeEl) {
+      notificationBadgeEl.textContent = '0';
+    }
   }
+}
 
   showPendingAlert(count) {
     const alertElement = document.getElementById('pendingAlert');
