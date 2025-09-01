@@ -125,22 +125,39 @@ export class SidebarComponent {
               </a>
             </li>
 
-            ${isEvaluator || isAdmin ? `
-            <!-- 評価入力（評価者・管理者） -->
-            <li class="nav-item" role="none">
-              <a 
-                class="nav-link text-white d-flex align-items-center ${this.isActive('/evaluation-form') ? 'active' : ''}" 
-                href="#/evaluation-form" 
-                data-link
-                role="menuitem"
-                aria-current="${this.isActive('/evaluation-form') ? 'page' : 'false'}"
-                tabindex="0"
-              >
-                <i class="fas fa-edit nav-icon me-3" aria-hidden="true"></i>
-                <span data-i18n="nav.evaluation">評価入力</span>
-              </a>
-            </li>
-            ` : ''}
+           ${isEvaluator || userRole === 'worker' ? `
+<!-- 目標設定 -->
+<li class="nav-item" role="none">
+  <a 
+    class="nav-link text-white d-flex align-items-center ${this.isActive('/goal-setting') ? 'active' : ''}" 
+    href="#/goal-setting" 
+    data-link
+    role="menuitem"
+    aria-current="${this.isActive('/goal-setting') ? 'page' : 'false'}"
+    tabindex="0"
+  >
+    <i class="fas fa-bullseye nav-icon me-3" aria-hidden="true"></i>
+    <span data-i18n="nav.goal_setting">目標設定</span>
+  </a>
+</li>
+
+${userRole === 'worker' ? `
+<!-- 自己評価入力（一般ユーザー用）-->
+<li class="nav-item" role="none">
+  <a 
+    class="nav-link text-white d-flex align-items-center ${this.isActive('/self-evaluation') ? 'active' : ''}" 
+    href="#/self-evaluation" 
+    data-link
+    role="menuitem"
+    aria-current="${this.isActive('/self-evaluation') ? 'page' : 'false'}"
+    tabindex="0"
+  >
+    <i class="fas fa-edit nav-icon me-3" aria-hidden="true"></i>
+    <span>自己評価入力</span>
+  </a>
+</li>
+` : ''}
+` : ''}
 
             ${isEvaluator || userRole === 'worker' ? `
             <!-- 目標設定 -->
