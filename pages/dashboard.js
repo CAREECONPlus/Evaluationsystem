@@ -413,15 +413,21 @@ export class DashboardPage {
     }
   }
 
-  async loadData() {
-    try {
-      console.log('Dashboard: Loading data...');
-      
-      const currentUser = this.app.currentUser;
-      if (!currentUser) {
-        console.error('Dashboard: No current user');
-        return;
+async loadData() {
+  try {
+    console.log('Dashboard: Loading data...');
+    
+    const currentUser = this.app.currentUser;
+    if (!currentUser) {
+      console.error('Dashboard: No current user');
+      // 自動更新タイマーを停止して無限ループを防ぐ
+      this.cleanup();
+      // ログインページへリダイレクト
+      if (this.app && this.app.navigate) {
+        this.app.navigate('#/login');
       }
+      return;
+    }
 
       // 役割に応じて異なるデータを読み込み
       if (currentUser.role === 'admin') {
