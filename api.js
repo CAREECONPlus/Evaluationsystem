@@ -852,37 +852,6 @@ export class API {
       throw error;
     }
   }
-// validateInvitationCode メソッドも修正
-async validateInvitationCode(code) {
-  try {
-    console.log("API: Validating invitation code:", code);
-    
-    if (!code || typeof code !== 'string' || code.trim() === '') {
-      throw new Error("招待コードが無効です");
-    }
-    
-    // 招待コードのクエリ
-    const invitationsQuery = query(
-      collection(this.db, "invitations"),
-      where("code", "==", code.trim()),
-      where("used", "==", false),
-      limit(1)
-    );
-
-    const invitationsSnapshot = await getDocs(invitationsQuery);
-    
-    console.log("API: Query result size:", invitationsSnapshot.size); // デバッグログ追加
-    
-    if (invitationsSnapshot.empty) {
-      console.log("API: No invitation found for code:", code);
-      throw new Error("無効な招待コードです");
-    }
-
-    const invitationDoc = invitationsSnapshot.docs[0];
-    const invitation = {
-      id: invitationDoc.id,
-      ...invitationDoc.data()
-    };
 
     console.log("API: Found invitation:", invitation); // デバッグログ追加
 
@@ -912,74 +881,6 @@ async validateInvitationCode(code) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;
-  }
-
-  /**
-   * 招待一覧を取得
-   */
-  async getInvitations() {
-    try {
-      console.log("API: Loading invitations...");
-      
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser || !currentUser.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const tenantId = currentUser.tenantId;
-      
-      const invitationsQuery = query(
-        collection(this.db, "invitations"),
-        where("tenantId", "==", tenantId)
-      );
-
-      const invitationsSnapshot = await getDocs(invitationsQuery);
-      const invitations = [];
-
-      invitationsSnapshot.forEach((doc) => {
-        const data = doc.data();
-        invitations.push({
-          id: doc.id,
-          ...data,
-          // 招待URLを再生成
-          url: `${window.location.origin}${window.location.pathname}#/register?code=${data.code}`
-        });
-      });
-
-      // 作成日時でソート（新しい順）
-      invitations.sort((a, b) => {
-        const aTime = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
-        const bTime = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
-        return bTime - aTime;
-      });
-
-      console.log("API: Invitations loaded:", invitations.length);
-      return invitations;
-
-    } catch (error) {
-      console.error("API: Error loading invitations:", error);
-      this.handleError(error, '招待一覧の読み込み');
-      throw error;
-    }
-  }
-
-  /**
-   * 招待を削除
-   */
-  async deleteInvitation(invitationId) {
-    try {
-      console.log("API: Deleting invitation:", invitationId);
-      
-      await deleteDoc(doc(this.db, "invitations", invitationId));
-
-      console.log("API: Invitation deleted successfully");
-      return { success: true };
-
-    } catch (error) {
-      console.error("API: Error deleting invitation:", error);
-      this.handleError(error, '招待の削除');
-      throw error;
-    }
   }
 
   /**
@@ -2379,7 +2280,6 @@ async getEvaluatorStats() {
    * 現在のユーザーが担当する承認待ち評価を取得（エラー回避版）
    */
   async getPendingEvaluationsForCurrentUser() {
-async getPendingEvaluationsforcurrentuser（）{
     try {
       console.log("API: Loading pending evaluations for current user...");
       
@@ -2424,7 +2324,6 @@ async getPendingEvaluationsforcurrentuser（）{
    * 全体の承認待ち評価統計を取得（エラー回避版）
    */
   async getPendingEvaluationStats() {
-async getPendingEvaluationStats（）{
     try {
       console.log("API: Loading pending evaluation statistics...");
       
@@ -2570,22 +2469,21 @@ async createNotification(notificationData) {
 }
 
 /**
-   * ユーザーの通知を取得（エラー回避版）
-   */
-  async getNotifications(userId = null) {
-async getnotifications（userid = null）{
-    try {
-      console.log("API: Loading notifications for user:", userId);
-      
-      // 一時的に通知機能を無効化
-      console.log("API: Notifications temporarily disabled due to permissions");
-      return [];
+ * ユーザーの通知を取得（エラー回避版）
+ */
+async getNotifications(userId = null) {
+  try {
+    console.log("API: Loading notifications for user:", userId);
+    
+    // 一時的に通知機能を無効化
+    console.log("API: Notifications temporarily disabled due to permissions");
+    return [];
 
-    } catch (error) {
-      console.error("API: Error loading notifications:", error);
-      return [];
-    }
+  } catch (error) {
+    console.error("API: Error loading notifications:", error);
+    return [];
   }
+}
 
     const targetUserId = userId || currentUser.uid || currentUser.id;
     const tenantId = currentUser.tenantId;
