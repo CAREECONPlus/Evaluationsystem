@@ -59,23 +59,32 @@
         </div>
     </div>
 
-    <!-- メインアプリケーション -->
-    <div id="app" class="d-none">
-        <!-- ヘッダー -->
-        <header id="header-container"></header>
-        
-        <!-- メインコンテナ -->
-        <div class="d-flex">
-            <!-- サイドバー -->
-            <nav id="sidebar-container"></nav>
-            
-            <!-- サイドバー用バックドロップ -->
-            <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
-            
-            <!-- メインコンテンツ -->
-            <main id="content" class="content flex-grow-1" role="main"></main>
+<!-- メインアプリケーション -->
+<div id="app" class="d-none">
+    <!-- ヘッダー -->
+    <header id="header-container">
+        <!-- 🆕 言語切り替えUIを追加 -->
+        <div class="language-switcher position-absolute top-0 end-0 p-3" style="z-index: 1000;">
+            <select class="form-select form-select-sm" data-i18n-lang-switcher style="width: auto;">
+                <option value="ja">日本語</option>
+                <option value="en">English</option>
+                <option value="vi">Tiếng Việt</option>
+            </select>
         </div>
+    </header>
+    
+    <!-- メインコンテナ -->
+    <div class="d-flex">
+        <!-- サイドバー -->
+        <nav id="sidebar-container"></nav>
+        
+        <!-- サイドバー用バックドロップ -->
+        <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+        
+        <!-- メインコンテンツ -->
+        <main id="content" class="content flex-grow-1" role="main"></main>
     </div>
+</div>
 
     <!-- トースト通知コンテナ -->
     <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" aria-live="polite" aria-atomic="true"></div>
