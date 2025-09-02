@@ -522,3 +522,188 @@ if (logoutBtn) {
     console.log('Header: Cleanup completed');
   }
 }
+
+function createHeader() {
+    return `
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container-fluid">
+                <!-- ブランドロゴ -->
+                <a class="navbar-brand" href="#dashboard" data-i18n="app.system_name">
+                    <i class="fas fa-hard-hat me-2"></i>
+                    建設業評価管理システム
+                </a>
+
+                <!-- モバイルメニューボタン -->
+                <button class="navbar-toggler d-lg-none" type="button" id="sidebarToggle">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- ナビゲーションメニュー（デスクトップ） -->
+                <div class="navbar-nav d-none d-lg-flex">
+                    <a class="nav-link" href="#dashboard" data-i18n="nav.dashboard">ダッシュボード</a>
+                    <a class="nav-link" href="#users" data-i18n="nav.users">ユーザー管理</a>
+                    <a class="nav-link" href="#evaluations" data-i18n="nav.evaluations">評価一覧</a>
+                    <a class="nav-link" href="#evaluation" data-i18n="nav.evaluation">評価入力</a>
+                </div>
+
+                <!-- 右側のUIエリア -->
+                <div class="d-flex align-items-center">
+                    <!-- 🌐 言語切り替えUI -->
+                    <div class="me-3">
+                        <select class="form-select form-select-sm bg-light text-dark border-0" 
+                                data-i18n-lang-switcher 
+                                style="width: 130px; font-size: 0.875rem;"
+                                title="言語を選択">
+                            <option value="ja">🇯🇵 日本語</option>
+                            <option value="en">🇺🇸 English</option>
+                            <option value="vi">🇻🇳 Tiếng Việt</option>
+                        </select>
+                    </div>
+
+                    <!-- ユーザーメニュー -->
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light btn-sm dropdown-toggle d-flex align-items-center" 
+                                type="button" 
+                                id="userDropdown" 
+                                data-bs-toggle="dropdown" 
+                                aria-expanded="false">
+                            <i class="fas fa-user-circle me-2"></i>
+                            <span id="currentUserName" data-i18n="common.user">ユーザー</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li>
+                                <a class="dropdown-item" href="#profile">
+                                    <i class="fas fa-user me-2"></i>
+                                    <span data-i18n="nav.profile">プロフィール</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#settings">
+                                    <i class="fas fa-cog me-2"></i>
+                                    <span data-i18n="nav.settings">設定</span>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="#" id="logoutBtn">
+                                    <i class="fas fa-sign-out-alt me-2"></i>
+                                    <span data-i18n="nav.logout">ログアウト</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    `;
+}
+
+// ヘッダーを描画し、翻訳を適用
+function renderHeader() {
+    const headerContainer = document.getElementById('header-container');
+    if (!headerContainer) return;
+
+    // HTMLを生成
+    headerContainer.innerHTML = createHeader();
+
+    // 🌐 翻訳を適用
+    if (window.i18n) {
+        window.i18n.updateElement(headerContainer);
+        
+        // 現在のユーザー名を表示
+        updateCurrentUserDisplay();
+    }
+
+    // イベントリスナーを設定
+    setupHeaderEventListeners();
+}
+
+// 現在のユーザー名を表示
+function updateCurrentUserDisplay() {
+    const currentUserElement = document.getElementById('currentUserName');
+    if (currentUserElement && window.app && window.app.currentUser) {
+        currentUserElement.textContent = window.app.currentUser.name || window.i18n.t('common.user');
+    }
+}
+
+// ヘッダーのイベントリスナーを設定
+function setupHeaderEventListeners() {
+    // サイドバートグルボタン
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar-container');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            
+            if (sidebar) {
+                sidebar.classList.toggle('show');
+            }
+            if (backdrop) {
+                backdrop.classList.toggle('show');
+            }
+        });
+    }
+
+    // ログアウトボタン
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            // 確認ダイアログ
+            const confirmLogout = confirm(window.i18n ? window.i18n.t('auth.confirm_logout') : 'ログアウトしますか？');
+            if (confirmLogout && window.app) {
+                try {
+                    await window.app.logout();
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    alert(window.i18n ? window.i18n.t('errors.logout_failed') : 'ログアウトに失敗しました');
+                }
+            }
+        });
+    }
+
+    // 言語切り替えの変更を監視（i18n.js が自動的に処理するが、追加処理が必要な場合）
+    const langSwitcher = document.querySelector('[data-i18n-lang-switcher]');
+    if (langSwitcher) {
+        langSwitcher.addEventListener('change', () => {
+            // 言語切り替え後に現在のユーザー名表示を更新
+            setTimeout(() => {
+                updateCurrentUserDisplay();
+            }, 100);
+        });
+    }
+}
+
+// 言語が変更された時の処理（オブザーバー）
+function onLanguageChanged() {
+    updateCurrentUserDisplay();
+    
+    // 他の動的コンテンツも更新
+    if (window.app && window.app.currentPage) {
+        // ページタイトルの更新
+        updatePageTitle();
+        
+        // パンくずリストの更新（もしあれば）
+        updateBreadcrumb();
+    }
+}
+
+// ページタイトルを更新
+function updatePageTitle() {
+    const pageTitle = document.title;
+    if (window.i18n) {
+        // ページごとのタイトル設定
+        const currentPage = window.app?.currentPage || 'dashboard';
+        const newTitle = window.i18n.t(`${currentPage}.title`) + ' - ' + window.i18n.t('app.system_name');
+        document.title = newTitle;
+    }
+}
+
+// i18nのオブザーバーに登録
+if (window.i18n) {
+    window.i18n.addObserver(onLanguageChanged);
+}
+
+// エクスポート
+export { renderHeader, updateCurrentUserDisplay };
