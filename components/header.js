@@ -1,4 +1,4 @@
-// components/header.js - 通知バッジ機能追加
+// components/header.js - 通知バッジ機能追加 + i18n対応
 
 export class HeaderComponent {
   constructor(app) {
@@ -21,7 +21,7 @@ export class HeaderComponent {
             <!-- ブランド -->
             <a class="navbar-brand d-flex align-items-center" href="#/dashboard" data-link>
               <i class="fas fa-hard-hat text-primary me-2"></i>
-              <span class="fw-bold">評価管理システム</span>
+              <span class="fw-bold" data-i18n="app.system_name">評価管理システム</span>
             </a>
 
             <!-- モバイル用メニューボタン -->
@@ -32,11 +32,24 @@ export class HeaderComponent {
             <!-- ナビゲーションメニュー -->
             <div class="navbar-nav ms-auto d-flex flex-row align-items-center">
               
+              <!-- 🌐 言語切り替えUI -->
+              <div class="nav-item me-3 d-none d-md-block">
+                <select class="form-select form-select-sm border-0 bg-light" 
+                        data-i18n-lang-switcher 
+                        style="width: 130px; font-size: 0.875rem;"
+                        data-i18n-title="common.language">
+                  <option value="ja">🇯🇵 日本語</option>
+                  <option value="en">🇺🇸 English</option>
+                  <option value="vi">🇻🇳 Tiếng Việt</option>
+                </select>
+              </div>
+              
               <!-- 通知ドロップダウン -->
               ${isEvaluator || isAdmin ? `
               <div class="nav-item dropdown me-3">
                 <a class="nav-link position-relative" href="#" id="notificationDropdown" 
-                   role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                   role="button" data-bs-toggle="dropdown" aria-expanded="false"
+                   data-i18n-title="common.notifications">
                   <i class="fas fa-bell fa-lg"></i>
                   <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
                         id="headerNotificationBadge" style="display: none;">
@@ -46,8 +59,9 @@ export class HeaderComponent {
                 <ul class="dropdown-menu dropdown-menu-end notification-dropdown" 
                     aria-labelledby="notificationDropdown" style="width: 350px; max-height: 400px; overflow-y: auto;">
                   <li class="dropdown-header d-flex justify-content-between align-items-center">
-                    <span><i class="fas fa-bell me-2"></i>通知</span>
-                    <button class="btn btn-sm btn-outline-secondary" id="markAllNotificationsRead">
+                    <span><i class="fas fa-bell me-2"></i><span data-i18n="common.notifications">通知</span></span>
+                    <button class="btn btn-sm btn-outline-secondary" id="markAllNotificationsRead"
+                            data-i18n="common.mark_all_read">
                       すべて既読
                     </button>
                   </li>
@@ -55,14 +69,15 @@ export class HeaderComponent {
                   <div id="headerNotificationsList">
                     <li class="text-center py-3">
                       <div class="spinner-border spinner-border-sm text-primary" role="status">
-                        <span class="visually-hidden">読み込み中...</span>
+                        <span class="visually-hidden" data-i18n="common.loading">読み込み中...</span>
                       </div>
                     </li>
                   </div>
                   <li><hr class="dropdown-divider"></li>
                   <li>
                     <a class="dropdown-item text-center" href="#/evaluations?filter=pending" data-link>
-                      <i class="fas fa-list me-2"></i>すべての通知を表示
+                      <i class="fas fa-list me-2"></i>
+                      <span data-i18n="common.view_all_notifications">すべての通知を表示</span>
                     </a>
                   </li>
                 </ul>
@@ -72,41 +87,48 @@ export class HeaderComponent {
               <!-- クイックアクション -->
               <div class="nav-item dropdown me-3">
                 <a class="nav-link" href="#" id="quickActionDropdown" 
-                   role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                   role="button" data-bs-toggle="dropdown" aria-expanded="false"
+                   data-i18n-title="common.quick_actions">
                   <i class="fas fa-plus-circle fa-lg"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="quickActionDropdown">
                   ${isAdmin ? `
                   <li>
                     <a class="dropdown-item" href="#/users" data-link>
-                      <i class="fas fa-user-plus me-2"></i>ユーザー招待
+                      <i class="fas fa-user-plus me-2"></i>
+                      <span data-i18n="users.invite_user">ユーザー招待</span>
                     </a>
                   </li>
                   <li>
                     <a class="dropdown-item" href="#/settings" data-link>
-                      <i class="fas fa-cog me-2"></i>システム設定
+                      <i class="fas fa-cog me-2"></i>
+                      <span data-i18n="nav.settings">システム設定</span>
                     </a>
                   </li>
                   ` : isEvaluator ? `
                   <li>
                     <a class="dropdown-item" href="#/evaluation-form" data-link>
-                      <i class="fas fa-edit me-2"></i>新規評価作成
+                      <i class="fas fa-edit me-2"></i>
+                      <span data-i18n="evaluation.new_evaluation">新規評価作成</span>
                     </a>
                   </li>
                   <li>
                     <a class="dropdown-item" href="#/evaluations?filter=pending" data-link>
-                      <i class="fas fa-clipboard-check me-2"></i>承認待ち評価
+                      <i class="fas fa-clipboard-check me-2"></i>
+                      <span data-i18n="evaluation.pending_evaluations">承認待ち評価</span>
                     </a>
                   </li>
                   ` : `
                   <li>
                     <a class="dropdown-item" href="#/goal-setting" data-link>
-                      <i class="fas fa-target me-2"></i>目標設定
+                      <i class="fas fa-target me-2"></i>
+                      <span data-i18n="nav.goal_setting">目標設定</span>
                     </a>
                   </li>
                   <li>
                     <a class="dropdown-item" href="#/evaluations" data-link>
-                      <i class="fas fa-chart-bar me-2"></i>マイ評価
+                      <i class="fas fa-chart-bar me-2"></i>
+                      <span data-i18n="evaluation.my_evaluations">マイ評価</span>
                     </a>
                   </li>
                   `}
@@ -145,18 +167,37 @@ export class HeaderComponent {
                   <li><hr class="dropdown-divider"></li>
                   <li>
                     <a class="dropdown-item" href="#/profile" data-link>
-                      <i class="fas fa-user me-2"></i>プロフィール
+                      <i class="fas fa-user me-2"></i>
+                      <span data-i18n="nav.profile">プロフィール</span>
                     </a>
                   </li>
                   <li>
                     <a class="dropdown-item" href="#/evaluations" data-link>
-                      <i class="fas fa-chart-bar me-2"></i>マイ評価
+                      <i class="fas fa-chart-bar me-2"></i>
+                      <span data-i18n="evaluation.my_evaluations">マイ評価</span>
                     </a>
+                  </li>
+                  <!-- モバイル用言語切り替え -->
+                  <li class="d-block d-md-none">
+                    <hr class="dropdown-divider">
+                    <div class="dropdown-item-text">
+                      <div class="d-flex align-items-center">
+                        <i class="fas fa-language me-2"></i>
+                        <select class="form-select form-select-sm" 
+                                data-i18n-lang-switcher 
+                                style="width: 120px;">
+                          <option value="ja">🇯🇵 日本語</option>
+                          <option value="en">🇺🇸 English</option>
+                          <option value="vi">🇻🇳 Tiếng Việt</option>
+                        </select>
+                      </div>
+                    </div>
                   </li>
                   <li><hr class="dropdown-divider"></li>
                   <li>
                     <a class="dropdown-item" href="#" id="logoutBtn">
-                      <i class="fas fa-sign-out-alt me-2"></i>ログアウト
+                      <i class="fas fa-sign-out-alt me-2"></i>
+                      <span data-i18n="nav.logout">ログアウト</span>
                     </a>
                   </li>
                 </ul>
@@ -171,6 +212,14 @@ export class HeaderComponent {
   init() {
     console.log('Header: Initializing...');
     
+    // 🌐 翻訳を適用
+    if (window.i18n) {
+      const headerElement = document.querySelector('.header');
+      if (headerElement) {
+        window.i18n.updateElement(headerElement);
+      }
+    }
+    
     // イベントリスナーの設定
     this.setupEventListeners();
     
@@ -179,6 +228,14 @@ export class HeaderComponent {
     if (currentUser && (currentUser.role === 'evaluator' || currentUser.role === 'admin')) {
       this.loadNotifications();
       this.startNotificationPolling();
+    }
+
+    // 🌐 i18nオブザーバーに登録
+    if (window.i18n) {
+      window.i18n.addObserver(() => {
+        this.updateRoleLabels();
+        this.updateNotificationTitles();
+      });
     }
   }
 
@@ -192,28 +249,35 @@ export class HeaderComponent {
     }
 
     // ログアウト
-const logoutBtn = document.getElementById('logoutBtn');
-if (logoutBtn) {
-  logoutBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    
-    try {
-      const confirmed = await this.app.confirm(
-        'ログアウトしてもよろしいですか？',
-        'ログアウト確認'
-      );
-      
-      if (confirmed) {
-        console.log('Header: Logging out user...');
-        await this.app.logout();
-        console.log('Header: User logged out successfully');
-      }
-    } catch (error) {
-      console.error('Header: Error during logout:', error);
-      this.app.showError('ログアウト中にエラーが発生しました');
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        
+        try {
+          const confirmMessage = window.i18n ? 
+            window.i18n.t('auth.confirm_logout') : 
+            'ログアウトしてもよろしいですか？';
+          
+          const confirmed = await this.app.confirm(
+            confirmMessage,
+            window.i18n ? window.i18n.t('auth.logout') : 'ログアウト確認'
+          );
+          
+          if (confirmed) {
+            console.log('Header: Logging out user...');
+            await this.app.logout();
+            console.log('Header: User logged out successfully');
+          }
+        } catch (error) {
+          console.error('Header: Error during logout:', error);
+          const errorMessage = window.i18n ? 
+            window.i18n.t('errors.logout_failed') : 
+            'ログアウト中にエラーが発生しました';
+          this.app.showError(errorMessage);
+        }
+      });
     }
-  });
-}
 
     // 通知全既読ボタン
     const markAllReadBtn = document.getElementById('markAllNotificationsRead');
@@ -228,6 +292,36 @@ if (logoutBtn) {
         this.loadNotifications();
       });
     }
+
+    // 🌐 言語切り替え後の追加処理
+    document.addEventListener('change', (e) => {
+      if (e.target.hasAttribute('data-i18n-lang-switcher')) {
+        setTimeout(() => {
+          this.updateRoleLabels();
+          this.updateNotificationTitles();
+        }, 100);
+      }
+    });
+  }
+
+  // 🌐 役割ラベルを更新
+  updateRoleLabels() {
+    const currentUser = this.app.currentUser;
+    if (!currentUser) return;
+
+    const roleElements = document.querySelectorAll('.text-muted');
+    roleElements.forEach(element => {
+      if (element.textContent === this.getRoleLabel(currentUser.role, 'ja') ||
+          element.textContent === this.getRoleLabel(currentUser.role, 'en') ||
+          element.textContent === this.getRoleLabel(currentUser.role, 'vi')) {
+        element.textContent = this.getRoleLabel(currentUser.role);
+      }
+    });
+  }
+
+  // 🌐 通知タイトルを更新
+  updateNotificationTitles() {
+    this.renderNotificationsList();
   }
 
   async loadNotifications() {
@@ -246,7 +340,9 @@ if (logoutBtn) {
         notifications = pendingEvaluations.map(evaluation => ({
           id: `eval_${evaluation.id}`,
           type: 'evaluation_pending',
-          message: `${evaluation.targetUserName || '不明'}さんの評価が承認待ちです`,
+          message: window.i18n ? 
+            window.i18n.t('notifications.evaluation_pending', { userName: evaluation.targetUserName || '不明' }) :
+            `${evaluation.targetUserName || '不明'}さんの評価が承認待ちです`,
           createdAt: evaluation.createdAt,
           evaluationId: evaluation.id,
           read: false
@@ -259,7 +355,12 @@ if (logoutBtn) {
           stat.evaluations.slice(0, 3).map(evaluation => ({
             id: `eval_${evaluation.id}`,
             type: 'evaluation_pending',
-            message: `${evaluation.targetUserName || '不明'}さんの評価が${stat.evaluatorName}の承認待ちです`,
+            message: window.i18n ? 
+              window.i18n.t('notifications.admin_evaluation_pending', { 
+                userName: evaluation.targetUserName || '不明',
+                evaluatorName: stat.evaluatorName 
+              }) :
+              `${evaluation.targetUserName || '不明'}さんの評価が${stat.evaluatorName}の承認待ちです`,
             createdAt: evaluation.createdAt,
             evaluationId: evaluation.id,
             evaluatorName: stat.evaluatorName,
@@ -318,10 +419,13 @@ if (logoutBtn) {
     if (!container) return;
 
     if (this.notifications.length === 0) {
+      const noNotificationsText = window.i18n ? 
+        window.i18n.t('common.no_notifications') : '通知はありません';
+      
       container.innerHTML = `
         <li class="text-center py-3 text-muted">
           <i class="fas fa-bell-slash fa-2x mb-2"></i>
-          <div>通知はありません</div>
+          <div>${noNotificationsText}</div>
         </li>
       `;
       return;
@@ -412,11 +516,17 @@ if (logoutBtn) {
       this.updateNotificationBadge();
       this.renderNotificationsList();
 
-      this.app.showSuccess('すべての通知を既読にしました');
+      const successMessage = window.i18n ? 
+        window.i18n.t('messages.mark_all_notifications_read') : 
+        'すべての通知を既読にしました';
+      this.app.showSuccess(successMessage);
 
     } catch (error) {
       console.error('Header: Error marking all notifications as read:', error);
-      this.app.showError('通知の既読化に失敗しました');
+      const errorMessage = window.i18n ? 
+        window.i18n.t('errors.mark_notifications_failed') : 
+        '通知の既読化に失敗しました';
+      this.app.showError(errorMessage);
     }
   }
 
@@ -454,6 +564,10 @@ if (logoutBtn) {
   }
 
   getNotificationTitle(type) {
+    if (window.i18n) {
+      return window.i18n.t(`notifications.type.${type}`) || window.i18n.t('common.notification');
+    }
+    
     const titles = {
       'evaluation_pending': '評価承認待ち',
       'evaluation_completed': '評価完了',
@@ -476,16 +590,30 @@ if (logoutBtn) {
       const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-      if (diffMinutes < 1) {
-        return 'たった今';
-      } else if (diffMinutes < 60) {
-        return `${diffMinutes}分前`;
-      } else if (diffHours < 24) {
-        return `${diffHours}時間前`;
-      } else if (diffDays < 7) {
-        return `${diffDays}日前`;
+      if (window.i18n) {
+        if (diffMinutes < 1) {
+          return window.i18n.t('time.just_now');
+        } else if (diffMinutes < 60) {
+          return window.i18n.t('time.minutes_ago', { count: diffMinutes });
+        } else if (diffHours < 24) {
+          return window.i18n.t('time.hours_ago', { count: diffHours });
+        } else if (diffDays < 7) {
+          return window.i18n.t('time.days_ago', { count: diffDays });
+        } else {
+          return this.app.formatDate(date);
+        }
       } else {
-        return this.app.formatDate(date);
+        if (diffMinutes < 1) {
+          return 'たった今';
+        } else if (diffMinutes < 60) {
+          return `${diffMinutes}分前`;
+        } else if (diffHours < 24) {
+          return `${diffHours}時間前`;
+        } else if (diffDays < 7) {
+          return `${diffDays}日前`;
+        } else {
+          return this.app.formatDate(date);
+        }
       }
     } catch (error) {
       return this.app.formatDate(timestamp);
@@ -502,14 +630,35 @@ if (logoutBtn) {
     return name.substring(0, 2).toUpperCase();
   }
 
-  getRoleLabel(role) {
+  getRoleLabel(role, lang = null) {
+    const currentLang = lang || (window.i18n ? window.i18n.getCurrentLanguage() : 'ja');
+    
+    if (window.i18n && !lang) {
+      return window.i18n.t(`roles.${role}`) || role;
+    }
+    
     const labels = {
-      admin: '管理者',
-      evaluator: '評価者',
-      worker: '一般ユーザー',
-      developer: '開発者'
+      ja: {
+        admin: '管理者',
+        evaluator: '評価者',
+        worker: '一般ユーザー',
+        developer: '開発者'
+      },
+      en: {
+        admin: 'Administrator',
+        evaluator: 'Evaluator',
+        worker: 'Worker',
+        developer: 'Developer'
+      },
+      vi: {
+        admin: 'Quản trị viên',
+        evaluator: 'Người đánh giá',
+        worker: 'Công nhân',
+        developer: 'Nhà phát triển'
+      }
     };
-    return labels[role] || role;
+    
+    return labels[currentLang]?.[role] || role;
   }
 
   cleanup() {
@@ -519,10 +668,16 @@ if (logoutBtn) {
       this.notificationTimer = null;
     }
     
+    // i18nオブザーバーから削除
+    if (window.i18n) {
+      window.i18n.removeObserver(this.updateRoleLabels);
+    }
+    
     console.log('Header: Cleanup completed');
   }
 }
 
+// 🌐 レガシー関数（互換性のため残す）
 function createHeader() {
     return `
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
@@ -553,7 +708,7 @@ function createHeader() {
                         <select class="form-select form-select-sm bg-light text-dark border-0" 
                                 data-i18n-lang-switcher 
                                 style="width: 130px; font-size: 0.875rem;"
-                                title="言語を選択">
+                                data-i18n-title="common.language">
                             <option value="ja">🇯🇵 日本語</option>
                             <option value="en">🇺🇸 English</option>
                             <option value="vi">🇻🇳 Tiếng Việt</option>
@@ -622,7 +777,8 @@ function renderHeader() {
 function updateCurrentUserDisplay() {
     const currentUserElement = document.getElementById('currentUserName');
     if (currentUserElement && window.app && window.app.currentUser) {
-        currentUserElement.textContent = window.app.currentUser.name || window.i18n.t('common.user');
+        currentUserElement.textContent = window.app.currentUser.name || 
+          (window.i18n ? window.i18n.t('common.user') : 'ユーザー');
     }
 }
 
@@ -651,13 +807,20 @@ function setupHeaderEventListeners() {
             e.preventDefault();
             
             // 確認ダイアログ
-            const confirmLogout = confirm(window.i18n ? window.i18n.t('auth.confirm_logout') : 'ログアウトしますか？');
+            const confirmMessage = window.i18n ? 
+              window.i18n.t('auth.confirm_logout') : 
+              'ログアウトしますか？';
+            const confirmLogout = confirm(confirmMessage);
+            
             if (confirmLogout && window.app) {
                 try {
                     await window.app.logout();
                 } catch (error) {
                     console.error('Logout error:', error);
-                    alert(window.i18n ? window.i18n.t('errors.logout_failed') : 'ログアウトに失敗しました');
+                    const errorMessage = window.i18n ? 
+                      window.i18n.t('errors.logout_failed') : 
+                      'ログアウトに失敗しました';
+                    alert(errorMessage);
                 }
             }
         });
@@ -683,15 +846,11 @@ function onLanguageChanged() {
     if (window.app && window.app.currentPage) {
         // ページタイトルの更新
         updatePageTitle();
-        
-        // パンくずリストの更新（もしあれば）
-        updateBreadcrumb();
     }
 }
 
 // ページタイトルを更新
 function updatePageTitle() {
-    const pageTitle = document.title;
     if (window.i18n) {
         // ページごとのタイトル設定
         const currentPage = window.app?.currentPage || 'dashboard';
