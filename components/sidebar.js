@@ -42,7 +42,7 @@ export class SidebarComponent {
                 <div class="user-details">
                   <div class="user-name text-white fw-semibold mb-1">${this.truncateText(userName, 20)}</div>
                   <div class="user-role">
-                    <span class="badge ${this.getRoleBadgeClass(userRole)} small">${this.getRoleDisplayName(userRole)}</span>
+                    <span class="badge ${this.getRoleBadgeClass(userRole)} small" data-i18n="roles.${userRole}">${this.getRoleDisplayName(userRole)}</span>
                   </div>
                 </div>
               </div>
@@ -105,7 +105,7 @@ export class SidebarComponent {
                 tabindex="0"
               >
                 <i class="fas fa-briefcase nav-icon me-3" aria-hidden="true"></i>
-                <span>職種管理</span>
+                <span data-i18n="nav.job_types">職種管理</span>
               </a>
             </li>
             ` : ''}
@@ -305,13 +305,25 @@ export class SidebarComponent {
       this.setupFocusManagement();
       
       // 翻訳を適用
-      if (this.app.i18n) {
-        this.app.i18n.updateUI();
-      }
+      this.applyTranslations();
       
       console.log("Sidebar: Initialized with enhanced mobile support and accessibility");
     } catch (error) {
       console.error("Sidebar: Initialization error:", error);
+    }
+  }
+
+  /**
+   * サイドバー要素に翻訳を適用
+   */
+  applyTranslations() {
+    const sidebarContainer = document.getElementById('sidebar-container');
+    if (sidebarContainer && window.i18n) {
+      window.i18n.updateElement(sidebarContainer);
+      console.log("Sidebar: Translations applied via global i18n");
+    } else if (sidebarContainer && this.app.i18n) {
+      this.app.i18n.updateElement(sidebarContainer);
+      console.log("Sidebar: Translations applied via app i18n");
     }
   }
 
@@ -562,6 +574,11 @@ export class SidebarComponent {
       
       sidebarContainer.innerHTML = this.render();
       this.init();
+      
+      // 🆕 新しく追加された要素を翻訳
+      if (window.i18n) {
+        window.i18n.updateElement(sidebarContainer);
+      }
       
       // フォーカスを復元
       if (wasInSidebar) {

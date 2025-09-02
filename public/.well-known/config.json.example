@@ -1,0 +1,23 @@
+{
+  "FIREBASE_API_KEY": "your_firebase_api_key_here",
+  "FIREBASE_AUTH_DOMAIN": "your_project_id.firebaseapp.com", 
+  "FIREBASE_PROJECT_ID": "your_project_id",
+  "FIREBASE_STORAGE_BUCKET": "your_project_id.appspot.com",
+  "FIREBASE_MESSAGING_SENDER_ID": "your_messaging_sender_id",
+  "FIREBASE_APP_ID": "your_app_id",
+  
+  "APP_NAME": "建設業評価管理システム",
+  "APP_VERSION": "1.0.0",
+  "SUPPORT_EMAIL": "support@your-domain.com",
+  
+  "SESSION_TIMEOUT": 3600000,
+  "MAX_LOGIN_ATTEMPTS": 5,
+  "PASSWORD_MIN_LENGTH": 8,
+  
+  "DEFAULT_LANGUAGE": "ja",
+  "DEFAULT_THEME": "light", 
+  "ITEMS_PER_PAGE": 20,
+  
+  "DEBUG_MODE": false,
+  "LOG_LEVEL": "info"
+}

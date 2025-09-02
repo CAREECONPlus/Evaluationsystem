@@ -1327,3 +1327,214 @@ button, a, input, select, textarea, [role="button"] {
 .modal-backdrop {
     z-index: 1055 !important;
 }
+
+/* === 言語切り替えUI === */
+.language-switcher {
+    z-index: 1050;
+}
+
+.language-switcher .form-select {
+    min-width: 120px;
+    font-size: 0.875rem;
+}
+
+.language-switcher .dropdown-menu {
+    min-width: 180px;
+}
+
+.language-switcher .dropdown-item {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.language-switcher .dropdown-item:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+    transform: translateX(2px);
+}
+
+.language-switcher .dropdown-item:active {
+    background-color: rgba(0, 123, 255, 0.2);
+}
+
+/* フラグアイコンのスタイル */
+.flag-icon {
+    width: 20px;
+    height: 15px;
+    display: inline-block;
+    border-radius: 2px;
+    background-size: cover;
+    background-position: center;
+}
+
+.flag-icon-jp {
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600"><rect width="900" height="600" fill="%23fff"/><circle cx="450" cy="300" r="180" fill="%23bc002d"/></svg>');
+}
+
+.flag-icon-us {
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1235 650"><rect width="1235" height="650" fill="%23B22234"/><g fill="%23fff"><rect width="1235" height="50"/><rect width="1235" height="50" y="100"/><rect width="1235" height="50" y="200"/><rect width="1235" height="50" y="300"/><rect width="1235" height="50" y="400"/><rect width="1235" height="50" y="500"/><rect width="1235" height="50" y="600"/></g><rect width="494" height="350" fill="%233C3B6E"/></svg>');
+}
+
+.flag-icon-vn {
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600"><rect width="900" height="600" fill="%23da020e"/><polygon points="450,120 467,183 532,183 479,223 496,286 450,246 404,286 421,223 368,183 433,183" fill="%23ff0"/></svg>');
+}
+
+/* === 翻訳中のローディング表示 === */
+.i18n-loading {
+    opacity: 0.5;
+    pointer-events: none;
+    position: relative;
+    transition: opacity 0.3s ease;
+}
+
+.i18n-loading::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    z-index: 1;
+    border-radius: inherit;
+}
+
+.i18n-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: i18nSpin 1s linear infinite;
+    z-index: 2;
+}
+
+@keyframes i18nSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 翻訳済み要素のアニメーション */
+[data-i18n] {
+    transition: opacity 0.2s ease;
+}
+
+[data-i18n].i18n-updated {
+    animation: i18nFadeIn 0.3s ease;
+}
+
+@keyframes i18nFadeIn {
+    0% {
+        opacity: 0.7;
+        transform: translateY(-2px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* === 右から左の言語対応（アラビア語等） === */
+[dir="rtl"] .language-switcher {
+    left: 0;
+    right: auto;
+}
+
+[dir="rtl"] .dropdown-menu {
+    left: 0 !important;
+    right: auto !important;
+    transform: none !important;
+}
+
+[dir="rtl"] .flag-icon {
+    margin-left: 0.5rem;
+    margin-right: 0;
+}
+
+[dir="rtl"] .sidebar {
+    left: auto;
+    right: 0;
+}
+
+[dir="rtl"] .content {
+    margin-left: 0;
+    margin-right: var(--sidebar-width);
+}
+
+/* === レスポンシブ対応 === */
+@media (max-width: 767.98px) {
+    .language-switcher .btn {
+        padding: 0.375rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .language-switcher .d-none.d-lg-inline {
+        display: none !important;
+    }
+    
+    .language-switcher .d-lg-none {
+        display: inline !important;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .language-switcher .dropdown-menu {
+        min-width: 150px;
+        right: 0;
+        left: auto;
+    }
+    
+    .flag-icon {
+        width: 16px;
+        height: 12px;
+    }
+}
+
+/* === ホバー効果とアクセシビリティ === */
+.language-switcher .btn:focus,
+.language-switcher .dropdown-item:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+.language-switcher .btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* 高コントラストモード対応 */
+@media (prefers-contrast: high) {
+    .flag-icon {
+        border: 1px solid #000;
+    }
+    
+    .language-switcher .dropdown-item {
+        border-bottom: 1px solid #ccc;
+    }
+    
+    .i18n-loading::before {
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid #000;
+    }
+}
+
+/* 動き抑制設定への対応 */
+@media (prefers-reduced-motion: reduce) {
+    .language-switcher .dropdown-item,
+    .i18n-loading,
+    [data-i18n],
+    [data-i18n].i18n-updated {
+        transition: none;
+        animation: none;
+    }
+    
+    .i18n-loading::after {
+        animation: none;
+        border: 2px solid #007bff;
+    }
+}

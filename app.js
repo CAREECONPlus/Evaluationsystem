@@ -24,6 +24,9 @@ class App {
     
     // グローバルナビゲーションイベントハンドラー
     this.setupGlobalNavigation()
+    
+    // グローバルi18n参照を設定
+    this.setupGlobalI18n()
   }
 
   async init() {
@@ -39,6 +42,13 @@ class App {
       console.log("Step 1: Initializing I18n...")
       await this.i18n.init()
       console.log("✓ I18n initialized")
+      
+      // i18nシステムの利用可能性をデバッグ出力
+      if (window.i18n) {
+        console.log('I18n system loaded and available globally');
+        console.log('Current language:', window.i18n.getCurrentLanguage());
+        window.i18n.debug();
+      }
 
       console.log("Step 2: Initializing Auth module...")
       await this.auth.init()
@@ -106,6 +116,10 @@ class App {
 
       clearTimeout(initTimeout)
       console.log("🎉 Application initialized successfully")
+      
+      // DOMContentLoaded時のi18n確認を追加
+      this.setupI18nDOMReadyCheck();
+      
     } catch (error) {
       clearTimeout(initTimeout)
       console.error("❌ Failed to initialize application:", error)
@@ -130,6 +144,43 @@ class App {
         }
       }
     });
+  }
+
+  // グローバルi18n参照の設定
+  setupGlobalI18n() {
+    // i18nシステムをグローバルに公開
+    window.i18n = this.i18n;
+    window.app = this;
+    console.log("App: Global i18n references set up");
+  }
+
+  // DOMContentLoaded時のi18n確認を設定
+  setupI18nDOMReadyCheck() {
+    // アプリケーション初期化時にi18nを呼び出す
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        this.performI18nCheck();
+      });
+    } else {
+      // 既にDOM準備完了の場合は即座に実行
+      this.performI18nCheck();
+    }
+  }
+
+  performI18nCheck() {
+    // i18nシステムが利用可能になるまで待機
+    if (window.i18n) {
+      console.log('I18n system loaded');
+      window.i18n.debug(); // デバッグ情報表示
+    } else {
+      // i18nが読み込まれるまで少し待つ
+      setTimeout(() => {
+        if (window.i18n) {
+          console.log('I18n system loaded after delay');
+          window.i18n.debug();
+        }
+      }, 100);
+    }
   }
 
   // グローバルエラーハンドラーの設定

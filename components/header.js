@@ -105,8 +105,8 @@ export class HeaderComponent {
                 <i class="fas fa-user-circle me-1 d-none d-sm-inline" aria-hidden="true"></i>
                 <span class="d-none d-md-inline me-1">${this.truncateText(userName, 15)}</span>
                 <span class="d-md-none">${this.getInitials(userName)}</span>
-                ${isAdmin ? '<span class="badge bg-warning text-dark ms-1 d-none d-lg-inline">管理者</span>' : ''}
-                ${isDeveloper ? '<span class="badge bg-info text-dark ms-1 d-none d-lg-inline">開発者</span>' : ''}
+                ${isAdmin ? '<span class="badge bg-warning text-dark ms-1 d-none d-lg-inline" data-i18n="roles.admin">管理者</span>' : ''}
+                ${isDeveloper ? '<span class="badge bg-info text-dark ms-1 d-none d-lg-inline" data-i18n="roles.developer">開発者</span>' : ''}
               </button>
               <ul class="dropdown-menu dropdown-menu-end">
                 <li><h6 class="dropdown-header text-truncate">${user.email || ''}</h6></li>
@@ -170,11 +170,23 @@ export class HeaderComponent {
     this.setupKeyboardNavigation();
     
     // 翻訳を適用
-    if (this.app.i18n) {
-      this.app.i18n.updateUI();
-    }
+    this.applyTranslations();
     
     console.log("Header: Initialized with mobile support");
+  }
+
+  /**
+   * ヘッダー要素に翻訳を適用
+   */
+  applyTranslations() {
+    const headerContainer = document.getElementById('header-container');
+    if (headerContainer && window.i18n) {
+      window.i18n.updateElement(headerContainer);
+      console.log("Header: Translations applied via global i18n");
+    } else if (headerContainer && this.app.i18n) {
+      this.app.i18n.updateElement(headerContainer);
+      console.log("Header: Translations applied via app i18n");
+    }
   }
 
   /**
@@ -515,6 +527,11 @@ export class HeaderComponent {
       
       // 初期化
       this.init();
+      
+      // 🆕 新しく追加された要素を翻訳
+      if (window.i18n) {
+        window.i18n.updateElement(headerContainer);
+      }
       
       // メニュー状態を復元（必要に応じて）
       if (wasMenuOpen && window.innerWidth < 992) {

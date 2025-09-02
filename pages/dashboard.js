@@ -102,7 +102,7 @@ export class DashboardPage {
     this.renderStatsCards();
     this.renderRecentEvaluations();
     this.initializeChart();
-    this.app.i18n.updateUI();
+    this.applyTranslations();
   }
   
   getDefaultStats() {
@@ -111,6 +111,20 @@ export class DashboardPage {
   
   getDefaultChartData() {
       return { labels: [], datasets: [] };
+  }
+
+  /**
+   * ダッシュボード要素に翻訳を適用
+   */
+  applyTranslations() {
+    const dashboardContainer = document.querySelector('.dashboard-page');
+    if (dashboardContainer && window.i18n) {
+      window.i18n.updateElement(dashboardContainer);
+      console.log("Dashboard: Translations applied via global i18n");
+    } else if (dashboardContainer && this.app.i18n) {
+      this.app.i18n.updateElement(dashboardContainer);
+      console.log("Dashboard: Translations applied via app i18n");
+    }
   }
   
   renderStatsCards() {
@@ -154,6 +168,13 @@ export class DashboardPage {
         </div>
       </div>
     `;
+    
+    // 🆕 新しく追加された要素に翻訳を適用
+    if (window.i18n) {
+      window.i18n.updateElement(container);
+    } else if (this.app.i18n) {
+      this.app.i18n.updateElement(container);
+    }
   }
 
   renderRecentEvaluations() {
@@ -162,6 +183,13 @@ export class DashboardPage {
 
     if (!this.recentEvaluations || this.recentEvaluations.length === 0) {
       container.innerHTML = `<div class="text-center p-4 text-muted" data-i18n="dashboard.no_recent_evaluations">最近の評価はありません。</div>`;
+      
+      // 🆕 翻訳を適用
+      if (window.i18n) {
+        window.i18n.updateElement(container);
+      } else if (this.app.i18n) {
+        this.app.i18n.updateElement(container);
+      }
       return;
     }
 
@@ -178,9 +206,16 @@ export class DashboardPage {
         `).join('')}
       </ul>
       <div class="card-footer text-center">
-        <a href="#/evaluations" class="btn btn-sm btn-outline-primary" data-link data-i18n="common.view_all"></a>
+        <a href="#/evaluations" class="btn btn-sm btn-outline-primary" data-link data-i18n="common.view_all">すべて表示</a>
       </div>
     `;
+    
+    // 🆕 新しく追加された要素に翻訳を適用
+    if (window.i18n) {
+      window.i18n.updateElement(container);
+    } else if (this.app.i18n) {
+      this.app.i18n.updateElement(container);
+    }
   }
 
   initializeChart() {
@@ -250,6 +285,14 @@ export class DashboardPage {
           </div>
         </div>
       `;
+      
+      // 🆕 翻訳を適用
+      if (window.i18n) {
+        window.i18n.updateElement(container);
+      } else if (this.app.i18n) {
+        this.app.i18n.updateElement(container);
+      }
+      
       document.getElementById("recent-evaluations-container").innerHTML = '';
       document.getElementById("performance-chart-container").innerHTML = '';
       document.getElementById('retry-load-btn').addEventListener('click', () => this.retryLoad());

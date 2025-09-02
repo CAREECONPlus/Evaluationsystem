@@ -1,0 +1,27 @@
+{
+  "FIREBASE_API_KEY": "YOUR_PRODUCTION_API_KEY",
+  "FIREBASE_AUTH_DOMAIN": "your-prod-project.firebaseapp.com",
+  "FIREBASE_PROJECT_ID": "your-prod-project",
+  "FIREBASE_STORAGE_BUCKET": "your-prod-project.appspot.com",
+  "FIREBASE_MESSAGING_SENDER_ID": "YOUR_MESSAGING_SENDER_ID",
+  "FIREBASE_APP_ID": "YOUR_PRODUCTION_APP_ID",
+  
+  "APP_NAME": "建設業評価管理システム",
+  "APP_VERSION": "1.0.0",
+  "APP_DESCRIPTION": "建設業向け従業員評価管理システム",
+  "SUPPORT_EMAIL": "support@your-company.com",
+  "COMPANY_NAME": "あなたの会社名",
+  "MAINTENANCE_MODE": "false",
+  
+  "SESSION_TIMEOUT_MS": "3600000",
+  "MAX_LOGIN_ATTEMPTS": "5",
+  "PASSWORD_MIN_LENGTH": "8",
+  "REQUIRE_MFA": "true",
+  "ALLOWED_DOMAINS": "your-domain.com",
+  
+  "DEFAULT_LANGUAGE": "ja",
+  "DEFAULT_THEME": "light",
+  "ITEMS_PER_PAGE": "20",
+  "DARK_MODE_ENABLED": "false",
+  "TOAST_DURATION_MS": "3000"
+}

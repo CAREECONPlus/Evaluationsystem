@@ -243,9 +243,23 @@ export class UserManagementPage {
     this.setupEventListeners();
     
     // 国際化の適用
-    this.app.i18n.updateUI();
+    this.applyTranslations();
     
     console.log("UserManagement: Initialization completed successfully");
+  }
+
+  /**
+   * ユーザー管理要素に翻訳を適用
+   */
+  applyTranslations() {
+    const userManagementContainer = document.querySelector('.container-fluid');
+    if (userManagementContainer && window.i18n) {
+      window.i18n.updateElement(userManagementContainer);
+      console.log("UserManagement: Translations applied via global i18n");
+    } else if (userManagementContainer && this.app.i18n) {
+      this.app.i18n.updateElement(userManagementContainer);
+      console.log("UserManagement: Translations applied via app i18n");
+    }
   }
 
   async loadData() {
@@ -405,28 +419,35 @@ export class UserManagementPage {
     html += '</tbody></table></div>';
     container.innerHTML = html;
 
+    // 🆕 新しく追加された要素に翻訳を適用
+    if (window.i18n) {
+      window.i18n.updateElement(container);
+    } else if (this.app.i18n) {
+      this.app.i18n.updateElement(container);
+    }
+
     // グローバル参照を設定（ボタンから呼び出すため）
     window.userManagement = this;
   }
 
   getStatusBadge(status) {
     const badges = {
-      'active': '<span class="badge bg-success">アクティブ</span>',
-      'inactive': '<span class="badge bg-secondary">非アクティブ</span>',
-      'pending': '<span class="badge bg-warning">承認待ち</span>',
-      'suspended': '<span class="badge bg-danger">停止中</span>'
+      'active': '<span class="badge bg-success" data-i18n="users.active">アクティブ</span>',
+      'inactive': '<span class="badge bg-secondary" data-i18n="users.inactive">非アクティブ</span>',
+      'pending': '<span class="badge bg-warning" data-i18n="users.pending">承認待ち</span>',
+      'suspended': '<span class="badge bg-danger" data-i18n="users.suspended">停止中</span>'
     };
-    return badges[status] || '<span class="badge bg-light text-dark">不明</span>';
+    return badges[status] || '<span class="badge bg-light text-dark" data-i18n="common.unknown">不明</span>';
   }
 
   getRoleBadge(role) {
     const badges = {
-      'admin': '<span class="badge bg-info">管理者</span>',
-      'evaluator': '<span class="badge bg-primary">評価者</span>',
-      'worker': '<span class="badge bg-secondary">一般ユーザー</span>',
-      'developer': '<span class="badge bg-dark">開発者</span>'
+      'admin': '<span class="badge bg-info" data-i18n="roles.admin">管理者</span>',
+      'evaluator': '<span class="badge bg-primary" data-i18n="roles.evaluator">評価者</span>',
+      'worker': '<span class="badge bg-secondary" data-i18n="roles.worker">一般ユーザー</span>',
+      'developer': '<span class="badge bg-dark" data-i18n="roles.developer">開発者</span>'
     };
-    return badges[role] || '<span class="badge bg-light text-dark">不明</span>';
+    return badges[role] || '<span class="badge bg-light text-dark" data-i18n="common.unknown">不明</span>';
   }
 
   updateStats() {

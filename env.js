@@ -10,6 +10,7 @@ export class Environment {
     this.environment = this.detectEnvironment();
     
     console.log(`Environment: 検出された環境: ${this.environment}`);
+    console.log(`Environment: hostname=${window.location.hostname}, port=${window.location.port}`);
   }
 
   /**
@@ -25,6 +26,7 @@ export class Environment {
       hostname === 'localhost' || 
       hostname === '127.0.0.1' || 
       hostname.includes('local') ||
+      hostname.includes('github.io') ||  // GitHub Pages も開発環境として扱う
       port === '3000' ||
       port === '5000' ||
       port === '8000' ||
@@ -262,4 +264,5 @@ const environment = new Environment();
 window.Environment = Environment;
 window.env = environment;
 
+export { Environment };
 export default environment;

@@ -2313,7 +2313,11 @@ async getAllUsers() {
    */
   async getJobTypes() {
     try {
-      const tenantId = await this.getCurrentTenantId();
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("ユーザー情報またはテナント情報が見つかりません");
+      }
+      const tenantId = currentUser.tenantId;
       const snapshot = await getDocs(
         query(
           collection(this.db, 'targetJobTypes'),
