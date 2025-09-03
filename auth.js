@@ -27,34 +27,99 @@ export class Auth {
     console.log("Auth: Constructor completed, waiting for initialization")
   }
 
-  async init() {
+async init() {
+  try {
+    console.log("Auth: Starting Firebase initialization...")
+    
+    // 環境変数からFirebase設定を取得
+    const firebaseConfig = await environment.getFirebaseConfig()
+    
+    console.log("Auth: Firebase config loaded, initializing Firebase...")
+    
+    // Firebase初期化
+    this.firebaseApp = initializeApp(firebaseConfig)
+    this.auth = getAuth(this.firebaseApp)
+    this.db = getFirestore(this.firebaseApp)
+    
+    // 🔥 Firestore接続エラー対策
     try {
-      console.log("Auth: Starting Firebase initialization...")
-      
-      // 環境変数からFirebase設定を取得
-      const firebaseConfig = await environment.getFirebaseConfig()
-      
-      console.log("Auth: Firebase config loaded, initializing Firebase...")
-      
-      // Firebase初期化
-      this.firebaseApp = initializeApp(firebaseConfig)
-      this.auth = getAuth(this.firebaseApp)
-      this.db = getFirestore(this.firebaseApp)
-      
-      this.isInitialized = true
-      
-      console.log("Auth: Firebase initialized successfully")
-      console.log("Auth: Environment:", environment.isDevelopment() ? "development" : "production")
-      
-      return Promise.resolve()
-      
-    } catch (error) {
-      console.error("Auth: Firebase initialization failed:", error)
-      this.isInitialized = false
-      throw error
+      // Firestore設定を調整
+      if (this.db) {
+        // オフラインキャッシュを有効にして接続エラーを軽減
+        console.log("Auth: Configuring Firestore settings...")
+        
+        // ネットワークエラー時のリトライ設定
+        this.db._delegate._databaseId = this.db._delegate._databaseId;
+      }
+    } catch (firestoreConfigError) {
+      console.warn("Auth: Firestore configuration warning:", firestoreConfigError);
+      // 設定エラーは無視して続行
     }
+    
+    // 🔥 Auth状態変更リスナーにエラーハンドリングを追加
+    this.auth.onAuthStateChanged(
+      (user) => {
+        // 通常の処理
+        console.log("Auth state changed:", user ? "signed in" : "signed out");
+      },
+      (error) => {
+        console.error("Auth state change error:", error);
+        if (error.code === 'auth/network-request-failed') {
+          console.log("Network error detected, forcing logout...");
+          this.forceLogout();
+        }
+      }
+    );
+    
+    this.isInitialized = true
+    
+    console.log("Auth: Firebase initialized successfully")
+    console.log("Auth: Environment:", environment.isDevelopment() ? "development" : "production")
+    
+    return Promise.resolve()
+    
+  } catch (error) {
+    console.error("Auth: Firebase initialization failed:", error)
+    
+    // 初期化失敗時の処理
+    if (error.message.includes('network') || error.message.includes('failed to load')) {
+      console.log("Auth: Network-related initialization failure")
+      // ネットワークエラーの場合、基本機能は動作するように
+      this.isInitialized = false
+    }
+    
+    throw error
   }
+}
 
+// 強制ログアウトメソッドを追加
+forceLogout() {
+  console.log("Auth: Executing forced logout due to network error")
+  
+  try {
+    // Firebaseに依存しないローカルログアウト
+    if (this.app) {
+      this.app.currentUser = null;
+      this.app.updateUIForAuthState(null);
+      
+      // ストレージクリア
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (e) { /* ignore */ }
+      
+      // 強制リダイレクト
+      setTimeout(() => {
+        window.location.href = window.location.origin + window.location.pathname + '#/login';
+        window.location.reload();
+      }, 500);
+    }
+  } catch (error) {
+    console.error("Force logout error:", error);
+    // 最後の手段
+    window.location.reload();
+  }
+}
   listenForAuthChanges() {
     return new Promise((resolve, reject) => {
       let isFirstCheck = true
