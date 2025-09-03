@@ -219,90 +219,96 @@ export class HeaderComponent {
         window.i18n.updateElement(headerElement);
       }
     }
-    
-    // イベントリスナーの設定
-    this.setupEventListeners();
-    
-    // 通知の読み込み（評価者・管理者のみ）
-    const currentUser = this.app.currentUser;
-    if (currentUser && (currentUser.role === 'evaluator' || currentUser.role === 'admin')) {
-      this.loadNotifications();
-      this.startNotificationPolling();
-    }
 
-    // 🌐 i18nオブザーバーに登録
-    if (window.i18n) {
-      window.i18n.addObserver(() => {
-        this.updateRoleLabels();
-        this.updateNotificationTitles();
-      });
-    }
+setupEventListeners() {
+  // サイドバートグル
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', () => {
+      this.app.sidebar.toggle();
+    });
   }
 
-  setupEventListeners() {
-    // サイドバートグル
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    if (sidebarToggle) {
-      sidebarToggle.addEventListener('click', () => {
-        this.app.sidebar.toggle();
-      });
-    }
-
-    // ログアウト
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', async (e) => {
-        e.preventDefault();
+  // ログアウト - 修正版
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation(); // イベントの伝播を停止
+      
+      try {
+        console.log('Header: Logout button clicked');
         
-        try {
-          const confirmMessage = window.i18n ? 
-            window.i18n.t('auth.confirm_logout') : 
-            'ログアウトしてもよろしいですか？';
-          
-          const confirmed = await this.app.confirm(
-            confirmMessage,
-            window.i18n ? window.i18n.t('auth.logout') : 'ログアウト確認'
-          );
-          
-          if (confirmed) {
-            console.log('Header: Logging out user...');
-            await this.app.logout();
-            console.log('Header: User logged out successfully');
-          }
-        } catch (error) {
-          console.error('Header: Error during logout:', error);
-          const errorMessage = window.i18n ? 
-            window.i18n.t('errors.logout_failed') : 
-            'ログアウト中にエラーが発生しました';
-          this.app.showError(errorMessage);
+        const confirmMessage = window.i18n ? 
+          window.i18n.t('auth.confirm_logout') : 
+          'ログアウトしてもよろしいですか？';
+        
+        // Bootstrapのドロップダウンを閉じる
+        const dropdown = window.bootstrap?.Dropdown?.getInstance(logoutBtn.closest('.dropdown-toggle'));
+        if (dropdown) {
+          dropdown.hide();
         }
-      });
-    }
-
-    // 通知全既読ボタン
-    const markAllReadBtn = document.getElementById('markAllNotificationsRead');
-    if (markAllReadBtn) {
-      markAllReadBtn.addEventListener('click', () => this.markAllNotificationsAsRead());
-    }
-
-    // 通知ドロップダウンが開かれた時に通知を更新
-    const notificationDropdown = document.getElementById('notificationDropdown');
-    if (notificationDropdown) {
-      notificationDropdown.addEventListener('show.bs.dropdown', () => {
-        this.loadNotifications();
-      });
-    }
-
-    // 🌐 言語切り替え後の追加処理
-    document.addEventListener('change', (e) => {
-      if (e.target.hasAttribute('data-i18n-lang-switcher')) {
-        setTimeout(() => {
-          this.updateRoleLabels();
-          this.updateNotificationTitles();
-        }, 100);
+        
+        const confirmed = await this.app.confirm(
+          confirmMessage,
+          window.i18n ? window.i18n.t('auth.logout') : 'ログアウト確認'
+        );
+        
+        if (confirmed) {
+          console.log('Header: User confirmed logout');
+          
+          // ログアウト処理を実行
+          if (this.app.auth && typeof this.app.auth.logout === 'function') {
+            await this.app.auth.logout();
+            console.log('Header: Auth logout completed');
+          } else {
+            console.error('Header: Auth.logout method not found');
+            throw new Error('認証システムが利用できません');
+          }
+          
+          // ナビゲーションを実行
+          if (typeof this.app.navigate === 'function') {
+            this.app.navigate('#/login');
+            console.log('Header: Navigated to login page');
+          } else {
+            window.location.hash = '#/login';
+          }
+        }
+      } catch (error) {
+        console.error('Header: Error during logout:', error);
+        const errorMessage = window.i18n ? 
+          window.i18n.t('errors.logout_failed') : 
+          'ログアウト中にエラーが発生しました';
+        this.app.showError(errorMessage);
       }
     });
   }
+
+  // その他のイベントリスナー設定...
+  // 通知全既読ボタン
+  const markAllReadBtn = document.getElementById('markAllNotificationsRead');
+  if (markAllReadBtn) {
+    markAllReadBtn.addEventListener('click', () => this.markAllNotificationsAsRead());
+  }
+
+  // 通知ドロップダウンが開かれた時に通知を更新
+  const notificationDropdown = document.getElementById('notificationDropdown');
+  if (notificationDropdown) {
+    notificationDropdown.addEventListener('show.bs.dropdown', () => {
+      this.loadNotifications();
+    });
+  }
+
+  // 言語切り替え後の追加処理
+  document.addEventListener('change', (e) => {
+    if (e.target.hasAttribute('data-i18n-lang-switcher')) {
+      setTimeout(() => {
+        this.updateRoleLabels();
+        this.updateNotificationTitles();
+      }, 100);
+    }
+  });
+}
 
   // 🌐 役割ラベルを更新
   updateRoleLabels() {
