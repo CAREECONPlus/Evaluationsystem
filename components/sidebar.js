@@ -1,8 +1,6 @@
 /**
  * Sidebar Component - Enhanced Mobile Support Version
  * サイドバーコンポーネント - 改善版モバイル完全対応
- * 
- * 🔧 修正点: render メソッドでのユーザー情報取得を強化
  */
 
 export class SidebarComponent {
@@ -12,7 +10,7 @@ export class SidebarComponent {
   }
 
   render() {
-    // 🔧 修正: ユーザー情報の取得を強化
+    // ユーザー情報の取得を強化
     const user = this.app.currentUser || null;
     console.log("Sidebar: Rendering with user:", user);
     
@@ -48,14 +46,14 @@ export class SidebarComponent {
               </div>
             </div>
             <!-- モバイル用閉じるボタン -->
-           <button 
-            class="btn btn-link text-white p-1 d-lg-none sidebar-close-btn"
-            id="sidebarCloseBtn"
-            aria-label="メニューを閉じる"
-            title="メニューを閉じる"
-    >
-           <i class="fas fa-times fa-lg" aria-hidden="true"></i>
-         </button>
+            <button 
+              class="btn btn-link text-white p-1 d-lg-none sidebar-close-btn"
+              id="sidebarCloseBtn"
+              aria-label="メニューを閉じる"
+              title="メニューを閉じる"
+            >
+              <i class="fas fa-times fa-lg" aria-hidden="true"></i>
+            </button>
           </div>
         </div>
 
@@ -125,40 +123,6 @@ export class SidebarComponent {
               </a>
             </li>
 
-           ${isEvaluator || userRole === 'worker' ? `
-<!-- 目標設定 -->
-<li class="nav-item" role="none">
-  <a 
-    class="nav-link text-white d-flex align-items-center ${this.isActive('/goal-setting') ? 'active' : ''}" 
-    href="#/goal-setting" 
-    data-link
-    role="menuitem"
-    aria-current="${this.isActive('/goal-setting') ? 'page' : 'false'}"
-    tabindex="0"
-  >
-    <i class="fas fa-bullseye nav-icon me-3" aria-hidden="true"></i>
-    <span data-i18n="nav.goal_setting">目標設定</span>
-  </a>
-</li>
-
-${userRole === 'worker' ? `
-<!-- 自己評価入力（一般ユーザー用）-->
-<li class="nav-item" role="none">
-  <a 
-    class="nav-link text-white d-flex align-items-center ${this.isActive('/self-evaluation') ? 'active' : ''}" 
-    href="#/self-evaluation" 
-    data-link
-    role="menuitem"
-    aria-current="${this.isActive('/self-evaluation') ? 'page' : 'false'}"
-    tabindex="0"
-  >
-    <i class="fas fa-edit nav-icon me-3" aria-hidden="true"></i>
-    <span>自己評価入力</span>
-  </a>
-</li>
-` : ''}
-` : ''}
-
             ${isEvaluator || userRole === 'worker' ? `
             <!-- 目標設定 -->
             <li class="nav-item" role="none">
@@ -174,6 +138,23 @@ ${userRole === 'worker' ? `
                 <span data-i18n="nav.goal_setting">目標設定</span>
               </a>
             </li>
+
+            ${userRole === 'worker' ? `
+            <!-- 自己評価入力（一般ユーザー用）-->
+            <li class="nav-item" role="none">
+              <a 
+                class="nav-link text-white d-flex align-items-center ${this.isActive('/self-evaluation') ? 'active' : ''}" 
+                href="#/self-evaluation" 
+                data-link
+                role="menuitem"
+                aria-current="${this.isActive('/self-evaluation') ? 'page' : 'false'}"
+                tabindex="0"
+              >
+                <i class="fas fa-edit nav-icon me-3" aria-hidden="true"></i>
+                <span>自己評価入力</span>
+              </a>
+            </li>
+            ` : ''}
             ` : ''}
 
             ${isAdmin ? `
@@ -281,7 +262,7 @@ ${userRole === 'worker' ? `
             <!-- ログアウト -->
             <button 
               class="btn btn-danger btn-sm d-flex align-items-center justify-content-center" 
-              onclick="window.app.logout()"
+              id="sidebarLogoutBtn"
               type="button"
               tabindex="0"
             >
@@ -304,103 +285,90 @@ ${userRole === 'worker' ? `
   /**
    * サイドバーコンポーネントの初期化
    */
- init() {
-  console.log("Sidebar: Starting initialization...");
-  
-  try {
-    // イベントリスナーの設定
-    this.setupEventListeners();
+  init() {
+    console.log("Sidebar: Starting initialization...");
     
-    // ルート変更の監視
-    this.setupRouteListener();
-    
-    // アクセシビリティの設定
-    this.setupAccessibility();
-    
-    // キーボードナビゲーションの設定
-    this.setupKeyboardNavigation();
-
-    // フォーカス管理の設定
-    this.setupFocusManagement();
-    
-    // 翻訳を適用
-    if (this.app.i18n) {
-      this.app.i18n.updateUI();
-    }
-    
-    console.log("Sidebar: Initialized with enhanced mobile support and accessibility");
-  } catch (error) {
-    console.error("Sidebar: Initialization error:", error);
-  }
-}
-
-/**
- * イベントリスナーの設定
- */
-// components/sidebar.js の setupEventListeners メソッドを以下に修正
-
-setupEventListeners() {
-  // 閉じるボタンのイベントリスナー
-  const closeBtn = document.getElementById('sidebarCloseBtn');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.hide();
-    });
-  }
-
-  // サイドバーのログアウトボタン - 修正版
-  const sidebarLogoutBtn = document.querySelector('.sidebar .btn-danger');
-  if (sidebarLogoutBtn) {
-    // onclick属性を削除
-    sidebarLogoutBtn.removeAttribute('onclick');
-    
-    sidebarLogoutBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+    try {
+      // イベントリスナーの設定
+      this.setupEventListeners();
       
-      try {
-        console.log('Sidebar: Logout button clicked');
-        
-        const confirmMessage = window.i18n ? 
-          window.i18n.t('auth.confirm_logout') : 
-          'ログアウトしてもよろしいですか？';
-        
-        const confirmed = await this.app.confirm(
-          confirmMessage,
-          window.i18n ? window.i18n.t('auth.logout') : 'ログアウト確認'
-        );
-        
-        if (confirmed) {
-          console.log('Sidebar: User confirmed logout');
-          
-          // ログアウト処理を実行
-          if (this.app.auth && typeof this.app.auth.logout === 'function') {
-            await this.app.auth.logout();
-            console.log('Sidebar: Auth logout completed');
-          } else {
-            console.error('Sidebar: Auth.logout method not found');
-            throw new Error('認証システムが利用できません');
-          }
-          
-          // ナビゲーションを実行
-          if (typeof this.app.navigate === 'function') {
-            this.app.navigate('#/login');
-            console.log('Sidebar: Navigated to login page');
-          } else {
-            window.location.hash = '#/login';
-          }
-        }
-      } catch (error) {
-        console.error('Sidebar: Error during logout:', error);
-        const errorMessage = window.i18n ? 
-          window.i18n.t('errors.logout_failed') : 
-          'ログアウト中にエラーが発生しました';
-        this.app.showError(errorMessage);
+      // ルート変更の監視
+      this.setupRouteListener();
+      
+      // アクセシビリティの設定
+      this.setupAccessibility();
+      
+      // キーボードナビゲーションの設定
+      this.setupKeyboardNavigation();
+
+      // フォーカス管理の設定
+      this.setupFocusManagement();
+      
+      // 翻訳を適用
+      if (this.app.i18n) {
+        this.app.i18n.updateUI();
       }
-    });
+      
+      console.log("Sidebar: Initialized with enhanced mobile support and accessibility");
+    } catch (error) {
+      console.error("Sidebar: Initialization error:", error);
+    }
   }
-}
+
+  /**
+   * イベントリスナーの設定
+   */
+  setupEventListeners() {
+    // 閉じるボタンのイベントリスナー
+    const closeBtn = document.getElementById('sidebarCloseBtn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.hide();
+      });
+    }
+
+    // サイドバーのログアウトボタン - 修正版
+    const sidebarLogoutBtn = document.getElementById('sidebarLogoutBtn');
+    if (sidebarLogoutBtn) {
+      sidebarLogoutBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        try {
+          console.log('Sidebar: Logout button clicked');
+          
+          const confirmMessage = window.i18n ? 
+            window.i18n.t('auth.confirm_logout') : 
+            'ログアウトしてもよろしいですか？';
+          
+          const confirmed = await this.app.confirm(
+            confirmMessage,
+            window.i18n ? window.i18n.t('auth.logout') : 'ログアウト確認'
+          );
+          
+          if (confirmed) {
+            console.log('Sidebar: User confirmed logout');
+            
+            // ログアウト処理を実行
+            if (this.app.logout && typeof this.app.logout === 'function') {
+              await this.app.logout();
+              console.log('Sidebar: App logout completed');
+            } else {
+              console.error('Sidebar: App.logout method not found');
+              throw new Error('ログアウト機能が利用できません');
+            }
+          }
+        } catch (error) {
+          console.error('Sidebar: Error during logout:', error);
+          const errorMessage = window.i18n ? 
+            window.i18n.t('errors.logout_failed') : 
+            'ログアウト中にエラーが発生しました';
+          this.app.showError(errorMessage);
+        }
+      });
+    }
+  }
 
   /**
    * ルート変更の監視
