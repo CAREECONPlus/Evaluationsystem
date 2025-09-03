@@ -385,58 +385,74 @@ class App {
 
   // ログアウトメソッド
   async logout() {
-    try {
-      console.log('App: Starting logout process...');
-      
-      // 認証システムのログアウト処理
-      if (this.auth && typeof this.auth.logout === 'function') {
-        await this.auth.logout();
-        console.log('App: Auth logout completed');
-      } else {
-        console.warn('App: Auth system not available');
-      }
-      
-      // ユーザー情報をクリア
-      this.currentUser = null;
-      
-      // UIを更新
-      this.updateUIForAuthState(null);
-      
-      // ダッシュボードやその他のページの自動更新タイマーをクリア
-      if (this.router && this.router.getCurrentPageInstance()) {
-        const currentPage = this.router.getCurrentPageInstance();
-        if (currentPage && typeof currentPage.cleanup === 'function') {
-          currentPage.cleanup();
-        }
-      }
-      
-      // ログインページにリダイレクト
-      this.navigate('#/login');
-      
-      console.log('App: Logout process completed');
-      
-      // ログアウト成功メッセージ
-      setTimeout(() => {
-        this.showSuccess(window.i18n ? 
-          window.i18n.t('auth.logout_success') : 
-          'ログアウトしました'
-        );
-      }, 100);
-      
-    } catch (error) {
-      console.error('App: Error during logout:', error);
-      
-      // エラーが発生してもログアウト処理を続行
-      this.currentUser = null;
-      this.updateUIForAuthState(null);
-      this.navigate('#/login');
-      
-      this.showError(window.i18n ? 
-        window.i18n.t('errors.logout_failed') : 
-        'ログアウト中にエラーが発生しましたが、ログアウトしました'
-      );
+  try {
+    console.log('App: Starting logout process...');
+    
+    // 1. まず認証システムのログアウト処理
+    if (this.auth && typeof this.auth.logout === 'function') {
+      await this.auth.logout();
+      console.log('App: Auth logout completed');
+    } else {
+      console.warn('App: Auth system not available');
     }
+    
+    // 2. ユーザー情報をクリア
+    this.currentUser = null;
+    
+    // 3. 現在のページのクリーンアップ
+    if (this.router && this.router.getCurrentPageInstance()) {
+      const currentPage = this.router.getCurrentPageInstance();
+      if (currentPage && typeof currentPage.cleanup === 'function') {
+        currentPage.cleanup();
+      }
+    }
+    
+    // 4. UIを更新（ログアウト状態に）
+    this.updateUIForAuthState(null);
+    
+    console.log('App: Logout process completed');
+    
+    // 5. 少し待ってからログインページにリダイレクト
+    setTimeout(() => {
+      try {
+        // 強制的にログインページに移動
+        window.location.hash = '#/login';
+        
+        // 念のためページをリロード（完全にログアウト状態にするため）
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+        
+      } catch (error) {
+        console.error('App: Error during navigation:', error);
+        // フォールバック：直接ページリロード
+        window.location.reload();
+      }
+    }, 500);
+    
+    // 6. ログアウト成功メッセージ
+    this.showSuccess(window.i18n ? 
+      window.i18n.t('auth.logout_success') : 
+      'ログアウトしました'
+    );
+    
+  } catch (error) {
+    console.error('App: Error during logout:', error);
+    
+    // エラーが発生してもログアウト処理を続行
+    this.currentUser = null;
+    this.updateUIForAuthState(null);
+    
+    // 強制的にログインページに移動
+    window.location.hash = '#/login';
+    window.location.reload();
+    
+    this.showError(window.i18n ? 
+      window.i18n.t('errors.logout_failed') : 
+      'ログアウト中にエラーが発生しましたが、ログアウトしました'
+    );
   }
+}
 
   // プログラム的なナビゲーション
   navigate(path) {
