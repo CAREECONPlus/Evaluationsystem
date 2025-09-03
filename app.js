@@ -383,74 +383,90 @@ class App {
     }
   }
 
-async logout() {
-  try {
-    console.log('App: Starting logout process...');
-    
-    // 認証システムのログアウト処理
-    if (this.auth && typeof this.auth.logout === 'function') {
-      await this.auth.logout();
-      console.log('App: Auth logout completed');
-    } else {
-      console.warn('App: Auth system not available');
-    }
-    
-    // ユーザー情報をクリア
-    this.currentUser = null;
-    
-    // UIを更新
-    this.updateUIForAuthState(null);
-    
-    // ダッシュボードやその他のページの自動更新タイマーをクリア
-    if (this.router && this.router.getCurrentPageInstance()) {
-      const currentPage = this.router.getCurrentPageInstance();
-      if (currentPage && typeof currentPage.cleanup === 'function') {
-        currentPage.cleanup();
+  // ログアウトメソッド
+  async logout() {
+    try {
+      console.log('App: Starting logout process...');
+      
+      // 認証システムのログアウト処理
+      if (this.auth && typeof this.auth.logout === 'function') {
+        await this.auth.logout();
+        console.log('App: Auth logout completed');
+      } else {
+        console.warn('App: Auth system not available');
       }
-    }
-    
-    // ログインページにリダイレクト
-    this.navigate('#/login');
-    
-    console.log('App: Logout process completed');
-    
-    // ログアウト成功メッセージ
-    setTimeout(() => {
-      this.showSuccess(window.i18n ? 
-        window.i18n.t('auth.logout_success') : 
-        'ログアウトしました'
+      
+      // ユーザー情報をクリア
+      this.currentUser = null;
+      
+      // UIを更新
+      this.updateUIForAuthState(null);
+      
+      // ダッシュボードやその他のページの自動更新タイマーをクリア
+      if (this.router && this.router.getCurrentPageInstance()) {
+        const currentPage = this.router.getCurrentPageInstance();
+        if (currentPage && typeof currentPage.cleanup === 'function') {
+          currentPage.cleanup();
+        }
+      }
+      
+      // ログインページにリダイレクト
+      this.navigate('#/login');
+      
+      console.log('App: Logout process completed');
+      
+      // ログアウト成功メッセージ
+      setTimeout(() => {
+        this.showSuccess(window.i18n ? 
+          window.i18n.t('auth.logout_success') : 
+          'ログアウトしました'
+        );
+      }, 100);
+      
+    } catch (error) {
+      console.error('App: Error during logout:', error);
+      
+      // エラーが発生してもログアウト処理を続行
+      this.currentUser = null;
+      this.updateUIForAuthState(null);
+      this.navigate('#/login');
+      
+      this.showError(window.i18n ? 
+        window.i18n.t('errors.logout_failed') : 
+        'ログアウト中にエラーが発生しましたが、ログアウトしました'
       );
-    }, 100);
-    
-  } catch (error) {
-    console.error('App: Error during logout:', error);
-    
-    // エラーが発生してもログアウト処理を続行
-    this.currentUser = null;
-    this.updateUIForAuthState(null);
-    this.navigate('#/login');
-    
-    this.showError(window.i18n ? 
-      window.i18n.t('errors.logout_failed') : 
-      'ログアウト中にエラーが発生しましたが、ログアウトしました'
-    );
+    }
   }
-}
 
-// confirm メソッドも追加（もし存在しない場合）
-async confirm(message, title = '確認') {
-  return new Promise((resolve) => {
-    // シンプルなconfirmダイアログを使用
-    // より高度なモーダルが必要な場合は、Bootstrapモーダルを使用
-    const result = window.confirm(`${title}\n\n${message}`);
-    resolve(result);
-  });
-}
+  // プログラム的なナビゲーション
+  navigate(path) {
+    if (this.router && typeof this.router.navigate === 'function') {
+      this.router.navigate(path);
+    } else {
+      window.location.hash = path;
+    }
+  }
+
+  // 認証状態に応じたUI更新
+  updateUIForAuthState(user) {
+    this.currentUser = user;
+
+    if (user) {
+      console.log("App: User authenticated, rendering header and sidebar");
       
-      // ログインページのクリーンアップ
-      const loginPageElements = document.querySelectorAll(".login-page");
-      loginPageElements.forEach((el) => el.remove());
-      
+      // ヘッダーの表示
+      const headerContainer = document.getElementById("header-container");
+      if (headerContainer) {
+        headerContainer.innerHTML = this.header.render();
+        this.header.init();
+      }
+
+      // サイドバーの表示  
+      const sidebarContainer = document.getElementById("sidebar-container");
+      if (sidebarContainer) {
+        sidebarContainer.innerHTML = this.sidebar.render();
+        this.sidebar.init();
+      }
     } else {
       // 未ログインの場合
       console.log("App: User not authenticated, clearing header and sidebar");
