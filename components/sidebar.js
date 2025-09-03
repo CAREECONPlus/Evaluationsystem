@@ -337,6 +337,8 @@ ${userRole === 'worker' ? `
 /**
  * イベントリスナーの設定
  */
+// components/sidebar.js の setupEventListeners メソッドを以下に修正
+
 setupEventListeners() {
   // 閉じるボタンのイベントリスナー
   const closeBtn = document.getElementById('sidebarCloseBtn');
@@ -347,27 +349,54 @@ setupEventListeners() {
     });
   }
 
-  // サイドバーのログアウトボタン（onclick属性を置き換え）
+  // サイドバーのログアウトボタン - 修正版
   const sidebarLogoutBtn = document.querySelector('.sidebar .btn-danger');
   if (sidebarLogoutBtn) {
-    sidebarLogoutBtn.removeAttribute('onclick'); // onclick属性を削除
+    // onclick属性を削除
+    sidebarLogoutBtn.removeAttribute('onclick');
+    
     sidebarLogoutBtn.addEventListener('click', async (e) => {
       e.preventDefault();
+      e.stopPropagation();
       
       try {
+        console.log('Sidebar: Logout button clicked');
+        
+        const confirmMessage = window.i18n ? 
+          window.i18n.t('auth.confirm_logout') : 
+          'ログアウトしてもよろしいですか？';
+        
         const confirmed = await this.app.confirm(
-          'ログアウトしてもよろしいですか？',
-          'ログアウト確認'
+          confirmMessage,
+          window.i18n ? window.i18n.t('auth.logout') : 'ログアウト確認'
         );
         
         if (confirmed) {
-          console.log('Sidebar: Logging out user...');
-          await this.app.logout();
-          console.log('Sidebar: User logged out successfully');
+          console.log('Sidebar: User confirmed logout');
+          
+          // ログアウト処理を実行
+          if (this.app.auth && typeof this.app.auth.logout === 'function') {
+            await this.app.auth.logout();
+            console.log('Sidebar: Auth logout completed');
+          } else {
+            console.error('Sidebar: Auth.logout method not found');
+            throw new Error('認証システムが利用できません');
+          }
+          
+          // ナビゲーションを実行
+          if (typeof this.app.navigate === 'function') {
+            this.app.navigate('#/login');
+            console.log('Sidebar: Navigated to login page');
+          } else {
+            window.location.hash = '#/login';
+          }
         }
       } catch (error) {
         console.error('Sidebar: Error during logout:', error);
-        this.app.showError('ログアウト中にエラーが発生しました');
+        const errorMessage = window.i18n ? 
+          window.i18n.t('errors.logout_failed') : 
+          'ログアウト中にエラーが発生しました';
+        this.app.showError(errorMessage);
       }
     });
   }
