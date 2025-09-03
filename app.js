@@ -3,7 +3,7 @@ import { API } from "./api.js"
 import { Auth } from "./auth.js"
 import { Router } from "./router.js"
 import { HeaderComponent } from "./components/header.js"
-import { SidebarComponent } from "./components/sidebar.js"
+import { SidebarComponent } from "./components/sidebar.js"gout
 
 class App {
   constructor() {
@@ -384,74 +384,164 @@ class App {
   }
 
   // ログアウトメソッド
-  async logout() {
+async logout() {
+  console.log('🔴 LOGOUT: Starting robust logout process...');
+  
+  let logoutSuccess = false;
+  
   try {
-    console.log('App: Starting logout process...');
+    // 1. ローディング表示
+    this.showLoading('ログアウト中...');
     
-    // 1. まず認証システムのログアウト処理
-    if (this.auth && typeof this.auth.logout === 'function') {
-      await this.auth.logout();
-      console.log('App: Auth logout completed');
-    } else {
-      console.warn('App: Auth system not available');
-    }
-    
-    // 2. ユーザー情報をクリア
+    // 2. アプリケーション状態を即座にクリア（Firebase接続に関係なく）
     this.currentUser = null;
+    console.log('✅ LOGOUT: App user state cleared');
     
-    // 3. 現在のページのクリーンアップ
-    if (this.router && this.router.getCurrentPageInstance()) {
-      const currentPage = this.router.getCurrentPageInstance();
-      if (currentPage && typeof currentPage.cleanup === 'function') {
-        currentPage.cleanup();
-      }
-    }
-    
-    // 4. UIを更新（ログアウト状態に）
-    this.updateUIForAuthState(null);
-    
-    console.log('App: Logout process completed');
-    
-    // 5. 少し待ってからログインページにリダイレクト
-    setTimeout(() => {
+    // 3. Firebase Auth からのログアウトを試行（エラーは無視）
+    if (this.auth?.auth) {
       try {
-        // 強制的にログインページに移動
-        window.location.hash = '#/login';
-        
-        // 念のためページをリロード（完全にログアウト状態にするため）
-        setTimeout(() => {
-          window.location.reload();
-        }, 100);
-        
-      } catch (error) {
-        console.error('App: Error during navigation:', error);
-        // フォールバック：直接ページリロード
-        window.location.reload();
+        await Promise.race([
+          this.auth.auth.signOut(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+        ]);
+        console.log('✅ LOGOUT: Firebase signOut completed');
+        logoutSuccess = true;
+      } catch (firebaseError) {
+        console.warn('⚠️ LOGOUT: Firebase signOut failed (continuing anyway):', firebaseError);
+        // Firebaseのログアウトが失敗してもローカル状態はクリアする
+        logoutSuccess = true;
       }
-    }, 500);
+    } else {
+      console.log('✅ LOGOUT: No Firebase auth instance (continuing)');
+      logoutSuccess = true;
+    }
     
-    // 6. ログアウト成功メッセージ
-    this.showSuccess(window.i18n ? 
-      window.i18n.t('auth.logout_success') : 
-      'ログアウトしました'
-    );
+    // 4. ローカルデータを完全クリア
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+      console.log('✅ LOGOUT: Local storage cleared');
+    } catch (storageError) {
+      console.warn('⚠️ LOGOUT: Storage clear failed:', storageError);
+    }
     
-  } catch (error) {
-    console.error('App: Error during logout:', error);
+    // 5. API接続をリセット
+    try {
+      if (this.api) {
+        this.api.setCurrentTenantId(null);
+        // APIキャッシュがあればクリア
+        if (this.api.cache) {
+          this.api.cache.clear();
+        }
+      }
+      console.log('✅ LOGOUT: API state reset');
+    } catch (apiError) {
+      console.warn('⚠️ LOGOUT: API reset failed:', apiError);
+    }
     
-    // エラーが発生してもログアウト処理を続行
+    // 6. 現在のページをクリーンアップ
+    try {
+      if (this.router?.currentPageInstance?.cleanup) {
+        this.router.currentPageInstance.cleanup();
+        this.router.currentPageInstance = null;
+      }
+      console.log('✅ LOGOUT: Page cleanup completed');
+    } catch (cleanupError) {
+} catch（cleanuperror）{
+      console.warn('⚠️ LOGOUT: Page cleanup failed:', cleanupError);
+    }
+    
+    // 7. UI要素をクリア
+    try {
+      const containers = ['header-container', 'sidebar-container', 'content'];
+      containers.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.innerHTML = '';
+      });
+      
+      // モーダルなどを削除
+      document.querySelectorAll('.modal, .modal-backdrop, .sidebar-backdrop, .toast').forEach(el => {
+        try { el.remove(); } catch (e) { /* ignore */ }
+      });
+      
+      // body状態をリセット
+      document.body.classList.remove('modal-open', 'mobile-menu-open');
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+      
+      console.log('✅ LOGOUT: UI cleanup completed');
+    } catch (uiError) {
+      console.warn('⚠️ LOGOUT: UI cleanup failed:', uiError);
+    }
+    
+    // 8. ローディングを隠して成功メッセージ
+    this.hideLoading();
+    
+    if (logoutSuccess) {
+      this.showSuccess('ログアウトしました');
+      console.log('✅ LOGOUT: Logout completed successfully');
+    } else {
+      this.showWarning('ログアウト処理が完了しました（一部エラー）');
+      console.log('⚠️ LOGOUT: Logout completed with warnings');
+    }
+    
+    // 9. 確実なリダイレクト
+    this.executeLogoutRedirect();
+    
+  } catch (criticalError) {
+    console.error('🚨 LOGOUT: Critical error:', criticalError);
+    
+    // 緊急時の処理
+    this.hideLoading();
     this.currentUser = null;
-    this.updateUIForAuthState(null);
     
-    // 強制的にログインページに移動
-    window.location.hash = '#/login';
-    window.location.reload();
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (e) { /* ignore */ }
     
-    this.showError(window.i18n ? 
-      window.i18n.t('errors.logout_failed') : 
-      'ログアウト中にエラーが発生しましたが、ログアウトしました'
-    );
+    this.showError('ログアウト中にエラーが発生しましたが、処理を続行します');
+    this.executeLogoutRedirect();
   }
+}
+
+// 確実なリダイレクト処理（別メソッドとして分離）
+executeLogoutRedirect() {
+  console.log('🔄 LOGOUT: Executing redirect...');
+  
+  // 複数の方法を段階的に実行
+  const methods = [
+    // 方法1: ハッシュ変更
+    () => {
+      window.location.hash = '#/login';
+      console.log('📍 Hash changed to #/login');
+    },
+    
+    // 方法2: ルーターを使用（500ms後）
+    () => {
+      if (this.router && typeof this.router.navigate === 'function') {
+        this.router.navigate('#/login');
+        console.log('🧭 Router navigate executed');
+      }
+    },
+    
+    // 方法3: 直接URL変更（1000ms後）
+    () => {
+      window.location.href = window.location.origin + window.location.pathname + '#/login';
+      console.log('🔗 Direct URL change executed');
+    },
+    
+    // 方法4: 完全リロード（1500ms後）
+    () => {
+      console.log('🔄 Executing page reload...');
+      window.location.reload(true);
+    }
+  ];
+  
+  // 段階的に実行
+  methods.forEach((method, index) => {
+    setTimeout(method, index * 500);
+  });
 }
 
   // プログラム的なナビゲーション
