@@ -383,88 +383,69 @@ class App {
     }
   }
 
-  async logout() {
-    try {
-      await this.auth.logout()
-    } catch (error) {
-      this.handleError(error, "Logout")
-    }
-  }
-
-  navigate(path) {
-    console.log("App: navigate called with path:", path)
+async logout() {
+  try {
+    console.log('App: Starting logout process...');
     
-    // ルーターのnavigate メソッドを使用
-    this.router.navigate(path)
-
-    // アクセシビリティ通知
-    if (this.accessibility) {
-      this.accessibility.announce("ページを読み込んでいます")
+    // 認証システムのログアウト処理
+    if (this.auth && typeof this.auth.logout === 'function') {
+      await this.auth.logout();
+      console.log('App: Auth logout completed');
+    } else {
+      console.warn('App: Auth system not available');
     }
+    
+    // ユーザー情報をクリア
+    this.currentUser = null;
+    
+    // UIを更新
+    this.updateUIForAuthState(null);
+    
+    // ダッシュボードやその他のページの自動更新タイマーをクリア
+    if (this.router && this.router.getCurrentPageInstance()) {
+      const currentPage = this.router.getCurrentPageInstance();
+      if (currentPage && typeof currentPage.cleanup === 'function') {
+        currentPage.cleanup();
+      }
+    }
+    
+    // ログインページにリダイレクト
+    this.navigate('#/login');
+    
+    console.log('App: Logout process completed');
+    
+    // ログアウト成功メッセージ
+    setTimeout(() => {
+      this.showSuccess(window.i18n ? 
+        window.i18n.t('auth.logout_success') : 
+        'ログアウトしました'
+      );
+    }, 100);
+    
+  } catch (error) {
+    console.error('App: Error during logout:', error);
+    
+    // エラーが発生してもログアウト処理を続行
+    this.currentUser = null;
+    this.updateUIForAuthState(null);
+    this.navigate('#/login');
+    
+    this.showError(window.i18n ? 
+      window.i18n.t('errors.logout_failed') : 
+      'ログアウト中にエラーが発生しましたが、ログアウトしました'
+    );
   }
+}
 
-  updateUIForAuthState(user) {
-    this.currentUser = user;
-
-    console.log("App: updateUIForAuthState called with user:", user ? user.email : 'null');
-
-    // ログイン状態に応じてヘッダーとサイドバーの表示を制御
-    if (user) {
-      // ログイン済みの場合
-      console.log("App: User authenticated, updating header and sidebar");
-      console.log("App: Current user details:", { 
-        name: user.name, 
-        email: user.email, 
-        role: user.role 
-      });
-      
-      // ヘッダーとサイドバーのHTMLを挿入
-      const headerContainer = document.getElementById("header-container");
-      const sidebarContainer = document.getElementById("sidebar-container");
-      
-      if (headerContainer) {
-        console.log("App: Rendering header...");
-        headerContainer.innerHTML = this.header.render();
-        // DOM要素が確実に存在するまで少し待ってから初期化
-        setTimeout(() => {
-          console.log("App: Initializing header...");
-          try {
-            this.header.init();
-          } catch (error) {
-            console.error("App: Header initialization error:", error);
-          }
-        }, 100);
-      }
-      
-      if (sidebarContainer) {
-        console.log("App: Rendering sidebar...");
-        try {
-          // サイドバーのレンダリング前にユーザー情報を再確認
-          console.log("App: Sidebar rendering with user:", this.currentUser);
-          const sidebarHtml = this.sidebar.render();
-          console.log("App: Sidebar HTML generated, length:", sidebarHtml.length);
-          sidebarContainer.innerHTML = sidebarHtml;
-          
-          // サイドバーの初期化をより確実に
-          setTimeout(() => {
-            console.log("App: Initializing sidebar...");
-            try {
-              this.sidebar.init();
-              console.log("App: Sidebar initialization completed");
-              
-              // 初期化後の内容確認
-              const navLinks = sidebarContainer.querySelectorAll('.nav-link');
-              console.log("App: Sidebar nav links found:", navLinks.length);
-              
-            } catch (error) {
-              console.error("App: Sidebar initialization error:", error);
-            }
-          }, 150); // サイドバーはヘッダーより少し遅らせる
-          
-        } catch (error) {
-          console.error("App: Sidebar rendering error:", error);
-        }
-      }
+// confirm メソッドも追加（もし存在しない場合）
+async confirm(message, title = '確認') {
+  return new Promise((resolve) => {
+    // シンプルなconfirmダイアログを使用
+    // より高度なモーダルが必要な場合は、Bootstrapモーダルを使用
+    const result = window.confirm(`${title}\n\n${message}`);
+    resolve(result);
+  });
+}
       
       // ログインページのクリーンアップ
       const loginPageElements = document.querySelectorAll(".login-page");
