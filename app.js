@@ -3,7 +3,7 @@ import { API } from "./api.js"
 import { Auth } from "./auth.js"
 import { Router } from "./router.js"
 import { HeaderComponent } from "./components/header.js"
-import { SidebarComponent } from "./components/sidebar.js"gout
+import { SidebarComponent } from "./components/sidebar.js"
 
 class App {
   constructor() {
@@ -33,7 +33,7 @@ class App {
     const initTimeout = setTimeout(() => {
       console.error("Application initialization timeout")
       this.showInitializationError("初期化がタイムアウトしました。ページを再読み込みしてください。")
-    }, 30000) // 30秒に延長
+    }, 30000)
 
     try {
       console.log("Step 1: Initializing I18n...")
@@ -52,7 +52,7 @@ class App {
       try {
         await Promise.race([
           this.auth.listenForAuthChanges(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error("Auth timeout")), 15000)) // Auth部分は15秒のまま
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Auth timeout")), 15000))
         ])
         console.log("✓ Auth state listener has completed its initial check.")
       } catch (authError) {
@@ -62,11 +62,9 @@ class App {
           console.warn("⚠ Auth operation cancelled, continuing with initialization")
         } else {
           console.warn("⚠ Auth error occurred, continuing with initialization:", authError.message)
-          // エラーを投げ直さずに継続
         }
       }
 
-      // タイムアウトをクリア（成功時）
       clearTimeout(initTimeout)
 
       console.log("Step 5: Showing app...")
@@ -75,10 +73,8 @@ class App {
       console.log("Step 6: Initial routing...")
       await this.router.route()
 
-      // 以下の動的インポートを並列実行に変更して高速化
       console.log("Step 7-9: Loading additional features...")
       await Promise.allSettled([
-        // アクセシビリティ機能
         import("./js/accessibility.js").then(({ AccessibilityHelper }) => {
           this.accessibility = new AccessibilityHelper(this)
           this.accessibility.init()
@@ -87,7 +83,6 @@ class App {
           console.warn("⚠ Accessibility features could not be loaded:", error)
         }),
         
-        // パフォーマンス最適化
         import("./js/performance.js").then(({ PerformanceOptimizer }) => {
           this.performance = new PerformanceOptimizer(this)
           this.performance.init()
@@ -96,7 +91,6 @@ class App {
           console.warn("⚠ Performance optimizations could not be loaded:", error)
         }),
         
-        // アニメーション
         import("./js/animations.js").then(({ AnimationHelper }) => {
           this.animations = new AnimationHelper(this)
           this.animations.init()
@@ -106,7 +100,6 @@ class App {
         })
       ])
 
-      // ★ ページアンロードクリーンアップの設定を追加
       console.log("Step 10: Setting up cleanup handlers...")
       this.setupPageUnloadCleanup()
       console.log("✓ Cleanup handlers initialized")
@@ -116,11 +109,9 @@ class App {
       clearTimeout(initTimeout)
       console.error("❌ Failed to initialize application:", error)
       
-      // 重大なエラーの場合のみエラー画面を表示
       if (!error.message.includes("timeout") && !error.message.includes("Operation cancelled")) {
         this.showInitializationError("アプリケーションの起動中にエラーが発生しました。")
       } else {
-        // タイムアウトや軽微なエラーの場合はアプリを表示して継続
         console.warn("⚠ Non-critical initialization error, continuing...")
         this.showApp()
       }
@@ -129,7 +120,6 @@ class App {
 
   // グローバルナビゲーションイベントの設定
   setupGlobalNavigation() {
-    // data-link属性を持つ要素のクリックイベントを処理
     document.addEventListener('click', (e) => {
       const link = e.target.closest('[data-link]');
       if (link) {
@@ -143,9 +133,8 @@ class App {
     });
   }
 
-  // グローバルエラーハンドラーの設定（強化版）
+  // グローバルエラーハンドラーの設定
   setupGlobalErrorHandlers() {
-    // 未処理のPromiseエラーをキャッチ
     window.addEventListener("unhandledrejection", (event) => {
       if (this.isOperationCancelledError(event.reason)) {
         console.log("[App] Firebase operation cancelled - likely due to page reload, ignoring error")
@@ -153,14 +142,12 @@ class App {
         return
       }
 
-      // Modal関連のエラーを無視
       if (this.isModalError(event.reason)) {
         console.log("[App] Modal operation error ignored:", event.reason.message)
         event.preventDefault()
         return
       }
 
-      // Bootstrap関連のDOM操作エラーを無視
       if (this.isBootstrapDOMError(event.reason)) {
         console.log("[App] Bootstrap DOM operation error ignored:", event.reason.message)
         event.preventDefault()
@@ -172,7 +159,6 @@ class App {
       event.preventDefault()
     })
 
-    // 一般的なJavaScriptエラーをキャッチ
     window.addEventListener("error", (event) => {
       if (this.isOperationCancelledError(event.error)) {
         console.log("[App] Firebase timer operation cancelled - likely due to page reload, ignoring error")
@@ -180,21 +166,18 @@ class App {
         return
       }
 
-      // Modal関連のエラーを無視
       if (this.isModalError(event.error)) {
         console.log("[App] Modal operation error ignored:", event.error.message)
         event.preventDefault()
         return
       }
 
-      // DOM関連エラーを無視
       if (this.isDOMError(event.error)) {
         console.log("[App] DOM operation error ignored:", event.error.message)
         event.preventDefault()
         return
       }
 
-      // Bootstrap関連のDOM操作エラーを無視
       if (this.isBootstrapDOMError(event.error)) {
         console.log("[App] Bootstrap DOM operation error ignored:", event.error.message)
         event.preventDefault()
@@ -207,7 +190,6 @@ class App {
     })
   }
 
-  // Bootstrap DOM関連エラーの判定（新しいメソッド）
   isBootstrapDOMError(error) {
     return error && error.message && (
       error.message.includes("Cannot read properties of null (reading 'style')") ||
@@ -223,7 +205,6 @@ class App {
     )
   }
 
-  // Modal関連エラーの判定（強化版）
   isModalError(error) {
     return error && error.message && (
       error.message.includes("Cannot read properties of null") ||
@@ -240,7 +221,6 @@ class App {
     )
   }
 
-  // DOM関連エラーの判定（強化版）
   isDOMError(error) {
     return error && error.message && (
       error.message.includes("Cannot read properties of null (reading 'style')") ||
@@ -251,12 +231,10 @@ class App {
     )
   }
 
-  // Operation cancelled エラーの判定
   isOperationCancelledError(error) {
     return error && error.message && error.message.includes("Operation cancelled")
   }
 
-  // 統一エラーハンドリング
   handleError(error, context = "") {
     if (this.isOperationCancelledError(error)) {
       console.log(`[App] Firebase operation cancelled in ${context} - likely due to page reload, ignoring error`)
@@ -267,9 +245,7 @@ class App {
 
     let message = ""
 
-    // エラータイプに応じた処理
     if (error?.code) {
-      // Firebaseエラー
       switch (error.code) {
         case "permission-denied":
           message = "権限がありません。管理者に連絡してください。"
@@ -298,11 +274,9 @@ class App {
     this.showError(message)
   }
 
-  // ページアンロード時のクリーンアップ（新しいメソッド）
   setupPageUnloadCleanup() {
     window.addEventListener('beforeunload', () => {
       try {
-        // 全てのモーダルを強制クリーンアップ
         const modals = document.querySelectorAll('.modal');
         modals.forEach(modal => {
           try {
@@ -315,11 +289,9 @@ class App {
           }
         });
 
-        // バックドロップの削除
         const backdrops = document.querySelectorAll('.modal-backdrop, .sidebar-backdrop');
         backdrops.forEach(backdrop => backdrop.remove());
 
-        // body スタイルのリセット
         document.body.classList.remove('modal-open', 'mobile-menu-open');
         document.body.style.overflow = '';
         document.body.style.paddingRight = '';
@@ -368,7 +340,6 @@ class App {
 
   async login(email, password) {
     try {
-      // 基本的なバリデーション
       if (!email || !email.trim()) {
         throw new Error("メールアドレスを入力してください")
       }
@@ -383,168 +354,95 @@ class App {
     }
   }
 
-  // ログアウトメソッド
-async logout() {
-  console.log('🔴 LOGOUT: Starting robust logout process...');
-  
-  let logoutSuccess = false;
-  
-  try {
-    // 1. ローディング表示
-    this.showLoading('ログアウト中...');
+  // 🔧 修正: ログアウトメソッドを簡潔かつ確実に
+  async logout() {
+    console.log('🔴 LOGOUT: Starting logout process...');
     
-    // 2. アプリケーション状態を即座にクリア（Firebase接続に関係なく）
-    this.currentUser = null;
-    console.log('✅ LOGOUT: App user state cleared');
-    
-    // 3. Firebase Auth からのログアウトを試行（エラーは無視）
-    if (this.auth?.auth) {
+    try {
+      // 1. ローディング表示
+      this.showLoading('ログアウト中...');
+      
+      // 2. 即座にアプリケーション状態をクリア
+      this.currentUser = null;
+      console.log('✅ LOGOUT: User state cleared');
+      
+      // 3. Firebase Authからログアウト（エラーは無視）
       try {
-        await Promise.race([
-          this.auth.auth.signOut(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
-        ]);
-        console.log('✅ LOGOUT: Firebase signOut completed');
-        logoutSuccess = true;
-      } catch (firebaseError) {
-        console.warn('⚠️ LOGOUT: Firebase signOut failed (continuing anyway):', firebaseError);
-        // Firebaseのログアウトが失敗してもローカル状態はクリアする
-        logoutSuccess = true;
-      }
-    } else {
-      console.log('✅ LOGOUT: No Firebase auth instance (continuing)');
-      logoutSuccess = true;
-    }
-    
-    // 4. ローカルデータを完全クリア
-    try {
-      localStorage.clear();
-      sessionStorage.clear();
-      console.log('✅ LOGOUT: Local storage cleared');
-    } catch (storageError) {
-      console.warn('⚠️ LOGOUT: Storage clear failed:', storageError);
-    }
-    
-    // 5. API接続をリセット
-    try {
-      if (this.api) {
-        this.api.setCurrentTenantId(null);
-        // APIキャッシュがあればクリア
-        if (this.api.cache) {
-          this.api.cache.clear();
+        if (this.auth?.auth) {
+          await this.auth.auth.signOut();
+          console.log('✅ LOGOUT: Firebase Auth signed out');
         }
+      } catch (authError) {
+        console.warn('⚠️ LOGOUT: Firebase Auth error (continuing):', authError);
       }
-      console.log('✅ LOGOUT: API state reset');
-    } catch (apiError) {
-      console.warn('⚠️ LOGOUT: API reset failed:', apiError);
-    }
-    
-    // 6. 現在のページをクリーンアップ
-    try {
-      if (this.router?.currentPageInstance?.cleanup) {
-        this.router.currentPageInstance.cleanup();
-        this.router.currentPageInstance = null;
+      
+      // 4. ストレージとAPIをクリア
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+        if (this.api) {
+          this.api.setCurrentTenantId(null);
+        }
+        console.log('✅ LOGOUT: Storage and API cleared');
+      } catch (storageError) {
+        console.warn('⚠️ LOGOUT: Storage clear error:', storageError);
       }
-      console.log('✅ LOGOUT: Page cleanup completed');
-    } catch (cleanupError) {
-} catch（cleanuperror）{
-      console.warn('⚠️ LOGOUT: Page cleanup failed:', cleanupError);
-    }
-    
-    // 7. UI要素をクリア
-    try {
-      const containers = ['header-container', 'sidebar-container', 'content'];
-      containers.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) element.innerHTML = '';
-      });
       
-      // モーダルなどを削除
-      document.querySelectorAll('.modal, .modal-backdrop, .sidebar-backdrop, .toast').forEach(el => {
-        try { el.remove(); } catch (e) { /* ignore */ }
-      });
+      // 5. UIをクリア
+      try {
+        ['header-container', 'sidebar-container', 'content'].forEach(id => {
+          const element = document.getElementById(id);
+          if (element) element.innerHTML = '';
+        });
+        
+        document.querySelectorAll('.modal, .modal-backdrop, .sidebar-backdrop, .toast').forEach(el => {
+          try { el.remove(); } catch (e) { /* ignore */ }
+        });
+        
+        document.body.classList.remove('modal-open', 'mobile-menu-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+        
+        console.log('✅ LOGOUT: UI cleared');
+      } catch (uiError) {
+        console.warn('⚠️ LOGOUT: UI cleanup error:', uiError);
+      }
       
-      // body状態をリセット
-      document.body.classList.remove('modal-open', 'mobile-menu-open');
-      document.body.style.overflow = '';
-      document.body.style.paddingRight = '';
-      
-      console.log('✅ LOGOUT: UI cleanup completed');
-    } catch (uiError) {
-      console.warn('⚠️ LOGOUT: UI cleanup failed:', uiError);
-    }
-    
-    // 8. ローディングを隠して成功メッセージ
-    this.hideLoading();
-    
-    if (logoutSuccess) {
+      // 6. ローディングを隠して成功メッセージ
+      this.hideLoading();
       this.showSuccess('ログアウトしました');
-      console.log('✅ LOGOUT: Logout completed successfully');
-    } else {
-      this.showWarning('ログアウト処理が完了しました（一部エラー）');
-      console.log('⚠️ LOGOUT: Logout completed with warnings');
-    }
-    
-    // 9. 確実なリダイレクト
-    this.executeLogoutRedirect();
-    
-  } catch (criticalError) {
-    console.error('🚨 LOGOUT: Critical error:', criticalError);
-    
-    // 緊急時の処理
-    this.hideLoading();
-    this.currentUser = null;
-    
-    try {
-      localStorage.clear();
-      sessionStorage.clear();
-    } catch (e) { /* ignore */ }
-    
-    this.showError('ログアウト中にエラーが発生しましたが、処理を続行します');
-    this.executeLogoutRedirect();
-  }
-}
-
-// 確実なリダイレクト処理（別メソッドとして分離）
-executeLogoutRedirect() {
-  console.log('🔄 LOGOUT: Executing redirect...');
-  
-  // 複数の方法を段階的に実行
-  const methods = [
-    // 方法1: ハッシュ変更
-    () => {
-      window.location.hash = '#/login';
-      console.log('📍 Hash changed to #/login');
-    },
-    
-    // 方法2: ルーターを使用（500ms後）
-    () => {
-      if (this.router && typeof this.router.navigate === 'function') {
-        this.router.navigate('#/login');
-        console.log('🧭 Router navigate executed');
-      }
-    },
-    
-    // 方法3: 直接URL変更（1000ms後）
-    () => {
+      
+      console.log('✅ LOGOUT: Logout completed, redirecting...');
+      
+      // 7. 確実なリダイレクト（段階的実行）
+      setTimeout(() => {
+        window.location.hash = '#/login';
+      }, 200);
+      
+      setTimeout(() => {
+        window.location.reload(true);
+      }, 800);
+      
+    } catch (error) {
+      console.error('🚨 LOGOUT: Critical error:', error);
+      
+      // 緊急処理
+      this.hideLoading();
+      this.currentUser = null;
+      
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (e) { /* ignore */ }
+      
+      // 強制リロード
       window.location.href = window.location.origin + window.location.pathname + '#/login';
-      console.log('🔗 Direct URL change executed');
-    },
-    
-    // 方法4: 完全リロード（1500ms後）
-    () => {
-      console.log('🔄 Executing page reload...');
-      window.location.reload(true);
+      setTimeout(() => {
+        window.location.reload(true);
+      }, 500);
     }
-  ];
-  
-  // 段階的に実行
-  methods.forEach((method, index) => {
-    setTimeout(method, index * 500);
-  });
-}
+  }
 
-  // プログラム的なナビゲーション
   navigate(path) {
     if (this.router && typeof this.router.navigate === 'function') {
       this.router.navigate(path);
@@ -553,30 +451,25 @@ executeLogoutRedirect() {
     }
   }
 
-  // 認証状態に応じたUI更新
   updateUIForAuthState(user) {
     this.currentUser = user;
 
     if (user) {
       console.log("App: User authenticated, rendering header and sidebar");
       
-      // ヘッダーの表示
       const headerContainer = document.getElementById("header-container");
       if (headerContainer) {
         headerContainer.innerHTML = this.header.render();
         this.header.init();
       }
 
-      // サイドバーの表示  
       const sidebarContainer = document.getElementById("sidebar-container");
       if (sidebarContainer) {
         sidebarContainer.innerHTML = this.sidebar.render();
         this.sidebar.init();
       }
     } else {
-      // 未ログインの場合
       console.log("App: User not authenticated, clearing header and sidebar");
-      // ヘッダーとサイドバーをクリア
       const headerContainer = document.getElementById("header-container");
       const sidebarContainer = document.getElementById("sidebar-container");
       if (headerContainer) headerContainer.innerHTML = "";
@@ -584,9 +477,6 @@ executeLogoutRedirect() {
     }
   }
 
-  /**
-   * 現在のユーザー情報を取得
-   */
   getCurrentUser() {
     return this.currentUser;
   }
@@ -616,16 +506,16 @@ executeLogoutRedirect() {
     }
 
     const toastHTML = `
-          <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-              <div class="d-flex">
-                  <div class="toast-body">
-                    <i class="fas ${iconMap[type]} me-2"></i>
-                    ${this.sanitizeHtml(message)}
-                  </div>
-                  <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-              </div>
+      <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body">
+            <i class="fas ${iconMap[type]} me-2"></i>
+            ${this.sanitizeHtml(message)}
           </div>
-      `
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      </div>
+    `
     toastContainer.insertAdjacentHTML("beforeend", toastHTML)
     const toastElement = document.getElementById(toastId)
     const toast = new window.bootstrap.Toast(toastElement, { delay: duration })
@@ -638,7 +528,7 @@ executeLogoutRedirect() {
   }
 
   showError(message) {
-    this.showToast(message, "danger", 8000) // エラーは長めに表示
+    this.showToast(message, "danger", 8000)
   }
 
   showWarning(message) {
@@ -656,7 +546,6 @@ executeLogoutRedirect() {
     return temp.innerHTML
   }
 
-  // 入力値のサニタイゼーション
   sanitizeInput(input) {
     if (!input) return ""
     return input.trim().replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
@@ -715,14 +604,11 @@ executeLogoutRedirect() {
     }
   }
 
-  // 確認ダイアログの表示（改善版）
   async confirm(message, title = "確認") {
     return new Promise((resolve) => {
       try {
-        // 既存のconfirmModalを安全に削除
         this.safelyRemoveModal("confirmModal");
 
-        // カスタム確認ダイアログのHTMLを作成
         const modalHTML = `
           <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
@@ -743,7 +629,6 @@ executeLogoutRedirect() {
           </div>
         `;
 
-        // モーダルを追加
         document.body.insertAdjacentHTML("beforeend", modalHTML);
         const modalElement = document.getElementById("confirmModal");
         
@@ -753,7 +638,6 @@ executeLogoutRedirect() {
           return;
         }
         
-        // Bootstrap modal の存在確認
         if (!window.bootstrap || !window.bootstrap.Modal) {
           console.error("App: Bootstrap Modal not available");
           resolve(false);
@@ -766,7 +650,6 @@ executeLogoutRedirect() {
             keyboard: false
           });
 
-          // 確認ボタンのイベントリスナー
           const confirmBtn = document.getElementById("confirmOkBtn");
           if (confirmBtn) {
             confirmBtn.addEventListener("click", () => {
@@ -774,7 +657,6 @@ executeLogoutRedirect() {
             });
           }
 
-          // キャンセルボタンのイベントリスナー
           const cancelBtn = document.getElementById("confirmCancelBtn");
           if (cancelBtn) {
             cancelBtn.addEventListener("click", () => {
@@ -782,7 +664,6 @@ executeLogoutRedirect() {
             });
           }
 
-          // モーダルが閉じられた時の処理
           modalElement.addEventListener("hidden.bs.modal", () => {
             try {
               if (modalElement && modalElement.parentNode) {
@@ -794,7 +675,6 @@ executeLogoutRedirect() {
             resolve(false);
           }, { once: true });
 
-          // モーダルを表示
           modal.show();
           
         } catch (modalError) {
@@ -810,11 +690,9 @@ executeLogoutRedirect() {
     });
   }
 
-  // モーダルを安全に非表示にする（新しいメソッド）
   safelyHideModal(modalInstance, modalElement, callback) {
     try {
       if (modalInstance && typeof modalInstance.hide === 'function') {
-        // コールバックを一度だけ実行するためのフラグ
         let callbackExecuted = false;
         
         const executeCallback = () => {
@@ -828,17 +706,14 @@ executeLogoutRedirect() {
           }
         };
 
-        // hidden イベントリスナーを設定
         if (modalElement) {
           modalElement.addEventListener("hidden.bs.modal", executeCallback, { once: true });
         }
 
-        // タイムアウトでコールバックを強制実行（フェイルセーフ）
         setTimeout(executeCallback, 1000);
 
         modalInstance.hide();
       } else {
-        // モーダルインスタンスが無効な場合は直接削除
         if (modalElement && modalElement.parentNode) {
           modalElement.remove();
         }
@@ -846,17 +721,14 @@ executeLogoutRedirect() {
       }
     } catch (error) {
       console.warn("App: Error hiding modal:", error);
-      // エラーが発生した場合は強制的にコールバックを実行
       if (callback) callback();
     }
   }
 
-  // モーダルを安全に削除する（新しいメソッド）
   safelyRemoveModal(modalId) {
     try {
       const existingModal = document.getElementById(modalId);
       if (existingModal) {
-        // Bootstrap インスタンスがある場合は適切に破棄
         if (window.bootstrap && window.bootstrap.Modal) {
           const modalInstance = window.bootstrap.Modal.getInstance(existingModal);
           if (modalInstance) {
@@ -868,11 +740,9 @@ executeLogoutRedirect() {
           }
         }
         
-        // DOM から削除
         existingModal.remove();
       }
 
-      // 残ったバックドロップを削除
       const backdrops = document.querySelectorAll('.modal-backdrop');
       backdrops.forEach(backdrop => {
         try {
@@ -882,7 +752,6 @@ executeLogoutRedirect() {
         }
       });
 
-      // body クラスをクリーンアップ
       document.body.classList.remove('modal-open');
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
@@ -894,7 +763,6 @@ executeLogoutRedirect() {
 
   showLoading(message = "処理中...") {
     try {
-      // 既存のローディングを削除
       this.hideLoading();
       
       const loadingHTML = `
@@ -931,7 +799,6 @@ executeLogoutRedirect() {
     }
   }
 
-  // デバッグモード
   enableDebugMode() {
     window.DEBUG = true
     console.log("Debug mode enabled")
