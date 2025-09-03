@@ -126,58 +126,69 @@ export class Router {
     return new URLSearchParams(queryString)
   }
 
-  async route() {
-    try {
-      const path = this.getCurrentPath()
-      const params = this.getParams()
+async route() {
+  try {
+    const path = this.getCurrentPath()
+    const params = this.getParams()
 
-      console.log(`Router: Navigating to ${path}`)
+    console.log(`Router: Navigating to ${path}`)
 
-      // 現在のページのクリーンアップ（シンプル化）
-      this.cleanupCurrentPage()
+    // 現在のページのクリーンアップ（シンプル化）
+    this.cleanupCurrentPage()
 
-      // ルート設定を取得
-      const routeConfig = this.routes[path] || this.routes["/login"]
+    // ルート設定を取得
+    const routeConfig = this.routes[path] || this.routes["/login"]
 
-      // 認証チェック
-      if (routeConfig.auth && !this.app.isAuthenticated()) {
-        console.log("Router: Authentication required, redirecting to /login")
-        this.navigate("#/login")
-        return
-      }
+    // 認証チェック
+    if (routeConfig.auth && !this.app.isAuthenticated()) {
+      console.log("Router: Authentication required, redirecting to /login")
+      this.navigate("#/login")
+      return
+    }
 
-      // 認証済みユーザーが公開ページにアクセスする場合の処理
-      if (!routeConfig.auth && this.app.isAuthenticated() && !path.includes("register")) {
-        console.log("Router: Already authenticated, redirecting to /dashboard")
+    // 🔧 修正: 認証済みユーザーが公開ページにアクセスする場合の処理を調整
+    if (!routeConfig.auth && this.app.isAuthenticated() && !path.includes("register") && path !== "/login") {
+      console.log("Router: Already authenticated, redirecting to /dashboard")
+      this.navigate("#/dashboard")
+      return
+    }
+
+    // 🔧 追加: ログインページの場合は特別処理
+    if (path === "/login" && this.app.isAuthenticated()) {
+      // ログイン状態でログインページにアクセスした場合、少し待ってからチェック
+      setTimeout(() => {
+        if (this.app.isAuthenticated()) {
+          console.log("Router: Still authenticated after timeout, redirecting to dashboard")
+          this.navigate("#/dashboard")
+        }
+      }, 1000);
+    }
+
+    // 権限チェック
+    if (routeConfig.roles && this.app.isAuthenticated()) {
+      if (!this.app.hasAnyRole(routeConfig.roles)) {
+        console.log(`Router: Access denied. Required roles: ${routeConfig.roles}`)
+        this.app.showError("このページにアクセスする権限がありません。")
         this.navigate("#/dashboard")
         return
       }
-
-      // 権限チェック
-      if (routeConfig.roles && this.app.isAuthenticated()) {
-        if (!this.app.hasAnyRole(routeConfig.roles)) {
-          console.log(`Router: Access denied. Required roles: ${routeConfig.roles}`)
-          this.app.showError("このページにアクセスする権限がありません。")
-          this.navigate("#/dashboard")
-          return
-        }
-      }
-
-      // ページのレンダリングと初期化
-      await this.renderPage(routeConfig, params)
-
-      // ページタイトルの更新
-      this.updatePageTitle(routeConfig.title)
-
-      // 現在のルートを記録
-      this.currentRoute = path
-
-      console.log(`Router: Successfully navigated to ${path}`)
-    } catch (error) {
-      console.error("Router: Error during routing:", error)
-      this.renderErrorPage(error)
     }
+
+    // ページのレンダリングと初期化
+    await this.renderPage(routeConfig, params)
+
+    // ページタイトルの更新
+    this.updatePageTitle(routeConfig.title)
+
+    // 現在のルートを記録
+    this.currentRoute = path
+
+    console.log(`Router: Successfully navigated to ${path}`)
+  } catch (error) {
+    console.error("Router: Error during routing:", error)
+    this.renderErrorPage(error)
   }
+}
 
   cleanupCurrentPage() {
     try {
