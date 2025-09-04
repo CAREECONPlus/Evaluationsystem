@@ -135,7 +135,7 @@ export class HeaderComponent {
                 <li>
                   <button 
                     class="dropdown-item d-flex align-items-center text-danger" 
-                    onclick="console.log('Header: Logout button clicked'); window.app.logout()"
+                    onclick="console.log('Header: Logout button clicked'); if(window.app && window.app.logout) { window.app.logout().catch(e => console.error('Logout failed:', e)); } else { console.error('App or logout method not available'); }"
                     type="button"
                   >
                     <i class="fas fa-sign-out-alt me-2" aria-hidden="true"></i>

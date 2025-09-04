@@ -315,18 +315,26 @@ async login(email, password) {
   async logout() {
     console.log("App: logout() called")
     
-    // ローディング表示
-    this.showLoading("ログアウト中...")
-    
     try {
+      // ローディング表示
+      this.showLoading("ログアウト中...")
       console.log("App: Starting logout process...")
       
       // 先にローカル状態をクリア（認証状態リスナーの競合を避けるため）
       this.currentUser = null
       
-      // Firebase認証のサインアウト実行
-      await this.auth.logout()
-      console.log("App: Firebase logout completed successfully")
+      // Firebase認証が利用可能かチェック
+      if (this.auth && typeof this.auth.logout === 'function') {
+        try {
+          // Firebase認証のサインアウト実行
+          await this.auth.logout()
+          console.log("App: Firebase logout completed successfully")
+        } catch (authError) {
+          console.warn("App: Firebase logout failed, but continuing:", authError)
+        }
+      } else {
+        console.warn("App: Firebase auth not available, proceeding with local logout")
+      }
       
       // UI状態更新
       this.updateUIForAuthState(null)
@@ -335,14 +343,15 @@ async login(email, password) {
       console.log("App: Redirecting to login page...")
       this.navigate("#/login")
       
-      // 成功メッセージ
+      // 成功メッセージを少し遅延させて表示
       setTimeout(() => {
-        if (this.i18n) {
-          this.showSuccess(this.i18n.t("messages.logout_success"))
+        this.hideLoading()
+        if (this.i18n && this.i18n.t) {
+          this.showSuccess(this.i18n.t("messages.logout_success") || "ログアウトしました")
         } else {
           this.showSuccess("ログアウトしました")
         }
-      }, 100)
+      }, 200)
       
     } catch (error) {
       console.error("App: logout() failed:", error)
@@ -350,15 +359,20 @@ async login(email, password) {
       // エラーが発生してもローカル状態をクリア
       this.currentUser = null
       this.updateUIForAuthState(null)
-      this.navigate("#/login")
+      
+      try {
+        this.navigate("#/login")
+      } catch (navError) {
+        console.error("App: Navigation failed, forcing page reload")
+        window.location.hash = "#/login"
+        window.location.reload()
+      }
       
       // 警告メッセージ
       setTimeout(() => {
+        this.hideLoading()
         this.showWarning("ログアウトしました（一部処理でエラーが発生しましたが、安全にログアウトされています）")
-      }, 100)
-      
-    } finally {
-      this.hideLoading()
+      }, 200)
     }
   }
 
@@ -645,6 +659,26 @@ updateUIForAuthState(user) {
   enableDebugMode() {
     window.DEBUG = true
     console.log("Debug mode enabled")
+    window.debugApp = this
+  }
+
+  // デバッグ用ログアウトテスト
+  testLogout() {
+    console.log("=== LOGOUT TEST START ===")
+    console.log("window.app:", window.app)
+    console.log("window.app.logout:", window.app?.logout)
+    console.log("this.auth:", this.auth)
+    console.log("this.currentUser:", this.currentUser)
+    console.log("=== CALLING LOGOUT ===")
+    if (this.logout) {
+      this.logout().then(() => {
+        console.log("=== LOGOUT COMPLETED ===")
+      }).catch(e => {
+        console.error("=== LOGOUT ERROR ===", e)
+      })
+    } else {
+      console.error("=== LOGOUT METHOD NOT FOUND ===")
+    }
   }
 
   disableDebugMode() {
