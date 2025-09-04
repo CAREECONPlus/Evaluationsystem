@@ -319,37 +319,43 @@ async login(email, password) {
     this.showLoading("ログアウト中...")
     
     try {
-      console.log("App: Calling auth.logout()...")
+      console.log("App: Starting logout process...")
+      
+      // 先にローカル状態をクリア（認証状態リスナーの競合を避けるため）
+      this.currentUser = null
+      
+      // Firebase認証のサインアウト実行
       await this.auth.logout()
       console.log("App: Firebase logout completed successfully")
       
-      // 手動でUI状態をクリア
-      console.log("App: Clearing UI state manually...")
-      this.currentUser = null
+      // UI状態更新
       this.updateUIForAuthState(null)
       
       // ログイン画面にリダイレクト
       console.log("App: Redirecting to login page...")
       this.navigate("#/login")
       
-      // ログアウト成功メッセージ
-      if (this.i18n) {
-        this.showSuccess(this.i18n.t("messages.logout_success"))
-      } else {
-        this.showSuccess("ログアウトしました")
-      }
+      // 成功メッセージ
+      setTimeout(() => {
+        if (this.i18n) {
+          this.showSuccess(this.i18n.t("messages.logout_success"))
+        } else {
+          this.showSuccess("ログアウトしました")
+        }
+      }, 100)
       
     } catch (error) {
       console.error("App: logout() failed:", error)
       
-      // Firebaseのログアウトが失敗してもローカル状態をクリア
-      console.log("App: Firebase logout failed, clearing local state anyway...")
+      // エラーが発生してもローカル状態をクリア
       this.currentUser = null
       this.updateUIForAuthState(null)
       this.navigate("#/login")
       
-      // エラーメッセージは表示しない（ログアウトは成功として扱う）
-      this.showWarning("ログアウトしました（一部処理でエラーが発生しましたが、安全にログアウトされています）")
+      // 警告メッセージ
+      setTimeout(() => {
+        this.showWarning("ログアウトしました（一部処理でエラーが発生しましたが、安全にログアウトされています）")
+      }, 100)
       
     } finally {
       this.hideLoading()

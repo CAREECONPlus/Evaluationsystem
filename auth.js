@@ -112,17 +112,25 @@ export class Auth {
           } else {
             console.log("Auth state changed: User is signed out.")
             
+            // 手動ログアウト以外の場合のみUI更新とリダイレクトを実行
+            // （手動ログアウトの場合はapp.js側で処理済み）
+            if (!this.app.currentUser) {
+              console.log("Auth: User already cleared by manual logout, skipping duplicate processing")
+              return
+            }
+            
             // ユーザー状態をクリア
             this.app.currentUser = null
             this.app.updateUIForAuthState(null)
             
-            // ログアウト時はログインページへ
+            // 自動ログアウト時のみリダイレクト
             if (
               !isFirstCheck &&
               window.location.hash !== "#/register" &&
-              !window.location.hash.includes("/register-admin")
+              !window.location.hash.includes("/register-admin") &&
+              window.location.hash !== "#/login"
             ) {
-              console.log("Auth: Redirecting to login page after logout")
+              console.log("Auth: Redirecting to login page after automatic logout")
               this.app.navigate("#/login")
             }
           }
@@ -198,25 +206,31 @@ export class Auth {
 
   async logout() {
     console.log("Auth: logout() called")
+    
+    if (!this.auth) {
+      console.error("Auth: Firebase auth not initialized")
+      throw new Error("Firebase認証が初期化されていません")
+    }
+    
     try {
-      if (!this.auth) {
-        console.error("Auth: Firebase auth not initialized")
-        throw new Error("Firebase認証が初期化されていません")
-      }
-      
       console.log("Auth: Calling Firebase signOut()...")
       await signOut(this.auth)
       console.log("Auth: Firebase signOut() completed successfully")
       
+      // 認証関連ストレージのクリーンアップ
+      this.cleanupAuthStorage()
+      
     } catch (error) {
       console.error("Auth: Logout error:", error)
-      // Firebase のログアウトエラーでも処理を続行
-      // ユーザー情報をクリアするため
+      // エラーが発生してもクリーンアップは実行
+      this.cleanupAuthStorage()
+      throw error
     }
-    
-    // 追加のクリーンアップ
+  }
+
+  cleanupAuthStorage() {
     try {
-      // ローカルストレージのクリア（もしある場合）
+      // ローカルストレージのクリア
       if (typeof localStorage !== 'undefined') {
         const keysToRemove = []
         for (let i = 0; i < localStorage.length; i++) {
@@ -229,7 +243,7 @@ export class Auth {
         console.log("Auth: Cleaned up local storage auth keys")
       }
       
-      // セッションストレージのクリア（もしある場合）
+      // セッションストレージのクリア
       if (typeof sessionStorage !== 'undefined') {
         const keysToRemove = []
         for (let i = 0; i < sessionStorage.length; i++) {
