@@ -264,7 +264,7 @@ export class SidebarComponent {
             <!-- ログアウト -->
             <button 
               class="btn btn-danger btn-sm d-flex align-items-center justify-content-center" 
-              onclick="window.app.logout()"
+              onclick="console.log('Sidebar: Logout button clicked'); window.app.logout()"
               type="button"
               tabindex="0"
             >

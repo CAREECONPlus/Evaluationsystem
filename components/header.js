@@ -135,7 +135,7 @@ export class HeaderComponent {
                 <li>
                   <button 
                     class="dropdown-item d-flex align-items-center text-danger" 
-                    onclick="window.app.logout()"
+                    onclick="console.log('Header: Logout button clicked'); window.app.logout()"
                     type="button"
                   >
                     <i class="fas fa-sign-out-alt me-2" aria-hidden="true"></i>
