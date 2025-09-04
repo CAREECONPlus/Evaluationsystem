@@ -324,16 +324,19 @@ async login(email, password) {
       this.currentUser = null
       
       // Firebase認証が利用可能かチェック
-      if (this.auth && typeof this.auth.logout === 'function') {
+      if (this.auth && this.auth.isInitialized && typeof this.auth.logout === 'function') {
         try {
           // Firebase認証のサインアウト実行
           await this.auth.logout()
           console.log("App: Firebase logout completed successfully")
         } catch (authError) {
           console.warn("App: Firebase logout failed, but continuing:", authError)
+          // Firebase エラーでもローカルログアウトは続行
         }
       } else {
-        console.warn("App: Firebase auth not available, proceeding with local logout")
+        console.warn("App: Firebase auth not properly initialized, proceeding with local logout only")
+        // ローカルストレージの手動クリーンアップ
+        this.manualStorageCleanup()
       }
       
       // UI状態更新
@@ -668,6 +671,7 @@ updateUIForAuthState(user) {
     console.log("window.app:", window.app)
     console.log("window.app.logout:", window.app?.logout)
     console.log("this.auth:", this.auth)
+    console.log("this.auth.isInitialized:", this.auth?.isInitialized)
     console.log("this.currentUser:", this.currentUser)
     console.log("=== CALLING LOGOUT ===")
     if (this.logout) {
@@ -678,6 +682,41 @@ updateUIForAuthState(user) {
       })
     } else {
       console.error("=== LOGOUT METHOD NOT FOUND ===")
+    }
+  }
+
+  // 手動ストレージクリーンアップ
+  manualStorageCleanup() {
+    try {
+      console.log("App: Performing manual storage cleanup")
+      
+      // ローカルストレージのクリア
+      if (typeof localStorage !== 'undefined') {
+        const keysToRemove = []
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i)
+          if (key && (key.startsWith('firebase:') || key.includes('auth') || key.includes('user'))) {
+            keysToRemove.push(key)
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key))
+        console.log(`App: Cleaned up ${keysToRemove.length} local storage keys`)
+      }
+      
+      // セッションストレージのクリア
+      if (typeof sessionStorage !== 'undefined') {
+        const keysToRemove = []
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i)
+          if (key && (key.startsWith('firebase:') || key.includes('auth') || key.includes('user'))) {
+            keysToRemove.push(key)
+          }
+        }
+        keysToRemove.forEach(key => sessionStorage.removeItem(key))
+        console.log(`App: Cleaned up ${keysToRemove.length} session storage keys`)
+      }
+    } catch (cleanupError) {
+      console.warn("App: Manual storage cleanup failed:", cleanupError)
     }
   }
 

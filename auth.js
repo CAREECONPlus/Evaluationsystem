@@ -34,12 +34,37 @@ export class Auth {
       // 環境変数からFirebase設定を取得
       const firebaseConfig = await environment.getFirebaseConfig()
       
-      console.log("Auth: Firebase config loaded, initializing Firebase...")
+      console.log("Auth: Firebase config loaded:", {
+        hasApiKey: !!firebaseConfig.apiKey,
+        hasAuthDomain: !!firebaseConfig.authDomain,
+        hasProjectId: !!firebaseConfig.projectId,
+        projectId: firebaseConfig.projectId
+      })
+      
+      // Firebase設定の妥当性チェック
+      if (!firebaseConfig.projectId || !firebaseConfig.apiKey) {
+        throw new Error("Firebase configuration is incomplete. Missing projectId or apiKey.")
+      }
       
       // Firebase初期化
       this.firebaseApp = initializeApp(firebaseConfig)
       this.auth = getAuth(this.firebaseApp)
-      this.db = getFirestore(this.firebaseApp)
+      
+      // Firestore初期化をより慎重に
+      try {
+        this.db = getFirestore(this.firebaseApp)
+        
+        // Firestoreの接続確認
+        if (this.db && this.db.app) {
+          console.log("Auth: Firestore initialized successfully")
+        } else {
+          console.warn("Auth: Firestore initialization may be incomplete")
+        }
+      } catch (firestoreError) {
+        console.error("Auth: Firestore initialization failed:", firestoreError)
+        // Firestoreが失敗しても認証は続行
+        this.db = null
+      }
       
       this.isInitialized = true
       
@@ -207,9 +232,14 @@ export class Auth {
   async logout() {
     console.log("Auth: logout() called")
     
+    if (!this.isInitialized) {
+      console.error("Auth: Firebase not initialized")
+      throw new Error("Firebase が初期化されていません")
+    }
+    
     if (!this.auth) {
-      console.error("Auth: Firebase auth not initialized")
-      throw new Error("Firebase認証が初期化されていません")
+      console.error("Auth: Firebase auth not available")
+      throw new Error("Firebase認証が利用できません")
     }
     
     try {
@@ -224,7 +254,8 @@ export class Auth {
       console.error("Auth: Logout error:", error)
       // エラーが発生してもクリーンアップは実行
       this.cleanupAuthStorage()
-      throw error
+      // エラーは再スローせず、警告として扱う
+      console.warn("Auth: Logout completed with warnings")
     }
   }
 
