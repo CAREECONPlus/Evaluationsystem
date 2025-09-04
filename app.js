@@ -151,6 +151,17 @@ class App {
     // i18nシステムをグローバルに公開
     window.i18n = this.i18n;
     window.app = this;
+    
+    // デバッグ用グローバル関数
+    window.forceLogout = () => {
+      console.log("=== FORCE LOGOUT CALLED ===")
+      if (window.app && window.app.logout) {
+        window.app.logout()
+      } else {
+        console.error("App or logout not available")
+      }
+    }
+    
     console.log("App: Global i18n references set up");
   }
 
@@ -312,70 +323,68 @@ async login(email, password) {
     }
   }
 
-  async logout() {
-    console.log("App: logout() called")
+  logout() {
+    console.log("=== App: logout() START ===")
     
     try {
       // ローディング表示
+      console.log("App: Showing loading...")
       this.showLoading("ログアウト中...")
-      console.log("App: Starting logout process...")
       
-      // 先にローカル状態をクリア（認証状態リスナーの競合を避けるため）
+      // 即座にローカル状態をクリア
+      console.log("App: Clearing local state...")
       this.currentUser = null
       
-      // Firebase認証が利用可能かチェック
-      if (this.auth && this.auth.isInitialized && typeof this.auth.logout === 'function') {
-        try {
-          // Firebase認証のサインアウト実行
-          await this.auth.logout()
-          console.log("App: Firebase logout completed successfully")
-        } catch (authError) {
-          console.warn("App: Firebase logout failed, but continuing:", authError)
-          // Firebase エラーでもローカルログアウトは続行
-        }
-      } else {
-        console.warn("App: Firebase auth not properly initialized, proceeding with local logout only")
-        // ローカルストレージの手動クリーンアップ
-        this.manualStorageCleanup()
+      // UI状態を即座に更新
+      console.log("App: Updating UI state...")
+      this.updateUIForAuthState(null)
+      
+      // Firebase認証のクリーンアップ（非同期でバックグラウンド実行）
+      if (this.auth && this.auth.isInitialized) {
+        console.log("App: Cleaning up Firebase auth in background...")
+        this.auth.logout().catch(e => {
+          console.warn("App: Firebase logout failed, but continuing:", e)
+        })
       }
       
-      // UI状態更新
-      this.updateUIForAuthState(null)
+      // ストレージの手動クリーンアップ
+      console.log("App: Manual storage cleanup...")
+      this.manualStorageCleanup()
       
-      // ログイン画面にリダイレクト
-      console.log("App: Redirecting to login page...")
+      // 即座にログイン画面にリダイレクト
+      console.log("App: Navigating to login...")
       this.navigate("#/login")
       
-      // 成功メッセージを少し遅延させて表示
+      // UIクリーンアップとメッセージ表示
       setTimeout(() => {
+        console.log("App: Final cleanup...")
         this.hideLoading()
-        if (this.i18n && this.i18n.t) {
-          this.showSuccess(this.i18n.t("messages.logout_success") || "ログアウトしました")
-        } else {
-          this.showSuccess("ログアウトしました")
-        }
-      }, 200)
+        this.showSuccess("ログアウトしました")
+      }, 100)
+      
+      console.log("=== App: logout() SUCCESS ===")
+      return Promise.resolve()
       
     } catch (error) {
-      console.error("App: logout() failed:", error)
+      console.error("=== App: logout() ERROR ===", error)
       
-      // エラーが発生してもローカル状態をクリア
+      // エラー時も強制的にログアウト状態にする
       this.currentUser = null
       this.updateUIForAuthState(null)
+      this.manualStorageCleanup()
       
+      // 強制リダイレクト
       try {
         this.navigate("#/login")
       } catch (navError) {
-        console.error("App: Navigation failed, forcing page reload")
-        window.location.hash = "#/login"
+        console.error("App: Navigation failed, forcing reload")
+        window.location.href = "#/login"
         window.location.reload()
       }
       
-      // 警告メッセージ
-      setTimeout(() => {
-        this.hideLoading()
-        this.showWarning("ログアウトしました（一部処理でエラーが発生しましたが、安全にログアウトされています）")
-      }, 200)
+      this.hideLoading()
+      this.showWarning("強制ログアウトしました")
+      return Promise.resolve()
     }
   }
 

@@ -50,21 +50,10 @@ export class Auth {
       this.firebaseApp = initializeApp(firebaseConfig)
       this.auth = getAuth(this.firebaseApp)
       
-      // Firestore初期化をより慎重に
-      try {
-        this.db = getFirestore(this.firebaseApp)
-        
-        // Firestoreの接続確認
-        if (this.db && this.db.app) {
-          console.log("Auth: Firestore initialized successfully")
-        } else {
-          console.warn("Auth: Firestore initialization may be incomplete")
-        }
-      } catch (firestoreError) {
-        console.error("Auth: Firestore initialization failed:", firestoreError)
-        // Firestoreが失敗しても認証は続行
-        this.db = null
-      }
+      // Firestore初期化を遅延させる
+      setTimeout(() => {
+        this.initializeFirestore()
+      }, 100)
       
       this.isInitialized = true
       
@@ -256,6 +245,30 @@ export class Auth {
       this.cleanupAuthStorage()
       // エラーは再スローせず、警告として扱う
       console.warn("Auth: Logout completed with warnings")
+    }
+  }
+
+  // Firestore初期化メソッド（遅延実行）
+  initializeFirestore() {
+    try {
+      if (!this.firebaseApp) {
+        console.warn("Auth: Firebase app not available for Firestore initialization")
+        return
+      }
+      
+      console.log("Auth: Initializing Firestore...")
+      this.db = getFirestore(this.firebaseApp)
+      
+      // Firestoreの接続確認
+      if (this.db && this.db.app && this.db.app.options) {
+        console.log("Auth: Firestore initialized successfully")
+      } else {
+        console.warn("Auth: Firestore initialization may be incomplete")
+        this.db = null
+      }
+    } catch (firestoreError) {
+      console.error("Auth: Firestore initialization failed:", firestoreError)
+      this.db = null
     }
   }
 

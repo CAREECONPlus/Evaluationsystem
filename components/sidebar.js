@@ -264,7 +264,7 @@ export class SidebarComponent {
             <!-- ログアウト -->
             <button 
               class="btn btn-danger btn-sm d-flex align-items-center justify-content-center" 
-              onclick="console.log('Sidebar: Logout button clicked'); if(window.app && window.app.logout) { window.app.logout().catch(e => console.error('Logout failed:', e)); } else { console.error('App or logout method not available'); }"
+              onclick="console.log('=== SIDEBAR LOGOUT CLICKED ==='); try { if (window.app) { console.log('Found window.app, calling logout...'); window.app.logout(); } else { console.error('window.app not found!'); } } catch(e) { console.error('Logout click error:', e); }"
               type="button"
               tabindex="0"
             >
