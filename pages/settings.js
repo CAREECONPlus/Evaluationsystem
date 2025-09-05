@@ -197,11 +197,24 @@ export class SettingsPage {
   }
 
   setupEventListeners() {
+    // 既存のイベントリスナーを削除
+    if (this.boundHandlers) {
+      document.removeEventListener('click', this.boundHandlers.click);
+      document.removeEventListener('input', this.boundHandlers.input);
+      document.removeEventListener('change', this.boundHandlers.change);
+    }
+    
+    // バインドされたハンドラーを保存
+    this.boundHandlers = {
+      click: this.handleClick.bind(this),
+      input: this.handleInput.bind(this),
+      change: this.handleChange.bind(this)
+    };
     
     // イベント委譲を使用してシンプルに実装
-    document.addEventListener('click', this.handleClick.bind(this));
-    document.addEventListener('input', this.handleInput.bind(this));
-    document.addEventListener('change', this.handleChange.bind(this));
+    document.addEventListener('click', this.boundHandlers.click);
+    document.addEventListener('input', this.boundHandlers.input);
+    document.addEventListener('change', this.boundHandlers.change);
   }
 
   handleClick(e) {
@@ -1039,8 +1052,15 @@ export class SettingsPage {
   }
 
   cleanup() {
-    
     try {
+      // イベントリスナーのクリーンアップ
+      if (this.boundHandlers) {
+        document.removeEventListener('click', this.boundHandlers.click);
+        document.removeEventListener('input', this.boundHandlers.input);
+        document.removeEventListener('change', this.boundHandlers.change);
+        this.boundHandlers = null;
+      }
+      
       if (this.unloadHandler) {
         window.removeEventListener('beforeunload', this.unloadHandler);
       }
