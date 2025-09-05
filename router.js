@@ -16,6 +16,7 @@ import { JobTypeManagementPage } from "./pages/job-type-management.js"
 import { InvitationAcceptPage } from "./pages/invitation-accept.js"
 import { ProfilePage } from "./pages/profile.js"
 import { HelpPage } from "./pages/help.js"
+import { MultilingualAdminPage } from "./pages/multilingual-admin.js"
 
 export class Router {
   constructor(app) {
@@ -111,6 +112,12 @@ export class Router {
         component: HelpPage,
         auth: true,
         title: "ヘルプ",
+      },
+      "/multilingual-admin": {
+        component: MultilingualAdminPage,
+        auth: true,
+        roles: ["admin"],
+        title: "多言語管理",
       },
     }
 
