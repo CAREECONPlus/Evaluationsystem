@@ -29,14 +29,14 @@ export class EvaluationsPage {
               <div>
                 <h1 class="h3 mb-3">
                   <i class="fas fa-clipboard-list me-2"></i>
-                  評価一覧
+                  <span data-i18n="evaluations.title">評価一覧</span>
                 </h1>
                 <nav aria-label="breadcrumb">
                   <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                      <a href="#/dashboard" data-link>ダッシュボード</a>
+                      <a href="#/dashboard" data-link data-i18n="nav.dashboard">ダッシュボード</a>
                     </li>
-                    <li class="breadcrumb-item active" aria-current="page">評価一覧</li>
+                    <li class="breadcrumb-item active" aria-current="page" data-i18n="evaluations.title">評価一覧</li>
                   </ol>
                 </nav>
               </div>
@@ -44,7 +44,7 @@ export class EvaluationsPage {
                 ${isEvaluator || isAdmin ? `
                 <a href="#/evaluation-form" class="btn btn-primary" data-link>
                   <i class="fas fa-plus me-2"></i>
-                  新規評価作成
+                  <span data-i18n="evaluations.new_evaluation">新規評価作成</span>
                 </a>
                 ` : ''}
               </div>
@@ -57,7 +57,7 @@ export class EvaluationsPage {
           <div class="col-md-3 mb-3">
             <div class="card border-primary">
               <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">総評価数</h6>
+                <h6 class="card-subtitle mb-2 text-muted" data-i18n="dashboard.total_evaluations">総評価数</h6>
                 <h3 class="card-title mb-0">
                   <span id="totalEvaluations">0</span>
                 </h3>
@@ -67,7 +67,7 @@ export class EvaluationsPage {
           <div class="col-md-3 mb-3">
             <div class="card border-warning">
               <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">承認待ち</h6>
+                <h6 class="card-subtitle mb-2 text-muted" data-i18n="dashboard.pending_evaluations">承認待ち</h6>
                 <h3 class="card-title mb-0 text-warning">
                   <span id="pendingEvaluations">0</span>
                 </h3>
@@ -77,7 +77,7 @@ export class EvaluationsPage {
           <div class="col-md-3 mb-3">
             <div class="card border-success">
               <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">完了済み</h6>
+                <h6 class="card-subtitle mb-2 text-muted" data-i18n="dashboard.completed_evaluations">完了済み</h6>
                 <h3 class="card-title mb-0 text-success">
                   <span id="completedEvaluations">0</span>
                 </h3>
@@ -88,7 +88,7 @@ export class EvaluationsPage {
           <div class="col-md-3 mb-3">
             <div class="card border-info">
               <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">私の担当</h6>
+                <h6 class="card-subtitle mb-2 text-muted" data-i18n="evaluations.my_assignments">私の担当</h6>
                 <h3 class="card-title mb-0 text-info">
                   <span id="myAssignedEvaluations">0</span>
                 </h3>
@@ -99,7 +99,7 @@ export class EvaluationsPage {
           <div class="col-md-3 mb-3">
             <div class="card border-info">
               <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">進行中</h6>
+                <h6 class="card-subtitle mb-2 text-muted" data-i18n="evaluations.in_progress">進行中</h6>
                 <h3 class="card-title mb-0 text-info">
                   <span id="inProgressEvaluations">0</span>
                 </h3>
@@ -121,64 +121,65 @@ export class EvaluationsPage {
                   <input type="text" 
                          class="form-control" 
                          id="evaluationSearchInput" 
+                         data-i18n-placeholder="evaluations.search_placeholder" 
                          placeholder="評価対象者名で検索...">
                 </div>
               </div>
               <div class="col-md-2 mb-3 mb-md-0">
                 <select class="form-select" id="statusFilter">
-                  <option value="all">すべてのステータス</option>
-                  <option value="draft">下書き</option>
-                  <option value="self_assessed">自己評価完了</option>
-                  <option value="pending_approval">承認待ち</option>
-                  <option value="completed">完了</option>
-                  <option value="in_progress">進行中</option>
+                  <option value="all" data-i18n="evaluations.all_status">すべてのステータス</option>
+                  <option value="draft" data-i18n="status.draft">下書き</option>
+                  <option value="self_assessed" data-i18n="status.self_assessed">自己評価完了</option>
+                  <option value="pending_approval" data-i18n="status.pending_approval">承認待ち</option>
+                  <option value="completed" data-i18n="status.completed">完了</option>
+                  <option value="in_progress" data-i18n="evaluations.in_progress">進行中</option>
                 </select>
               </div>
               ${isAdmin ? `
               <div class="col-md-2 mb-3 mb-md-0">
                 <select class="form-select" id="userFilter">
-                  <option value="all">すべてのユーザー</option>
+                  <option value="all" data-i18n="evaluations.all_users">すべてのユーザー</option>
                 </select>
               </div>
               <div class="col-md-2 mb-3 mb-md-0">
                 <select class="form-select" id="assignmentFilter">
-                  <option value="all">すべての担当</option>
-                  <option value="assigned">担当割り当て済み</option>
-                  <option value="unassigned">担当未割り当て</option>
-                  <option value="my_evaluations">私が評価者</option>
+                  <option value="all" data-i18n="evaluations.all_assignments">すべての担当</option>
+                  <option value="assigned" data-i18n="evaluations.assigned">担当割り当て済み</option>
+                  <option value="unassigned" data-i18n="evaluations.unassigned">担当未割り当て</option>
+                  <option value="my_evaluations" data-i18n="evaluations.my_evaluations">私が評価者</option>
                 </select>
               </div>
               ` : isEvaluator ? `
               <div class="col-md-2 mb-3 mb-md-0">
                 <select class="form-select" id="assignmentFilter">
-                  <option value="all">すべての担当</option>
-                  <option value="my_evaluations">私の担当評価</option>
-                  <option value="others">他の評価者</option>
+                  <option value="all" data-i18n="evaluations.all_assignments">すべての担当</option>
+                  <option value="my_evaluations" data-i18n="evaluations.my_evaluations">私の担当評価</option>
+                  <option value="others" data-i18n="evaluations.other_evaluators">他の評価者</option>
                 </select>
               </div>
               <div class="col-md-2 mb-3 mb-md-0">
                 <select class="form-select" id="priorityFilter">
-                  <option value="all">すべて</option>
-                  <option value="urgent">緊急（承認待ち）</option>
-                  <option value="this_week">今週作成</option>
+                  <option value="all" data-i18n="common.all">すべて</option>
+                  <option value="urgent" data-i18n="evaluations.urgent">緊急（承認待ち）</option>
+                  <option value="this_week" data-i18n="evaluations.this_week">今週作成</option>
                 </select>
               </div>
               ` : `
               <div class="col-md-4 mb-3 mb-md-0">
                 <div class="text-muted small">
                   <i class="fas fa-info-circle me-1"></i>
-                  あなたの評価のみ表示されます
+                  <span data-i18n="evaluations.own_evaluations_only">あなたの評価のみ表示されます</span>
                 </div>
               </div>
               `}
               <div class="col-md-3 text-md-end">
                 <button class="btn btn-outline-secondary me-2" id="resetFiltersBtn">
                   <i class="fas fa-times me-2"></i>
-                  フィルターリセット
+                  <span data-i18n="evaluations.reset_filters">フィルターリセット</span>
                 </button>
                 <button class="btn btn-outline-info" id="exportEvaluationsBtn">
                   <i class="fas fa-download me-2"></i>
-                  エクスポート
+                  <span data-i18n="common.export">エクスポート</span>
                 </button>
               </div>
             </div>
@@ -189,9 +190,9 @@ export class EvaluationsPage {
         <div class="card">
           <div class="card-header">
             <div class="d-flex justify-content-between align-items-center">
-              <h5 class="card-title mb-0">評価一覧</h5>
+              <h5 class="card-title mb-0" data-i18n="evaluations.title">評価一覧</h5>
               <div class="d-flex align-items-center">
-                <span class="text-muted me-3" id="evaluationCount">0件</span>
+                <span class="text-muted me-3" id="evaluationCount">0<span data-i18n="evaluations.items_count">件</span></span>
                 <div class="btn-group" role="group">
                   <button type="button" class="btn btn-sm btn-outline-secondary active" id="listViewBtn">
                     <i class="fas fa-list"></i>
@@ -207,7 +208,7 @@ export class EvaluationsPage {
             <div id="evaluationTableContainer">
               <div class="text-center py-5">
                 <div class="spinner-border text-primary" role="status">
-                  <span class="visually-hidden">読み込み中...</span>
+                  <span class="visually-hidden" data-i18n="common.loading">読み込み中...</span>
                 </div>
               </div>
             </div>
@@ -513,19 +514,27 @@ export class EvaluationsPage {
     // 件数を更新
     const countElement = document.getElementById('evaluationCount');
     if (countElement) {
-      countElement.textContent = `${this.filteredEvaluations.length}件`;
+      countElement.innerHTML = `${this.filteredEvaluations.length}<span data-i18n="evaluations.items_count">件</span>`;
+      // 翻訳を適用
+      if (this.app.i18n) {
+        this.app.i18n.updateElement(countElement);
+      }
     }
 
     if (this.filteredEvaluations.length === 0) {
       container.innerHTML = `
         <div class="text-center py-5">
           <i class="fas fa-clipboard fa-3x text-muted mb-3"></i>
-          <p class="text-muted">条件に合致する評価が見つかりません</p>
+          <p class="text-muted" data-i18n="evaluations.no_matching_evaluations">条件に合致する評価が見つかりません</p>
           <button class="btn btn-outline-secondary" onclick="window.app.router.currentPageInstance.resetFilters()">
-            フィルターをリセット
+            <span data-i18n="evaluations.reset_filters">フィルターをリセット</span>
           </button>
         </div>
       `;
+      // 翻訳を適用
+      if (this.app.i18n) {
+        this.app.i18n.updateElement(container);
+      }
       return;
     }
 
@@ -537,14 +546,14 @@ export class EvaluationsPage {
         <table class="table table-hover">
           <thead>
             <tr>
-              <th>評価対象者</th>
-              <th>評価者</th>
-              <th>評価期間</th>
-              <th>ステータス</th>
-              <th>作成日</th>
-              <th>更新日</th>
-              <th>担当状況</th>
-              <th>操作</th>
+              <th data-i18n="evaluations.target_user">評価対象者</th>
+              <th data-i18n="evaluations.evaluator">評価者</th>
+              <th data-i18n="evaluations.period">評価期間</th>
+              <th data-i18n="status.title">ステータス</th>
+              <th data-i18n="common.created_at">作成日</th>
+              <th data-i18n="evaluations.updated_at">更新日</th>
+              <th data-i18n="evaluations.assignment_status">担当状況</th>
+              <th data-i18n="common.actions">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -563,7 +572,7 @@ export class EvaluationsPage {
                         </span>
                       </div>
                       <div>
-                        <strong>${this.app.sanitizeHtml(evaluation.targetUserName || '不明')}</strong>
+                        <strong>${this.app.sanitizeHtml(evaluation.targetUserName || this.app.i18n.t('common.unknown'))}</strong>
                         <br><small class="text-muted">${this.app.sanitizeHtml(evaluation.targetUserEmail || '')}</small>
                       </div>
                     </div>
@@ -571,23 +580,23 @@ export class EvaluationsPage {
                   <td>
                     ${evaluation.evaluatorName ? 
                       `<span class="text-success">${this.app.sanitizeHtml(evaluation.evaluatorName)}</span>` :
-                      '<span class="text-muted">未割り当て</span>'
+                      `<span class="text-muted">${this.app.i18n.t('evaluations.unassigned')}</span>`
                     }
-                    ${isMyEvaluation ? '<br><small class="badge bg-info">担当</small>' : ''}
+                    ${isMyEvaluation ? `<br><small class="badge bg-info">${this.app.i18n.t('evaluations.assigned_to_me')}</small>` : ''}
                   </td>
                   <td>${this.app.sanitizeHtml(evaluation.periodName || '-')}</td>
                   <td>
                     <span class="badge ${this.app.getStatusBadgeClass(evaluation.status)}">
                       ${this.getStatusLabel(evaluation.status)}
                     </span>
-                    ${canApprove ? '<br><small class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>要承認</small>' : ''}
+                    ${canApprove ? `<br><small class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>${this.app.i18n.t('evaluations.requires_approval')}</small>` : ''}
                   </td>
                   <td>${this.app.formatDate(evaluation.createdAt)}</td>
                   <td>${this.app.formatDate(evaluation.updatedAt)}</td>
                   <td>
                     ${isAssigned ? 
-                      `<span class="badge bg-success">割り当て済み</span>` :
-                      `<span class="badge bg-warning">未割り当て</span>`
+                      `<span class="badge bg-success">${this.app.i18n.t('evaluations.assigned')}</span>` :
+                      `<span class="badge bg-warning">${this.app.i18n.t('evaluations.unassigned')}</span>`
                     }
                   </td>
                   <td>
@@ -618,6 +627,11 @@ export class EvaluationsPage {
         </table>
       </div>
     `;
+
+    // 動的生成されたテーブルに翻訳を適用
+    if (this.app.i18n) {
+      this.app.i18n.updateElement(container);
+    }
   }
 
   updateStatistics() {

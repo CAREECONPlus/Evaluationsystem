@@ -105,7 +105,27 @@ const BUILT_IN_TRANSLATIONS = {
       "evaluation_period": "評価期間",
       "target_info": "評価対象情報",
       "confirm_submit": "評価を提出しますか？提出後は編集できません。",
-      "evaluator": "評価者"
+      "evaluator": "評価者",
+      "my_assignments": "私の担当",
+      "in_progress": "進行中",
+      "items_count": "件",
+      "search_placeholder": "評価対象者名で検索...",
+      "all_status": "すべてのステータス",
+      "all_users": "すべてのユーザー",
+      "all_assignments": "すべての担当",
+      "assigned": "担当割り当て済み",
+      "unassigned": "担当未割り当て",
+      "my_evaluations": "私の担当評価",
+      "other_evaluators": "他の評価者",
+      "urgent": "緊急（承認待ち）",
+      "this_week": "今週作成",
+      "own_evaluations_only": "あなたの評価のみ表示されます",
+      "reset_filters": "フィルターリセット",
+      "no_matching_evaluations": "条件に合致する評価が見つかりません",
+      "assigned_to_me": "担当",
+      "requires_approval": "要承認",
+      "updated_at": "更新日",
+      "assignment_status": "担当状況"
     },
 
     "evaluation": {
@@ -291,6 +311,7 @@ const BUILT_IN_TRANSLATIONS = {
 
     // ===== ステータス =====
     "status": {
+      "title": "ステータス",
       "active": "アクティブ",
       "inactive": "非アクティブ",
       "pending": "保留中",
@@ -454,7 +475,27 @@ const BUILT_IN_TRANSLATIONS = {
       "evaluation_period": "Evaluation Period",
       "target_info": "Target Information",
       "confirm_submit": "Submit evaluation? You cannot edit after submission.",
-      "evaluator": "Evaluator"
+      "evaluator": "Evaluator",
+      "my_assignments": "My Assignments",
+      "in_progress": "In Progress",
+      "items_count": " items",
+      "search_placeholder": "Search by target user name...",
+      "all_status": "All Status",
+      "all_users": "All Users",
+      "all_assignments": "All Assignments",
+      "assigned": "Assigned",
+      "unassigned": "Unassigned",
+      "my_evaluations": "My Evaluations",
+      "other_evaluators": "Other Evaluators",
+      "urgent": "Urgent (Pending Approval)",
+      "this_week": "This Week",
+      "own_evaluations_only": "Only your evaluations are displayed",
+      "reset_filters": "Reset Filters",
+      "no_matching_evaluations": "No evaluations match the criteria",
+      "assigned_to_me": "Assigned",
+      "requires_approval": "Requires Approval",
+      "updated_at": "Updated Date",
+      "assignment_status": "Assignment Status"
     },
 
     "evaluation": {
@@ -641,6 +682,7 @@ const BUILT_IN_TRANSLATIONS = {
 
     // ===== Status =====
     "status": {
+      "title": "Status",
       "active": "Active",
       "inactive": "Inactive",
       "pending": "Pending",
@@ -828,7 +870,27 @@ const BUILT_IN_TRANSLATIONS = {
       "evaluation_period": "Kỳ đánh giá",
       "target_info": "Thông tin đối tượng",
       "confirm_submit": "Gửi đánh giá? Bạn không thể chỉnh sửa sau khi gửi.",
-      "evaluator": "Người đánh giá"
+      "evaluator": "Người đánh giá",
+      "my_assignments": "Nhiệm vụ của tôi",
+      "in_progress": "Đang thực hiện",
+      "items_count": " mục",
+      "search_placeholder": "Tìm kiếm theo tên người được đánh giá...",
+      "all_status": "Tất cả trạng thái",
+      "all_users": "Tất cả người dùng",
+      "all_assignments": "Tất cả phân công",
+      "assigned": "Đã phân công",
+      "unassigned": "Chưa phân công",
+      "my_evaluations": "Đánh giá của tôi",
+      "other_evaluators": "Người đánh giá khác",
+      "urgent": "Khẩn cấp (Chờ phê duyệt)",
+      "this_week": "Tuần này",
+      "own_evaluations_only": "Chỉ hiển thị đánh giá của bạn",
+      "reset_filters": "Đặt lại bộ lọc",
+      "no_matching_evaluations": "Không tìm thấy đánh giá phù hợp với tiêu chí",
+      "assigned_to_me": "Được giao",
+      "requires_approval": "Cần phê duyệt",
+      "updated_at": "Ngày cập nhật",
+      "assignment_status": "Trạng thái phân công"
     },
 
     "evaluation": {
@@ -1015,6 +1077,7 @@ const BUILT_IN_TRANSLATIONS = {
 
     // ===== Status =====
     "status": {
+      "title": "Trạng thái",
       "active": "Hoạt động",
       "inactive": "Không hoạt động",
       "pending": "Chờ xử lý",
