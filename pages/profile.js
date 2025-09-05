@@ -189,7 +189,7 @@ export class ProfilePage {
 
   async init() {
     try {
-      this.currentUser = this.app.getCurrentUser();
+      this.currentUser = this.app.currentUser;
       if (!this.currentUser) {
         throw new Error('User not authenticated');
       }

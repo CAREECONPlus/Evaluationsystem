@@ -18,7 +18,7 @@ export class DashboardPage {
       <div class="dashboard-page p-md-4 p-3">
         <div class="page-header mb-4">
           <h1 class="page-title h2 mb-1" data-i18n="nav.dashboard">ダッシュボード</h1>
-          <p class="page-subtitle text-secondary mb-0" data-i18n="dashboard.system_overview">システム概要と最新の活動状況</p>
+          <p class="page-subtitle text-dark mb-0" data-i18n="dashboard.system_overview">システム概要と最新の活動状況</p>
         </div>
 
         <div class="row mb-4" id="stats-cards-container">
