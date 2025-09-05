@@ -578,7 +578,6 @@ export class SidebarComponent {
         }
       }
       
-      console.log("Sidebar: Updated with focus restoration");
     }
   }
 
@@ -600,7 +599,6 @@ export class SidebarComponent {
     document.body.style.overflow = '';
     document.body.classList.remove('mobile-menu-open');
 
-    console.log("Sidebar: Mobile menu closed");
   }
 
   /**
@@ -610,6 +608,5 @@ export class SidebarComponent {
     // イベントリスナーの削除
     window.removeEventListener('hashchange', this.updateActiveStates);
     
-    console.log("Sidebar: Cleaned up");
   }
 }

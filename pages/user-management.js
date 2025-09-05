@@ -275,7 +275,6 @@ export class UserManagementPage {
         this.app.api.getUsers(),
         this.app.api.getJobTypes ? this.app.api.getJobTypes() : Promise.resolve([])
       ]);
-      console.log("UserManagement: Job types loaded:", jobTypes);
 
       // データを保存
       this.users = users || [];
@@ -285,7 +284,6 @@ export class UserManagementPage {
       this.renderUsersList();
       this.updateStats();
 
-      console.log("UserManagement: Data loaded successfully");
 
     } catch (error) {
       console.error("Failed to load users:", error);
@@ -825,7 +823,6 @@ export class UserManagementPage {
     this.forceCloseModal('inviteUserModal');
     this.forceCloseModal('editUserModal');
     
-    console.log("UserManagement: Cleanup completed");
   }
 
   // 職種バッジを生成

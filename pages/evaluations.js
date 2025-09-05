@@ -218,7 +218,6 @@ export class EvaluationsPage {
   }
 
   async init(params) {
-    console.log('EvaluationsPage: Initializing...', params);
     
     // URLパラメータから初期フィルターを設定
     if (params.get('filter')) {
@@ -299,7 +298,6 @@ export class EvaluationsPage {
     this.isLoading = true;
     
     try {
-      console.log('EvaluationsPage: Loading data...');
       
       const currentUser = this.app.currentUser;
       
@@ -331,10 +329,6 @@ export class EvaluationsPage {
 
       this.filteredEvaluations = [...this.evaluations];
       
-      console.log('EvaluationsPage: Data loaded');
-      console.log('- Evaluations:', this.evaluations.length);
-      console.log('- Users:', this.users.length);
-      console.log('- Periods:', this.periods.length);
       
       // ユーザーセレクトボックスを更新
       this.updateUserSelect();
@@ -941,6 +935,5 @@ export class EvaluationsPage {
 
   cleanup() {
     // イベントリスナーのクリーンアップ
-    console.log('EvaluationsPage: Cleanup completed');
   }
 }

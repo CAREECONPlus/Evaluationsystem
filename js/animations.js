@@ -14,7 +14,6 @@ export class AnimationHelper {
     this.setupElementAnimations();
     this.setupScrollAnimations();
     this.respectMotionPreferences();
-    console.log('Animation features initialized');
   }
 
   // ユーザーのモーション設定を確認

@@ -539,6 +539,5 @@ export class HeaderComponent {
       style.remove();
     }
     
-    console.log("Header: Cleaned up");
   }
 }

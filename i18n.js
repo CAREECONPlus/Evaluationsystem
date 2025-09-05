@@ -954,7 +954,6 @@ export class I18n {
       subtree: true
     });
 
-    console.log("I18n: Auto translation enabled");
   }
 
   /**
@@ -972,7 +971,6 @@ export class I18n {
     // 新しいイベントリスナーを設定
     const newSwitchers = document.querySelectorAll('[data-i18n-lang-switcher]');
     newSwitchers.forEach(switcher => {
-      console.log("I18n: Setting up language switcher:", switcher);
       
       // 言語リストを作成
       const supportedLangs = this.getSupportedLanguages();
@@ -1016,7 +1014,6 @@ export class I18n {
       }
     });
 
-    console.log("I18n: Language switcher setup completed for", newSwitchers.length, "elements");
   }
 
   /**
@@ -1088,4 +1085,3 @@ if (typeof window !== 'undefined') {
 // デフォルトエクスポート
 export default i18nInstance;
 
-console.log("I18n: Module loaded and instance created");

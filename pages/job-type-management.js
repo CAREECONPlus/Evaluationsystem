@@ -189,7 +189,6 @@ export class JobTypeManagementPage {
   }
 
   async init(params) {
-    console.log('JobTypeManagement: Initializing...');
     
     // イベントリスナーの設定
     this.setupEventListeners();
@@ -240,7 +239,6 @@ export class JobTypeManagementPage {
     this.isLoading = true;
     
     try {
-      console.log('JobTypeManagement: Loading job types...');
       
       // APIからデータを取得（修正版）
       const response = await this.app.api.getJobTypes();
@@ -258,7 +256,6 @@ export class JobTypeManagementPage {
       
       this.filteredJobTypes = [...this.jobTypes];
       
-      console.log('JobTypeManagement: Job types loaded:', this.jobTypes.length);
       
       // テーブルを更新
       this.renderJobTypeTable();
@@ -543,6 +540,5 @@ export class JobTypeManagementPage {
       }
     }
     
-    console.log('JobTypeManagement: Cleanup completed');
   }
 }

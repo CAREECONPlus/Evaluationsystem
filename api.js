@@ -902,7 +902,6 @@ export class API {
    */
   async getEvaluations(filters = {}) {
     try {
-      console.log("API: Loading evaluations...", filters);
       
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
@@ -910,7 +909,6 @@ export class API {
       }
 
       const tenantId = currentUser.tenantId;
-      console.log("API: Loading evaluations for tenant:", tenantId);
 
       // クエリを構築
       let evaluationsQuery = query(
@@ -943,7 +941,6 @@ export class API {
         return bTime - aTime; // 降順
       });
 
-      console.log("API: Evaluations loaded:", evaluations.length);
       return evaluations;
 
     } catch (error) {
@@ -1000,7 +997,6 @@ async getUsers(statusFilter = null) {
       return bTime - aTime; // 降順
     });
 
-    console.log("API: Users loaded successfully:", users.length);
     return users;
 
   } catch (error) {
@@ -1527,7 +1523,6 @@ async getAllUsers() {
    */
   async getEvaluations(filters = {}) {
     try {
-      console.log("API: Loading evaluations...", filters);
       
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
@@ -1535,7 +1530,6 @@ async getAllUsers() {
       }
 
       const tenantId = currentUser.tenantId;
-      console.log("API: Loading evaluations for tenant:", tenantId);
 
       // クエリを構築
       let evaluationsQuery = query(
@@ -1568,7 +1562,6 @@ async getAllUsers() {
         return bTime - aTime; // 降順
       });
 
-      console.log("API: Evaluations loaded:", evaluations.length);
       return evaluations;
 
     } catch (error) {
@@ -1833,7 +1826,6 @@ async getAllUsers() {
    */
   async getGoalsByStatus(status) {
     try {
-      console.log("API: Loading goals by status:", status);
       
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
@@ -1858,7 +1850,6 @@ async getAllUsers() {
         });
       });
 
-      console.log("API: Goals loaded by status:", goals.length);
       return goals;
 
     } catch (error) {
@@ -1983,7 +1974,6 @@ async getAllUsers() {
    */
   async getSettings() {
     try {
-      console.log("API: Loading settings...");
       
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
@@ -1991,9 +1981,7 @@ async getAllUsers() {
       }
 
       const tenantId = currentUser.tenantId;
-      console.log("API: Loading settings for tenant:", tenantId);
 
-      console.log("API: Fetching settings data...");
 
       // 各設定データを並行取得
       const [jobTypesSnapshot, periodsSnapshot, structuresSnapshot] = await Promise.all([
@@ -2020,10 +2008,6 @@ async getAllUsers() {
         structures[data.jobTypeId || doc.id] = { id: doc.id, ...data };
       });
 
-      console.log("API: Settings loaded successfully:");
-      console.log("- Job types:", jobTypes.length);
-      console.log("- Periods:", periods.length);
-      console.log("- Structures:", Object.keys(structures).length);
 
       return {
         jobTypes,
