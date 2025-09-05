@@ -31,8 +31,12 @@ export class DashboardPage {
               <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 card-title-icon"><i class="fas fa-chart-line me-2 text-primary"></i><span data-i18n="dashboard.performance_chart"></span></h5>
                 <div class="btn-group btn-group-sm" role="group">
-                    <button type="button" class="btn btn-outline-secondary chart-type-btn active" data-type="radar"><i class="fas fa-spider-web"></i></button>
-                    <button type="button" class="btn btn-outline-secondary chart-type-btn" data-type="bar"><i class="fas fa-chart-bar"></i></button>
+                    <button type="button" class="btn btn-outline-secondary chart-type-btn active" data-type="radar" title="レーダーチャート">
+                      <i class="fas fa-circle"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary chart-type-btn" data-type="bar" title="棒グラフ">
+                      <i class="fas fa-chart-bar"></i>
+                    </button>
                 </div>
               </div>
               <div class="card-body" id="performance-chart-container">
