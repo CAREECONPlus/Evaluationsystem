@@ -600,7 +600,6 @@ export class I18n {
     this.loadPromises = new Map();
     this.observers = []; // UIの更新を監視するオブザーバー
     
-    console.log("I18n: Initialized with language:", this.lang, "(Built-in mode:", BYPASS_JSON_FILES, ")");
     
     // 内蔵翻訳データを即座に読み込み
     this.loadBuiltInTranslations();
@@ -620,15 +619,11 @@ export class I18n {
    * 内蔵翻訳データの読み込み
    */
   loadBuiltInTranslations() {
-    console.log("I18n: Loading built-in translations...");
     
     Object.keys(BUILT_IN_TRANSLATIONS).forEach(lang => {
       this.translations[lang] = BUILT_IN_TRANSLATIONS[lang];
-      console.log(`I18n: Built-in translations loaded for ${lang}`, 
-        Object.keys(this.translations[lang]).length, "sections");
     });
     
-    console.log("I18n: All built-in translations loaded successfully");
   }
 
   /**
@@ -666,7 +661,6 @@ export class I18n {
    */
   async init() {
     try {
-      console.log("I18n: Starting initialization...");
       
       // 内蔵翻訳を使用
       this.loadBuiltInTranslations();
@@ -680,7 +674,6 @@ export class I18n {
       // 言語切り替えUIをセットアップ
       this.setupLanguageSwitcher();
       
-      console.log("I18n: Initialization completed");
       return true;
       
     } catch (error) {
@@ -696,7 +689,6 @@ export class I18n {
     // 1. ローカルストレージから取得
     const savedLang = localStorage.getItem('app_language');
     if (savedLang && this.isValidLanguage(savedLang)) {
-      console.log("I18n: Using saved language:", savedLang);
       return savedLang;
     }
 
@@ -889,7 +881,6 @@ export class I18n {
         }
       });
 
-      console.log(`I18n: Updated ${updatedCount} UI elements out of ${elements.length + titleElements.length + placeholderElements.length} found`);
       
       // ページタイトルも更新
       this.updatePageTitle();

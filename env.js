@@ -9,8 +9,6 @@ class Environment {
     this.isLoaded = false;
     this.environment = this.detectEnvironment();
     
-    console.log(`Environment: 検出された環境: ${this.environment}`);
-    console.log(`Environment: hostname=${window.location.hostname}, port=${window.location.port}`);
   }
 
   /**
@@ -57,7 +55,6 @@ class Environment {
     }
 
     try {
-      console.log('Environment: 環境設定を読み込み中...');
 
       // 開発環境では現在の設定を使用（後で削除予定）
       if (this.environment === 'development') {
@@ -76,7 +73,6 @@ class Environment {
       }
 
       this.isLoaded = true;
-      console.log('Environment: 環境設定の読み込み完了');
       
       return this.config;
 
@@ -133,7 +129,6 @@ class Environment {
    */
   loadFromMetaTags() {
     try {
-      console.log('Environment: メタタグから設定を読み込み中...');
 
       const getMetaContent = (name) => {
         const meta = document.querySelector(`meta[name="${name}"]`);
@@ -159,7 +154,6 @@ class Environment {
         throw new Error(`必要なメタタグが不足: ${missing.join(', ')}`);
       }
 
-      console.log('Environment: メタタグから設定を読み込み完了');
       return config;
 
     } catch (error) {
@@ -225,7 +219,6 @@ class Environment {
    */
   debug() {
     if (!this.isLoaded) {
-      console.log('Environment: まだ設定が読み込まれていません');
       return;
     }
 
@@ -241,10 +234,6 @@ class Environment {
       }
     });
 
-    console.log('Environment Debug Info:');
-    console.log('- Environment:', this.environment);
-    console.log('- Config loaded:', this.isLoaded);
-    console.log('- Safe config:', safeConfig);
   }
 
   /**

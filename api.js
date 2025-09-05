@@ -2321,14 +2321,20 @@ async getAllUsers() {
       const snapshot = await getDocs(
         query(
           collection(this.db, 'targetJobTypes'),
-          where('tenantId', '==', tenantId),
-          orderBy('name')
+          where('tenantId', '==', tenantId)
         )
       );
-      return snapshot.docs.map(doc => ({
+      
+      // クライアント側でソート
+      const jobTypes = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+      
+      // 名前でソート
+      jobTypes.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      
+      return jobTypes;
     } catch (error) {
       console.error('Error fetching job types:', error);
       throw new Error('職種の取得に失敗しました');
