@@ -282,16 +282,66 @@ export class SettingsPage {
     // 変更時の処理（必要に応じて実装）
   }
 
-  // 🔧 修正版：Bootstrapモーダルベースの入力
+  // 🔧 修正版：Bootstrapモーダルベースの入力（バックドロップ問題修正）
   async promptForValue(title, message, placeholder = '', currentValue = '') {
     return new Promise((resolve) => {
+      const modalId = `inputModal_${Date.now()}`;
+      let modalInstance = null;
+      let isResolved = false;
+      
+      const cleanup = () => {
+        if (modalInstance) {
+          try {
+            modalInstance.dispose();
+          } catch (e) {
+            console.warn('Modal dispose error:', e);
+          }
+          modalInstance = null;
+        }
+        
+        // 全ての関連要素を削除
+        const modalElement = document.getElementById(modalId);
+        if (modalElement) {
+          modalElement.remove();
+        }
+        
+        // バックドロップを確実に削除
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => backdrop.remove());
+        
+        // bodyの状態をリセット
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+      };
+
+      const safeResolve = (value) => {
+        if (!isResolved) {
+          isResolved = true;
+          cleanup();
+          resolve(value);
+        }
+      };
+
+      // 既存のモーダルとバックドロップを完全にクリーンアップ
+      const existingModals = document.querySelectorAll('[id^="inputModal"]');
+      existingModals.forEach(modal => modal.remove());
+      
+      const existingBackdrops = document.querySelectorAll('.modal-backdrop');
+      existingBackdrops.forEach(backdrop => backdrop.remove());
+      
+      // bodyの状態をリセット
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+
       const modalHTML = `
-        <div class="modal fade" id="inputModal" tabindex="-1">
+        <div class="modal fade" id="${modalId}" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
           <div class="modal-dialog">
             <div class="modal-content">
               <div class="modal-header">
                 <h5 class="modal-title">${this.app.sanitizeHtml(title)}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" id="modal-close-btn"></button>
               </div>
               <div class="modal-body">
                 <div class="mb-3">
@@ -300,7 +350,7 @@ export class SettingsPage {
                 </div>
               </div>
               <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-secondary" id="modal-cancel-btn">キャンセル</button>
                 <button type="button" class="btn btn-primary" id="confirmInput">確認</button>
               </div>
             </div>
@@ -308,28 +358,39 @@ export class SettingsPage {
         </div>
       `;
 
-      // 既存のモーダルを削除
-      const existingModal = document.getElementById('inputModal');
-      if (existingModal) {
-        existingModal.remove();
-      }
-
       // 新しいモーダルを追加
       document.body.insertAdjacentHTML('beforeend', modalHTML);
       
-      const modal = new bootstrap.Modal(document.getElementById('inputModal'));
+      const modalElement = document.getElementById(modalId);
       const inputField = document.getElementById('inputValue');
       const confirmBtn = document.getElementById('confirmInput');
+      const cancelBtn = document.getElementById('modal-cancel-btn');
+      const closeBtn = document.getElementById('modal-close-btn');
+      
+      modalInstance = new bootstrap.Modal(modalElement, {
+        backdrop: 'static',
+        keyboard: false
+      });
 
       // 確認ボタンのイベント
       confirmBtn.addEventListener('click', () => {
         const value = inputField.value.trim();
         if (value) {
-          modal.hide();
-          resolve(value);
+          safeResolve(value);
         } else {
           inputField.classList.add('is-invalid');
+          inputField.focus();
         }
+      });
+
+      // キャンセルボタンのイベント
+      cancelBtn.addEventListener('click', () => {
+        safeResolve(null);
+      });
+
+      // 閉じるボタンのイベント
+      closeBtn.addEventListener('click', () => {
+        safeResolve(null);
       });
 
       // Enterキーでも確認
@@ -339,20 +400,36 @@ export class SettingsPage {
         }
       });
 
-      // キャンセル処理
-      document.getElementById('inputModal').addEventListener('hidden.bs.modal', () => {
-        document.getElementById('inputModal').remove();
-        resolve(null);
+      // Escapeキーでキャンセル
+      modalElement.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          safeResolve(null);
+        }
+      });
+
+      // 予期しないモーダル非表示時のクリーンアップ
+      modalElement.addEventListener('hidden.bs.modal', () => {
+        if (!isResolved) {
+          safeResolve(null);
+        }
       });
 
       // モーダル表示
-      modal.show();
+      modalInstance.show();
       
       // フォーカス設定
-      document.getElementById('inputModal').addEventListener('shown.bs.modal', () => {
+      modalElement.addEventListener('shown.bs.modal', () => {
         inputField.focus();
         inputField.select();
       });
+
+      // タイムアウト保護（30秒後に自動クローズ）
+      setTimeout(() => {
+        if (!isResolved) {
+          console.warn('Modal timeout, force closing');
+          safeResolve(null);
+        }
+      }, 30000);
     });
   }
 
