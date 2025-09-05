@@ -198,8 +198,8 @@ export class DashboardPage {
         ${this.recentEvaluations.map(e => `
           <li class="list-group-item d-flex justify-content-between align-items-center">
             <div>
-              <strong>${this.app.sanitizeHtml(e.targetUserName)}</strong>
-              <small class="d-block text-muted">${this.app.sanitizeHtml(e.periodName)}</small>
+              <strong>${this.app.sanitizeHtml(e.targetUserName || '不明なユーザー')}</strong>
+              <small class="d-block text-muted">${this.app.sanitizeHtml(e.periodName || '期間未設定')}</small>
             </div>
             <span class="badge ${this.app.getStatusBadgeClass(e.status)}">${this.app.i18n.t(`status.${e.status}`)}</span>
           </li>
