@@ -34,7 +34,8 @@ const BUILT_IN_TRANSLATIONS = {
       "help": "ヘルプ",
       "about": "このシステムについて",
       "reports": "レポート",
-      "developer": "開発者管理"
+      "developer": "開発者管理",
+      "multilingual_admin": "多言語管理"
     },
     
     // ===== ダッシュボード翻訳 =====
@@ -414,6 +415,40 @@ const BUILT_IN_TRANSLATIONS = {
       "migration_completed": "データ移行が完了しました",
       "setup_error": "初期データ設定中にエラーが発生しました",
       "migration_error": "データ移行中にエラーが発生しました"
+    },
+
+    // ===== 翻訳品質管理 =====
+    "translation_quality": {
+      "title": "翻訳品質管理",
+      "total_translations": "総翻訳数",
+      "manual_verified": "手動検証済み",
+      "average_quality": "平均品質スコア",
+      "needs_review": "要レビュー",
+      "filter_by_quality": "品質でフィルタ",
+      "high_quality": "高品質 (0.8+)",
+      "medium_quality": "中品質 (0.5-0.8)",
+      "low_quality": "低品質 (<0.5)",
+      "unverified": "未検証",
+      "language_pair": "言語ペア",
+      "translation_service": "翻訳サービス",
+      "automatic": "自動翻訳",
+      "fallback": "フォールバック",
+      "manual": "手動翻訳",
+      "translations_list": "翻訳一覧",
+      "source_text": "原文",
+      "translated_text": "翻訳文",
+      "languages": "言語",
+      "quality": "品質",
+      "service": "サービス",
+      "status": "状態",
+      "no_translations": "該当する翻訳が見つかりません",
+      "edit_translation": "翻訳の編集",
+      "original_text": "原文",
+      "current_translation": "現在の翻訳",
+      "improved_translation": "改善された翻訳",
+      "quality_score": "品質スコア",
+      "improvement_notes": "改善メモ",
+      "quality_analysis": "品質分析"
     }
   },
   
@@ -444,7 +479,8 @@ const BUILT_IN_TRANSLATIONS = {
       "help": "Help",
       "about": "About This System",
       "reports": "Reports",
-      "developer": "Developer Management"
+      "developer": "Developer Management",
+      "multilingual_admin": "Multilingual Management"
     },
     
     // ===== Dashboard =====
@@ -827,6 +863,40 @@ const BUILT_IN_TRANSLATIONS = {
       "migration_error": "Error occurred during data migration"
     },
 
+    // ===== Translation Quality Management =====
+    "translation_quality": {
+      "title": "Translation Quality Management",
+      "total_translations": "Total Translations",
+      "manual_verified": "Manual Verified",
+      "average_quality": "Average Quality Score",
+      "needs_review": "Needs Review",
+      "filter_by_quality": "Filter by Quality",
+      "high_quality": "High Quality (0.8+)",
+      "medium_quality": "Medium Quality (0.5-0.8)",
+      "low_quality": "Low Quality (<0.5)",
+      "unverified": "Unverified",
+      "language_pair": "Language Pair",
+      "translation_service": "Translation Service",
+      "automatic": "Automatic",
+      "fallback": "Fallback",
+      "manual": "Manual",
+      "translations_list": "Translations List",
+      "source_text": "Source Text",
+      "translated_text": "Translated Text",
+      "languages": "Languages",
+      "quality": "Quality",
+      "service": "Service",
+      "status": "Status",
+      "no_translations": "No translations found matching criteria",
+      "edit_translation": "Edit Translation",
+      "original_text": "Original Text",
+      "current_translation": "Current Translation",
+      "improved_translation": "Improved Translation",
+      "quality_score": "Quality Score",
+      "improvement_notes": "Improvement Notes",
+      "quality_analysis": "Quality Analysis"
+    },
+
     // ===== Report =====
     "report": {
       "summary": "Summary",
@@ -879,7 +949,8 @@ const BUILT_IN_TRANSLATIONS = {
       "help": "Trợ giúp",
       "about": "Về hệ thống này",
       "reports": "Báo cáo",
-      "developer": "Quản lý nhà phát triển"
+      "developer": "Quản lý nhà phát triển",
+      "multilingual_admin": "Quản lý đa ngôn ngữ"
     },
     
     // ===== Dashboard =====
@@ -1260,6 +1331,40 @@ const BUILT_IN_TRANSLATIONS = {
       "migration_completed": "Di chuyển dữ liệu hoàn tất",
       "setup_error": "Lỗi xảy ra trong quá trình thiết lập dữ liệu ban đầu",
       "migration_error": "Lỗi xảy ra trong quá trình di chuyển dữ liệu"
+    },
+
+    // ===== Quản lý chất lượng dịch thuật =====
+    "translation_quality": {
+      "title": "Quản lý chất lượng dịch thuật",
+      "total_translations": "Tổng số dịch thuật",
+      "manual_verified": "Đã xác minh thủ công",
+      "average_quality": "Điểm chất lượng trung bình",
+      "needs_review": "Cần xem xét",
+      "filter_by_quality": "Lọc theo chất lượng",
+      "high_quality": "Chất lượng cao (0.8+)",
+      "medium_quality": "Chất lượng trung bình (0.5-0.8)",
+      "low_quality": "Chất lượng thấp (<0.5)",
+      "unverified": "Chưa xác minh",
+      "language_pair": "Cặp ngôn ngữ",
+      "translation_service": "Dịch vụ dịch thuật",
+      "automatic": "Tự động",
+      "fallback": "Dự phòng",
+      "manual": "Thủ công",
+      "translations_list": "Danh sách dịch thuật",
+      "source_text": "Văn bản gốc",
+      "translated_text": "Văn bản đã dịch",
+      "languages": "Ngôn ngữ",
+      "quality": "Chất lượng",
+      "service": "Dịch vụ",
+      "status": "Trạng thái",
+      "no_translations": "Không tìm thấy dịch thuật phù hợp với tiêu chí",
+      "edit_translation": "Chỉnh sửa dịch thuật",
+      "original_text": "Văn bản gốc",
+      "current_translation": "Dịch thuật hiện tại",
+      "improved_translation": "Dịch thuật cải thiện",
+      "quality_score": "Điểm chất lượng",
+      "improvement_notes": "Ghi chú cải thiện",
+      "quality_analysis": "Phân tích chất lượng"
     },
 
     // ===== Report =====

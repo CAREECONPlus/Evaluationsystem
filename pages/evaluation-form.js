@@ -101,22 +101,18 @@ export class EvaluationFormPage {
     try {
       const currentUser = this.app.currentUser;
       
-      // 権限に応じて評価対象者を取得
-      if (currentUser.role === 'worker') {
-        // 作業員は自分のみを評価対象とする
-        this.usersForEvaluation = [currentUser];
-      } else if (currentUser.role === 'evaluator') {
-        // 評価者は自分と部下を評価対象とする
-        const subordinates = await this.app.api.getSubordinates();
-        this.usersForEvaluation = [currentUser, ...subordinates];
-      } else if (currentUser.role === 'admin') {
-        // 管理者は全ユーザーを評価対象とする
-        this.usersForEvaluation = await this.app.api.getUsers('active');
-      }
-
-      // 評価期間を取得
-      const settings = await this.app.api.getSettings();
+      // 並行でデータを取得
+      const [usersData, settings, multilingualData] = await Promise.all([
+        this.loadUsersData(currentUser),
+        this.app.api.getSettings(),
+        this.loadMultilingualData()
+      ]);
+      
+      this.usersForEvaluation = usersData;
       this.periods = settings.periods;
+      this.multilingualData = multilingualData;
+      
+      console.log("Loaded multilingual data:", this.multilingualData);
       
       this.renderUserSelect();
       this.renderPeriodSelect();
@@ -124,6 +120,53 @@ export class EvaluationFormPage {
     } catch (error) {
       console.error("Error loading initial data:", error);
       this.app.showError("初期データの読み込みに失敗しました");
+    }
+  }
+
+  /**
+   * ユーザーデータの読み込み（権限に応じて）
+   */
+  async loadUsersData(currentUser) {
+    try {
+      // 権限に応じて評価対象者を取得
+      if (currentUser.role === 'worker') {
+        return [currentUser];
+      } else if (currentUser.role === 'evaluator') {
+        const subordinates = await this.app.api.getSubordinates();
+        return [currentUser, ...subordinates];
+      } else if (currentUser.role === 'admin') {
+        return await this.app.api.getUsers('active');
+      }
+      return [currentUser];
+    } catch (error) {
+      console.error('Error loading users data:', error);
+      return [currentUser];
+    }
+  }
+
+  /**
+   * 多言語データの読み込み
+   */
+  async loadMultilingualData() {
+    try {
+      if (this.app.api.multilingual) {
+        const data = await this.app.api.multilingual.getAllI18nData(this.currentLanguage);
+        return data;
+      }
+      return {
+        categories: [],
+        evaluationItems: [],
+        jobTypes: [],
+        evaluationPeriods: []
+      };
+    } catch (error) {
+      console.error('Error loading multilingual data:', error);
+      return {
+        categories: [],
+        evaluationItems: [],
+        jobTypes: [],
+        evaluationPeriods: []
+      };
     }
   }
 

@@ -20,6 +20,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
 
 import { MultilingualAPI } from './api/multilingual-api.js';
+import { TranslationService } from './services/translation-service.js';
+import { DynamicContentTranslator } from './services/dynamic-content-translator.js';
 
 export class API {
   constructor(app) {
@@ -27,6 +29,8 @@ export class API {
     this.auth = app.auth;
     this.db = getFirestore(app.auth.firebaseApp);
     this.multilingual = new MultilingualAPI(app);
+    this.translationService = new TranslationService(app);
+    this.contentTranslator = new DynamicContentTranslator(app);
   }
 
   // ===== Validation Methods =====
