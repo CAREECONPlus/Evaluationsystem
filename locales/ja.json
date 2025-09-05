@@ -408,3 +408,21 @@
     "supervisor": "監督者"
   }
 }
+
+{
+  "common": {
+    "notifications": "通知",
+    "mark_all_read": "すべて既読",
+    "no_notifications": "通知はありません",
+    "quick_actions": "クイックアクション"
+  },
+  "notifications": {
+    "type": {
+      "evaluation_pending": "評価承認待ち",
+      "evaluation_completed": "評価完了"
+    },
+    "evaluation_pending": "{{userName}}さんの評価が承認待ちです",
+    "admin_evaluation_pending": "{{userName}}さんの評価が{{evaluatorName}}の承認待ちです"
+  }
+}
+
