@@ -207,7 +207,8 @@ export class EvaluationReportPage {
       return;
     }
 
-    if (this.isInitialized) return;
+    // 既存のチャートをクリーンアップ
+    this.cleanup();
 
     try {
       await this.loadReportData();
@@ -341,150 +342,232 @@ export class EvaluationReportPage {
   }
 
   renderCharts() {
-    this.renderPerformanceTrendChart();
-    this.renderStatusDistributionChart();
-    this.renderScoreComparisonChart();
+    // すべてのチャートを先に破棄
+    this.destroyAllCharts();
     
-    if (this.app.hasRole('admin')) {
-      this.renderAdminCharts();
-    }
+    // 少し待ってからチャートを再作成
+    setTimeout(() => {
+      this.renderPerformanceTrendChart();
+      this.renderStatusDistributionChart();
+      this.renderScoreComparisonChart();
+      
+      if (this.app.hasRole('admin')) {
+        this.renderAdminCharts();
+      }
+    }, 100);
+  }
+
+  destroyAllCharts() {
+    Object.values(this.chartInstances).forEach(chart => {
+      if (chart && typeof chart.destroy === 'function') {
+        try {
+          chart.destroy();
+        } catch (error) {
+          console.warn("Reports: Error destroying chart:", error);
+        }
+      }
+    });
+    this.chartInstances = {};
   }
 
   renderPerformanceTrendChart() {
     const canvas = document.getElementById('performanceTrendChart');
-    if (!canvas || typeof Chart === 'undefined') return;
-
-    if (this.chartInstances.performanceTrend) {
-      this.chartInstances.performanceTrend.destroy();
+    if (!canvas || typeof Chart === 'undefined') {
+      console.warn("Reports: Cannot render performance trend chart - canvas or Chart.js not available");
+      return;
     }
 
-    const ctx = canvas.getContext('2d');
-    const trends = this.reportData.trends || this.getDefaultTrends();
+    // 既存のチャートがある場合は破棄
+    if (this.chartInstances.performanceTrend) {
+      try {
+        this.chartInstances.performanceTrend.destroy();
+        this.chartInstances.performanceTrend = null;
+      } catch (error) {
+        console.warn("Reports: Error destroying existing performance trend chart:", error);
+      }
+    }
 
-    this.chartInstances.performanceTrend = new Chart(ctx, {
-      type: 'line',
-      data: trends,
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            beginAtZero: true,
-            max: 5,
-            title: {
-              display: true,
-              text: 'スコア'
+    // Chart.jsのキャッシュからも削除
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
+    }
+
+    try {
+      const ctx = canvas.getContext('2d');
+      const trends = this.reportData.trends || this.getDefaultTrends();
+
+      this.chartInstances.performanceTrend = new Chart(ctx, {
+        type: 'line',
+        data: trends,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 5,
+              title: {
+                display: true,
+                text: 'スコア'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: '期間'
+              }
             }
           },
-          x: {
-            title: {
+          plugins: {
+            legend: {
               display: true,
-              text: '期間'
+              position: 'top'
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false
             }
-          }
-        },
-        plugins: {
-          legend: {
-            display: true,
-            position: 'top'
-          },
-          tooltip: {
-            mode: 'index',
-            intersect: false
           }
         }
-      }
-    });
+      });
+      
+      console.log("Reports: Performance trend chart created successfully");
+    } catch (error) {
+      console.error("Reports: Failed to create performance trend chart:", error);
+    }
   }
 
   renderStatusDistributionChart() {
     const canvas = document.getElementById('statusDistributionChart');
-    if (!canvas || typeof Chart === 'undefined') return;
-
-    if (this.chartInstances.statusDistribution) {
-      this.chartInstances.statusDistribution.destroy();
+    if (!canvas || typeof Chart === 'undefined') {
+      console.warn("Reports: Cannot render status distribution chart - canvas or Chart.js not available");
+      return;
     }
 
-    // ステータス分布データを計算
-    const evaluations = this.reportData.evaluations || [];
-    const statusCounts = evaluations.reduce((acc, evaluation) => {
-      acc[evaluation.status] = (acc[evaluation.status] || 0) + 1;
-      return acc;
-    }, {});
+    // 既存のチャートがある場合は破棄
+    if (this.chartInstances.statusDistribution) {
+      try {
+        this.chartInstances.statusDistribution.destroy();
+        this.chartInstances.statusDistribution = null;
+      } catch (error) {
+        console.warn("Reports: Error destroying existing status distribution chart:", error);
+      }
+    }
 
-    const ctx = canvas.getContext('2d');
-    
-    this.chartInstances.statusDistribution = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: Object.keys(statusCounts).map(status => this.getStatusDisplayName(status)),
-        datasets: [{
-          data: Object.values(statusCounts),
-          backgroundColor: [
-            '#28a745',
-            '#ffc107', 
-            '#dc3545',
-            '#17a2b8',
-            '#6c757d'
-          ]
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'bottom'
+    // Chart.jsのキャッシュからも削除
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
+    }
+
+    try {
+      // ステータス分布データを計算
+      const evaluations = this.reportData.evaluations || [];
+      const statusCounts = evaluations.reduce((acc, evaluation) => {
+        acc[evaluation.status] = (acc[evaluation.status] || 0) + 1;
+        return acc;
+      }, {});
+
+      const ctx = canvas.getContext('2d');
+      
+      this.chartInstances.statusDistribution = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(statusCounts).map(status => this.getStatusDisplayName(status)),
+          datasets: [{
+            data: Object.values(statusCounts),
+            backgroundColor: [
+              '#28a745',
+              '#ffc107', 
+              '#dc3545',
+              '#17a2b8',
+              '#6c757d'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom'
+            }
           }
         }
-      }
-    });
+      });
+      
+      console.log("Reports: Status distribution chart created successfully");
+    } catch (error) {
+      console.error("Reports: Failed to create status distribution chart:", error);
+    }
   }
 
   renderScoreComparisonChart() {
     const canvas = document.getElementById('scoreComparisonChart');
-    if (!canvas || typeof Chart === 'undefined') return;
-
-    if (this.chartInstances.scoreComparison) {
-      this.chartInstances.scoreComparison.destroy();
+    if (!canvas || typeof Chart === 'undefined') {
+      console.warn("Reports: Cannot render score comparison chart - canvas or Chart.js not available");
+      return;
     }
 
-    const ctx = canvas.getContext('2d');
-    
-    // 自己評価vs評価者評価のデータを生成（ダミーデータ）
-    const categories = ['コミュニケーション', '技術力', '責任感', '協調性', 'リーダーシップ'];
-    const selfScores = [4.2, 3.8, 4.5, 4.1, 3.6];
-    const evaluatorScores = [4.0, 4.2, 4.3, 4.0, 3.8];
+    // 既存のチャートがある場合は破棄
+    if (this.chartInstances.scoreComparison) {
+      try {
+        this.chartInstances.scoreComparison.destroy();
+        this.chartInstances.scoreComparison = null;
+      } catch (error) {
+        console.warn("Reports: Error destroying existing score comparison chart:", error);
+      }
+    }
 
-    this.chartInstances.scoreComparison = new Chart(ctx, {
-      type: 'radar',
-      data: {
-        labels: categories,
-        datasets: [{
-          label: '自己評価',
-          data: selfScores,
-          borderColor: 'rgba(54, 162, 235, 1)',
-          backgroundColor: 'rgba(54, 162, 235, 0.2)',
-          pointBackgroundColor: 'rgba(54, 162, 235, 1)'
-        }, {
-          label: '評価者評価',
-          data: evaluatorScores,
-          borderColor: 'rgba(255, 99, 132, 1)',
-          backgroundColor: 'rgba(255, 99, 132, 0.2)',
-          pointBackgroundColor: 'rgba(255, 99, 132, 1)'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          r: {
-            beginAtZero: true,
-            max: 5
+    // Chart.jsのキャッシュからも削除
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
+    }
+
+    try {
+      const ctx = canvas.getContext('2d');
+      
+      // 自己評価vs評価者評価のデータを生成（ダミーデータ）
+      const categories = ['コミュニケーション', '技術力', '責任感', '協調性', 'リーダーシップ'];
+      const selfScores = [4.2, 3.8, 4.5, 4.1, 3.6];
+      const evaluatorScores = [4.0, 4.2, 4.3, 4.0, 3.8];
+
+      this.chartInstances.scoreComparison = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: categories,
+          datasets: [{
+            label: '自己評価',
+            data: selfScores,
+            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            pointBackgroundColor: 'rgba(54, 162, 235, 1)'
+          }, {
+            label: '評価者評価',
+            data: evaluatorScores,
+            borderColor: 'rgba(255, 99, 132, 1)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            pointBackgroundColor: 'rgba(255, 99, 132, 1)'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              beginAtZero: true,
+              max: 5
+            }
           }
         }
-      }
-    });
+      });
+      
+      console.log("Reports: Score comparison chart created successfully");
+    } catch (error) {
+      console.error("Reports: Failed to create score comparison chart:", error);
+    }
   }
 
   renderAdminCharts() {
@@ -496,92 +579,135 @@ export class EvaluationReportPage {
 
   renderDepartmentComparisonChart() {
     const canvas = document.getElementById('departmentComparisonChart');
-    if (!canvas || typeof Chart === 'undefined') return;
-
-    if (this.chartInstances.departmentComparison) {
-      this.chartInstances.departmentComparison.destroy();
+    if (!canvas || typeof Chart === 'undefined') {
+      console.warn("Reports: Cannot render department comparison chart - canvas or Chart.js not available");
+      return;
     }
 
-    const ctx = canvas.getContext('2d');
-    
-    // ダミーデータ
-    const departments = ['開発部', '営業部', '管理部', '人事部'];
-    const scores = [4.2, 3.8, 4.0, 3.9];
+    // 既存のチャートがある場合は破棄
+    if (this.chartInstances.departmentComparison) {
+      try {
+        this.chartInstances.departmentComparison.destroy();
+        this.chartInstances.departmentComparison = null;
+      } catch (error) {
+        console.warn("Reports: Error destroying existing department comparison chart:", error);
+      }
+    }
 
-    this.chartInstances.departmentComparison = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: departments,
-        datasets: [{
-          label: '平均スコア',
-          data: scores,
-          backgroundColor: 'rgba(75, 192, 192, 0.6)',
-          borderColor: 'rgba(75, 192, 192, 1)',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            beginAtZero: true,
-            max: 5
-          }
+    // Chart.jsのキャッシュからも削除
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
+    }
+
+    try {
+      const ctx = canvas.getContext('2d');
+      
+      // ダミーデータ
+      const departments = ['開発部', '営業部', '管理部', '人事部'];
+      const scores = [4.2, 3.8, 4.0, 3.9];
+
+      this.chartInstances.departmentComparison = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: departments,
+          datasets: [{
+            label: '平均スコア',
+            data: scores,
+            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+          }]
         },
-        plugins: {
-          title: {
-            display: true,
-            text: '部署別平均スコア'
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 5
+            }
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: '部署別平均スコア'
+            }
           }
         }
-      }
-    });
+      });
+      
+      console.log("Reports: Department comparison chart created successfully");
+    } catch (error) {
+      console.error("Reports: Failed to create department comparison chart:", error);
+    }
   }
 
   renderEvaluatorEfficiencyChart() {
     const canvas = document.getElementById('evaluatorEfficiencyChart');
-    if (!canvas || typeof Chart === 'undefined') return;
-
-    if (this.chartInstances.evaluatorEfficiency) {
-      this.chartInstances.evaluatorEfficiency.destroy();
+    if (!canvas || typeof Chart === 'undefined') {
+      console.warn("Reports: Cannot render evaluator efficiency chart - canvas or Chart.js not available");
+      return;
     }
 
-    const ctx = canvas.getContext('2d');
-    
-    // ダミーデータ
-    const evaluators = ['田中', '佐藤', '山田', '鈴木'];
-    const efficiency = [92, 88, 95, 85];
+    // 既存のチャートがある場合は破棄
+    if (this.chartInstances.evaluatorEfficiency) {
+      try {
+        this.chartInstances.evaluatorEfficiency.destroy();
+        this.chartInstances.evaluatorEfficiency = null;
+      } catch (error) {
+        console.warn("Reports: Error destroying existing evaluator efficiency chart:", error);
+      }
+    }
 
-    this.chartInstances.evaluatorEfficiency = new Chart(ctx, {
-      type: 'horizontalBar',
-      data: {
-        labels: evaluators,
-        datasets: [{
-          label: '評価完了率(%)',
-          data: efficiency,
-          backgroundColor: 'rgba(153, 102, 255, 0.6)',
-          borderColor: 'rgba(153, 102, 255, 1)',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: {
-            beginAtZero: true,
-            max: 100
-          }
+    // Chart.jsのキャッシュからも削除
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
+    }
+
+    try {
+      const ctx = canvas.getContext('2d');
+      
+      // ダミーデータ
+      const evaluators = ['田中', '佐藤', '山田', '鈴木'];
+      const efficiency = [92, 88, 95, 85];
+
+      this.chartInstances.evaluatorEfficiency = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: evaluators,
+          datasets: [{
+            label: '評価完了率(%)',
+            data: efficiency,
+            backgroundColor: 'rgba(153, 102, 255, 0.6)',
+            borderColor: 'rgba(153, 102, 255, 1)',
+            borderWidth: 1
+          }]
         },
-        plugins: {
-          title: {
-            display: true,
-            text: '評価者別完了率'
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              beginAtZero: true,
+              max: 100
+            }
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: '評価者別完了率'
+            }
           }
         }
-      }
-    });
+      });
+      
+      console.log("Reports: Evaluator efficiency chart created successfully");
+    } catch (error) {
+      console.error("Reports: Failed to create evaluator efficiency chart:", error);
+    }
   }
 
   renderTopPerformers() {
@@ -762,12 +888,17 @@ export class EvaluationReportPage {
 
   cleanup() {
     // チャートインスタンスを破棄
-    Object.values(this.chartInstances).forEach(chart => {
-      if (chart && typeof chart.destroy === 'function') {
-        chart.destroy();
-      }
-    });
-    this.chartInstances = {};
+    this.destroyAllCharts();
     this.isInitialized = false;
+    
+    // イベントリスナーもクリーンアップ
+    const refreshBtn = document.getElementById('refreshDataBtn');
+    if (refreshBtn) {
+      refreshBtn.replaceWith(refreshBtn.cloneNode(true));
+    }
+    
+    document.querySelectorAll('.time-range-btn').forEach(btn => {
+      btn.replaceWith(btn.cloneNode(true));
+    });
   }
 }
