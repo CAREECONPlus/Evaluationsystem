@@ -14,6 +14,7 @@ import { RegisterPage } from "./pages/register.js"
 import { JobTypeManagementPage } from "./pages/job-type-management.js"
 import { InvitationAcceptPage } from "./pages/invitation-accept.js"
 import { ProfilePage } from "./pages/profile.js"
+import { HelpPage } from "./pages/help.js"
 
 export class Router {
   constructor(app) {
@@ -100,6 +101,11 @@ export class Router {
         auth: true,
         title: "プロフィール",
       },
+      "/help": {
+        component: HelpPage,
+        auth: true,
+        title: "ヘルプ",
+      },
     }
 
     this.currentPageInstance = null
@@ -138,11 +144,13 @@ export class Router {
         return
       }
 
-      // 認証済みユーザーが公開ページにアクセスする場合の処理
-      if (!routeConfig.auth && this.app.isAuthenticated() && !path.includes("register")) {
-        console.log("Router: Already authenticated, redirecting to /dashboard")
-        this.navigate("#/dashboard")
-        return
+      // 認証済みユーザーが公開ページ（ログインのみ）にアクセスする場合の処理
+      if (!routeConfig.auth && this.app.isAuthenticated() && (path === "/login" || path.includes("register"))) {
+        if (path === "/login") {
+          console.log("Router: Already authenticated, redirecting to /dashboard")
+          this.navigate("#/dashboard")
+          return
+        }
       }
 
       // 権限チェック
