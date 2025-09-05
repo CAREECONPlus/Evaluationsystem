@@ -838,21 +838,37 @@ export class API {
       const recentSnapshot = await getDocs(recentQuery);
       const recentEvaluations = [];
 
+      // ユーザー情報と期間情報を並行取得するためのPromise配列
+      const enrichmentPromises = [];
+      
       recentSnapshot.forEach((doc) => {
-        recentEvaluations.push({
+        const data = doc.data();
+        const evaluation = {
           id: doc.id,
-          ...doc.data()
-        });
+          ...data
+        };
+        recentEvaluations.push(evaluation);
+        
+        // ユーザー名と期間名を取得するPromiseを追加
+        enrichmentPromises.push(this.enrichEvaluationData(evaluation, tenantId));
       });
 
+      // 全ての追加情報を並行取得
+      const enrichedResults = await Promise.allSettled(enrichmentPromises);
+      
+      // 成功したものだけを取得
+      const finalEvaluations = enrichedResults
+        .filter(result => result.status === 'fulfilled')
+        .map(result => result.value);
+
       // 更新日時でソート
-      recentEvaluations.sort((a, b) => {
+      finalEvaluations.sort((a, b) => {
         const aTime = a.updatedAt ? (a.updatedAt.toDate ? a.updatedAt.toDate() : new Date(a.updatedAt)) : new Date(0);
         const bTime = b.updatedAt ? (b.updatedAt.toDate ? b.updatedAt.toDate() : new Date(b.updatedAt)) : new Date(0);
         return bTime - aTime; // 降順
       });
 
-      return recentEvaluations;
+      return finalEvaluations;
 
     } catch (error) {
       console.error("API: Error loading recent evaluations:", error);
@@ -1459,21 +1475,37 @@ async getAllUsers() {
       const recentSnapshot = await getDocs(recentQuery);
       const recentEvaluations = [];
 
+      // ユーザー情報と期間情報を並行取得するためのPromise配列
+      const enrichmentPromises = [];
+      
       recentSnapshot.forEach((doc) => {
-        recentEvaluations.push({
+        const data = doc.data();
+        const evaluation = {
           id: doc.id,
-          ...doc.data()
-        });
+          ...data
+        };
+        recentEvaluations.push(evaluation);
+        
+        // ユーザー名と期間名を取得するPromiseを追加
+        enrichmentPromises.push(this.enrichEvaluationData(evaluation, tenantId));
       });
 
+      // 全ての追加情報を並行取得
+      const enrichedResults = await Promise.allSettled(enrichmentPromises);
+      
+      // 成功したものだけを取得
+      const finalEvaluations = enrichedResults
+        .filter(result => result.status === 'fulfilled')
+        .map(result => result.value);
+
       // 更新日時でソート
-      recentEvaluations.sort((a, b) => {
+      finalEvaluations.sort((a, b) => {
         const aTime = a.updatedAt ? (a.updatedAt.toDate ? a.updatedAt.toDate() : new Date(a.updatedAt)) : new Date(0);
         const bTime = b.updatedAt ? (b.updatedAt.toDate ? b.updatedAt.toDate() : new Date(b.updatedAt)) : new Date(0);
         return bTime - aTime; // 降順
       });
 
-      return recentEvaluations;
+      return finalEvaluations;
 
     } catch (error) {
       console.error("API: Error loading recent evaluations:", error);
@@ -2302,6 +2334,60 @@ async getAllUsers() {
     } catch (error) {
       console.error('Error fetching job types:', error);
       throw new Error('職種の取得に失敗しました');
+    }
+  }
+
+  /**
+   * 評価データにユーザー名と期間名を追加
+   */
+  async enrichEvaluationData(evaluation, tenantId) {
+    try {
+      let targetUserName = evaluation.targetUserName || '不明なユーザー';
+      let periodName = evaluation.periodName || '期間未設定';
+      
+      // targetUserId から targetUserName を取得
+      if (evaluation.targetUserId && !evaluation.targetUserName) {
+        try {
+          const userDoc = await getDoc(doc(this.db, "users", evaluation.targetUserId));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            targetUserName = userData.name || userData.displayName || '不明なユーザー';
+          }
+        } catch (userError) {
+          console.warn("Failed to fetch user data:", userError);
+        }
+      }
+      
+      // periodId から periodName を取得
+      if (evaluation.periodId && !evaluation.periodName) {
+        try {
+          const periodQuery = query(
+            collection(this.db, "evaluationPeriods"),
+            where("tenantId", "==", tenantId),
+            where("id", "==", evaluation.periodId)
+          );
+          const periodSnapshot = await getDocs(periodQuery);
+          if (!periodSnapshot.empty) {
+            const periodData = periodSnapshot.docs[0].data();
+            periodName = periodData.name || '期間未設定';
+          }
+        } catch (periodError) {
+          console.warn("Failed to fetch period data:", periodError);
+        }
+      }
+      
+      return {
+        ...evaluation,
+        targetUserName,
+        periodName
+      };
+    } catch (error) {
+      console.warn("Failed to enrich evaluation data:", error);
+      return {
+        ...evaluation,
+        targetUserName: evaluation.targetUserName || '不明なユーザー',
+        periodName: evaluation.periodName || '期間未設定'
+      };
     }
   }
 }
