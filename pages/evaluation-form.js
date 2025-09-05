@@ -2,6 +2,8 @@
  * Evaluation Form Page Component (完全実装版)
  * 評価フォームページコンポーネント
  */
+import { DynamicContentTranslator } from '../services/dynamic-content-translator.js';
+
 export class EvaluationFormPage {
   constructor(app) {
     this.app = app;
@@ -15,6 +17,13 @@ export class EvaluationFormPage {
     this.existingEvaluation = null;
     this.isReadOnly = false;
     this.isDraft = false;
+    this.contentTranslator = new DynamicContentTranslator(app);
+    this.multilingualData = {
+      categories: [],
+      evaluationItems: [],
+      jobTypes: []
+    };
+    this.currentLanguage = app.i18n.getCurrentLanguage();
   }
 
   async render() {

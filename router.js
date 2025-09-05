@@ -17,6 +17,7 @@ import { InvitationAcceptPage } from "./pages/invitation-accept.js"
 import { ProfilePage } from "./pages/profile.js"
 import { HelpPage } from "./pages/help.js"
 import { MultilingualAdminPage } from "./pages/multilingual-admin.js"
+import { TranslationQualityManagementPage } from "./pages/translation-quality-management.js"
 
 export class Router {
   constructor(app) {
@@ -118,6 +119,12 @@ export class Router {
         auth: true,
         roles: ["admin"],
         title: "多言語管理",
+      },
+      "/translation-quality": {
+        component: TranslationQualityManagementPage,
+        auth: true,
+        roles: ["admin"],
+        title: "翻訳品質管理",
       },
     }
 

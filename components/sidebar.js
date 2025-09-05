@@ -187,6 +187,20 @@ export class SidebarComponent {
                 <span data-i18n="nav.settings">設定</span>
               </a>
             </li>
+            <!-- 多言語管理（管理者のみ） -->
+            <li class="nav-item" role="none">
+              <a 
+                class="nav-link text-white d-flex align-items-center ${this.isActive('/multilingual-admin') ? 'active' : ''}" 
+                href="#/multilingual-admin" 
+                data-link
+                role="menuitem"
+                aria-current="${this.isActive('/multilingual-admin') ? 'page' : 'false'}"
+                tabindex="0"
+              >
+                <i class="fas fa-language nav-icon me-3" aria-hidden="true"></i>
+                <span data-i18n="nav.multilingual_admin">多言語管理</span>
+              </a>
+            </li>
             ` : ''}
 
             ${isDeveloper ? `
