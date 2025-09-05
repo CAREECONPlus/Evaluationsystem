@@ -18,7 +18,7 @@ export class DashboardPage {
       <div class="dashboard-page p-md-4 p-3">
         <div class="page-header mb-4">
           <h1 class="page-title h2 mb-1" data-i18n="nav.dashboard">ダッシュボード</h1>
-          <p class="page-subtitle text-muted mb-0" data-i18n="dashboard.system_overview">システム概要と最新の活動状況</p>
+          <p class="page-subtitle text-secondary mb-0" data-i18n="dashboard.system_overview">システム概要と最新の活動状況</p>
         </div>
 
         <div class="row mb-4" id="stats-cards-container">
@@ -31,10 +31,10 @@ export class DashboardPage {
               <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 card-title-icon"><i class="fas fa-chart-line me-2 text-primary"></i><span data-i18n="dashboard.performance_chart"></span></h5>
                 <div class="btn-group btn-group-sm" role="group">
-                    <button type="button" class="btn btn-outline-secondary chart-type-btn active" data-type="radar" title="レーダーチャート">
+                    <button type="button" class="btn btn-primary chart-type-btn active" data-type="radar" title="レーダーチャート">
                       <i class="fas fa-circle"></i>
                     </button>
-                    <button type="button" class="btn btn-outline-secondary chart-type-btn" data-type="bar" title="棒グラフ">
+                    <button type="button" class="btn btn-outline-primary chart-type-btn" data-type="bar" title="棒グラフ">
                       <i class="fas fa-chart-bar"></i>
                     </button>
                 </div>
@@ -264,8 +264,22 @@ export class DashboardPage {
 
   switchChartType(type) {
     this.currentChartType = type;
-    document.querySelectorAll('.chart-type-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelector(`.chart-type-btn[data-type="${type}"]`).classList.add('active');
+    
+    // 全てのボタンからactiveクラスを削除し、通常の状態にリセット
+    document.querySelectorAll('.chart-type-btn').forEach(btn => {
+      btn.classList.remove('active');
+      btn.classList.remove('btn-primary');
+      btn.classList.add('btn-outline-primary');
+    });
+    
+    // 選択されたボタンをアクティブ状態にする
+    const activeBtn = document.querySelector(`.chart-type-btn[data-type="${type}"]`);
+    if (activeBtn) {
+      activeBtn.classList.add('active');
+      activeBtn.classList.remove('btn-outline-primary');
+      activeBtn.classList.add('btn-primary');
+    }
+    
     this.initializeChart();
   }
 
