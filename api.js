@@ -1062,6 +1062,53 @@ async getAllUsers() {
   }
 
   /**
+   * 評価者担当のユーザー一覧を取得
+   */
+  async getUsersByEvaluator(evaluatorId) {
+    try {
+      console.log("API: Loading users by evaluator:", evaluatorId);
+      
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("ユーザー情報またはテナント情報が見つかりません");
+      }
+
+      const tenantId = currentUser.tenantId;
+
+      const usersQuery = query(
+        collection(this.db, "users"),
+        where("tenantId", "==", tenantId),
+        where("evaluatorId", "==", evaluatorId)
+      );
+
+      const usersSnapshot = await getDocs(usersQuery);
+      const users = [];
+
+      usersSnapshot.forEach((doc) => {
+        const userData = {
+          id: doc.id,
+          ...doc.data()
+        };
+        users.push(userData);
+      });
+
+      users.sort((a, b) => {
+        const aTime = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
+        const bTime = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
+        return bTime - aTime;
+      });
+
+      console.log("API: Users by evaluator loaded:", users.length);
+      return users;
+
+    } catch (error) {
+      console.error("API: Error loading users by evaluator:", error);
+      this.handleError(error, '評価者担当ユーザーの読み込み');
+      throw error;
+    }
+  }
+
+  /**
    * 特定のユーザー情報を取得
    */
   async getUser(userId) {
@@ -2389,5 +2436,209 @@ async getAllUsers() {
         periodName: evaluation.periodName || '期間未設定'
       };
     }
+  }
+
+  // ===== Report Management =====
+
+  /**
+   * レポート統計データを取得
+   */
+  async getReportStatistics(timeRange = 'last6months') {
+    try {
+      console.log("API: Loading report statistics for range:", timeRange);
+      
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("ユーザー情報またはテナント情報が見つかりません");
+      }
+
+      const tenantId = currentUser.tenantId;
+      const dateFilter = this.getDateFilterForTimeRange(timeRange);
+
+      // 評価データを取得
+      let evaluationsQuery = query(
+        collection(this.db, "evaluations"),
+        where("tenantId", "==", tenantId)
+      );
+
+      if (dateFilter) {
+        evaluationsQuery = query(evaluationsQuery, where("createdAt", ">=", dateFilter));
+      }
+
+      const evaluationsSnapshot = await getDocs(evaluationsQuery);
+      const evaluations = [];
+
+      evaluationsSnapshot.forEach((doc) => {
+        evaluations.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+
+      // 統計を計算
+      const totalEvaluations = evaluations.length;
+      const completedEvaluations = evaluations.filter(e => e.status === 'completed').length;
+      
+      // 平均スコア計算
+      const completedWithScores = evaluations.filter(e => e.status === 'completed' && e.finalScore);
+      const averageScore = completedWithScores.length > 0 
+        ? completedWithScores.reduce((sum, e) => sum + (parseFloat(e.finalScore) || 0), 0) / completedWithScores.length
+        : 0;
+
+      // 改善率計算（簡易版）
+      const improvementRate = Math.random() * 10; // ダミーデータ
+
+      const statistics = {
+        totalEvaluations,
+        completedEvaluations,
+        averageScore,
+        improvementRate
+      };
+
+      console.log("API: Report statistics loaded:", statistics);
+      return statistics;
+
+    } catch (error) {
+      console.error("API: Error loading report statistics:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 評価リストを取得（レポート用）
+   */
+  async getEvaluationsList(options = {}) {
+    try {
+      console.log("API: Loading evaluations list for reports:", options);
+      
+      const filters = {};
+      if (options.timeRange) {
+        const dateFilter = this.getDateFilterForTimeRange(options.timeRange);
+        if (dateFilter) {
+          filters.createdAtFrom = dateFilter;
+        }
+      }
+
+      const evaluations = await this.getEvaluations(filters);
+      
+      // 追加データを付与
+      const currentUser = await this.getCurrentUserData();
+      if (currentUser && currentUser.tenantId) {
+        const enrichedEvaluations = await Promise.all(
+          evaluations.map(evaluation => this.enrichEvaluationData(evaluation, currentUser.tenantId))
+        );
+        return enrichedEvaluations;
+      }
+
+      return evaluations;
+
+    } catch (error) {
+      console.error("API: Error loading evaluations list:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * パフォーマンストレンドデータを取得
+   */
+  async getPerformanceTrends(timeRange = 'last6months') {
+    try {
+      console.log("API: Loading performance trends for range:", timeRange);
+      
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("ユーザー情報またはテナント情報が見つかりません");
+      }
+
+      // 簡易的なトレンドデータを生成
+      const months = this.getMonthsForTimeRange(timeRange);
+      const trendData = {
+        labels: months,
+        datasets: [{
+          label: '平均スコア',
+          data: months.map(() => 3.5 + Math.random() * 1.5), // ダミーデータ
+          borderColor: 'rgba(54, 162, 235, 1)',
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          tension: 0.4
+        }, {
+          label: '完了率',
+          data: months.map(() => 70 + Math.random() * 25), // ダミーデータ
+          borderColor: 'rgba(255, 99, 132, 1)',
+          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+          tension: 0.4,
+          yAxisID: 'y1'
+        }]
+      };
+
+      console.log("API: Performance trends loaded");
+      return trendData;
+
+    } catch (error) {
+      console.error("API: Error loading performance trends:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 時間範囲に応じた日付フィルターを生成
+   */
+  getDateFilterForTimeRange(timeRange) {
+    const now = new Date();
+    const startDate = new Date();
+
+    switch (timeRange) {
+      case 'last3months':
+        startDate.setMonth(now.getMonth() - 3);
+        break;
+      case 'last6months':
+        startDate.setMonth(now.getMonth() - 6);
+        break;
+      case 'thisyear':
+        startDate.setMonth(0);
+        startDate.setDate(1);
+        break;
+      case 'all':
+      default:
+        return null;
+    }
+
+    return startDate;
+  }
+
+  /**
+   * 時間範囲に応じた月のリストを生成
+   */
+  getMonthsForTimeRange(timeRange) {
+    const months = [];
+    const now = new Date();
+    let startDate = new Date();
+    let monthCount = 6;
+
+    switch (timeRange) {
+      case 'last3months':
+        monthCount = 3;
+        startDate.setMonth(now.getMonth() - 3);
+        break;
+      case 'last6months':
+        monthCount = 6;
+        startDate.setMonth(now.getMonth() - 6);
+        break;
+      case 'thisyear':
+        monthCount = now.getMonth() + 1;
+        startDate.setMonth(0);
+        break;
+      case 'all':
+        monthCount = 12;
+        startDate.setMonth(now.getMonth() - 12);
+        break;
+    }
+
+    for (let i = 0; i < monthCount; i++) {
+      const date = new Date(startDate);
+      date.setMonth(startDate.getMonth() + i);
+      months.push(`${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}`);
+    }
+
+    return months;
   }
 }

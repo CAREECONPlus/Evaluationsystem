@@ -4,6 +4,7 @@ import { DashboardPage } from "./pages/dashboard.js"
 import { UserManagementPage } from "./pages/user-management.js"
 import { EvaluationsPage } from "./pages/evaluations.js"
 import { EvaluationReportPage } from "./pages/report.js"
+import { EvaluationReportDetailPage } from "./pages/evaluation-report-detail.js"
 import { SettingsPage } from "./pages/settings.js"
 import { EvaluationFormPage } from "./pages/evaluation-form.js"
 import { GoalSettingPage } from "./pages/goal-setting.js"
@@ -44,7 +45,12 @@ export class Router {
       "/report": {
         component: EvaluationReportPage,
         auth: true,
-        title: "評価レポート",
+        title: "レポート",
+      },
+      "/evaluation-report": {
+        component: EvaluationReportDetailPage,
+        auth: true,
+        title: "評価詳細レポート",
       },
       "/settings": {
         component: SettingsPage,
