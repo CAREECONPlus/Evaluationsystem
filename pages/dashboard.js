@@ -62,7 +62,6 @@ export class DashboardPage {
       await this.loadData();
       this.setupEventListeners();
       this.isInitialized = true;
-      console.log("Dashboard: Initialization completed successfully");
     } catch (error) {
       console.error("Dashboard: Initialization error:", error);
       this.renderErrorState();
@@ -78,7 +77,6 @@ export class DashboardPage {
   }
 
   async loadData() {
-    console.log("Dashboard: Loading data...");
     
     if (!this.app.api) {
         throw new Error("APIが初期化されていません");
@@ -120,10 +118,8 @@ export class DashboardPage {
     const dashboardContainer = document.querySelector('.dashboard-page');
     if (dashboardContainer && window.i18n) {
       window.i18n.updateElement(dashboardContainer);
-      console.log("Dashboard: Translations applied via global i18n");
     } else if (dashboardContainer && this.app.i18n) {
       this.app.i18n.updateElement(dashboardContainer);
-      console.log("Dashboard: Translations applied via app i18n");
     }
   }
   
@@ -312,6 +308,5 @@ export class DashboardPage {
       this.chart = null;
     }
     this.isInitialized = false;
-    console.log("Dashboard cleaned up.");
   }
 }

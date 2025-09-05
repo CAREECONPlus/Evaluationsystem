@@ -153,7 +153,6 @@ export class InvitationAcceptPage {
   }
 
   async init(params) {
-    console.log('InvitationAccept: Initializing with params:', params);
     
     // URLパラメータから招待コードを取得
     this.invitationCode = params.get('code');
@@ -203,7 +202,6 @@ export class InvitationAcceptPage {
       this.isLoading = true;
       this.showLoading();
 
-      console.log('InvitationAccept: Loading invitation info for code:', this.invitationCode);
 
       // 招待情報を取得
       const response = await this.app.api.validateInvitationCode(this.invitationCode);
@@ -213,7 +211,6 @@ export class InvitationAcceptPage {
       }
 
       this.invitationData = response.data;
-      console.log('InvitationAccept: Invitation data loaded:', this.invitationData);
 
       // 招待情報を表示
       this.displayInvitationInfo();
@@ -358,7 +355,6 @@ export class InvitationAcceptPage {
       // フォームデータを収集
       const formData = this.collectFormData();
       
-      console.log('InvitationAccept: Submitting registration:', { ...formData, password: '[HIDDEN]' });
 
       // アカウント作成APIを呼び出し
       const response = await this.app.api.acceptInvitation(this.invitationCode, formData);
@@ -472,6 +468,5 @@ export class InvitationAcceptPage {
     this.isLoading = false;
     this.isProcessing = false;
     
-    console.log('InvitationAccept: Cleanup completed');
   }
 }

@@ -124,7 +124,6 @@ export class Router {
       const path = this.getCurrentPath()
       const params = this.getParams()
 
-      console.log(`Router: Navigating to ${path}`)
 
       // 現在のページのクリーンアップ（シンプル化）
       this.cleanupCurrentPage()
@@ -165,7 +164,6 @@ export class Router {
       // 現在のルートを記録
       this.currentRoute = path
 
-      console.log(`Router: Successfully navigated to ${path}`)
     } catch (error) {
       console.error("Router: Error during routing:", error)
       this.renderErrorPage(error)
@@ -294,7 +292,6 @@ export class Router {
       const queryString = Object.keys(params).length > 0 ? "?" + new URLSearchParams(params).toString() : ""
       const fullPath = path + queryString
 
-      console.log(`Router: Programmatic navigation to ${fullPath}`)
 
       if (window.location.hash !== fullPath) {
         window.location.hash = fullPath

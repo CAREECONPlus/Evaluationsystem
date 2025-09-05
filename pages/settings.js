@@ -77,7 +77,6 @@ export class SettingsPage {
   }
 
   async init() {
-    console.log("Settings: Starting initialization...");
     
     if (!this.app.hasRole('admin')) {
       this.app.navigate('#/dashboard');
@@ -91,7 +90,6 @@ export class SettingsPage {
       this.setupEventListeners();
       this.setupUnloadWarning();
       this.isInitialized = true;
-      console.log("Settings: Initialization completed successfully");
     } catch (error) {
       console.error("Settings: Initialization error:", error);
       this.app.showError("設定ページの初期化に失敗しました: " + error.message);
@@ -100,10 +98,8 @@ export class SettingsPage {
 
   async loadData() {
     try {
-      console.log("Settings: Loading data from Firebase...");
       
       if (!this.app.currentUser?.tenantId) {
-        console.warn("Settings: TenantId is missing. Creating empty settings structure.");
         this.settings = {
           jobTypes: [],
           periods: [],
@@ -116,7 +112,6 @@ export class SettingsPage {
       
       this.showLoadingState();
       this.settings = await this.app.api.getSettings();
-      console.log("Settings: Data loaded successfully");
       this.renderAll();
       
     } catch (error) {
@@ -202,7 +197,6 @@ export class SettingsPage {
   }
 
   setupEventListeners() {
-    console.log("Settings: Setting up event listeners...");
     
     // イベント委譲を使用してシンプルに実装
     document.addEventListener('click', this.handleClick.bind(this));
@@ -363,7 +357,6 @@ export class SettingsPage {
   }
 
   async addJobType() {
-    console.log("Settings: Adding job type");
     try {
       const name = await this.promptForValue(
         '職種追加', 
@@ -384,7 +377,6 @@ export class SettingsPage {
   }
 
   async addPeriod() {
-    console.log("Settings: Adding period");
     try {
       const name = await this.promptForValue(
         '評価期間追加',
@@ -504,7 +496,6 @@ export class SettingsPage {
       return;
     }
     
-    console.log("Settings: Selecting job type:", id);
     this.selectedJobTypeId = id;
     this.markAsSaved();
     this.renderAll();
@@ -832,9 +823,7 @@ export class SettingsPage {
       saveBtn.innerHTML = `<i class="fas fa-save me-2"></i>変更を保存`;
       saveBtn.classList.remove('btn-success');
       saveBtn.classList.add('btn-warning');
-      console.log("Settings: Marked as unsaved");
     } else {
-      console.warn("Settings: Save button not found in markUnsaved");
     }
   }
   
@@ -845,9 +834,7 @@ export class SettingsPage {
       saveBtn.disabled = true;
       saveBtn.classList.remove('btn-warning');
       saveBtn.classList.add('btn-success');
-      console.log("Settings: Marked as saved");
     } else {
-      console.warn("Settings: Save button not found in markAsSaved");
     }
   }
 
@@ -877,7 +864,6 @@ export class SettingsPage {
     // 🔧 新規追加: タイムアウト設定（30秒）
     let timeoutId = null;
     
-    console.log("Settings: Starting save process");
     
     try {
       // ローディング状態に設定
@@ -887,7 +873,6 @@ export class SettingsPage {
       
       // 🔧 新規追加: 30秒後に強制的にUI復元
       timeoutId = setTimeout(() => {
-        console.warn("Settings: Save operation timeout, restoring UI");
         const currentBtn = document.getElementById('save-settings-btn');
         if (currentBtn) {
           currentBtn.disabled = false;
@@ -897,7 +882,6 @@ export class SettingsPage {
         this.app.showWarning('保存処理がタイムアウトしました。再度お試しください。');
       }, 30000);
       
-      console.log("Settings: Saving settings to Firebase...");
       
       // 🔧 修正: Promise.race でタイムアウト制御
       const savePromise = this.app.api.saveSettings(this.settings);
@@ -913,7 +897,6 @@ export class SettingsPage {
         timeoutId = null;
       }
       
-      console.log("Settings: Settings saved successfully");
       
       // 🔧 修正: 成功時のUI更新を確実に実行
       this.markAsSaved();
@@ -932,10 +915,9 @@ export class SettingsPage {
             currentBtn.disabled = true; // 変更がないため無効化
             currentBtn.innerHTML = `<i class="fas fa-save me-2"></i>変更を保存`;
             currentBtn.className = 'btn btn-success';
-            console.log("Settings: Button state reset to saved state");
           }
         } catch (resetError) {
-          console.error("Settings: Error resetting button state:", resetError);
+          // Error resetting button state - silent fail
         }
       }, 3000);
       
@@ -976,19 +958,16 @@ export class SettingsPage {
       btn.disabled = true;
       btn.innerHTML = `<i class="fas fa-save me-2"></i>変更を保存`;
       btn.className = 'btn btn-success';
-      console.log("Settings: Button state forcefully reset");
     }
   }
 
   cleanup() {
-    console.log("Settings: Starting cleanup...");
     
     try {
       if (this.unloadHandler) {
         window.removeEventListener('beforeunload', this.unloadHandler);
       }
       
-      console.log("Settings: Cleanup completed");
     } catch (error) {
       console.error("Settings: Cleanup error:", error);
     }

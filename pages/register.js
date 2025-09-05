@@ -181,11 +181,9 @@ export class RegisterPage {
     };
 
     try {
-      console.log("Register: Starting registration process...");
       
       // Step 1: Firebase Authにユーザーを作成
       const userCredential = await this.app.auth.registerWithEmail(userData.email, userData.password);
-      console.log("Register: Firebase Auth user created:", userCredential.user.uid);
 
       // Step 2: ユーザープロファイルを作成（undefinedフィールドを除外）
       const profileData = {
@@ -231,14 +229,11 @@ export class RegisterPage {
 
       // undefinedフィールドをクリーンアップ
       const cleanedProfileData = cleanData(profileData);
-      console.log("Register: Creating profile with data:", cleanedProfileData);
 
       await this.app.api.createUserProfile(cleanedProfileData);
-      console.log("Register: User profile created successfully");
 
       // Step 3: 招待を使用済みにマーク
       await this.app.api.markInvitationAsUsed(this.invitation.id, userCredential.user.uid);
-      console.log("Register: Invitation marked as used");
 
       // Step 4: 成功画面を表示
       this.showSuccessScreen(userData.name, this.invitation.role);

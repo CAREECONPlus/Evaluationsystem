@@ -208,7 +208,6 @@ export class ProfilePage {
   async loadUserProfile() {
     try {
       this.userProfile = await this.app.api.getUserProfile(this.currentUser.uid);
-      console.log('Profile: User profile loaded:', this.userProfile);
     } catch (error) {
       console.error('Profile: Failed to load user profile:', error);
       throw error;
@@ -218,7 +217,6 @@ export class ProfilePage {
   async loadJobTypes() {
     try {
       this.jobTypes = await this.app.api.getJobTypes();
-      console.log('Profile: Job types loaded:', this.jobTypes.length);
     } catch (error) {
       console.error('Profile: Failed to load job types:', error);
       this.jobTypes = [];

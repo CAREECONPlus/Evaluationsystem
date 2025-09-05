@@ -30,7 +30,6 @@ class App {
   }
 
   async init() {
-    console.log("Starting application initialization...")
     this.showLoadingScreen()
 
     const initTimeout = setTimeout(() => {
@@ -39,32 +38,18 @@ class App {
     }, 15000) // 15秒のタイムアウト
 
     try {
-      console.log("Step 1: Initializing I18n...")
       await this.i18n.init()
-      console.log("✓ I18n initialized")
       
-      // i18nシステムの利用可能性をデバッグ出力
-      if (window.i18n) {
-        console.log('I18n system loaded and available globally');
-        console.log('Current language:', window.i18n.getCurrentLanguage());
-        window.i18n.debug();
-      }
 
-      console.log("Step 2: Initializing Auth module...")
       await this.auth.init()
-      console.log("✓ Auth module initialized")
 
-      console.log("Step 3: Initializing API...")
       this.api = new API(this)
-      console.log("✓ API initialized")
 
-      console.log("Step 4: Setting up and awaiting auth state listener...")
       try {
         await Promise.race([
           this.auth.listenForAuthChanges(),
           new Promise((_, reject) => setTimeout(() => reject(new Error("Auth timeout")), 10000))
         ])
-        console.log("✓ Auth state listener has completed its initial check.")
       } catch (authError) {
         if (authError.message === "Auth timeout") {
           console.warn("⚠ Auth state check timed out, continuing with initialization")
@@ -75,47 +60,38 @@ class App {
         }
       }
 
-      console.log("Step 5: Showing app...")
       this.showApp()
 
-      console.log("Step 6: Initial routing...")
       await this.router.route()
 
       // アクセシビリティ機能を動的にロード
-      console.log("Step 7: Loading accessibility features...")
       try {
         const { AccessibilityHelper } = await import("./js/accessibility.js")
         this.accessibility = new AccessibilityHelper(this)
         this.accessibility.init()
-        console.log("✓ Accessibility features initialized")
       } catch (error) {
         console.warn("⚠ Accessibility features could not be loaded:", error)
       }
 
       // パフォーマンス最適化を動的にロード
-      console.log("Step 8: Loading performance optimizations...")
       try {
         const { PerformanceOptimizer } = await import("./js/performance.js")
         this.performance = new PerformanceOptimizer(this)
         this.performance.init()
-        console.log("✓ Performance optimizations initialized")
       } catch (error) {
         console.warn("⚠ Performance optimizations could not be loaded:", error)
       }
 
       // アニメーションを動的にロード
-      console.log("Step 9: Loading animations...")
       try {
         const { AnimationHelper } = await import("./js/animations.js")
         this.animations = new AnimationHelper(this)
         this.animations.init()
-        console.log("✓ Animations initialized")
       } catch (error) {
         console.warn("⚠ Animation features could not be loaded:", error)
       }
 
       clearTimeout(initTimeout)
-      console.log("🎉 Application initialized successfully")
       
       // DOMContentLoaded時のi18n確認を追加
       this.setupI18nDOMReadyCheck();
@@ -139,7 +115,6 @@ class App {
         e.preventDefault();
         const href = link.getAttribute('href');
         if (href && href !== '#') {
-          console.log('App: Global navigation to', href);
           this.navigate(href);
         }
       }
@@ -162,7 +137,6 @@ class App {
       }
     }
     
-    console.log("App: Global i18n references set up");
   }
 
   // DOMContentLoaded時のi18n確認を設定
@@ -181,13 +155,11 @@ class App {
   performI18nCheck() {
     // i18nシステムが利用可能になるまで待機
     if (window.i18n) {
-      console.log('I18n system loaded');
       window.i18n.debug(); // デバッグ情報表示
     } else {
       // i18nが読み込まれるまで少し待つ
       setTimeout(() => {
         if (window.i18n) {
-          console.log('I18n system loaded after delay');
           window.i18n.debug();
         }
       }, 100);
@@ -324,49 +296,39 @@ async login(email, password) {
   }
 
   logout() {
-    console.log("=== App: logout() START ===")
-    
     try {
       // ローディング表示
-      console.log("App: Showing loading...")
       this.showLoading("ログアウト中...")
       
       // 即座にローカル状態をクリア
-      console.log("App: Clearing local state...")
       this.currentUser = null
       
       // UI状態を即座に更新
-      console.log("App: Updating UI state...")
       this.updateUIForAuthState(null)
       
       // Firebase認証のクリーンアップ（非同期でバックグラウンド実行）
       if (this.auth && this.auth.isInitialized) {
-        console.log("App: Cleaning up Firebase auth in background...")
         this.auth.logout().catch(e => {
           console.warn("App: Firebase logout failed, but continuing:", e)
         })
       }
       
       // ストレージの手動クリーンアップ
-      console.log("App: Manual storage cleanup...")
       this.manualStorageCleanup()
       
       // 即座にログイン画面にリダイレクト
-      console.log("App: Navigating to login...")
       this.navigate("#/login")
       
       // UIクリーンアップとメッセージ表示
       setTimeout(() => {
-        console.log("App: Final cleanup...")
         this.hideLoading()
         this.showSuccess("ログアウトしました")
       }, 100)
       
-      console.log("=== App: logout() SUCCESS ===")
       return Promise.resolve()
       
     } catch (error) {
-      console.error("=== App: logout() ERROR ===", error)
+      console.error("App: Logout error:", error)
       
       // エラー時も強制的にログアウト状態にする
       this.currentUser = null
@@ -389,8 +351,6 @@ async login(email, password) {
   }
 
   navigate(path) {
-    console.log("App: navigate called with path:", path)
-    
     // ルーターのnavigate メソッドを使用
     this.router.navigate(path)
 
@@ -403,28 +363,19 @@ async login(email, password) {
 updateUIForAuthState(user) {
     this.currentUser = user;
 
-    console.log("App: updateUIForAuthState called with user:", user ? user.email : 'null');
 
     // ログイン状態に応じてヘッダーとサイドバーの表示を制御
     if (user) {
       // ログイン済みの場合
-      console.log("App: User authenticated, updating header and sidebar");
-      console.log("App: Current user details:", { 
-        name: user.name, 
-        email: user.email, 
-        role: user.role 
-      });
       
       // ヘッダーとサイドバーのHTMLを挿入
       const headerContainer = document.getElementById("header-container");
       const sidebarContainer = document.getElementById("sidebar-container");
       
       if (headerContainer) {
-        console.log("App: Rendering header...");
         headerContainer.innerHTML = this.header.render();
         // DOM要素が確実に存在するまで少し待ってから初期化
         setTimeout(() => {
-          console.log("App: Initializing header...");
           try {
             this.header.init();
           } catch (error) {
@@ -434,25 +385,14 @@ updateUIForAuthState(user) {
       }
       
       if (sidebarContainer) {
-        console.log("App: Rendering sidebar...");
         try {
-          // サイドバーのレンダリング前にユーザー情報を再確認
-          console.log("App: Sidebar rendering with user:", this.currentUser);
           const sidebarHtml = this.sidebar.render();
-          console.log("App: Sidebar HTML generated, length:", sidebarHtml.length);
           sidebarContainer.innerHTML = sidebarHtml;
           
           // サイドバーの初期化をより確実に
           setTimeout(() => {
-            console.log("App: Initializing sidebar...");
             try {
               this.sidebar.init();
-              console.log("App: Sidebar initialization completed");
-              
-              // 初期化後の内容確認
-              const navLinks = sidebarContainer.querySelectorAll('.nav-link');
-              console.log("App: Sidebar nav links found:", navLinks.length);
-              
             } catch (error) {
               console.error("App: Sidebar initialization error:", error);
             }
@@ -469,7 +409,6 @@ updateUIForAuthState(user) {
       
     } else {
       // 未ログインの場合
-      console.log("App: User not authenticated, clearing header and sidebar");
       // ヘッダーとサイドバーをクリア
       const headerContainer = document.getElementById("header-container");
       const sidebarContainer = document.getElementById("sidebar-container");
@@ -674,31 +613,10 @@ updateUIForAuthState(user) {
     window.debugApp = this
   }
 
-  // デバッグ用ログアウトテスト
-  testLogout() {
-    console.log("=== LOGOUT TEST START ===")
-    console.log("window.app:", window.app)
-    console.log("window.app.logout:", window.app?.logout)
-    console.log("this.auth:", this.auth)
-    console.log("this.auth.isInitialized:", this.auth?.isInitialized)
-    console.log("this.currentUser:", this.currentUser)
-    console.log("=== CALLING LOGOUT ===")
-    if (this.logout) {
-      this.logout().then(() => {
-        console.log("=== LOGOUT COMPLETED ===")
-      }).catch(e => {
-        console.error("=== LOGOUT ERROR ===", e)
-      })
-    } else {
-      console.error("=== LOGOUT METHOD NOT FOUND ===")
-    }
-  }
 
   // 手動ストレージクリーンアップ
   manualStorageCleanup() {
     try {
-      console.log("App: Performing manual storage cleanup")
-      
       // ローカルストレージのクリア
       if (typeof localStorage !== 'undefined') {
         const keysToRemove = []
@@ -709,7 +627,6 @@ updateUIForAuthState(user) {
           }
         }
         keysToRemove.forEach(key => localStorage.removeItem(key))
-        console.log(`App: Cleaned up ${keysToRemove.length} local storage keys`)
       }
       
       // セッションストレージのクリア
@@ -722,7 +639,6 @@ updateUIForAuthState(user) {
           }
         }
         keysToRemove.forEach(key => sessionStorage.removeItem(key))
-        console.log(`App: Cleaned up ${keysToRemove.length} session storage keys`)
       }
     } catch (cleanupError) {
       console.warn("App: Manual storage cleanup failed:", cleanupError)

@@ -173,12 +173,10 @@ export class RegisterAdminPage {
     };
 
     try {
-        console.log("RegisterAdmin: Starting registration process...");
         
         // Step 1: Firebase Authにユーザーを作成（最重要）
         userCredential = await this.app.auth.registerWithEmail(userData.email, userData.password);
         registrationResults.authUser = true;
-        console.log("RegisterAdmin: ✅ Firebase Auth user created:", userCredential.user.uid);
         
         const db = getFirestore(this.app.auth.firebaseApp);
         
@@ -204,7 +202,6 @@ export class RegisterAdminPage {
             });
             adminRequestId = requestRef.id;
             registrationResults.adminRequest = true;
-            console.log("RegisterAdmin: ✅ Admin request created:", adminRequestId);
         } catch (adminError) {
             console.error("RegisterAdmin: ❌ Admin request failed:", adminError);
             // admin_requestsの作成失敗は致命的
@@ -226,7 +223,6 @@ export class RegisterAdminPage {
                 registrationRequestId: adminRequestId
             });
             registrationResults.globalUser = true;
-            console.log("RegisterAdmin: ✅ Global user created");
         } catch (globalError) {
             console.warn("RegisterAdmin: ⚠️ Global user creation failed (non-critical):", globalError);
         }
@@ -245,13 +241,10 @@ export class RegisterAdminPage {
                 registrationRequestId: adminRequestId
             });
             registrationResults.legacyUser = true;
-            console.log("RegisterAdmin: ✅ Legacy user created");
         } catch (userError) {
             console.warn("RegisterAdmin: ⚠️ Legacy user creation failed (non-critical):", userError);
         }
         
-        // 登録結果をログ出力
-        console.log("RegisterAdmin: Registration summary:", registrationResults);
         
         // 成功画面表示（最低限admin_requestが成功していれば成功とみなす）
         if (registrationResults.authUser && registrationResults.adminRequest) {
@@ -267,11 +260,6 @@ export class RegisterAdminPage {
         // 理由：admin_requestが成功していれば、後で承認時に紐付けできるため
         
         // ただし、Firebase Auth作成も失敗している場合は、何もできない
-        if (!registrationResults.authUser) {
-            console.log("RegisterAdmin: Firebase Auth creation failed, no cleanup needed");
-        } else {
-            console.log("RegisterAdmin: Firebase Auth user preserved for future approval process");
-        }
         
         // エラーメッセージの表示
         const errorMessage = this.getErrorMessage(err);

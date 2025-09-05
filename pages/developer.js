@@ -436,7 +436,7 @@ export class DeveloperPage {
               tenant.adminEmail = admin.email;
             }
           } catch (e) {
-            console.log("Failed to get admin info for tenant:", tenant.id);
+            // Failed to get admin info for tenant - silent fail
           }
           
           return tenant;
@@ -616,7 +616,6 @@ export class DeveloperPage {
         throw new Error("申請情報が見つかりません");
       }
       
-      console.log("Approving admin request:", requestData);
       
       // 新しいテナントIDを生成
       const tenantId = doc(collection(db, "tenants")).id;

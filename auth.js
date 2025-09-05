@@ -24,22 +24,14 @@ export class Auth {
     this.authStateUnsubscribe = null
     this.isInitialized = false
     
-    console.log("Auth: Constructor completed, waiting for initialization")
   }
 
   async init() {
     try {
-      console.log("Auth: Starting Firebase initialization...")
       
       // 環境変数からFirebase設定を取得
       const firebaseConfig = await environment.getFirebaseConfig()
       
-      console.log("Auth: Firebase config loaded:", {
-        hasApiKey: !!firebaseConfig.apiKey,
-        hasAuthDomain: !!firebaseConfig.authDomain,
-        hasProjectId: !!firebaseConfig.projectId,
-        projectId: firebaseConfig.projectId
-      })
       
       // Firebase設定の妥当性チェック
       if (!firebaseConfig.projectId || !firebaseConfig.apiKey) {
@@ -57,8 +49,6 @@ export class Auth {
       
       this.isInitialized = true
       
-      console.log("Auth: Firebase initialized successfully")
-      console.log("Auth: Environment:", environment.getEnvironment())
       
       return Promise.resolve()
       
@@ -92,11 +82,9 @@ export class Auth {
           }
 
           if (user) {
-            console.log("Auth: User detected, checking profile...")
             try {
               const userProfile = await this.app.api.getUserProfile(user.uid)
               if (userProfile && userProfile.status === "active") {
-                console.log("Auth state changed: User is signed in and active.", user.email)
                 this.app.updateUIForAuthState(userProfile)
 
                 // ログイン直後の場合、ダッシュボードへ遷移
