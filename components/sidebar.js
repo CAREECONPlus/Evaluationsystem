@@ -14,7 +14,6 @@ export class SidebarComponent {
   render() {
     // 🔧 修正: ユーザー情報の取得を強化
     const user = this.app.currentUser || null;
-    console.log("Sidebar: Rendering with user:", user);
     
     if (!user) {
       console.warn("Sidebar: No user found, rendering empty sidebar");
@@ -27,7 +26,6 @@ export class SidebarComponent {
     const isDeveloper = userRole === 'developer';
     const isEvaluator = userRole === 'evaluator';
 
-    console.log("Sidebar: User details:", { userName, userRole, isAdmin, isDeveloper, isEvaluator });
 
     return `
       <div class="sidebar h-100 d-flex flex-column" role="navigation" aria-label="メインナビゲーション">
@@ -288,7 +286,6 @@ export class SidebarComponent {
    * サイドバーコンポーネントの初期化
    */
   init() {
-    console.log("Sidebar: Starting initialization...");
     
     // 🔧 修正: 初期化の順序を調整
     try {
@@ -307,7 +304,6 @@ export class SidebarComponent {
       // 翻訳を適用
       this.applyTranslations();
       
-      console.log("Sidebar: Initialized with enhanced mobile support and accessibility");
     } catch (error) {
       console.error("Sidebar: Initialization error:", error);
     }
@@ -320,10 +316,8 @@ export class SidebarComponent {
     const sidebarContainer = document.getElementById('sidebar-container');
     if (sidebarContainer && window.i18n) {
       window.i18n.updateElement(sidebarContainer);
-      console.log("Sidebar: Translations applied via global i18n");
     } else if (sidebarContainer && this.app.i18n) {
       this.app.i18n.updateElement(sidebarContainer);
-      console.log("Sidebar: Translations applied via app i18n");
     }
   }
 
@@ -361,7 +355,6 @@ export class SidebarComponent {
       activeLink.setAttribute('aria-current', 'page');
     }
 
-    console.log(`Sidebar: Updated active state for route ${currentPath}`);
   }
 
   /**
@@ -387,7 +380,6 @@ export class SidebarComponent {
       }
     });
 
-    console.log("Sidebar: Accessibility features configured");
   }
 
   /**
@@ -434,7 +426,6 @@ export class SidebarComponent {
     };
 
     initFocus();
-    console.log("Sidebar: Focus management configured");
   }
 
   /**
@@ -482,7 +473,6 @@ export class SidebarComponent {
       }
     });
 
-    console.log("Sidebar: Keyboard navigation configured");
   }
 
   /**

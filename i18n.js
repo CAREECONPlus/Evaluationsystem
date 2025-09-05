@@ -1042,21 +1042,24 @@ export class I18n {
    * デバッグ用：読み込まれている翻訳データを表示
    */
   debug() {
-    console.log('=== I18n Debug Info ===');
-    console.log('Built-in mode:', BYPASS_JSON_FILES);
-    console.log('Current language:', this.lang);
-    console.log('Fallback language:', this.fallbackLang);
-    console.log('Loaded languages:', Object.keys(this.translations));
-    console.log('Available built-in languages:', Object.keys(BUILT_IN_TRANSLATIONS));
-    
-    if (this.translations[this.lang]) {
-      const keys = Object.keys(this.translations[this.lang]);
-      console.log(`Translation sections for ${this.lang}:`, keys);
-      console.log('Sample translations:');
-      console.log('  nav.dashboard:', this.t('nav.dashboard'));
-      console.log('  dashboard.total_users:', this.t('dashboard.total_users'));
-      console.log('  auth.logout:', this.t('auth.logout'));
-      console.log('  common.language:', this.t('common.language'));
+    // 本番環境では無効
+    if (window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1')) {
+      console.log('=== I18n Debug Info ===');
+      console.log('Built-in mode:', BYPASS_JSON_FILES);
+      console.log('Current language:', this.lang);
+      console.log('Fallback language:', this.fallbackLang);
+      console.log('Loaded languages:', Object.keys(this.translations));
+      console.log('Available built-in languages:', Object.keys(BUILT_IN_TRANSLATIONS));
+      
+      if (this.translations[this.lang]) {
+        const keys = Object.keys(this.translations[this.lang]);
+        console.log(`Translation sections for ${this.lang}:`, keys);
+        console.log('Sample translations:');
+        console.log('  nav.dashboard:', this.t('nav.dashboard'));
+        console.log('  dashboard.total_users:', this.t('dashboard.total_users'));
+        console.log('  auth.logout:', this.t('auth.logout'));
+        console.log('  common.language:', this.t('common.language'));
+      }
     }
   }
 

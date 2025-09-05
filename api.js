@@ -24,7 +24,6 @@ export class API {
     this.app = app;
     this.auth = app.auth;
     this.db = getFirestore(app.auth.firebaseApp);
-    console.log("API: Initialized with shared Firestore instance from Auth");
   }
 
   // ===== Validation Methods =====
@@ -104,8 +103,6 @@ export class API {
    */
   async getUserProfile(uid) {
     try {
-      console.log("API: User profile found:", Object);
-      console.log("API: User profile UID check:", uid);
       
       // まずusersコレクションから取得を試みる
       const userDoc = await getDoc(doc(this.db, "users", uid));
@@ -147,13 +144,11 @@ export class API {
     try {
       // まずアプリに保存されている現在のユーザー情報を確認
       if (this.app && this.app.currentUser) {
-        console.log("API: Using cached current user data:", this.app.currentUser);
         return this.app.currentUser;
       }
 
       // フォールバック: Firebase Authから直接取得
       if (!this.auth.currentUser) {
-        console.log("API: No authenticated user");
         return null;
       }
 
@@ -383,7 +378,6 @@ export class API {
         return bTime - aTime;
       });
 
-      console.log("API: Users loaded successfully:", users.length);
       return users;
 
     } catch (error) {
@@ -763,7 +757,6 @@ export class API {
    */
   async getDashboardStats() {
     try {
-      console.log("API: Loading dashboard stats...");
       
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
@@ -771,7 +764,6 @@ export class API {
       }
 
       const tenantId = currentUser.tenantId;
-      console.log("API: Loading dashboard stats for tenant:", tenantId);
 
       // 各統計データを並行取得
       const [usersSnapshot, evaluationsSnapshot, goalsSnapshot] = await Promise.all([
@@ -814,7 +806,6 @@ export class API {
         }
       });
 
-      console.log("API: Dashboard stats loaded:", stats);
       return stats;
 
     } catch (error) {
@@ -829,7 +820,6 @@ export class API {
    */
   async getRecentEvaluations() {
     try {
-      console.log("API: Loading recent evaluations...");
       
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
@@ -862,7 +852,6 @@ export class API {
         return bTime - aTime; // 降順
       });
 
-      console.log("API: Recent evaluations loaded:", recentEvaluations.length);
       return recentEvaluations;
 
     } catch (error) {
@@ -876,7 +865,6 @@ export class API {
    */
   async getEvaluationChartData() {
     try {
-      console.log("API: Loading evaluation chart data...");
       
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
@@ -899,7 +887,6 @@ export class API {
         }]
       };
 
-      console.log("API: Chart data loaded");
       return chartData;
 
     } catch (error) {
@@ -1395,7 +1382,6 @@ async getAllUsers() {
    */
   async getDashboardStats() {
     try {
-      console.log("API: Loading dashboard stats...");
       
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
@@ -1403,7 +1389,6 @@ async getAllUsers() {
       }
 
       const tenantId = currentUser.tenantId;
-      console.log("API: Loading dashboard stats for tenant:", tenantId);
 
       // 各統計データを並行取得
       const [usersSnapshot, evaluationsSnapshot, goalsSnapshot] = await Promise.all([
@@ -1446,7 +1431,6 @@ async getAllUsers() {
         }
       });
 
-      console.log("API: Dashboard stats loaded:", stats);
       return stats;
 
     } catch (error) {
@@ -1461,7 +1445,6 @@ async getAllUsers() {
    */
   async getRecentEvaluations() {
     try {
-      console.log("API: Loading recent evaluations...");
       
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
@@ -1494,7 +1477,6 @@ async getAllUsers() {
         return bTime - aTime; // 降順
       });
 
-      console.log("API: Recent evaluations loaded:", recentEvaluations.length);
       return recentEvaluations;
 
     } catch (error) {
@@ -1508,7 +1490,6 @@ async getAllUsers() {
    */
   async getEvaluationChartData() {
     try {
-      console.log("API: Loading evaluation chart data...");
       
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
@@ -1531,7 +1512,6 @@ async getAllUsers() {
         }]
       };
 
-      console.log("API: Chart data loaded");
       return chartData;
 
     } catch (error) {

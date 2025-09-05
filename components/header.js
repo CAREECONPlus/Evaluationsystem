@@ -172,7 +172,6 @@ export class HeaderComponent {
     // 翻訳を適用
     this.applyTranslations();
     
-    console.log("Header: Initialized with mobile support");
   }
 
   /**
@@ -182,10 +181,8 @@ export class HeaderComponent {
     const headerContainer = document.getElementById('header-container');
     if (headerContainer && window.i18n) {
       window.i18n.updateElement(headerContainer);
-      console.log("Header: Translations applied via global i18n");
     } else if (headerContainer && this.app.i18n) {
       this.app.i18n.updateElement(headerContainer);
-      console.log("Header: Translations applied via app i18n");
     }
   }
 
@@ -193,7 +190,6 @@ export class HeaderComponent {
    * 🔧 修正済み: モバイルメニューの設定（要素取得タイミング改善）
    */
   setupMobileMenu() {
-    console.log("Header: Setting up mobile menu...");
     
     // CSS スタイルを追加
     this.addMobileStyles();
@@ -204,11 +200,6 @@ export class HeaderComponent {
       const sidebar = document.getElementById('sidebar-container') || document.querySelector('.sidebar');
       const backdrop = document.getElementById('sidebar-backdrop');
       
-      console.log("Header: Elements found:", {
-        hamburgerBtn: !!hamburgerBtn,
-        sidebar: !!sidebar, 
-        backdrop: !!backdrop
-      });
       
       return { hamburgerBtn, sidebar, backdrop };
     };
@@ -232,14 +223,12 @@ export class HeaderComponent {
       hamburgerBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        console.log("Header: Hamburger button clicked");
         this.toggleMobileMenu();
       });
 
       // バックドロップのクリック・キーボードイベント
       if (backdrop) {
         backdrop.addEventListener('click', () => {
-          console.log("Header: Backdrop clicked");
           this.closeMobileMenu();
         });
         
@@ -254,7 +243,6 @@ export class HeaderComponent {
       // グローバルイベント設定
       this.setupGlobalEvents();
       
-      console.log("Header: Mobile menu events configured successfully");
     };
 
     // 初回セットアップ開始
@@ -339,7 +327,6 @@ export class HeaderComponent {
       setTimeout(() => firstFocusableElement.focus(), 100);
     }
     
-    console.log("Header: Mobile menu opened");
   }
 
   /**
@@ -366,7 +353,6 @@ export class HeaderComponent {
       hamburgerBtn.focus();
     }
     
-    console.log("Header: Mobile menu closed");
   }
 
   /**
@@ -490,7 +476,6 @@ export class HeaderComponent {
     `;
     
     document.head.appendChild(style);
-    console.log("Header: Mobile styles added");
   }
 
   /**
@@ -538,7 +523,6 @@ export class HeaderComponent {
         setTimeout(() => this.openMobileMenu(), 100);
       }
       
-      console.log("Header: Updated");
     }
   }
 

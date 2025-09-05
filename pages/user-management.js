@@ -233,7 +233,6 @@ export class UserManagementPage {
   }
 
   async init() {
-    console.log("UserManagement: Starting initialization...");
     this.app.currentPage = this;
     
     // データの読み込み
@@ -245,7 +244,6 @@ export class UserManagementPage {
     // 国際化の適用
     this.applyTranslations();
     
-    console.log("UserManagement: Initialization completed successfully");
   }
 
   /**
@@ -255,16 +253,13 @@ export class UserManagementPage {
     const userManagementContainer = document.querySelector('.container-fluid');
     if (userManagementContainer && window.i18n) {
       window.i18n.updateElement(userManagementContainer);
-      console.log("UserManagement: Translations applied via global i18n");
     } else if (userManagementContainer && this.app.i18n) {
       this.app.i18n.updateElement(userManagementContainer);
-      console.log("UserManagement: Translations applied via app i18n");
     }
   }
 
   async loadData() {
     try {
-      console.log("UserManagement: Loading users...");
       
       // getUsersメソッドの存在確認
       if (typeof this.app.api.getUsers !== 'function') {
@@ -280,7 +275,6 @@ export class UserManagementPage {
         this.app.api.getUsers(),
         this.app.api.getJobTypes ? this.app.api.getJobTypes() : Promise.resolve([])
       ]);
-      console.log("UserManagement: Users loaded:", users);
       console.log("UserManagement: Job types loaded:", jobTypes);
 
       // データを保存
