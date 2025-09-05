@@ -362,82 +362,168 @@ const BUILT_IN_TRANSLATIONS = {
       "title": "Evaluation Management System",
       "system_name": "Construction Industry Evaluation Management System",
       "loading": "Loading...",
-      "welcome": "Welcome"
+      "welcome": "Welcome",
+      "version": "Version",
+      "copyright": "Copyright"
     },
+    
+    // ===== Navigation =====
     "nav": {
       "dashboard": "Dashboard",
+      "evaluations": "Evaluation List",
+      "evaluation": "Evaluation Input",
+      "goal_approvals": "Goal Approvals",
+      "goal_setting": "Goal Setting",
+      "goals": "Goal Setting", 
       "users": "User Management",
       "settings": "Settings",
-      "evaluations": "Evaluations",
-      "goals": "Goal Setting",
-      "goal_setting": "Goal Setting",
-      "goal_approvals": "Goal Approvals",
-      "reports": "Reports",
-      "developer": "Developer",
       "logout": "Logout",
+      "home": "Home",
       "profile": "Profile",
-      "evaluation": "Evaluation Input"
+      "help": "Help",
+      "about": "About This System",
+      "reports": "Reports",
+      "developer": "Developer Management"
     },
+    
+    // ===== Dashboard =====
+    "dashboard": {
+      "title": "Dashboard",
+      "overview": "System Overview",
+      "system_overview": "System overview and latest activity status",
+      "total_users": "Total Users",
+      "active_users": "Active Users",
+      "completed_evaluations": "Completed Evaluations",
+      "pending_evaluations": "Pending Evaluations",
+      "recent_evaluations": "Recent Evaluations",
+      "no_recent_evaluations": "No recent evaluations",
+      "performance_chart": "Performance Chart",
+      "statistics": "Statistics",
+      "user_activity": "User Activity",
+      "system_status": "System Status",
+      "evaluation_progress": "Evaluation Progress",
+      "monthly_stats": "Monthly Statistics",
+      "total_goals": "Total Goals",
+      "completed_goals": "Completed Goals",
+      "total_employees": "Total Employees",
+      "pending_evaluations_count": "Processing Evaluations",
+      "completed_evaluations_count": "Completed Evaluations",
+      "performance_analysis": "Performance Analysis"
+    },
+
+    // ===== Authentication =====
     "auth": {
       "login": "Login",
       "logout": "Logout",
       "confirm_logout": "Are you sure you want to logout?",
       "email": "Email Address",
+      "email_label": "Email Address",
       "password": "Password",
+      "password_label": "Password",
+      "remember_me": "Keep me logged in",
+      "forgot_password": "Forgot Password?",
+      "register": "Register",
+      "sign_in": "Sign In",
+      "sign_out": "Sign Out",
+      "sign_up": "Sign Up",
       "name": "Name",
-      "company": "Company Name"
+      "company": "Company Name",
+      "login_failed": "Login failed",
+      "register_success": "Registration completed",
+      "reset_password": "Reset Password",
+      "confirm_password": "Confirm Password",
+      "register_admin": "Register Administrator Account",
+      "register_admin_link": "Click here to register new administrator account",
+      "register_user": "User Registration",
+      "logging_in": "Logging in...",
+      "sign_in_hint": "Please enter your account information",
+      "register_admin_success": "Registration application completed",
+      "register_admin_success_detail": "Please wait for approval by the system developer."
     },
-    "dashboard": {
-      "title": "Dashboard",
-      "system_overview": "System overview and recent activities",
-      "performance_analysis": "Performance Analysis",
-      "recent_evaluations": "Recent Evaluations",
-      "no_recent_evaluations": "No recent evaluations",
-      "total_employees": "Total Employees",
-      "pending_evaluations_count": "Pending Evaluations",
-      "completed_evaluations_count": "Completed Evaluations",
-      "total_users": "Total Users",
-      "completed_evaluations": "Completed Evaluations",
-      "pending_evaluations": "Pending Evaluations",
-      "performance_chart": "Performance Chart"
-    },
-    "users": {
-      "title": "User Management",
-      "invite": "Invite New User",
-      "invite_user": "Invite User",
-      "role": "Role",
-      "status": "Status",
-      "created_at": "Registration Date",
-      "actions": "Actions"
-    },
-    "evaluation": {
-      "title": "Evaluation Input",
+    
+    // ===== Evaluations =====
+    "evaluations": {
+      "title": "Evaluation List",
+      "form_title": "Evaluation Form",
       "new_evaluation": "New Evaluation",
       "my_evaluations": "My Evaluations",
       "pending_evaluations": "Pending Evaluations",
+      "total_score": "Total Score",
+      "target_user": "Target User",
+      "period": "Evaluation Period",
+      "evaluation_period": "Evaluation Period",
+      "target_info": "Target Information",
+      "confirm_submit": "Submit evaluation? You cannot edit after submission.",
+      "evaluator": "Evaluator"
+    },
+
+    "evaluation": {
+      "title": "Evaluation Input",
+      "new_evaluation": "Create New Evaluation",
       "self_assessment": "Self-Assessment",
-      "evaluator_assessment": "Evaluator's Assessment"
-    },
-    "roles": {
-      "developer": "Developer",
-      "admin": "Administrator", 
+      "evaluator_assessment": "Evaluator Assessment",
+      "score": "Score",
+      "comment": "Comment",
+      "submit": "Submit",
+      "period": "Evaluation Period",
+      "target": "Target User",
       "evaluator": "Evaluator",
-      "worker": "Worker",
-      "all": "All Roles"
+      "category": "Category",
+      "item": "Evaluation Item",
+      "job_type": "Job Type",
+      "target_info": "Target Information",
+      "select_target_user": "Please select target user",
+      "select_period": "Please select evaluation period",
+      "goal_achievement": "Goal Achievement Evaluation",
+      "no_goals_set": "No goals set for evaluation target.",
+      "confirm_submit": "Submit evaluation? You cannot edit after submission.",
+      "self_assessment_score": "Self-Assessment Score",
+      "evaluator_assessment_score": "Evaluator Assessment Score"
     },
-    "status": {
-      "active": "Active",
-      "inactive": "Inactive",
-      "pending": "Pending",
-      "completed": "Completed"
+    
+    // ===== Error Messages =====
+    "errors": {
+      "login_failed": "Login failed",
+      "logout_failed": "Logout failed",
+      "invalid_email_password": "Invalid email address or password",
+      "account_inactive": "Account is inactive",
+      "email_already_in_use": "This email address is already in use",
+      "weak_password": "Password is too weak",
+      "login_failed_generic": "Login failed",
+      "network_error": "Network error occurred",
+      "permission_denied": "Permission denied",
+      "not_found": "Data not found",
+      "validation_failed": "Input validation failed",
+      "server_error": "Server error occurred",
+      "timeout": "Request timed out",
+      "connection_failed": "Connection failed",
+      "invalid_data": "Invalid data",
+      "unauthorized": "Authentication required",
+      "forbidden": "Access denied",
+      "loading_failed": "Failed to load data.",
+      "email_password_required": "Please enter email address and password.",
+      "all_fields_required": "Please fill in all required fields.",
+      "access_denied": "You don't have permission to access this page.",
+      "passwords_not_match": "Passwords do not match.",
+      "passwords_match": "Passwords match.",
+      "chart_library_failed": "Failed to load chart library"
     },
+    
+    // ===== Common =====
     "common": {
       "language": "Language",
       "notifications": "Notifications",
-      "mark_all_read": "Mark all as read",
+      "mark_all_read": "Mark All as Read",
       "no_notifications": "No notifications",
       "quick_actions": "Quick Actions",
-      "user": "User",
+      "account": "Account",
+      "demo_account": "Demo Account",
+      "administrator": "Administrator",
+      "management": "Management",
+      "system": "System",
+      "profile": "Profile",
+      "settings": "Settings",
+      "support": "Support",
       "save": "Save",
       "cancel": "Cancel",
       "delete": "Delete",
@@ -445,8 +531,133 @@ const BUILT_IN_TRANSLATIONS = {
       "add": "Add",
       "search": "Search",
       "loading": "Loading...",
-      "actions": "Actions"
+      "error": "Error",
+      "success": "Success",
+      "confirm": "Confirm",
+      "yes": "Yes",
+      "no": "No",
+      "close": "Close",
+      "submit": "Submit",
+      "reset": "Reset",
+      "back": "Back",
+      "next": "Next",
+      "previous": "Previous",
+      "select": "Please select",
+      "clear": "Clear",
+      "toggle_navigation": "Toggle Navigation",
+      "user": "User",
+      "last_login": "Last Login",
+      "unknown": "Unknown",
+      "refresh": "Refresh",
+      "refreshing": "Refreshing...",
+      "reload": "Reload",
+      "view_all": "View All",
+      "no_data": "No data available",
+      "details": "Details",
+      "export": "Export",
+      "all": "All",
+      "add_success": "Added successfully",
+      "edit_user": "Edit User",
+      "current_status": "Current Status",
+      "load_draft": "Load Draft",
+      "save_draft": "Save Draft",
+      "back_to_login": "Back to Login",
+      "created_at": "Created Date",
+      "actions": "Actions",
+      "retry": "Retry"
     },
+
+    // ===== User Management =====
+    "users": {
+      "title": "User Management",
+      "subtitle": "Manage users within the organization",
+      "invite": "Invite New User",
+      "invite_user": "Invite User",
+      "role": "Role",
+      "status": "Status",
+      "created_at": "Registration Date",
+      "actions": "Actions",
+      "search_users": "Search users...",
+      "pending_approvals": "Pending Approval Users",
+      "active_users": "User List",
+      "invite_title": "Invite New User",
+      "send_invitation": "Send Invitation",
+      "invite_link_created": "Invitation link created",
+      "invite_link_instructions": "Copy and share the following link with the user you want to invite. The link is valid for 7 days.",
+      "copy_success": "Link copied!",
+      "confirm_approve": "Approve this user?",
+      "approve_success": "User approved.",
+      "confirm_reject": "Reject (delete) this user?",
+      "reject_success": "User deleted.",
+      "edit_user": "Edit User Information",
+      "total_users": "Total Users",
+      "pending_users": "Pending Approval",
+      "admin_users": "Administrators",
+      "all_status": "All Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "pending": "Pending",
+      "all_roles": "All Roles",
+      "invitation_message": "Invitation Message (Optional)"
+    },
+
+    // ===== Goal Management =====
+    "goals": {
+      "title": "Goal Setting",
+      "approvals_title": "Goal Approvals",
+      "weight": "Weight",
+      "total_weight": "Total Weight",
+      "add_goal": "Add Goal",
+      "apply": "Apply",
+      "approve": "Approve",
+      "reject": "Reject",
+      "goal_text": "Goal Content",
+      "weight_percent": "Weight (%)",
+      "pending_goals": "Pending Goals",
+      "approved_goals": "Approved Goals",
+      "about_goal_setting": "About Goal Setting",
+      "max_goals_info": "You can set up to {{maxGoals}} goals",
+      "total_weight_100_info": "Total weight must be 100%",
+      "admin_approval_info": "Administrator approval is required after application",
+      "submitted_at": "Application Date",
+      "confirm_approve": "Approve this goal?",
+      "confirm_reject": "Reject this goal?",
+      "rejection_reason_prompt": "Please enter the reason for rejection.",
+      "select_evaluation_period": "Please select evaluation period",
+      "confirm_apply": "Apply goals?",
+      "approve_success": "Goal approved.",
+      "reject_success": "Goal rejected."
+    },
+
+    // ===== Roles =====
+    "roles": {
+      "admin": "Administrator",
+      "user": "User",
+      "developer": "Developer",
+      "evaluator": "Evaluator",
+      "worker": "Worker",
+      "all": "All Roles"
+    },
+
+    // ===== Status =====
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "pending": "Pending",
+      "completed": "Completed",
+      "suspended": "Suspended",
+      "developer_approval_pending": "Pending Developer Approval",
+      "draft": "Draft",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "self_assessed": "Self-Assessment Complete",
+      "approved_by_evaluator": "Approved by Evaluator",
+      "pending_submission": "Pending Worker Submission",
+      "pending_evaluation": "Pending Evaluator Assessment",
+      "pending_approval": "Pending Administrator Approval"
+    },
+
+    // ===== Chart Items =====
     "chart_items": {
       "technical_skill": "Technical Skill",
       "quality": "Quality",
@@ -454,24 +665,68 @@ const BUILT_IN_TRANSLATIONS = {
       "cooperation": "Cooperation",
       "diligence": "Diligence"
     },
+
+    // ===== Time =====
     "time": {
       "just_now": "Just now",
       "minutes_ago": "{{count}} minutes ago",
       "hours_ago": "{{count}} hours ago",
       "days_ago": "{{count}} days ago"
     },
+
+    // ===== Notifications =====
     "notifications": {
       "type": {
         "evaluation_pending": "Evaluation Pending",
-        "evaluation_completed": "Evaluation Completed"
-      }
+        "evaluation_completed": "Evaluation Completed",
+        "user_assigned": "User Assigned",
+        "system_update": "System Update",
+        "reminder": "Reminder"
+      },
+      "evaluation_pending": "{{userName}}'s evaluation is pending approval",
+      "admin_evaluation_pending": "{{userName}}'s evaluation is pending approval by {{evaluatorName}}"
     },
-    "errors": {
-      "logout_failed": "Logout failed"
-    },
+
+    // ===== Messages =====
     "messages": {
+      "success": "Operation completed successfully",
+      "error": "An error occurred",
+      "loading": "Loading...",
+      "no_data": "No data available",
+      "save_success": "Saved successfully",
+      "delete_success": "Deleted successfully",
+      "approval_success": "Approved successfully",
+      "rejection_success": "Rejected successfully",
+      "invitation_sent": "Invitation sent",
+      "password_reset_sent": "Password reset email sent",
+      "login_success": "Welcome, {{userName}}",
+      "logout_success": "Logged out successfully.",
       "mark_all_notifications_read": "All notifications marked as read",
       "mark_notifications_failed": "Failed to mark notifications as read"
+    },
+
+    // ===== Report =====
+    "report": {
+      "summary": "Summary",
+      "comparison": "Comparison", 
+      "history": "History",
+      "overall_evaluation": "Overall Evaluation",
+      "detailed_scores": "Detailed Scores",
+      "score_comparison": "Score Comparison",
+      "process_history": "Process History",
+      "last_3_months": "Last 3 Months",
+      "last_6_months": "Last 6 Months",
+      "this_year": "This Year",
+      "all_time": "All Time",
+      "total_evaluations": "Total Evaluations",
+      "completed_evaluations": "Completed Evaluations",
+      "average_score": "Average Score",
+      "improvement_rate": "Improvement Rate",
+      "performance_trend": "Performance Trend",
+      "evaluation_status": "Evaluation Status Distribution",
+      "top_performers": "Top Performers",
+      "admin_analytics": "Admin Analytics",
+      "detailed_data": "Detailed Data"
     }
   },
 
@@ -481,78 +736,168 @@ const BUILT_IN_TRANSLATIONS = {
       "title": "Hệ thống quản lý đánh giá",
       "system_name": "Hệ thống quản lý đánh giá ngành xây dựng",
       "loading": "Đang tải...",
-      "welcome": "Chào mừng"
+      "welcome": "Chào mừng",
+      "version": "Phiên bản",
+      "copyright": "Bản quyền"
     },
+    
+    // ===== Navigation =====
     "nav": {
       "dashboard": "Bảng điều khiển",
+      "evaluations": "Danh sách đánh giá",
+      "evaluation": "Nhập đánh giá",
+      "goal_approvals": "Phê duyệt mục tiêu",
+      "goal_setting": "Thiết lập mục tiêu",
+      "goals": "Thiết lập mục tiêu", 
       "users": "Quản lý người dùng",
       "settings": "Cài đặt",
-      "evaluations": "Đánh giá",
-      "goals": "Thiết lập mục tiêu",
-      "goal_setting": "Thiết lập mục tiêu",
-      "goal_approvals": "Phê duyệt mục tiêu",
-      "reports": "Báo cáo",
-      "developer": "Nhà phát triển",
       "logout": "Đăng xuất",
+      "home": "Trang chủ",
       "profile": "Hồ sơ",
-      "evaluation": "Nhập đánh giá"
+      "help": "Trợ giúp",
+      "about": "Về hệ thống này",
+      "reports": "Báo cáo",
+      "developer": "Quản lý nhà phát triển"
     },
+    
+    // ===== Dashboard =====
+    "dashboard": {
+      "title": "Bảng điều khiển",
+      "overview": "Tổng quan hệ thống",
+      "system_overview": "Tổng quan hệ thống và tình trạng hoạt động mới nhất",
+      "total_users": "Tổng số người dùng",
+      "active_users": "Người dùng hoạt động",
+      "completed_evaluations": "Đánh giá hoàn thành",
+      "pending_evaluations": "Đánh giá chờ xử lý",
+      "recent_evaluations": "Đánh giá gần đây",
+      "no_recent_evaluations": "Không có đánh giá gần đây",
+      "performance_chart": "Biểu đồ hiệu suất",
+      "statistics": "Thống kê",
+      "user_activity": "Hoạt động người dùng",
+      "system_status": "Tình trạng hệ thống",
+      "evaluation_progress": "Tiến độ đánh giá",
+      "monthly_stats": "Thống kê tháng",
+      "total_goals": "Tổng số mục tiêu",
+      "completed_goals": "Mục tiêu hoàn thành",
+      "total_employees": "Tổng số nhân viên",
+      "pending_evaluations_count": "Đánh giá đang xử lý",
+      "completed_evaluations_count": "Đánh giá đã hoàn thành",
+      "performance_analysis": "Phân tích hiệu suất"
+    },
+
+    // ===== Authentication =====
     "auth": {
       "login": "Đăng nhập",
       "logout": "Đăng xuất",
       "confirm_logout": "Bạn có chắc chắn muốn đăng xuất?",
       "email": "Địa chỉ email",
+      "email_label": "Địa chỉ email",
       "password": "Mật khẩu",
+      "password_label": "Mật khẩu",
+      "remember_me": "Giữ tôi đăng nhập",
+      "forgot_password": "Quên mật khẩu?",
+      "register": "Đăng ký",
+      "sign_in": "Đăng nhập",
+      "sign_out": "Đăng xuất",
+      "sign_up": "Đăng ký",
       "name": "Họ tên",
-      "company": "Tên công ty"
+      "company": "Tên công ty",
+      "login_failed": "Đăng nhập thất bại",
+      "register_success": "Đăng ký hoàn tất",
+      "reset_password": "Đặt lại mật khẩu",
+      "confirm_password": "Xác nhận mật khẩu",
+      "register_admin": "Đăng ký tài khoản quản trị viên",
+      "register_admin_link": "Nhấn vào đây để đăng ký tài khoản quản trị viên mới",
+      "register_user": "Đăng ký người dùng",
+      "logging_in": "Đang đăng nhập...",
+      "sign_in_hint": "Vui lòng nhập thông tin tài khoản của bạn",
+      "register_admin_success": "Đơn đăng ký hoàn tất",
+      "register_admin_success_detail": "Vui lòng chờ phê duyệt từ nhà phát triển hệ thống."
     },
-    "dashboard": {
-      "title": "Bảng điều khiển",
-      "system_overview": "Tổng quan hệ thống và hoạt động gần đây",
-      "performance_analysis": "Phân tích hiệu suất",
-      "recent_evaluations": "Đánh giá gần đây",
-      "no_recent_evaluations": "Không có đánh giá gần đây",
-      "total_employees": "Tổng số nhân viên",
-      "pending_evaluations_count": "Đánh giá đang chờ xử lý",
-      "completed_evaluations_count": "Đánh giá đã hoàn thành"
-    },
-    "users": {
-      "title": "Quản lý người dùng",
-      "invite": "Mời người dùng mới",
-      "invite_user": "Mời người dùng",
-      "role": "Vai trò",
-      "status": "Trạng thái",
-      "created_at": "Ngày đăng ký",
-      "actions": "Hành động"
-    },
-    "evaluation": {
-      "title": "Nhập đánh giá",
+    
+    // ===== Evaluations =====
+    "evaluations": {
+      "title": "Danh sách đánh giá",
+      "form_title": "Biểu mẫu đánh giá",
       "new_evaluation": "Đánh giá mới",
       "my_evaluations": "Đánh giá của tôi",
-      "pending_evaluations": "Đánh giá chờ duyệt",
+      "pending_evaluations": "Đánh giá chờ xử lý",
+      "total_score": "Điểm tổng",
+      "target_user": "Người được đánh giá",
+      "period": "Kỳ đánh giá",
+      "evaluation_period": "Kỳ đánh giá",
+      "target_info": "Thông tin đối tượng",
+      "confirm_submit": "Gửi đánh giá? Bạn không thể chỉnh sửa sau khi gửi.",
+      "evaluator": "Người đánh giá"
+    },
+
+    "evaluation": {
+      "title": "Nhập đánh giá",
+      "new_evaluation": "Tạo đánh giá mới",
       "self_assessment": "Tự đánh giá",
-      "evaluator_assessment": "Đánh giá của người đánh giá"
+      "evaluator_assessment": "Đánh giá của người đánh giá",
+      "score": "Điểm",
+      "comment": "Bình luận",
+      "submit": "Gửi",
+      "period": "Kỳ đánh giá",
+      "target": "Người được đánh giá",
+      "evaluator": "Người đánh giá",
+      "category": "Danh mục",
+      "item": "Mục đánh giá",
+      "job_type": "Loại công việc",
+      "target_info": "Thông tin đối tượng",
+      "select_target_user": "Vui lòng chọn người được đánh giá",
+      "select_period": "Vui lòng chọn kỳ đánh giá",
+      "goal_achievement": "Đánh giá mức độ đạt mục tiêu",
+      "no_goals_set": "Chưa thiết lập mục tiêu cho đối tượng đánh giá.",
+      "confirm_submit": "Gửi đánh giá? Bạn không thể chỉnh sửa sau khi gửi.",
+      "self_assessment_score": "Điểm tự đánh giá",
+      "evaluator_assessment_score": "Điểm đánh giá của người đánh giá"
     },
-    "roles": {
-      "developer": "Nhà phát triển",
-      "admin": "Quản trị viên",
-      "evaluator": "Người đánh giá", 
-      "worker": "Công nhân",
-      "all": "Tất cả vai trò"
+    
+    // ===== Error Messages =====
+    "errors": {
+      "login_failed": "Đăng nhập thất bại",
+      "logout_failed": "Đăng xuất thất bại",
+      "invalid_email_password": "Địa chỉ email hoặc mật khẩu không đúng",
+      "account_inactive": "Tài khoản không hoạt động",
+      "email_already_in_use": "Địa chỉ email này đã được sử dụng",
+      "weak_password": "Mật khẩu quá yếu",
+      "login_failed_generic": "Đăng nhập thất bại",
+      "network_error": "Lỗi mạng đã xảy ra",
+      "permission_denied": "Không có quyền truy cập",
+      "not_found": "Không tìm thấy dữ liệu",
+      "validation_failed": "Xác thực đầu vào thất bại",
+      "server_error": "Lỗi máy chủ đã xảy ra",
+      "timeout": "Yêu cầu hết thời gian",
+      "connection_failed": "Kết nối thất bại",
+      "invalid_data": "Dữ liệu không hợp lệ",
+      "unauthorized": "Yêu cầu xác thực",
+      "forbidden": "Truy cập bị từ chối",
+      "loading_failed": "Không thể tải dữ liệu.",
+      "email_password_required": "Vui lòng nhập địa chỉ email và mật khẩu.",
+      "all_fields_required": "Vui lòng điền vào tất cả các trường bắt buộc.",
+      "access_denied": "Bạn không có quyền truy cập trang này.",
+      "passwords_not_match": "Mật khẩu không khớp.",
+      "passwords_match": "Mật khẩu khớp.",
+      "chart_library_failed": "Không thể tải thư viện biểu đồ"
     },
-    "status": {
-      "active": "Hoạt động",
-      "inactive": "Không hoạt động",
-      "pending": "Đang chờ",
-      "completed": "Hoàn thành"
-    },
+    
+    // ===== Common =====
     "common": {
       "language": "Ngôn ngữ",
       "notifications": "Thông báo",
       "mark_all_read": "Đánh dấu tất cả đã đọc",
       "no_notifications": "Không có thông báo",
       "quick_actions": "Hành động nhanh",
-      "user": "Người dùng",
+      "account": "Tài khoản",
+      "demo_account": "Tài khoản demo",
+      "administrator": "Quản trị viên",
+      "management": "Quản lý",
+      "system": "Hệ thống",
+      "profile": "Hồ sơ",
+      "settings": "Cài đặt",
+      "support": "Hỗ trợ",
       "save": "Lưu",
       "cancel": "Hủy",
       "delete": "Xóa",
@@ -560,8 +905,133 @@ const BUILT_IN_TRANSLATIONS = {
       "add": "Thêm",
       "search": "Tìm kiếm",
       "loading": "Đang tải...",
-      "actions": "Hành động"
+      "error": "Lỗi",
+      "success": "Thành công",
+      "confirm": "Xác nhận",
+      "yes": "Có",
+      "no": "Không",
+      "close": "Đóng",
+      "submit": "Gửi",
+      "reset": "Đặt lại",
+      "back": "Quay lại",
+      "next": "Tiếp theo",
+      "previous": "Trước",
+      "select": "Vui lòng chọn",
+      "clear": "Xóa",
+      "toggle_navigation": "Chuyển đổi điều hướng",
+      "user": "Người dùng",
+      "last_login": "Đăng nhập lần cuối",
+      "unknown": "Không xác định",
+      "refresh": "Làm mới",
+      "refreshing": "Đang làm mới...",
+      "reload": "Tải lại",
+      "view_all": "Xem tất cả",
+      "no_data": "Không có dữ liệu",
+      "details": "Chi tiết",
+      "export": "Xuất",
+      "all": "Tất cả",
+      "add_success": "Đã thêm thành công",
+      "edit_user": "Chỉnh sửa người dùng",
+      "current_status": "Trạng thái hiện tại",
+      "load_draft": "Tải bản nháp",
+      "save_draft": "Lưu bản nháp",
+      "back_to_login": "Quay lại đăng nhập",
+      "created_at": "Ngày tạo",
+      "actions": "Hành động",
+      "retry": "Thử lại"
     },
+
+    // ===== User Management =====
+    "users": {
+      "title": "Quản lý người dùng",
+      "subtitle": "Quản lý người dùng trong tổ chức",
+      "invite": "Mời người dùng mới",
+      "invite_user": "Mời người dùng",
+      "role": "Vai trò",
+      "status": "Trạng thái",
+      "created_at": "Ngày đăng ký",
+      "actions": "Hành động",
+      "search_users": "Tìm kiếm người dùng...",
+      "pending_approvals": "Người dùng chờ phê duyệt",
+      "active_users": "Danh sách người dùng",
+      "invite_title": "Mời người dùng mới",
+      "send_invitation": "Gửi lời mời",
+      "invite_link_created": "Liên kết mời đã được tạo",
+      "invite_link_instructions": "Sao chép và chia sẻ liên kết sau với người dùng bạn muốn mời. Liên kết có hiệu lực trong 7 ngày.",
+      "copy_success": "Đã sao chép liên kết!",
+      "confirm_approve": "Phê duyệt người dùng này?",
+      "approve_success": "Đã phê duyệt người dùng.",
+      "confirm_reject": "Từ chối (xóa) người dùng này?",
+      "reject_success": "Đã xóa người dùng.",
+      "edit_user": "Chỉnh sửa thông tin người dùng",
+      "total_users": "Tổng số người dùng",
+      "pending_users": "Chờ phê duyệt",
+      "admin_users": "Quản trị viên",
+      "all_status": "Tất cả trạng thái",
+      "active": "Hoạt động",
+      "inactive": "Không hoạt động",
+      "pending": "Chờ xử lý",
+      "all_roles": "Tất cả vai trò",
+      "invitation_message": "Tin nhắn mời (Tùy chọn)"
+    },
+
+    // ===== Goal Management =====
+    "goals": {
+      "title": "Thiết lập mục tiêu",
+      "approvals_title": "Phê duyệt mục tiêu",
+      "weight": "Trọng số",
+      "total_weight": "Tổng trọng số",
+      "add_goal": "Thêm mục tiêu",
+      "apply": "Áp dụng",
+      "approve": "Phê duyệt",
+      "reject": "Từ chối",
+      "goal_text": "Nội dung mục tiêu",
+      "weight_percent": "Trọng số (%)",
+      "pending_goals": "Mục tiêu chờ xử lý",
+      "approved_goals": "Mục tiêu đã phê duyệt",
+      "about_goal_setting": "Về thiết lập mục tiêu",
+      "max_goals_info": "Bạn có thể thiết lập tối đa {{maxGoals}} mục tiêu",
+      "total_weight_100_info": "Tổng trọng số phải bằng 100%",
+      "admin_approval_info": "Cần phê duyệt của quản trị viên sau khi áp dụng",
+      "submitted_at": "Ngày áp dụng",
+      "confirm_approve": "Phê duyệt mục tiêu này?",
+      "confirm_reject": "Từ chối mục tiêu này?",
+      "rejection_reason_prompt": "Vui lòng nhập lý do từ chối.",
+      "select_evaluation_period": "Vui lòng chọn kỳ đánh giá",
+      "confirm_apply": "Áp dụng mục tiêu?",
+      "approve_success": "Đã phê duyệt mục tiêu.",
+      "reject_success": "Đã từ chối mục tiêu."
+    },
+
+    // ===== Roles =====
+    "roles": {
+      "admin": "Quản trị viên",
+      "user": "Người dùng",
+      "developer": "Nhà phát triển",
+      "evaluator": "Người đánh giá",
+      "worker": "Công nhân",
+      "all": "Tất cả vai trò"
+    },
+
+    // ===== Status =====
+    "status": {
+      "active": "Hoạt động",
+      "inactive": "Không hoạt động",
+      "pending": "Chờ xử lý",
+      "completed": "Hoàn thành",
+      "suspended": "Tạm ngừng",
+      "developer_approval_pending": "Chờ phê duyệt nhà phát triển",
+      "draft": "Bản nháp",
+      "approved": "Đã phê duyệt",
+      "rejected": "Bị từ chối",
+      "self_assessed": "Tự đánh giá hoàn tất",
+      "approved_by_evaluator": "Đã phê duyệt bởi người đánh giá",
+      "pending_submission": "Chờ nộp của công nhân",
+      "pending_evaluation": "Chờ đánh giá của người đánh giá",
+      "pending_approval": "Chờ phê duyệt của quản trị viên"
+    },
+
+    // ===== Chart Items =====
     "chart_items": {
       "technical_skill": "Kỹ năng kỹ thuật",
       "quality": "Chất lượng",
@@ -569,24 +1039,68 @@ const BUILT_IN_TRANSLATIONS = {
       "cooperation": "Hợp tác",
       "diligence": "Chuyên cần"
     },
+
+    // ===== Time =====
     "time": {
       "just_now": "Vừa xong",
       "minutes_ago": "{{count}} phút trước",
       "hours_ago": "{{count}} giờ trước",
       "days_ago": "{{count}} ngày trước"
     },
+
+    // ===== Notifications =====
     "notifications": {
       "type": {
-        "evaluation_pending": "Đánh giá chờ duyệt",
-        "evaluation_completed": "Đánh giá hoàn thành"
-      }
+        "evaluation_pending": "Đánh giá chờ xử lý",
+        "evaluation_completed": "Đánh giá hoàn thành",
+        "user_assigned": "Người dùng được giao",
+        "system_update": "Cập nhật hệ thống",
+        "reminder": "Nhắc nhở"
+      },
+      "evaluation_pending": "Đánh giá của {{userName}} đang chờ phê duyệt",
+      "admin_evaluation_pending": "Đánh giá của {{userName}} đang chờ phê duyệt bởi {{evaluatorName}}"
     },
-    "errors": {
-      "logout_failed": "Đăng xuất thất bại"
-    },
+
+    // ===== Messages =====
     "messages": {
+      "success": "Thao tác hoàn tất thành công",
+      "error": "Đã xảy ra lỗi",
+      "loading": "Đang tải...",
+      "no_data": "Không có dữ liệu",
+      "save_success": "Đã lưu thành công",
+      "delete_success": "Đã xóa thành công",
+      "approval_success": "Đã phê duyệt thành công",
+      "rejection_success": "Đã từ chối thành công",
+      "invitation_sent": "Đã gửi lời mời",
+      "password_reset_sent": "Đã gửi email đặt lại mật khẩu",
+      "login_success": "Chào mừng, {{userName}}",
+      "logout_success": "Đã đăng xuất thành công.",
       "mark_all_notifications_read": "Đã đánh dấu tất cả thông báo đã đọc",
       "mark_notifications_failed": "Không thể đánh dấu thông báo đã đọc"
+    },
+
+    // ===== Report =====
+    "report": {
+      "summary": "Tóm tắt",
+      "comparison": "So sánh", 
+      "history": "Lịch sử",
+      "overall_evaluation": "Đánh giá tổng thể",
+      "detailed_scores": "Điểm chi tiết",
+      "score_comparison": "So sánh điểm",
+      "process_history": "Lịch sử xử lý",
+      "last_3_months": "3 tháng qua",
+      "last_6_months": "6 tháng qua",
+      "this_year": "Năm nay",
+      "all_time": "Tất cả thời gian",
+      "total_evaluations": "Tổng số đánh giá",
+      "completed_evaluations": "Đánh giá hoàn thành",
+      "average_score": "Điểm trung bình",
+      "improvement_rate": "Tỷ lệ cải thiện",
+      "performance_trend": "Xu hướng hiệu suất",
+      "evaluation_status": "Phân bố trạng thái đánh giá",
+      "top_performers": "Người có hiệu suất cao",
+      "admin_analytics": "Phân tích quản trị",
+      "detailed_data": "Dữ liệu chi tiết"
     }
   }
 };
