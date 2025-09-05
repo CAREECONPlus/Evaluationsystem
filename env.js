@@ -3,7 +3,7 @@
  * ブラウザ環境で環境変数を安全に管理するためのモジュール
  */
 
-export class Environment {
+class Environment {
   constructor() {
     this.config = null;
     this.isLoaded = false;
