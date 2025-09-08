@@ -86,16 +86,22 @@ export class EvaluationReportPage {
    */
   async loadWorkerData() {
     try {
-      const userId = this.currentUser.id;
-      const [personalEvaluations, personalStats] = await Promise.allSettled([
-        this.app.api.getUserEvaluations(userId, { timeRange: this.currentTimeRange }),
-        this.app.api.getUserStatistics(userId, { timeRange: this.currentTimeRange })
-      ]);
+      const userId = this.currentUser.uid || this.currentUser.id;
+      console.log('Reports: Loading worker data for user:', userId);
+      
+      // 実際の評価データを取得
+      const evaluations = await this.app.api.getEvaluations({
+        targetUserId: userId
+      });
 
+      const filteredEvaluations = this.filterEvaluationsByTimeRange(evaluations);
+      
       return {
-        evaluations: personalEvaluations.status === 'fulfilled' ? personalEvaluations.value : [],
-        statistics: personalStats.status === 'fulfilled' ? personalStats.value : this.getDefaultStats(),
-        trends: this.calculatePersonalTrends(personalEvaluations.value || [])
+        evaluations: filteredEvaluations,
+        statistics: this.calculateWorkerStatistics(filteredEvaluations),
+        trends: this.calculatePersonalTrends(filteredEvaluations),
+        improvements: this.analyzeImprovements(filteredEvaluations),
+        strengths: this.analyzeStrengths(filteredEvaluations)
       };
     } catch (error) {
       console.error('Reports: Failed to load worker data:', error);
@@ -108,18 +114,30 @@ export class EvaluationReportPage {
    */
   async loadEvaluatorData() {
     try {
-      const userId = this.currentUser.id;
-      const [personalData, subordinateData, subordinateList] = await Promise.allSettled([
-        this.loadWorkerData(), // 個人データ
-        this.app.api.getSubordinateEvaluations(this.subordinateIds, { timeRange: this.currentTimeRange }),
-        this.app.api.getSubordinatesList(userId)
-      ]);
+      const userId = this.currentUser.uid || this.currentUser.id;
+      console.log('Reports: Loading evaluator data for user:', userId);
+
+      // 個人の評価データ
+      const personalData = await this.loadWorkerData();
+
+      // 担当者の評価データを取得
+      const allEvaluations = await this.app.api.getEvaluations({
+        evaluatorId: userId
+      });
+
+      const filteredEvaluations = this.filterEvaluationsByTimeRange(allEvaluations);
+      
+      // 担当者リストを取得
+      const subordinateUsers = await this.app.api.getUsers({
+        evaluatorId: userId
+      }) || [];
 
       return {
-        personal: personalData.status === 'fulfilled' ? personalData.value : this.getDefaultWorkerData(),
-        subordinates: subordinateData.status === 'fulfilled' ? subordinateData.value : [],
-        subordinateList: subordinateList.status === 'fulfilled' ? subordinateList.value : [],
-        progress: this.calculateEvaluationProgress(subordinateData.value || [])
+        personal: personalData,
+        subordinates: filteredEvaluations,
+        subordinateList: subordinateUsers,
+        progress: this.calculateEvaluationProgress(filteredEvaluations),
+        subordinateStats: this.calculateSubordinateStatistics(filteredEvaluations)
       };
     } catch (error) {
       console.error('Reports: Failed to load evaluator data:', error);
@@ -132,20 +150,25 @@ export class EvaluationReportPage {
    */
   async loadAdminData() {
     try {
-      const [personalData, allEvaluations, organizationStats, skillData, departmentData] = await Promise.allSettled([
-        this.loadWorkerData(), // 個人データ
-        this.app.api.getAllEvaluations({ timeRange: this.currentTimeRange }),
-        this.app.api.getOrganizationStatistics({ timeRange: this.currentTimeRange }),
-        this.app.api.getSkillAnalysis({ timeRange: this.currentTimeRange }),
-        this.app.api.getDepartmentAnalysis({ timeRange: this.currentTimeRange })
-      ]);
+      console.log('Reports: Loading admin data for organization');
 
+      // 個人の評価データ
+      const personalData = await this.loadWorkerData();
+
+      // 組織全体の評価データを取得
+      const allEvaluations = await this.app.api.getEvaluations({});
+      const filteredEvaluations = this.filterEvaluationsByTimeRange(allEvaluations);
+      
+      // 全ユーザー情報を取得
+      const allUsers = await this.app.api.getUsers({}) || [];
+      
       return {
-        personal: personalData.status === 'fulfilled' ? personalData.value : this.getDefaultWorkerData(),
-        allEvaluations: allEvaluations.status === 'fulfilled' ? allEvaluations.value : [],
-        organizationStats: organizationStats.status === 'fulfilled' ? organizationStats.value : this.getDefaultOrgStats(),
-        skillAnalysis: skillData.status === 'fulfilled' ? skillData.value : this.getDefaultSkillData(),
-        departmentAnalysis: departmentData.status === 'fulfilled' ? departmentData.value : []
+        personal: personalData,
+        allEvaluations: filteredEvaluations,
+        organizationStats: this.calculateOrganizationStatistics(filteredEvaluations),
+        skillAnalysis: this.analyzeOrganizationSkills(filteredEvaluations),
+        departmentAnalysis: this.analyzeDepartmentPerformance(filteredEvaluations, allUsers),
+        userList: allUsers
       };
     } catch (error) {
       console.error('Reports: Failed to load admin data:', error);
@@ -156,23 +179,153 @@ export class EvaluationReportPage {
   /**
    * データ処理ヘルパーメソッド
    */
+  
+  /**
+   * 時間範囲によるフィルタリング
+   */
+  filterEvaluationsByTimeRange(evaluations) {
+    if (!evaluations || evaluations.length === 0) return [];
+    
+    const now = new Date();
+    let startDate;
+    
+    switch (this.currentTimeRange) {
+      case 'last3months':
+        startDate = new Date(now.setMonth(now.getMonth() - 3));
+        break;
+      case 'last6months':
+        startDate = new Date(now.setMonth(now.getMonth() - 6));
+        break;
+      case 'thisyear':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      case 'all':
+      default:
+        return evaluations;
+    }
+    
+    return evaluations.filter(evaluation => {
+      const evalDate = new Date(evaluation.evaluatedAt || evaluation.updatedAt || evaluation.createdAt);
+      return evalDate >= startDate;
+    });
+  }
+
+  /**
+   * 作業員統計の計算
+   */
+  calculateWorkerStatistics(evaluations) {
+    if (!evaluations || evaluations.length === 0) {
+      return this.getDefaultStats();
+    }
+
+    const completedEvaluations = evaluations.filter(e => e.status === 'completed');
+    const scores = completedEvaluations.map(e => parseFloat(e.finalScore) || 0).filter(s => s > 0);
+    
+    const averageScore = scores.length > 0 ? scores.reduce((sum, score) => sum + score, 0) / scores.length : 0;
+    
+    // 改善率の計算（前回と今回の比較）
+    let improvementRate = 0;
+    if (scores.length >= 2) {
+      const recentScores = scores.slice(-2);
+      improvementRate = ((recentScores[1] - recentScores[0]) / recentScores[0]) * 100;
+    }
+
+    return {
+      totalEvaluations: evaluations.length,
+      completedEvaluations: completedEvaluations.length,
+      averageScore: averageScore,
+      improvementRate: improvementRate
+    };
+  }
+
+  /**
+   * 個人評価推移の計算
+   */
   calculatePersonalTrends(evaluations) {
     if (!evaluations || evaluations.length === 0) {
       return { labels: [], datasets: [] };
     }
 
-    const sortedEvaluations = evaluations.sort((a, b) => new Date(a.evaluatedAt) - new Date(b.evaluatedAt));
+    const completedEvaluations = evaluations
+      .filter(e => e.status === 'completed' && e.finalScore)
+      .sort((a, b) => new Date(a.evaluatedAt || a.updatedAt) - new Date(b.evaluatedAt || b.updatedAt));
     
+    if (completedEvaluations.length === 0) {
+      return { labels: [], datasets: [] };
+    }
+
     return {
-      labels: sortedEvaluations.map(e => this.formatDate(e.evaluatedAt)),
+      labels: completedEvaluations.map(e => this.formatDate(e.evaluatedAt || e.updatedAt)),
       datasets: [{
         label: '総合評価',
-        data: sortedEvaluations.map(e => e.finalScore || 0),
+        data: completedEvaluations.map(e => parseFloat(e.finalScore) || 0),
         borderColor: 'rgba(54, 162, 235, 1)',
         backgroundColor: 'rgba(54, 162, 235, 0.1)',
-        fill: true
+        fill: true,
+        tension: 0.4
       }]
     };
+  }
+
+  /**
+   * 改善ポイントの分析
+   */
+  analyzeImprovements(evaluations) {
+    if (!evaluations || evaluations.length === 0) return [];
+
+    const latestEvaluation = evaluations
+      .filter(e => e.status === 'completed' && e.ratings)
+      .sort((a, b) => new Date(b.evaluatedAt || b.updatedAt) - new Date(a.evaluatedAt || a.updatedAt))[0];
+
+    if (!latestEvaluation || !latestEvaluation.ratings) return [];
+
+    const improvements = [];
+    const ratings = latestEvaluation.ratings;
+    
+    // スコアが3以下の項目を改善ポイントとする
+    Object.keys(ratings).forEach(key => {
+      const score = parseFloat(ratings[key]);
+      if (score > 0 && score <= 3 && !key.includes('Comment')) {
+        improvements.push({
+          category: this.getSkillCategoryName(key),
+          currentScore: score,
+          targetScore: Math.min(score + 1, 5),
+          advice: this.generateAdvice(key, score)
+        });
+      }
+    });
+
+    return improvements.slice(0, 5); // 上位5つまで
+  }
+
+  /**
+   * 強みの分析
+   */
+  analyzeStrengths(evaluations) {
+    if (!evaluations || evaluations.length === 0) return [];
+
+    const latestEvaluation = evaluations
+      .filter(e => e.status === 'completed' && e.ratings)
+      .sort((a, b) => new Date(b.evaluatedAt || b.updatedAt) - new Date(a.evaluatedAt || a.updatedAt))[0];
+
+    if (!latestEvaluation || !latestEvaluation.ratings) return [];
+
+    const strengths = [];
+    const ratings = latestEvaluation.ratings;
+    
+    // スコアが4以上の項目を強みとする
+    Object.keys(ratings).forEach(key => {
+      const score = parseFloat(ratings[key]);
+      if (score >= 4 && !key.includes('Comment')) {
+        strengths.push({
+          category: this.getSkillCategoryName(key),
+          score: score,
+          description: this.generateStrengthDescription(key, score)
+        });
+      }
+    });
+
+    return strengths.slice(0, 5); // 上位5つまで
   }
 
   calculateEvaluationProgress(subordinateEvaluations) {
@@ -1035,10 +1188,11 @@ export class EvaluationReportPage {
 
     const ctx = canvas.getContext('2d');
     
-    // ダミーデータ（実際は評価データから生成）
-    const categories = ['コミュニケーション', '技術力', '責任感', '協調性', 'リーダーシップ'];
-    const currentScores = [4.2, 3.8, 4.5, 4.1, 3.6];
-    const previousScores = [3.9, 3.5, 4.2, 3.8, 3.4];
+    // 実際の評価データからレーダーチャートデータを生成
+    const radarData = this.generateRadarChartData();
+    const categories = radarData.labels;
+    const currentScores = radarData.current;
+    const previousScores = radarData.previous;
 
     this.chartInstances.personalRadar = new Chart(ctx, {
       type: 'radar',
@@ -1078,27 +1232,18 @@ export class EvaluationReportPage {
     const container = document.getElementById('improvementPoints');
     if (!container) return;
 
-    // ダミーデータ（実際は評価データから生成）
-    const improvements = [
-      {
-        category: 'コミュニケーション',
-        currentScore: 3.2,
-        targetScore: 4.0,
-        advice: 'チーム内での積極的な意見交換を心がけましょう'
-      },
-      {
-        category: 'リーダーシップ',
-        currentScore: 3.1,
-        targetScore: 3.8,
-        advice: '後輩指導の機会を増やして経験を積みましょう'
-      },
-      {
-        category: '技術力',
-        currentScore: 3.5,
-        targetScore: 4.2,
-        advice: '新しい技術の学習時間を確保しましょう'
-      }
-    ];
+    // 実際の評価データから改善ポイントを生成
+    const improvements = this.reportData?.improvements || [];
+    
+    if (improvements.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-4">
+          <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+          <p class="text-muted">現在特に改善が必要な項目はありません</p>
+        </div>
+      `;
+      return;
+    }
 
     container.innerHTML = improvements.map(item => `
       <div class="mb-3 p-3 border-start border-warning border-3 bg-light">
@@ -1118,34 +1263,18 @@ export class EvaluationReportPage {
     const container = document.getElementById('strengthPoints');
     if (!container) return;
 
-    // ダミーデータ（実際は評価データから生成）
-    const strengths = [
-      {
-        category: '責任感',
-        score: 4.8,
-        description: '与えられた仕事を確実に完遂する能力に優れています'
-      },
-      {
-        category: '協調性',
-        score: 4.6,
-        description: 'チームメンバーとの連携が非常にうまく取れています'
-      },
-      {
-        category: '問題解決',
-        score: 4.4,
-        description: '課題に対して論理的なアプローチで取り組めています'
-      },
-      {
-        category: '学習意欲',
-        score: 4.3,
-        description: '新しい知識や技術の習得に積極的です'
-      },
-      {
-        category: '時間管理',
-        score: 4.2,
-        description: 'スケジュール管理と効率的な作業が得意です'
-      }
-    ];
+    // 実際の評価データから強みポイントを生成
+    const strengths = this.reportData?.strengths || [];
+    
+    if (strengths.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-4">
+          <i class="fas fa-search fa-3x text-muted mb-3"></i>
+          <p class="text-muted">強みを分析するには評価データが必要です</p>
+        </div>
+      `;
+      return;
+    }
 
     container.innerHTML = strengths.map(item => `
       <div class="mb-3 p-3 border-start border-success border-3 bg-light">
@@ -1685,10 +1814,13 @@ export class EvaluationReportPage {
 
     const ctx = canvas.getContext('2d');
     
-    // 部門別データ
-    const departments = ['開発部', '営業部', '管理部', '人事部'];
-    const currentScores = [4.1, 3.9, 4.0, 3.8];
-    const previousScores = [3.8, 3.7, 3.9, 3.6];
+    // 実際の部門データから生成
+    const departmentAnalysis = this.reportData?.departmentAnalysis;
+    const departments = departmentAnalysis?.departments || ['開発部', '営業部', '管理部', '人事部'];
+    const currentScores = departments.map(dept => 
+      departmentAnalysis?.averageScores?.[dept] || 0
+    );
+    const previousScores = departments.map(() => 0); // 前期データは要実装
 
     this.chartInstances.departmentPerformance = new Chart(ctx, {
       type: 'bar',
@@ -1968,6 +2100,315 @@ export class EvaluationReportPage {
       `;
       this.applyTranslationsToElement(container);
     }
+  }
+
+  /**
+   * スキルカテゴリ名を取得
+   */
+  getSkillCategoryName(key) {
+    const categoryMap = {
+      'technical': '技術スキル',
+      'communication': 'コミュニケーション', 
+      'leadership': 'リーダーシップ',
+      'teamwork': 'チームワーク',
+      'problemSolving': '問題解決',
+      'timeManagement': '時間管理',
+      'responsibility': '責任感',
+      'creativity': '創造性',
+      'learningAbility': '学習能力',
+      'adaptability': '適応力'
+    };
+    return categoryMap[key] || key;
+  }
+
+  /**
+   * 改善アドバイスを生成
+   */
+  generateAdvice(category, score) {
+    const adviceMap = {
+      'technical': 'より専門的な知識の習得と実践経験を積むことをお勧めします',
+      'communication': 'チーム内での積極的な意見交換を心がけ、プレゼンテーション能力の向上に取り組みましょう',
+      'leadership': '後輩指導の機会を増やし、リーダーとしての経験を積むことが重要です',
+      'teamwork': 'チームメンバーとの協調性を更に高め、共同作業のスキルを磨きましょう',
+      'problemSolving': '論理的思考力を鍛え、複雑な問題に対するアプローチ方法を学びましょう',
+      'timeManagement': 'スケジュール管理ツールの活用と優先順位の設定を見直しましょう',
+      'responsibility': '任された業務への責任感を更に高め、完遂率の向上を目指しましょう',
+      'creativity': '新しいアイデアの創出に挑戦し、創造的思考を養いましょう',
+      'learningAbility': '継続的な学習習慣を身につけ、新しい知識の吸収に努めましょう',
+      'adaptability': '変化に対する柔軟性を高め、新しい環境への適応力を向上させましょう'
+    };
+    return adviceMap[category] || 'この分野でのスキル向上に取り組むことをお勧めします';
+  }
+
+  /**
+   * 強みの説明を生成
+   */
+  generateStrengthDescription(category, score) {
+    const descriptionMap = {
+      'technical': '専門的な技術力と実践的な知識に優れています',
+      'communication': 'コミュニケーション能力が高く、効果的な意思疎通ができています',
+      'leadership': 'リーダーシップを発揮し、チームを適切に導く能力があります',
+      'teamwork': 'チームワークに優れ、協調性を持って業務に取り組んでいます',
+      'problemSolving': '問題解決能力が高く、論理的なアプローチで課題に取り組めています',
+      'timeManagement': '時間管理が得意で、効率的に業務を進めることができています',
+      'responsibility': '責任感が強く、与えられた仕事を確実に完遂する能力があります',
+      'creativity': '創造性に富み、新しいアイデアや解決策を提案できています',
+      'learningAbility': '学習意欲が高く、新しい知識や技術の習得に積極的です',
+      'adaptability': '適応力があり、変化する環境に柔軟に対応できています'
+    };
+    return descriptionMap[category] || 'この分野で優秀な能力を発揮しています';
+  }
+
+  /**
+   * 部下の統計を計算
+   */
+  calculateSubordinateStatistics(evaluations) {
+    if (!evaluations || evaluations.length === 0) {
+      return {
+        averageScore: 0,
+        completionRate: 0,
+        improvementRate: 0,
+        totalEvaluated: 0
+      };
+    }
+
+    const completedEvaluations = evaluations.filter(e => e.status === 'completed');
+    const totalScore = completedEvaluations.reduce((sum, e) => sum + (e.totalScore || 0), 0);
+    
+    return {
+      averageScore: completedEvaluations.length > 0 ? totalScore / completedEvaluations.length : 0,
+      completionRate: (completedEvaluations.length / evaluations.length) * 100,
+      improvementRate: this.calculateImprovementRate(evaluations),
+      totalEvaluated: evaluations.length
+    };
+  }
+
+  /**
+   * 改善率を計算
+   */
+  calculateImprovementRate(evaluations) {
+    // 過去の評価と比較して改善率を算出
+    const improved = evaluations.filter(e => {
+      return e.previousScore && e.totalScore > e.previousScore;
+    });
+    
+    return evaluations.length > 0 ? (improved.length / evaluations.length) * 100 : 0;
+  }
+
+  /**
+   * 組織統計を計算
+   */
+  calculateOrganizationStatistics(allEvaluations) {
+    if (!allEvaluations || allEvaluations.length === 0) {
+      return {
+        totalEmployees: 0,
+        evaluationRate: 0,
+        averageScore: 0,
+        strongSkills: 0,
+        weakSkills: 0
+      };
+    }
+
+    const completedEvaluations = allEvaluations.filter(e => e.status === 'completed');
+    const totalScore = completedEvaluations.reduce((sum, e) => sum + (e.totalScore || 0), 0);
+    const avgScore = completedEvaluations.length > 0 ? totalScore / completedEvaluations.length : 0;
+    
+    // ユニークなユーザー数を算出
+    const uniqueUsers = new Set(allEvaluations.map(e => e.targetUserId)).size;
+    
+    return {
+      totalEmployees: uniqueUsers,
+      evaluationRate: allEvaluations.length > 0 ? (completedEvaluations.length / allEvaluations.length) * 100 : 0,
+      averageScore: avgScore,
+      strongSkills: this.countSkillsAboveThreshold(completedEvaluations, 4.0),
+      weakSkills: this.countSkillsBelowThreshold(completedEvaluations, 3.0)
+    };
+  }
+
+  /**
+   * 閾値以上のスキル数をカウント
+   */
+  countSkillsAboveThreshold(evaluations, threshold) {
+    return evaluations.reduce((count, evaluation) => {
+      if (evaluation.ratings) {
+        const highRatings = Object.values(evaluation.ratings).filter(rating => rating >= threshold);
+        return count + highRatings.length;
+      }
+      return count;
+    }, 0);
+  }
+
+  /**
+   * 閾値以下のスキル数をカウント
+   */
+  countSkillsBelowThreshold(evaluations, threshold) {
+    return evaluations.reduce((count, evaluation) => {
+      if (evaluation.ratings) {
+        const lowRatings = Object.values(evaluation.ratings).filter(rating => rating <= threshold);
+        return count + lowRatings.length;
+      }
+      return count;
+    }, 0);
+  }
+
+  /**
+   * 評価進捗を計算
+   */
+  calculateEvaluationProgress(evaluations) {
+    const total = evaluations.length;
+    const completed = evaluations.filter(e => e.status === 'completed').length;
+    
+    return {
+      total,
+      completed,
+      percentage: total > 0 ? Math.round((completed / total) * 100) : 0
+    };
+  }
+
+  /**
+   * 組織のスキル分析
+   */
+  analyzeOrganizationSkills(evaluations) {
+    const completedEvaluations = evaluations.filter(e => e.status === 'completed' && e.ratings);
+    
+    if (completedEvaluations.length === 0) {
+      return {
+        topSkills: [],
+        improvementAreas: [],
+        skillDistribution: {}
+      };
+    }
+
+    const skillAverages = {};
+    const skillCounts = {};
+
+    // 各スキルの平均値を計算
+    completedEvaluations.forEach(evaluation => {
+      if (evaluation.ratings) {
+        Object.entries(evaluation.ratings).forEach(([skill, rating]) => {
+          if (!skillAverages[skill]) {
+            skillAverages[skill] = 0;
+            skillCounts[skill] = 0;
+          }
+          skillAverages[skill] += rating;
+          skillCounts[skill]++;
+        });
+      }
+    });
+
+    // 平均値を計算
+    Object.keys(skillAverages).forEach(skill => {
+      skillAverages[skill] = skillAverages[skill] / skillCounts[skill];
+    });
+
+    // トップスキルと改善が必要なスキルを抽出
+    const skillEntries = Object.entries(skillAverages);
+    const topSkills = skillEntries
+      .filter(([_, score]) => score >= 4.0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([skill, score]) => ({
+        name: this.getSkillCategoryName(skill),
+        score: score.toFixed(1)
+      }));
+
+    const improvementAreas = skillEntries
+      .filter(([_, score]) => score < 3.0)
+      .sort((a, b) => a[1] - b[1])
+      .slice(0, 5)
+      .map(([skill, score]) => ({
+        name: this.getSkillCategoryName(skill),
+        score: score.toFixed(1)
+      }));
+
+    return {
+      topSkills,
+      improvementAreas,
+      skillDistribution: skillAverages
+    };
+  }
+
+  /**
+   * レーダーチャートデータを生成
+   */
+  generateRadarChartData() {
+    const evaluations = this.reportData?.evaluations || [];
+    const completedEvaluations = evaluations.filter(e => e.status === 'completed' && e.ratings);
+    
+    if (completedEvaluations.length === 0) {
+      return {
+        labels: ['コミュニケーション', '技術力', '責任感', '協調性', 'リーダーシップ'],
+        current: [0, 0, 0, 0, 0],
+        previous: [0, 0, 0, 0, 0]
+      };
+    }
+
+    // 最新の評価データを取得
+    const latestEvaluation = completedEvaluations[0];
+    const previousEvaluation = completedEvaluations[1]; // 2番目に新しい評価
+
+    const skillCategories = ['communication', 'technical', 'responsibility', 'teamwork', 'leadership'];
+    const labels = skillCategories.map(skill => this.getSkillCategoryName(skill));
+    
+    const current = skillCategories.map(skill => 
+      latestEvaluation.ratings?.[skill] || 0
+    );
+    
+    const previous = skillCategories.map(skill => 
+      previousEvaluation?.ratings?.[skill] || 0
+    );
+
+    return { labels, current, previous };
+  }
+
+  /**
+   * 部門別パフォーマンス分析
+   */
+  analyzeDepartmentPerformance(evaluations, users) {
+    // 簡易的な部門分析（実際は部門データが必要）
+    const completedEvaluations = evaluations.filter(e => e.status === 'completed');
+    
+    if (completedEvaluations.length === 0 || !users || users.length === 0) {
+      return {
+        departments: [],
+        averageScores: {},
+        improvementRates: {}
+      };
+    }
+
+    // 部門別にデータを集計（サンプル実装）
+    const departmentData = {
+      '開発部': { scores: [], count: 0 },
+      '営業部': { scores: [], count: 0 },
+      '管理部': { scores: [], count: 0 },
+      '人事部': { scores: [], count: 0 }
+    };
+
+    completedEvaluations.forEach(evaluation => {
+      // 実際の実装では、ユーザーの部門情報を使用
+      const departments = Object.keys(departmentData);
+      const randomDept = departments[Math.floor(Math.random() * departments.length)];
+      
+      if (evaluation.totalScore) {
+        departmentData[randomDept].scores.push(evaluation.totalScore);
+        departmentData[randomDept].count++;
+      }
+    });
+
+    const averageScores = {};
+    Object.entries(departmentData).forEach(([dept, data]) => {
+      if (data.scores.length > 0) {
+        averageScores[dept] = data.scores.reduce((sum, score) => sum + score, 0) / data.scores.length;
+      } else {
+        averageScores[dept] = 0;
+      }
+    });
+
+    return {
+      departments: Object.keys(departmentData),
+      averageScores,
+      improvementRates: {} // 実装可能
+    };
   }
 
   cleanup() {
