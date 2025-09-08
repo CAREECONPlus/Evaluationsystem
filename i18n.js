@@ -35,7 +35,8 @@ const BUILT_IN_TRANSLATIONS = {
       "about": "このシステムについて",
       "reports": "レポート",
       "developer": "開発者管理",
-      "multilingual_admin": "多言語管理"
+      "multilingual_admin": "多言語管理",
+      "self_evaluation": "自己評価"
     },
     
     // ===== ダッシュボード翻訳 =====
@@ -480,7 +481,8 @@ const BUILT_IN_TRANSLATIONS = {
       "about": "About This System",
       "reports": "Reports",
       "developer": "Developer Management",
-      "multilingual_admin": "Multilingual Management"
+      "multilingual_admin": "Multilingual Management",
+      "self_evaluation": "Self-Evaluation"
     },
     
     // ===== Dashboard =====
@@ -950,7 +952,8 @@ const BUILT_IN_TRANSLATIONS = {
       "about": "Về hệ thống này",
       "reports": "Báo cáo",
       "developer": "Quản lý nhà phát triển",
-      "multilingual_admin": "Quản lý đa ngôn ngữ"
+      "multilingual_admin": "Quản lý đa ngôn ngữ",
+      "self_evaluation": "Tự đánh giá"
     },
     
     // ===== Dashboard =====

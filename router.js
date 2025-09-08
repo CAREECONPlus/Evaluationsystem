@@ -18,6 +18,7 @@ import { ProfilePage } from "./pages/profile.js"
 import { HelpPage } from "./pages/help.js"
 import { MultilingualAdminPage } from "./pages/multilingual-admin.js"
 import { TranslationQualityManagementPage } from "./pages/translation-quality-management.js"
+import { SelfEvaluationPage } from "./pages/self-evaluation.js"
 
 export class Router {
   constructor(app) {
@@ -125,6 +126,12 @@ export class Router {
         auth: true,
         roles: ["admin"],
         title: "翻訳品質管理",
+      },
+      "/self-evaluation": {
+        component: SelfEvaluationPage,
+        auth: true,
+        roles: ["worker", "evaluator", "admin"],
+        title: "自己評価",
       },
     }
 
