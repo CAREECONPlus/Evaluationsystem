@@ -1,1320 +1,502 @@
-/**
- * Reports Overview Page Component
- * レポート概要ページコンポーネント - 権限別表示対応
- */
-export class EvaluationReportPage {
+// pages/self-evaluation.js - 一般ユーザー専用自己評価ページ
+
+export class SelfEvaluationPage {
   constructor(app) {
     this.app = app;
-    this.reportData = null;
-    this.chartInstances = {};
-    this.isInitialized = false;
-    this.currentTimeRange = 'last6months';
-    this.userRole = this.getUserRole();
-  }
-
-  getUserRole() {
-    if (this.app.hasRole('admin')) return 'admin';
-    if (this.app.hasRole('evaluator')) return 'evaluator';
-    return 'worker';
+    this.currentUser = null;
+    this.periods = [];
+    this.selectedPeriod = null;
+    this.evaluationStructure = null;
+    this.qualitativeGoals = [];
+    this.evaluationData = {};
+    this.existingEvaluation = null;
   }
 
   async render() {
     return `
-      <div class="reports-page p-md-4 p-3">
-        <div class="page-header mb-4">
-          <h1 class="page-title h2 mb-1" data-i18n="nav.reports">レポート</h1>
-          <p class="page-subtitle text-dark mb-0" data-i18n="reports.subtitle">${this.getSubtitleByRole()}</p>
-        </div>
-
-        ${this.renderTimeRangeSelector()}
-
-        <!-- データ読み込み中の表示 -->
-        <div id="loading-container" class="text-center p-5">
-          ${this.renderLoadingState()}
-        </div>
-
-        <!-- メインコンテンツ -->
-        <div id="main-content" style="display: none;">
-          ${this.renderContentByRole()}
-        </div>
-      </div>
-    `;
-  }
-
-  getSubtitleByRole() {
-    switch (this.userRole) {
-      case 'admin':
-        return '全社評価データの分析とスキルマップ';
-      case 'evaluator':
-        return 'あなたと担当者の評価データ分析';
-      case 'worker':
-      default:
-        return 'あなたの評価データと成長分析';
-    }
-  }
-
-  renderTimeRangeSelector() {
-    // 作業員は期間選択を簡素化
-    if (this.userRole === 'worker') {
-      return `
-        <div class="card mb-4">
-          <div class="card-body py-2">
-            <div class="row align-items-center">
-              <div class="col-md-8">
-                <div class="btn-group" role="group" id="timeRangeButtons">
-                  <button type="button" class="btn btn-outline-primary time-range-btn ${this.currentTimeRange === 'last6months' ? 'active' : ''}" data-range="last6months">
-                    <span data-i18n="reports.last_6_months">過去6ヶ月</span>
-                  </button>
-                  <button type="button" class="btn btn-outline-primary time-range-btn ${this.currentTimeRange === 'thisyear' ? 'active' : ''}" data-range="thisyear">
-                    <span data-i18n="reports.this_year">今年</span>
-                  </button>
-                  <button type="button" class="btn btn-outline-primary time-range-btn ${this.currentTimeRange === 'all' ? 'active' : ''}" data-range="all">
-                    <span data-i18n="reports.all_time">全期間</span>
-                  </button>
-                </div>
-              </div>
-              <div class="col-md-4 text-md-end mt-2 mt-md-0">
-                <button class="btn btn-outline-secondary btn-sm" id="refreshDataBtn">
-                  <i class="fas fa-sync-alt me-1"></i>
-                  <span data-i18n="common.refresh">更新</span>
+      <div class="self-evaluation-page p-4">
+        <div class="row">
+          <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h1><i class="fas fa-user-edit me-2"></i>自己評価入力</h1>
+              <div class="d-flex gap-2">
+                <button id="saveDraftBtn" class="btn btn-outline-secondary">
+                  <i class="fas fa-save me-2"></i>下書き保存
+                </button>
+                <button id="submitSelfEvaluationBtn" class="btn btn-primary" disabled>
+                  <i class="fas fa-paper-plane me-2"></i>評価者に送信
                 </button>
               </div>
             </div>
           </div>
         </div>
-      `;
-    }
 
-    // 評価者・管理者は全期間選択可能
-    return `
-      <div class="card mb-4">
-        <div class="card-body py-2">
-          <div class="row align-items-center">
-            <div class="col-md-8">
-              <div class="btn-group" role="group" id="timeRangeButtons">
-                <button type="button" class="btn btn-outline-primary time-range-btn ${this.currentTimeRange === 'last3months' ? 'active' : ''}" data-range="last3months">
-                  <span data-i18n="reports.last_3_months">過去3ヶ月</span>
-                </button>
-                <button type="button" class="btn btn-outline-primary time-range-btn ${this.currentTimeRange === 'last6months' ? 'active' : ''}" data-range="last6months">
-                  <span data-i18n="reports.last_6_months">過去6ヶ月</span>
-                </button>
-                <button type="button" class="btn btn-outline-primary time-range-btn ${this.currentTimeRange === 'thisyear' ? 'active' : ''}" data-range="thisyear">
-                  <span data-i18n="reports.this_year">今年</span>
-                </button>
-                <button type="button" class="btn btn-outline-primary time-range-btn ${this.currentTimeRange === 'all' ? 'active' : ''}" data-range="all">
-                  <span data-i18n="reports.all_time">全期間</span>
-                </button>
+        <!-- 説明 -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="alert alert-info">
+              <h6><i class="fas fa-info-circle me-2"></i>自己評価について</h6>
+              <p class="mb-0">
+                あなた自身の評価を入力してください。入力後、評価者に送信できます。
+                下書き保存を使用して、途中で保存することも可能です。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 評価期間選択 -->
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="mb-0">評価期間の選択</h6>
               </div>
-            </div>
-            <div class="col-md-4 text-md-end mt-2 mt-md-0">
-              <button class="btn btn-outline-secondary btn-sm" id="refreshDataBtn">
-                <i class="fas fa-sync-alt me-1"></i>
-                <span data-i18n="common.refresh">更新</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-  }
-
-  renderContentByRole() {
-    switch (this.userRole) {
-      case 'admin':
-        return this.renderAdminContent();
-      case 'evaluator':
-        return this.renderEvaluatorContent();
-      case 'worker':
-      default:
-        return this.renderWorkerContent();
-    }
-  }
-
-  renderWorkerContent() {
-    return `
-      <!-- 個人統計カード -->
-      <div class="row mb-4" id="personal-stats-cards">
-        <!-- 個人統計カードがここに動的に挿入されます -->
-      </div>
-
-      <!-- 個人パフォーマンス分析 -->
-      <div class="row mb-4">
-        <div class="col-lg-8 mb-4">
-          <div class="card shadow-sm h-100">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-              <h5 class="mb-0 card-title-icon">
-                <i class="fas fa-chart-line me-2 text-primary"></i>
-                <span data-i18n="reports.personal_performance">あなたのパフォーマンス推移</span>
-              </h5>
-            </div>
-            <div class="card-body">
-              <canvas id="personalPerformanceChart"></canvas>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-4 mb-4">
-          <div class="card shadow-sm h-100">
-            <div class="card-header bg-white">
-              <h5 class="mb-0 card-title-icon">
-                <i class="fas fa-chart-radar me-2 text-primary"></i>
-                <span data-i18n="reports.skill_balance">スキルバランス</span>
-              </h5>
-            </div>
-            <div class="card-body">
-              <canvas id="personalSkillChart"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 成長分析と改善提案 -->
-      <div class="row mb-4">
-        <div class="col-12">
-          <div class="card shadow-sm">
-            <div class="card-header bg-white">
-              <h5 class="mb-0 card-title-icon">
-                <i class="fas fa-lightbulb me-2 text-primary"></i>
-                <span data-i18n="reports.improvement_suggestions">成長分析と改善提案</span>
-              </h5>
-            </div>
-            <div class="card-body" id="improvementSuggestions">
-              <!-- 改善提案がここに挿入されます -->
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  renderEvaluatorContent() {
-    return `
-      <!-- 統計カード -->
-      <div class="row mb-4" id="stats-cards">
-        <!-- 統計カードがここに動的に挿入されます -->
-      </div>
-
-      <!-- チャートセクション -->
-      <div class="row mb-4">
-        <div class="col-lg-8 mb-4">
-          <div class="card shadow-sm h-100">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-              <h5 class="mb-0 card-title-icon">
-                <i class="fas fa-chart-line me-2 text-primary"></i>
-                <span data-i18n="reports.team_performance">チーム・個人パフォーマンス推移</span>
-              </h5>
-            </div>
-            <div class="card-body">
-              <canvas id="performanceTrendChart"></canvas>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-4 mb-4">
-          <div class="card shadow-sm h-100">
-            <div class="card-header bg-white">
-              <h5 class="mb-0 card-title-icon">
-                <i class="fas fa-chart-pie me-2 text-primary"></i>
-                <span data-i18n="reports.evaluation_status">評価ステータス分布</span>
-              </h5>
-            </div>
-            <div class="card-body">
-              <canvas id="statusDistributionChart"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 担当者一覧と比較 -->
-      <div class="row mb-4">
-        <div class="col-12">
-          <div class="card shadow-sm">
-            <div class="card-header bg-white">
-              <h5 class="mb-0 card-title-icon">
-                <i class="fas fa-users me-2 text-primary"></i>
-                <span data-i18n="reports.team_overview">担当者概要</span>
-              </h5>
-            </div>
-            <div class="card-body">
-              <div id="teamMembersOverview">
-                <!-- 担当者一覧がここに挿入されます -->
+              <div class="card-body">
+                <select id="periodSelect" class="form-select">
+                  <option value="">評価期間を選択してください</option>
+                </select>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- 詳細テーブル -->
-      <div class="card">
-        <div class="card-header bg-white">
-          <h5 class="mb-0 card-title-icon">
-            <i class="fas fa-table me-2 text-primary"></i>
-            <span data-i18n="reports.detailed_data">詳細データ</span>
-          </h5>
-        </div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-hover" id="detailedDataTable">
-              <thead>
-                <tr>
-                  <th data-i18n="evaluation.period">評価期間</th>
-                  <th data-i18n="evaluation.target">対象者</th>
-                  <th data-i18n="evaluation.score">スコア</th>
-                  <th data-i18n="evaluation.status">ステータス</th>
-                  <th data-i18n="common.actions">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- データが動的に挿入されます -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  renderAdminContent() {
-    return `
-      <!-- 統計カード -->
-      <div class="row mb-4" id="stats-cards">
-        <!-- 統計カードがここに動的に挿入されます -->
-      </div>
-
-      <!-- 全社スキルマップ -->
-      <div class="row mb-4">
-        <div class="col-12">
-          <div class="card shadow-sm border-primary">
-            <div class="card-header bg-primary bg-opacity-10">
-              <h5 class="mb-0 card-title-icon text-primary">
-                <i class="fas fa-sitemap me-2"></i>
-                <span data-i18n="reports.company_skill_map">全社スキルマップ</span>
-              </h5>
-            </div>
-            <div class="card-body">
-              <div class="row">
-                <div class="col-lg-8 mb-3">
-                  <canvas id="skillMapChart"></canvas>
-                </div>
-                <div class="col-lg-4 mb-3">
-                  <div id="skillAnalysis">
-                    <!-- スキル分析がここに挿入されます -->
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="mb-0">評価対象者</h6>
+              </div>
+              <div class="card-body">
+                <div class="d-flex align-items-center">
+                  <div class="avatar-sm me-3">
+                    <span class="avatar-title rounded-circle bg-primary">
+                      ${this.app.currentUser?.name?.substring(0, 2) || '??'}
+                    </span>
+                  </div>
+                  <div>
+                    <strong>${this.app.sanitizeHtml(this.app.currentUser?.name || '')}</strong>
+                    <br>
+                    <small class="text-muted">${this.app.sanitizeHtml(this.app.currentUser?.email || '')}</small>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- チャートセクション -->
-      <div class="row mb-4">
-        <div class="col-lg-8 mb-4">
-          <div class="card shadow-sm h-100">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-              <h5 class="mb-0 card-title-icon">
-                <i class="fas fa-chart-line me-2 text-primary"></i>
-                <span data-i18n="reports.performance_trend">パフォーマンス推移</span>
-              </h5>
-            </div>
-            <div class="card-body">
-              <canvas id="performanceTrendChart"></canvas>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-4 mb-4">
-          <div class="card shadow-sm h-100">
-            <div class="card-header bg-white">
-              <h5 class="mb-0 card-title-icon">
-                <i class="fas fa-chart-pie me-2 text-primary"></i>
-                <span data-i18n="reports.evaluation_status">評価ステータス分布</span>
-              </h5>
-            </div>
-            <div class="card-body">
-              <canvas id="statusDistributionChart"></canvas>
-            </div>
-          </div>
+        <!-- 自己評価フォーム -->
+        <div id="evaluationFormContainer" class="d-none">
+          <!-- フォームがここに挿入される -->
         </div>
       </div>
-
-      <!-- 部署別分析 -->
-      <div class="row mb-4">
-        <div class="col-lg-6 mb-4">
-          <div class="card shadow-sm h-100">
-            <div class="card-header bg-white">
-              <h5 class="mb-0 card-title-icon">
-                <i class="fas fa-building me-2 text-primary"></i>
-                <span data-i18n="reports.department_comparison">部署別比較</span>
-              </h5>
-            </div>
-            <div class="card-body">
-              <canvas id="departmentComparisonChart"></canvas>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-6 mb-4">
-          <div class="card shadow-sm h-100">
-            <div class="card-header bg-white">
-              <h5 class="mb-0 card-title-icon">
-                <i class="fas fa-chart-bar me-2 text-primary"></i>
-                <span data-i18n="reports.evaluator_efficiency">評価者効率</span>
-              </h5>
-            </div>
-            <div class="card-body">
-              <canvas id="evaluatorEfficiencyChart"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 詳細テーブル -->
-      <div class="card">
-        <div class="card-header bg-white">
-          <h5 class="mb-0 card-title-icon">
-            <i class="fas fa-table me-2 text-primary"></i>
-            <span data-i18n="reports.detailed_data">詳細データ</span>
-          </h5>
-        </div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-hover" id="detailedDataTable">
-              <thead>
-                <tr>
-                  <th data-i18n="evaluation.period">評価期間</th>
-                  <th data-i18n="evaluation.target">対象者</th>
-                  <th data-i18n="evaluation.evaluator">評価者</th>
-                  <th data-i18n="evaluation.score">スコア</th>
-                  <th data-i18n="evaluation.status">ステータス</th>
-                  <th data-i18n="common.actions">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- データが動的に挿入されます -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  renderLoadingState() {
-    return `
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-      <p class="text-muted mt-3" data-i18n="common.loading_data">データを読み込み中...</p>
     `;
   }
 
   async init() {
-    this.app.currentPage = this;
+    this.currentUser = this.app.currentUser;
     
-    if (!this.app.isAuthenticated()) {
-      this.app.navigate("#/login");
+    if (this.currentUser.role !== 'worker') {
+      this.app.showError('この機能は一般ユーザー専用です');
+      this.app.navigate('#/dashboard');
       return;
     }
 
-    // 既存のチャートをクリーンアップ
-    this.cleanup();
+    await this.loadInitialData();
+    this.setupEventListeners();
+  }
 
+  async loadInitialData() {
     try {
-      await this.loadReportData();
-      this.setupEventListeners();
-      this.applyTranslations();
-      this.isInitialized = true;
+      const settings = await this.app.api.getSettings();
+      this.periods = settings.periods || [];
+      this.renderPeriodSelect();
     } catch (error) {
-      console.error("Reports: Initialization error:", error);
-      this.renderErrorState();
-      this.app.showError("レポートの読み込み中にエラーが発生しました。");
+      console.error('Self evaluation: Error loading periods:', error);
+      this.app.showError('評価期間の読み込みに失敗しました');
     }
   }
 
-  async loadReportData() {
-    if (!this.app.api) {
-      throw new Error("APIが初期化されていません");
-    }
+  renderPeriodSelect() {
+    const select = document.getElementById('periodSelect');
+    if (!select) return;
 
-    // ローディング表示
-    document.getElementById('loading-container').style.display = 'block';
-    document.getElementById('main-content').style.display = 'none';
-
-    try {
-      // 権限に応じてAPIコールを分岐
-      let apiCalls = [];
-      
-      switch (this.userRole) {
-        case 'admin':
-          apiCalls = [
-            this.app.api.getReportStatistics(this.currentTimeRange),
-            this.app.api.getEvaluationsList({ timeRange: this.currentTimeRange }),
-            this.app.api.getPerformanceTrends(this.currentTimeRange),
-            this.app.api.getSkillMapData(this.currentTimeRange),
-            this.app.api.getDepartmentStatistics(this.currentTimeRange)
-          ];
-          break;
-        case 'evaluator':
-          apiCalls = [
-            this.app.api.getMyEvaluatorStatistics(this.currentTimeRange),
-            this.app.api.getMyTeamEvaluations(this.currentTimeRange),
-            this.app.api.getMyTeamPerformanceTrends(this.currentTimeRange)
-          ];
-          break;
-        case 'worker':
-        default:
-          apiCalls = [
-            this.app.api.getMyPersonalStatistics(this.currentTimeRange),
-            this.app.api.getMyEvaluationHistory(this.currentTimeRange),
-            this.app.api.getMyPerformanceTrends(this.currentTimeRange)
-          ];
-          break;
-      }
-
-      const results = await Promise.allSettled(apiCalls);
-
-      // 結果を処理
-      this.reportData = this.processApiResults(results);
-
-      // UIの更新
-      this.renderStatsCards();
-      this.renderCharts();
-      this.renderDetailedTable();
-
-      // 権限別の追加処理
-      if (this.userRole === 'admin') {
-        this.renderSkillMapAnalysis();
-      } else if (this.userRole === 'evaluator') {
-        this.renderTeamOverview();
-      } else if (this.userRole === 'worker') {
-        this.renderImprovementSuggestions();
-      }
-
-      // ローディング表示を隠してメインコンテンツを表示
-      document.getElementById('loading-container').style.display = 'none';
-      document.getElementById('main-content').style.display = 'block';
-
-    } catch (error) {
-      console.error("Reports: Data loading failed:", error);
-      this.renderErrorState();
-      throw error;
-    }
-  }
-
-  processApiResults(results) {
-    switch (this.userRole) {
-      case 'admin':
-        return {
-          statistics: results[0].status === 'fulfilled' ? results[0].value : this.getDefaultStats(),
-          evaluations: results[1].status === 'fulfilled' ? results[1].value : [],
-          trends: results[2].status === 'fulfilled' ? results[2].value : this.getDefaultTrends(),
-          skillMap: results[3].status === 'fulfilled' ? results[3].value : this.getDefaultSkillMap(),
-          departmentStats: results[4].status === 'fulfilled' ? results[4].value : []
-        };
-      case 'evaluator':
-        return {
-          statistics: results[0].status === 'fulfilled' ? results[0].value : this.getDefaultStats(),
-          evaluations: results[1].status === 'fulfilled' ? results[1].value : [],
-          trends: results[2].status === 'fulfilled' ? results[2].value : this.getDefaultTrends()
-        };
-      case 'worker':
-      default:
-        return {
-          personalStats: results[0].status === 'fulfilled' ? results[0].value : this.getDefaultPersonalStats(),
-          evaluationHistory: results[1].status === 'fulfilled' ? results[1].value : [],
-          trends: results[2].status === 'fulfilled' ? results[2].value : this.getDefaultTrends()
-        };
-    }
-  }
-
-  getDefaultStats() {
-    return {
-      totalEvaluations: 0,
-      completedEvaluations: 0,
-      averageScore: 0,
-      improvementRate: 0
-    };
-  }
-
-  getDefaultPersonalStats() {
-    return {
-      totalEvaluations: 0,
-      averageScore: 0,
-      improvementRate: 0,
-      strongestSkill: '未設定',
-      weakestSkill: '未設定'
-    };
-  }
-
-  getDefaultTrends() {
-    return {
-      labels: [],
-      datasets: []
-    };
-  }
-
-  getDefaultSkillMap() {
-    return {
-      skills: [],
-      levels: [],
-      gaps: []
-    };
-  }
-
-  renderStatsCards() {
-    const container = document.getElementById("stats-cards");
-    if (!container) return;
-
-    switch (this.userRole) {
-      case 'worker':
-        this.renderPersonalStatsCards(container);
-        break;
-      case 'evaluator':
-      case 'admin':
-      default:
-        this.renderGeneralStatsCards(container);
-        break;
-    }
-  }
-
-  renderPersonalStatsCards(container) {
-    const stats = this.reportData.personalStats || this.getDefaultPersonalStats();
-
-    container.innerHTML = `
-      <div class="col-md-6 col-sm-6 mb-3">
-        <div class="card shadow-sm h-100 border-primary">
-          <div class="card-body d-flex align-items-center">
-            <i class="fas fa-user fa-2x text-primary me-3"></i>
-            <div>
-              <h6 class="card-subtitle text-muted mb-1" data-i18n="reports.my_evaluations">私の評価数</h6>
-              <div class="card-title h4 mb-0">${stats.totalEvaluations}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6 col-sm-6 mb-3">
-        <div class="card shadow-sm h-100 border-info">
-          <div class="card-body d-flex align-items-center">
-            <i class="fas fa-star fa-2x text-info me-3"></i>
-            <div>
-              <h6 class="card-subtitle text-muted mb-1" data-i18n="reports.my_average_score">私の平均スコア</h6>
-              <div class="card-title h4 mb-0">${stats.averageScore.toFixed(1)}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6 col-sm-6 mb-3">
-        <div class="card shadow-sm h-100 border-success">
-          <div class="card-body d-flex align-items-center">
-            <i class="fas fa-chart-line fa-2x text-success me-3"></i>
-            <div>
-              <h6 class="card-subtitle text-muted mb-1" data-i18n="reports.improvement_rate">改善率</h6>
-              <div class="card-title h4 mb-0">${stats.improvementRate.toFixed(1)}%</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6 col-sm-6 mb-3">
-        <div class="card shadow-sm h-100 border-warning">
-          <div class="card-body d-flex align-items-center">
-            <i class="fas fa-trophy fa-2x text-warning me-3"></i>
-            <div>
-              <h6 class="card-subtitle text-muted mb-1" data-i18n="reports.strongest_skill">最も優れたスキル</h6>
-              <div class="card-title h6 mb-0">${stats.strongestSkill}</div>
-            </div>
-          </div>
-        </div>
-      </div>
+    select.innerHTML = `
+      <option value="">評価期間を選択してください</option>
+      ${this.periods.map(period => 
+        `<option value="${period.id}">${this.app.sanitizeHtml(period.name)}</option>`
+      ).join('')}
     `;
-
-    this.applyTranslationsToElement(container);
-  }
-
-  renderGeneralStatsCards(container) {
-    const stats = this.reportData.statistics || this.getDefaultStats();
-
-    container.innerHTML = `
-      <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card shadow-sm h-100 border-primary">
-          <div class="card-body d-flex align-items-center">
-            <i class="fas fa-clipboard-list fa-2x text-primary me-3"></i>
-            <div>
-              <h6 class="card-subtitle text-muted mb-1" data-i18n="reports.total_evaluations">総評価数</h6>
-              <div class="card-title h4 mb-0">${stats.totalEvaluations}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card shadow-sm h-100 border-success">
-          <div class="card-body d-flex align-items-center">
-            <i class="fas fa-check-circle fa-2x text-success me-3"></i>
-            <div>
-              <h6 class="card-subtitle text-muted mb-1" data-i18n="reports.completed_evaluations">完了済み評価</h6>
-              <div class="card-title h4 mb-0">${stats.completedEvaluations}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card shadow-sm h-100 border-info">
-          <div class="card-body d-flex align-items-center">
-            <i class="fas fa-star fa-2x text-info me-3"></i>
-            <div>
-              <h6 class="card-subtitle text-muted mb-1" data-i18n="reports.average_score">平均スコア</h6>
-              <div class="card-title h4 mb-0">${stats.averageScore.toFixed(1)}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card shadow-sm h-100 border-warning">
-          <div class="card-body d-flex align-items-center">
-            <i class="fas fa-chart-line fa-2x text-warning me-3"></i>
-            <div>
-              <h6 class="card-subtitle text-muted mb-1" data-i18n="reports.improvement_rate">改善率</h6>
-              <div class="card-title h4 mb-0">${stats.improvementRate.toFixed(1)}%</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    this.applyTranslationsToElement(container);
-  }
-
-  renderCharts() {
-    // すべてのチャートを先に破棄
-    this.destroyAllCharts();
-    
-    // 少し待ってからチャートを再作成
-    setTimeout(() => {
-      switch (this.userRole) {
-        case 'admin':
-          this.renderPerformanceTrendChart();
-          this.renderStatusDistributionChart();
-          this.renderSkillMapChart();
-          this.renderDepartmentComparisonChart();
-          this.renderEvaluatorEfficiencyChart();
-          break;
-        case 'evaluator':
-          this.renderPerformanceTrendChart();
-          this.renderStatusDistributionChart();
-          break;
-        case 'worker':
-        default:
-          this.renderPersonalPerformanceChart();
-          this.renderPersonalSkillChart();
-          break;
-      }
-    }, 100);
-  }
-
-  renderPersonalPerformanceChart() {
-    const canvas = document.getElementById('personalPerformanceChart');
-    if (!canvas || typeof Chart === 'undefined') return;
-
-    const existingChart = Chart.getChart(canvas);
-    if (existingChart) existingChart.destroy();
-
-    try {
-      const ctx = canvas.getContext('2d');
-      const trends = this.reportData.trends || this.getDefaultTrends();
-
-      this.chartInstances.personalPerformance = new Chart(ctx, {
-        type: 'line',
-        data: trends,
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true,
-              max: 5,
-              title: {
-                display: true,
-                text: 'スコア'
-              }
-            }
-          },
-          plugins: {
-            legend: {
-              display: true,
-              position: 'top'
-            }
-          }
-        }
-      });
-    } catch (error) {
-      console.error("Reports: Failed to create personal performance chart:", error);
-    }
-  }
-
-  renderPersonalSkillChart() {
-    const canvas = document.getElementById('personalSkillChart');
-    if (!canvas || typeof Chart === 'undefined') return;
-
-    const existingChart = Chart.getChart(canvas);
-    if (existingChart) existingChart.destroy();
-
-    try {
-      const ctx = canvas.getContext('2d');
-      
-      // 個人スキルデータ（ダミー）
-      const skills = ['コミュニケーション', '技術力', '責任感', '協調性', 'リーダーシップ'];
-      const scores = [4.2, 3.8, 4.5, 4.1, 3.6];
-
-      this.chartInstances.personalSkill = new Chart(ctx, {
-        type: 'radar',
-        data: {
-          labels: skills,
-          datasets: [{
-            label: 'あなたのスコア',
-            data: scores,
-            borderColor: 'rgba(54, 162, 235, 1)',
-            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-            pointBackgroundColor: 'rgba(54, 162, 235, 1)'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            r: {
-              beginAtZero: true,
-              max: 5
-            }
-          }
-        }
-      });
-    } catch (error) {
-      console.error("Reports: Failed to create personal skill chart:", error);
-    }
-  }
-
-  renderSkillMapChart() {
-    const canvas = document.getElementById('skillMapChart');
-    if (!canvas || typeof Chart === 'undefined') return;
-
-    const existingChart = Chart.getChart(canvas);
-    if (existingChart) existingChart.destroy();
-
-    try {
-      const ctx = canvas.getContext('2d');
-      
-      // スキルマップデータ（ダミー）
-      const skills = ['技術力', 'コミュニケーション', '責任感', '協調性', 'リーダーシップ', '創造性'];
-      const currentLevels = [4.2, 3.8, 4.0, 4.1, 3.5, 3.2];
-      const targetLevels = [4.5, 4.2, 4.3, 4.2, 4.0, 3.8];
-
-      this.chartInstances.skillMap = new Chart(ctx, {
-        type: 'radar',
-        data: {
-          labels: skills,
-          datasets: [{
-            label: '現在のレベル',
-            data: currentLevels,
-            borderColor: 'rgba(54, 162, 235, 1)',
-            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-            pointBackgroundColor: 'rgba(54, 162, 235, 1)'
-          }, {
-            label: '目標レベル',
-            data: targetLevels,
-            borderColor: 'rgba(255, 99, 132, 1)',
-            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-            pointBackgroundColor: 'rgba(255, 99, 132, 1)',
-            borderDash: [5, 5]
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            r: {
-              beginAtZero: true,
-              max: 5
-            }
-          }
-        }
-      });
-    } catch (error) {
-      console.error("Reports: Failed to create skill map chart:", error);
-    }
-  }
-
-  renderSkillMapAnalysis() {
-    const container = document.getElementById('skillAnalysis');
-    if (!container) return;
-
-    // スキル分析データ（ダミー）
-    const analysis = {
-      strongAreas: ['責任感', '協調性'],
-      weakAreas: ['創造性', 'リーダーシップ'],
-      improvements: ['技術力の向上傾向', 'コミュニケーション能力の安定']
-    };
-
-    container.innerHTML = `
-      <div class="skill-analysis">
-        <div class="mb-3">
-          <h6 class="text-success mb-2">
-            <i class="fas fa-thumbs-up me-1"></i>組織の強み
-          </h6>
-          <div class="skill-tags">
-            ${analysis.strongAreas.map(skill => `
-              <span class="badge bg-success me-1 mb-1">${skill}</span>
-            `).join('')}
-          </div>
-        </div>
-        
-        <div class="mb-3">
-          <h6 class="text-warning mb-2">
-            <i class="fas fa-exclamation-triangle me-1"></i>改善が必要な領域
-          </h6>
-          <div class="skill-tags">
-            ${analysis.weakAreas.map(skill => `
-              <span class="badge bg-warning me-1 mb-1">${skill}</span>
-            `).join('')}
-          </div>
-        </div>
-        
-        <div class="mb-3">
-          <h6 class="text-info mb-2">
-            <i class="fas fa-chart-line me-1"></i>改善傾向
-          </h6>
-          <ul class="list-unstyled">
-            ${analysis.improvements.map(improvement => `
-              <li class="text-muted mb-1">
-                <i class="fas fa-arrow-up text-success me-1"></i>${improvement}
-              </li>
-            `).join('')}
-          </ul>
-        </div>
-      </div>
-    `;
-  }
-
-  renderTeamOverview() {
-    const container = document.getElementById('teamMembersOverview');
-    if (!container) return;
-
-    // 担当者データ（ダミー）
-    const teamMembers = [
-      { name: '田中太郎', score: 4.2, trend: 'up', evaluationCount: 3 },
-      { name: '佐藤花子', score: 3.8, trend: 'stable', evaluationCount: 2 },
-      { name: '山田次郎', score: 4.0, trend: 'down', evaluationCount: 4 }
-    ];
-
-    container.innerHTML = `
-      <div class="row">
-        ${teamMembers.map(member => `
-          <div class="col-md-4 mb-3">
-            <div class="card border-light">
-              <div class="card-body text-center">
-                <h6 class="card-title">${this.app.sanitizeHtml(member.name)}</h6>
-                <div class="mb-2">
-                  <span class="h4 text-primary">${member.score}</span>
-                  <i class="fas fa-arrow-${member.trend === 'up' ? 'up text-success' : member.trend === 'down' ? 'down text-danger' : 'right text-warning'} ms-1"></i>
-                </div>
-                <small class="text-muted">評価回数: ${member.evaluationCount}</small>
-              </div>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-
-  renderImprovementSuggestions() {
-    const container = document.getElementById('improvementSuggestions');
-    if (!container) return;
-
-    // 改善提案データ（ダミー）
-    const suggestions = [
-      {
-        category: '技術力向上',
-        suggestions: ['新技術の学習時間を週2時間確保', '社内勉強会への積極的参加']
-      },
-      {
-        category: 'コミュニケーション',
-        suggestions: ['チーム内での発言回数を増やす', '他部署との連携プロジェクトに参加']
-      }
-    ];
-
-    container.innerHTML = `
-      <div class="row">
-        ${suggestions.map(category => `
-          <div class="col-md-6 mb-3">
-            <div class="improvement-category">
-              <h6 class="text-primary mb-3">
-                <i class="fas fa-target me-1"></i>${category.category}
-              </h6>
-              <ul class="list-group list-group-flush">
-                ${category.suggestions.map(suggestion => `
-                  <li class="list-group-item px-0 py-2">
-                    <i class="fas fa-check text-success me-2"></i>${suggestion}
-                  </li>
-                `).join('')}
-              </ul>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-
-  // 以下、既存のメソッド群（Chart.js関連、イベントハンドラー等）は省略
-  // renderPerformanceTrendChart, renderStatusDistributionChart, 
-  // renderDepartmentComparisonChart, renderEvaluatorEfficiencyChart,
-  // destroyAllCharts, setupEventListeners, handleTimeRangeChange,
-  // refreshData, renderDetailedTable等は既存のコードを使用
-
-  destroyAllCharts() {
-    Object.values(this.chartInstances).forEach(chart => {
-      if (chart && typeof chart.destroy === 'function') {
-        try {
-          chart.destroy();
-        } catch (error) {
-          console.warn("Reports: Error destroying chart:", error);
-        }
-      }
-    });
-    this.chartInstances = {};
   }
 
   setupEventListeners() {
-    // 期間選択ボタン
-    document.querySelectorAll('.time-range-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => this.handleTimeRangeChange(e.target.dataset.range));
+    document.getElementById('periodSelect').addEventListener('change', (e) => {
+      this.onPeriodChange(e.target.value);
     });
 
-    // データ更新ボタン
-    const refreshBtn = document.getElementById('refreshDataBtn');
-    if (refreshBtn) {
-      refreshBtn.addEventListener('click', () => this.refreshData());
-    }
-  }
-
-  async handleTimeRangeChange(newRange) {
-    if (newRange === this.currentTimeRange) return;
-
-    this.currentTimeRange = newRange;
-
-    // ボタンの状態更新
-    document.querySelectorAll('.time-range-btn').forEach(btn => {
-      btn.classList.remove('active');
-      if (btn.dataset.range === newRange) {
-        btn.classList.add('active');
-      }
+    document.getElementById('saveDraftBtn').addEventListener('click', () => {
+      this.saveDraft();
     });
 
-    // データを再読み込み
-    await this.loadReportData();
+    document.getElementById('submitSelfEvaluationBtn').addEventListener('click', () => {
+      this.submitSelfEvaluation();
+    });
   }
 
-  async refreshData() {
-    const refreshBtn = document.getElementById('refreshDataBtn');
-    if (refreshBtn) {
-      refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>更新中...';
-      refreshBtn.disabled = true;
-    }
-
-    try {
-      await this.loadReportData();
-    } finally {
-      if (refreshBtn) {
-        refreshBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>更新';
-        refreshBtn.disabled = false;
-      }
-    }
-  }
-
-  renderDetailedTable() {
-    const tbody = document.querySelector('#detailedDataTable tbody');
-    if (!tbody) return;
-
-    const evaluations = this.reportData.evaluations || this.reportData.evaluationHistory || [];
-    
-    if (evaluations.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="6" class="text-center text-muted p-4">
-            <span data-i18n="common.no_data">データがありません</span>
-          </td>
-        </tr>
-      `;
+  async onPeriodChange(periodId) {
+    if (!periodId) {
+      document.getElementById('evaluationFormContainer').classList.add('d-none');
       return;
     }
 
-    // 権限に応じてテーブルの列を調整
-    const isWorker = this.userRole === 'worker';
-    const columnCount = isWorker ? 5 : 6;
+    this.selectedPeriod = this.periods.find(p => p.id === periodId);
+    await this.loadEvaluationData();
+    this.renderEvaluationForm();
+  }
 
-    tbody.innerHTML = evaluations.slice(0, 20).map(evaluation => {
-      let row = `
-        <td>${this.app.sanitizeHtml(evaluation.periodName || '未設定')}</td>
-        <td>${this.app.sanitizeHtml(evaluation.targetUserName || '不明')}</td>
-      `;
-      
-      if (!isWorker) {
-        row += `<td>${this.app.sanitizeHtml(evaluation.evaluatorName || '未割当')}</td>`;
+  async loadEvaluationData() {
+    try {
+      // 既存の評価をチェック
+      const evaluations = await this.app.api.getEvaluations({
+        targetUserId: this.currentUser.uid || this.currentUser.id,
+        periodId: this.selectedPeriod.id
+      });
+
+      this.existingEvaluation = evaluations.find(e => 
+        e.targetUserId === (this.currentUser.uid || this.currentUser.id) &&
+        e.periodId === this.selectedPeriod.id
+      );
+
+      // 評価構造を取得
+      if (this.currentUser.jobTypeId) {
+        this.evaluationStructure = await this.app.api.getEvaluationStructure(this.currentUser.jobTypeId);
       }
-      
-      row += `
-        <td>
-          <span class="badge bg-info">${evaluation.finalScore || '未評価'}</span>
-        </td>
-        <td>
-          <span class="badge ${this.getStatusBadgeClass(evaluation.status)}">
-            ${this.getStatusDisplayName(evaluation.status)}
-          </span>
-        </td>
-        <td>
-          <button class="btn btn-sm btn-outline-primary" onclick="window.app.navigate('#/evaluation-report?id=${evaluation.id}')">
-            <i class="fas fa-eye"></i>
-          </button>
-        </td>
-      `;
-      
-      return `<tr>${row}</tr>`;
-    }).join('');
 
-    this.applyTranslationsToElement(tbody);
-  }
+      // 目標を取得
+      const goals = await this.app.api.getGoals(this.currentUser.uid || this.currentUser.id, this.selectedPeriod.id);
+      this.qualitativeGoals = goals?.goals || [];
 
-  getStatusDisplayName(status) {
-    const statusNames = {
-      draft: '下書き',
-      submitted: '提出済み',
-      in_review: '審査中',
-      approved: '承認済み',
-      rejected: '差し戻し',
-      completed: '完了'
-    };
-    return statusNames[status] || status;
-  }
-
-  getStatusBadgeClass(status) {
-    const badgeClasses = {
-      draft: 'bg-secondary',
-      submitted: 'bg-primary',
-      in_review: 'bg-warning',
-      approved: 'bg-success',
-      rejected: 'bg-danger',
-      completed: 'bg-info'
-    };
-    return badgeClasses[status] || 'bg-secondary';
-  }
-
-  applyTranslations() {
-    const reportsContainer = document.querySelector('.reports-page');
-    if (reportsContainer && this.app.i18n) {
-      this.app.i18n.updateElement(reportsContainer);
+    } catch (error) {
+      console.error('Self evaluation: Error loading data:', error);
+      this.app.showError('評価データの読み込みに失敗しました');
     }
   }
 
-  applyTranslationsToElement(element) {
-    if (element && this.app.i18n) {
-      this.app.i18n.updateElement(element);
-    }
-  }
+  renderEvaluationForm() {
+    const container = document.getElementById('evaluationFormContainer');
+    
+    let formHtml = '<div class="row">';
 
-  renderErrorState() {
-    const container = document.getElementById("loading-container");
-    if (container) {
-      container.innerHTML = `
-        <div class="alert alert-danger text-center">
-          <h5 class="text-danger" data-i18n="errors.loading_failed">データの読み込みに失敗しました</h5>
-          <p class="text-muted">時間をおいて再度お試しください。</p>
-          <button class="btn btn-outline-danger" onclick="window.location.reload()">
-            <i class="fas fa-redo me-1"></i><span data-i18n="common.retry">再試行</span>
-          </button>
+    // 定量的評価
+    if (this.evaluationStructure?.categories) {
+      formHtml += `
+        <div class="col-lg-6 mb-4">
+          <div class="card">
+            <div class="card-header">
+              <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>スキル・能力評価</h6>
+            </div>
+            <div class="card-body">
+              ${this.renderSkillEvaluation()}
+            </div>
+          </div>
         </div>
       `;
-      this.applyTranslationsToElement(container);
     }
+
+    // 目標達成度評価
+    if (this.qualitativeGoals.length > 0) {
+      formHtml += `
+        <div class="col-lg-6 mb-4">
+          <div class="card">
+            <div class="card-header">
+              <h6 class="mb-0"><i class="fas fa-bullseye me-2"></i>目標達成度</h6>
+            </div>
+            <div class="card-body">
+              ${this.renderGoalEvaluation()}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    formHtml += '</div>';
+
+    // 自己評価コメント
+    formHtml += `
+      <div class="card mt-4">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="fas fa-comment me-2"></i>自己評価コメント</h6>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">今期の振り返り・成果</label>
+            <textarea class="form-control evaluation-input" id="achievementComment" rows="4" 
+                      placeholder="今期に達成した成果や頑張った点を具体的に記入してください..."></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">改善点・今後の課題</label>
+            <textarea class="form-control evaluation-input" id="improvementComment" rows="4" 
+                      placeholder="改善したい点や今後の課題について記入してください..."></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">今後の目標・やりたいこと</label>
+            <textarea class="form-control evaluation-input" id="futureGoalComment" rows="4" 
+                      placeholder="次期に向けた目標や取り組みたいことを記入してください..."></textarea>
+          </div>
+        </div>
+      </div>
+    `;
+
+    container.innerHTML = formHtml;
+    container.classList.remove('d-none');
+
+    // 既存データをロード
+    this.loadExistingData();
+    this.setupFormValidation();
   }
 
-  cleanup() {
-    this.destroyAllCharts();
-    this.isInitialized = false;
+  renderSkillEvaluation() {
+    let html = '<div class="evaluation-section">';
     
-    const refreshBtn = document.getElementById('refreshDataBtn');
-    if (refreshBtn) {
-      refreshBtn.replaceWith(refreshBtn.cloneNode(true));
-    }
+    this.evaluationStructure.categories.forEach((category, catIndex) => {
+      html += `<h6 class="text-primary mb-3">${this.app.sanitizeHtml(category.name)}</h6>`;
+      
+      category.items.forEach((item, itemIndex) => {
+        const key = `skill_${catIndex}_${itemIndex}`;
+        html += `
+          <div class="mb-4">
+            <label class="form-label fw-semibold">${this.app.sanitizeHtml(item.name)}</label>
+            <div class="rating-buttons d-flex gap-2 mb-2">
+              ${[1,2,3,4,5].map(score => `
+                <button type="button" class="btn btn-outline-primary rating-btn flex-fill" 
+                        data-key="${key}" data-value="${score}">
+                  ${score}<br><small>${this.getScoreLabel(score)}</small>
+                </button>
+              `).join('')}
+            </div>
+            <input type="hidden" class="evaluation-input" data-key="${key}" required>
+          </div>
+        `;
+      });
+    });
     
-    document.querySelectorAll('.time-range-btn').forEach(btn => {
-      btn.replaceWith(btn.cloneNode(true));
+    html += '</div>';
+    return html;
+  }
+
+  renderGoalEvaluation() {
+    let html = '<div class="goal-evaluation-section">';
+    
+    this.qualitativeGoals.forEach((goal, index) => {
+      const key = `goal_${index}`;
+      html += `
+        <div class="mb-4">
+          <label class="form-label fw-semibold">${this.app.sanitizeHtml(goal.text)}</label>
+          <small class="text-muted d-block mb-2">ウェイト: ${goal.weight}%</small>
+          <div class="rating-buttons d-flex gap-2 mb-2">
+            ${[1,2,3,4,5].map(score => `
+              <button type="button" class="btn btn-outline-success rating-btn flex-fill" 
+                      data-key="${key}" data-value="${score}">
+                ${score}<br><small>${this.getAchievementLabel(score)}</small>
+              </button>
+            `).join('')}
+          </div>
+          <input type="hidden" class="evaluation-input" data-key="${key}" required>
+        </div>
+      `;
+    });
+    
+    html += '</div>';
+    return html;
+  }
+
+  getScoreLabel(score) {
+    const labels = { 1: '要改善', 2: '基準以下', 3: '標準', 4: '良好', 5: '優秀' };
+    return labels[score] || '';
+  }
+
+  getAchievementLabel(score) {
+    const labels = { 1: '未達成', 2: '一部達成', 3: '概ね達成', 4: '達成', 5: '大幅達成' };
+    return labels[score] || '';
+  }
+
+  setupFormValidation() {
+    // 評価ボタンのクリック処理
+    document.querySelectorAll('.rating-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const key = btn.dataset.key;
+        const value = btn.dataset.value;
+        
+        // 同じキーのボタンから active を削除
+        document.querySelectorAll(`[data-key="${key}"]`).forEach(b => 
+          b.classList.remove('btn-primary', 'btn-success')
+        );
+        
+        // クリックされたボタンを active にする
+        if (btn.classList.contains('btn-outline-primary')) {
+          btn.classList.remove('btn-outline-primary');
+          btn.classList.add('btn-primary');
+        } else if (btn.classList.contains('btn-outline-success')) {
+          btn.classList.remove('btn-outline-success');
+          btn.classList.add('btn-success');
+        }
+        
+        // hidden input に値をセット
+        const input = document.querySelector(`input[data-key="${key}"]`);
+        if (input) {
+          input.value = value;
+        }
+        
+        this.validateForm();
+      });
+    });
+
+    // テキストエリアの変更監視
+    document.querySelectorAll('.evaluation-input').forEach(input => {
+      input.addEventListener('input', () => this.validateForm());
     });
   }
 
-  // Chart.js関連のメソッドは既存のものを継承
-  renderPerformanceTrendChart() {
-    const canvas = document.getElementById('performanceTrendChart');
-    if (!canvas || typeof Chart === 'undefined') return;
+  validateForm() {
+    const requiredInputs = document.querySelectorAll('input[required], textarea[required]');
+    let isValid = true;
+    let completedCount = 0;
 
-    const existingChart = Chart.getChart(canvas);
-    if (existingChart) existingChart.destroy();
+    requiredInputs.forEach(input => {
+      if (!input.value.trim()) {
+        isValid = false;
+      } else {
+        completedCount++;
+      }
+    });
 
-    try {
-      const ctx = canvas.getContext('2d');
-      const trends = this.reportData.trends || this.getDefaultTrends();
-
-      this.chartInstances.performanceTrend = new Chart(ctx, {
-        type: 'line',
-        data: trends,
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true,
-              max: 5,
-              title: {
-                display: true,
-                text: 'スコア'
-              }
-            }
-          }
-        }
-      });
-    } catch (error) {
-      console.error("Reports: Failed to create performance trend chart:", error);
-    }
-  }
-
-  renderStatusDistributionChart() {
-    const canvas = document.getElementById('statusDistributionChart');
-    if (!canvas || typeof Chart === 'undefined') return;
-
-    const existingChart = Chart.getChart(canvas);
-    if (existingChart) existingChart.destroy();
-
-    try {
-      const evaluations = this.reportData.evaluations || this.reportData.evaluationHistory || [];
-      const statusCounts = evaluations.reduce((acc, evaluation) => {
-        acc[evaluation.status] = (acc[evaluation.status] || 0) + 1;
-        return acc;
-      }, {});
-
-      const ctx = canvas.getContext('2d');
+    const progress = requiredInputs.length > 0 ? (completedCount / requiredInputs.length) * 100 : 100;
+    
+    const submitBtn = document.getElementById('submitSelfEvaluationBtn');
+    if (submitBtn) {
+      submitBtn.disabled = !isValid;
       
-      this.chartInstances.statusDistribution = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: Object.keys(statusCounts).map(status => this.getStatusDisplayName(status)),
-          datasets: [{
-            data: Object.values(statusCounts),
-            backgroundColor: [
-              '#28a745',
-              '#ffc107', 
-              '#dc3545',
-              '#17a2b8',
-              '#6c757d'
-            ]
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'bottom'
-            }
-          }
+      if (progress < 100) {
+        submitBtn.innerHTML = `<i class="fas fa-paper-plane me-2"></i>評価者に送信 (${Math.round(progress)}%完了)`;
+      } else {
+        submitBtn.innerHTML = `<i class="fas fa-paper-plane me-2"></i>評価者に送信`;
+      }
+    }
+
+    return isValid;
+  }
+
+  loadExistingData() {
+    if (!this.existingEvaluation) return;
+
+    const ratings = this.existingEvaluation.ratings || {};
+    
+    // 評価値をロード
+    Object.keys(ratings).forEach(key => {
+      const input = document.querySelector(`input[data-key="${key}"]`);
+      if (input) {
+        input.value = ratings[key];
+        
+        // ボタンの状態を更新
+        const btn = document.querySelector(`[data-key="${key}"][data-value="${ratings[key]}"]`);
+        if (btn) {
+          btn.click();
         }
-      });
+      }
+    });
+
+    // コメントをロード
+    if (ratings.achievementComment) {
+      document.getElementById('achievementComment').value = ratings.achievementComment;
+    }
+    if (ratings.improvementComment) {
+      document.getElementById('improvementComment').value = ratings.improvementComment;
+    }
+    if (ratings.futureGoalComment) {
+      document.getElementById('futureGoalComment').value = ratings.futureGoalComment;
+    }
+
+    this.validateForm();
+  }
+
+  collectEvaluationData() {
+    const data = {};
+    
+    // 評価値を収集
+    document.querySelectorAll('input[data-key]').forEach(input => {
+      if (input.value) {
+        data[input.dataset.key] = parseInt(input.value);
+      }
+    });
+
+    // コメントを収集
+    const achievementComment = document.getElementById('achievementComment')?.value.trim();
+    const improvementComment = document.getElementById('improvementComment')?.value.trim();
+    const futureGoalComment = document.getElementById('futureGoalComment')?.value.trim();
+
+    if (achievementComment) data.achievementComment = achievementComment;
+    if (improvementComment) data.improvementComment = improvementComment;
+    if (futureGoalComment) data.futureGoalComment = futureGoalComment;
+
+    return data;
+  }
+
+  async saveDraft() {
+    try {
+      const data = this.collectEvaluationData();
+      await this.saveEvaluation('draft', data);
+      this.app.showSuccess('下書きを保存しました');
     } catch (error) {
-      console.error("Reports: Failed to create status distribution chart:", error);
+      console.error('Self evaluation: Draft save failed:', error);
+      this.app.showError('下書きの保存に失敗しました');
     }
   }
 
-  renderDepartmentComparisonChart() {
-    const canvas = document.getElementById('departmentComparisonChart');
-    if (!canvas || typeof Chart === 'undefined') return;
+  async submitSelfEvaluation() {
+    if (!this.validateForm()) {
+      this.app.showError('すべての項目を入力してください');
+      return;
+    }
 
-    const existingChart = Chart.getChart(canvas);
-    if (existingChart) existingChart.destroy();
+    const confirmed = await this.app.confirm(
+      '自己評価を評価者に送信しますか？送信後は編集できなくなります。',
+      '自己評価送信確認'
+    );
+
+    if (!confirmed) return;
 
     try {
-      const ctx = canvas.getContext('2d');
-      const departments = ['開発部', '営業部', '管理部', '人事部'];
-      const scores = [4.2, 3.8, 4.0, 3.9];
-
-      this.chartInstances.departmentComparison = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: departments,
-          datasets: [{
-            label: '平均スコア',
-            data: scores,
-            backgroundColor: 'rgba(75, 192, 192, 0.6)',
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true,
-              max: 5
-            }
-          },
-          plugins: {
-            title: {
-              display: true,
-              text: '部署別平均スコア'
-            }
-          }
-        }
-      });
+      const data = this.collectEvaluationData();
+      await this.saveEvaluation('self_assessed', data);
+      this.app.showSuccess('自己評価を評価者に送信しました');
+      this.app.navigate('#/evaluations');
     } catch (error) {
-      console.error("Reports: Failed to create department comparison chart:", error);
+      console.error('Self evaluation: Submit failed:', error);
+      this.app.showError('自己評価の送信に失敗しました');
     }
   }
 
-  renderEvaluatorEfficiencyChart() {
-    const canvas = document.getElementById('evaluatorEfficiencyChart');
-    if (!canvas || typeof Chart === 'undefined') return;
+  async saveEvaluation(status, ratings) {
+    const evaluationData = {
+      id: this.existingEvaluation?.id,
+      tenantId: this.currentUser.tenantId,
+      targetUserId: this.currentUser.uid || this.currentUser.id,
+      targetUserName: this.currentUser.name,
+      targetUserEmail: this.currentUser.email,
+      jobTypeId: this.currentUser.jobTypeId,
+      periodId: this.selectedPeriod.id,
+      periodName: this.selectedPeriod.name,
+      evaluatorId: this.currentUser.evaluatorId,
+      status: status,
+      ratings: ratings,
+      type: 'self_assessment',
+      submittedAt: status === 'self_assessed' ? new Date().toISOString() : null,
+      updatedAt: new Date().toISOString()
+    };
 
-    const existingChart = Chart.getChart(canvas);
-    if (existingChart) existingChart.destroy();
-
-    try {
-      const ctx = canvas.getContext('2d');
-      const evaluators = ['田中', '佐藤', '山田', '鈴木'];
-      const efficiency = [92, 88, 95, 85];
-
-      this.chartInstances.evaluatorEfficiency = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: evaluators,
-          datasets: [{
-            label: '評価完了率(%)',
-            data: efficiency,
-            backgroundColor: 'rgba(153, 102, 255, 0.6)',
-            borderColor: 'rgba(153, 102, 255, 1)',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            x: {
-              beginAtZero: true,
-              max: 100
-            }
-          },
-          plugins: {
-            title: {
-              display: true,
-              text: '評価者別完了率'
-            }
-          }
-        }
-      });
-    } catch (error) {
-      console.error("Reports: Failed to create evaluator efficiency chart:", error);
+    const result = await this.app.api.saveEvaluation(evaluationData);
+    
+    if (result.success) {
+      this.existingEvaluation = { ...evaluationData, id: result.id };
     }
+
+    return result;
   }
 }
