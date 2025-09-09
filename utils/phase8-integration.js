@@ -19,7 +19,10 @@ class Phase8Integration {
    * Initialize Phase 8 enhancements
    */
   async init() {
-    if (this.initialized) return;
+    if (this.initialized) {
+      console.warn('Phase 8: 既に初期化済みです');
+      return;
+    }
 
     console.log('Phase 8: Initializing UX enhancements...');
 

@@ -62,7 +62,6 @@ export class SecurityAuditor {
       "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
       "img-src 'self' data: https:",
       "connect-src 'self' https://*.firebaseio.com https://*.googleapis.com",
-      "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'"
     ].join('; ');

@@ -28,7 +28,10 @@ class Phase9Integration {
    * Phase 9統合システムの初期化
    */
   async init() {
-    if (this.initialized) return;
+    if (this.initialized) {
+      console.warn('Phase 9: 既に初期化済みです');
+      return;
+    }
 
     console.log('Phase 9: システム統合とセキュリティ強化を初期化中...');
 
@@ -95,8 +98,14 @@ class Phase9Integration {
     console.log(`Phase 9: ${component.name}を初期化中...`);
     
     // コンポーネントが既に初期化されているかチェック
-    if (component.instance && typeof component.instance.init === 'function') {
-      await component.instance.init();
+    if (component.instance) {
+      if (component.instance.initialized === true) {
+        console.log(`Phase 9: ${component.name}は既に初期化済みです`);
+        return;
+      }
+      if (typeof component.instance.init === 'function') {
+        await component.instance.init();
+      }
     }
     
     console.log(`Phase 9: ${component.name}の初期化完了`);
@@ -639,7 +648,6 @@ class Phase9Integration {
       "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
       "img-src 'self' data: https:",
       "connect-src 'self' https://*.firebaseio.com https://*.googleapis.com",
-      "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
       "upgrade-insecure-requests"
