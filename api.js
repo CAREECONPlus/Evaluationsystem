@@ -3558,25 +3558,161 @@ async getAllUsers() {
     }
   }
 
-  // 同様の更新・削除メソッドをカテゴリと職種にも追加
+  /**
+   * カテゴリ更新（多言語）
+   */
   async updateCategoryI18n(categoryId, updateData) {
-    // updateEvaluationItemI18nと同様の実装
-    // categories_i18n コレクションを対象とする
+    try {
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser?.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      const batch = writeBatch(this.db);
+      const languages = ['ja', 'en', 'vi'];
+
+      for (const lang of languages) {
+        const categoryQuery = query(
+          collection(this.db, "categories_i18n"),
+          where("categoryId", "==", categoryId),
+          where("languageCode", "==", lang),
+          where("tenantId", "==", currentUser.tenantId)
+        );
+
+        const categorySnapshot = await getDocs(categoryQuery);
+        
+        if (!categorySnapshot.empty) {
+          const docRef = categorySnapshot.docs[0].ref;
+          const updateDoc = {
+            categoryName: updateData[`categoryName_${lang}`] || updateData.categoryName,
+            categoryDescription: updateData[`categoryDescription_${lang}`] || updateData.categoryDescription,
+            displayOrder: parseInt(updateData.displayOrder) || 0,
+            updatedAt: serverTimestamp()
+          };
+
+          batch.update(docRef, updateDoc);
+        }
+      }
+
+      await batch.commit();
+      return { success: true };
+
+    } catch (error) {
+      console.error("API: Error updating category:", error);
+      this.handleError(error, 'カテゴリの更新');
+      throw error;
+    }
   }
 
+  /**
+   * カテゴリ削除（多言語）
+   */
   async deleteCategoryI18n(categoryId) {
-    // deleteEvaluationItemI18nと同様の実装
-    // categories_i18n コレクションを対象とする
+    try {
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser?.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      const categoriesQuery = query(
+        collection(this.db, "categories_i18n"),
+        where("categoryId", "==", categoryId),
+        where("tenantId", "==", currentUser.tenantId)
+      );
+
+      const categoriesSnapshot = await getDocs(categoriesQuery);
+      const batch = writeBatch(this.db);
+
+      categoriesSnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+      return { success: true };
+
+    } catch (error) {
+      console.error("API: Error deleting category:", error);
+      this.handleError(error, 'カテゴリの削除');
+      throw error;
+    }
   }
 
+  /**
+   * 職種更新（多言語）
+   */
   async updateJobTypeI18n(jobTypeId, updateData) {
-    // updateEvaluationItemI18nと同様の実装
-    // job_types_i18n コレクションを対象とする
+    try {
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser?.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      const batch = writeBatch(this.db);
+      const languages = ['ja', 'en', 'vi'];
+
+      for (const lang of languages) {
+        const jobTypeQuery = query(
+          collection(this.db, "job_types_i18n"),
+          where("jobTypeId", "==", jobTypeId),
+          where("languageCode", "==", lang),
+          where("tenantId", "==", currentUser.tenantId)
+        );
+
+        const jobTypeSnapshot = await getDocs(jobTypeQuery);
+        
+        if (!jobTypeSnapshot.empty) {
+          const docRef = jobTypeSnapshot.docs[0].ref;
+          const updateDoc = {
+            jobTypeName: updateData[`jobTypeName_${lang}`] || updateData.jobTypeName,
+            jobTypeDescription: updateData[`jobTypeDescription_${lang}`] || updateData.jobTypeDescription,
+            updatedAt: serverTimestamp()
+          };
+
+          batch.update(docRef, updateDoc);
+        }
+      }
+
+      await batch.commit();
+      return { success: true };
+
+    } catch (error) {
+      console.error("API: Error updating job type:", error);
+      this.handleError(error, '職種の更新');
+      throw error;
+    }
   }
 
+  /**
+   * 職種削除（多言語）
+   */
   async deleteJobTypeI18n(jobTypeId) {
-    // deleteEvaluationItemI18nと同様の実装
-    // job_types_i18n コレクションを対象とする
+    try {
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser?.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      const jobTypesQuery = query(
+        collection(this.db, "job_types_i18n"),
+        where("jobTypeId", "==", jobTypeId),
+        where("tenantId", "==", currentUser.tenantId)
+      );
+
+      const jobTypesSnapshot = await getDocs(jobTypesQuery);
+      const batch = writeBatch(this.db);
+
+      jobTypesSnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+      return { success: true };
+
+    } catch (error) {
+      console.error("API: Error deleting job type:", error);
+      this.handleError(error, '職種の削除');
+      throw error;
+    }
   }
 
   async updateBenchmark(benchmarkId, updateData) {

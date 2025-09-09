@@ -422,8 +422,16 @@ export class DataSettingsPage {
   }
 
   async afterRender() {
+    // Make this instance available globally for onclick handlers
+    window.dataSettingsPage = this;
+    
     await this.loadCurrentData();
     this.setupEventListeners();
+  }
+
+  // Add init method for compatibility with router
+  async init(params = {}) {
+    await this.afterRender();
   }
 
   setupEventListeners() {
@@ -1182,5 +1190,5 @@ export class DataSettingsPage {
   }
 }
 
-// Make instance available globally for onclick handlers
-let dataSettingsPage;
+// Make instance available globally for onclick handlers  
+window.dataSettingsPage = null;
