@@ -226,6 +226,141 @@ export const INITIAL_I18N_DATA = {
 };
 
 /**
+ * 組織構造コレクション設計
+ * Collection: organizations
+ * 
+ * Document Structure:
+ * {
+ *   organizationId: string,      // 組織ID
+ *   tenantId: string,           // テナントID
+ *   departments: array,          // 部門リスト
+ *   teams: array,               // チームリスト
+ *   hierarchy: object,          // 組織階層構造
+ *   createdAt: timestamp,       // 作成日時
+ *   updatedAt: timestamp        // 更新日時
+ * }
+ */
+export const ORGANIZATIONS_SCHEMA = {
+  collection: 'organizations',
+  fields: {
+    organizationId: { type: 'string', required: true },
+    tenantId: { type: 'string', required: true },
+    departments: { type: 'object', default: [] },
+    teams: { type: 'object', default: [] },
+    hierarchy: { type: 'object', default: {} },
+    createdAt: { type: 'timestamp', required: true },
+    updatedAt: { type: 'timestamp', required: true }
+  },
+  indexes: [
+    ['tenantId'],
+    ['organizationId', 'tenantId']
+  ]
+};
+
+/**
+ * 評価期間コレクション設計
+ * Collection: evaluation_periods
+ * 
+ * Document Structure:
+ * {
+ *   periodId: string,           // 期間ID
+ *   tenantId: string,          // テナントID
+ *   periodName: string,        // 期間名
+ *   startDate: timestamp,      // 開始日
+ *   endDate: timestamp,        // 終了日
+ *   type: string,              // 期間タイプ (quarterly, semi-annual, annual)
+ *   status: string,            // ステータス (active, completed, scheduled)
+ *   createdAt: timestamp,      // 作成日時
+ *   updatedAt: timestamp       // 更新日時
+ * }
+ */
+export const EVALUATION_PERIODS_SCHEMA = {
+  collection: 'evaluation_periods',
+  fields: {
+    periodId: { type: 'string', required: true },
+    tenantId: { type: 'string', required: true },
+    periodName: { type: 'string', required: true },
+    startDate: { type: 'timestamp', required: true },
+    endDate: { type: 'timestamp', required: true },
+    type: { type: 'string', required: true, enum: ['quarterly', 'semi-annual', 'annual'] },
+    status: { type: 'string', required: true, enum: ['active', 'completed', 'scheduled'] },
+    createdAt: { type: 'timestamp', required: true },
+    updatedAt: { type: 'timestamp', required: true }
+  },
+  indexes: [
+    ['tenantId'],
+    ['tenantId', 'status'],
+    ['tenantId', 'type'],
+    ['startDate', 'endDate']
+  ]
+};
+
+/**
+ * 評価履歴コレクション設計
+ * Collection: evaluation_history
+ * 
+ * Document Structure:
+ * {
+ *   historyId: string,         // 履歴ID
+ *   evaluationId: string,      // 評価ID
+ *   userId: string,            // 評価対象ユーザーID
+ *   periodId: string,          // 期間ID
+ *   tenantId: string,          // テナントID
+ *   scores: object,            // スコア詳細
+ *   ratings: object,           // 評価詳細
+ *   totalScore: number,        // 総合スコア
+ *   status: string,            // ステータス
+ *   createdAt: timestamp,      // 作成日時
+ *   completedAt: timestamp     // 完了日時
+ * }
+ */
+export const EVALUATION_HISTORY_SCHEMA = {
+  collection: 'evaluation_history',
+  fields: {
+    historyId: { type: 'string', required: true },
+    evaluationId: { type: 'string', required: true },
+    userId: { type: 'string', required: true },
+    periodId: { type: 'string', required: true },
+    tenantId: { type: 'string', required: true },
+    scores: { type: 'object', default: {} },
+    ratings: { type: 'object', default: {} },
+    totalScore: { type: 'number', default: 0 },
+    status: { type: 'string', required: true },
+    createdAt: { type: 'timestamp', required: true },
+    completedAt: { type: 'timestamp', required: false }
+  },
+  indexes: [
+    ['tenantId'],
+    ['userId', 'tenantId'],
+    ['periodId', 'tenantId'],
+    ['userId', 'periodId', 'tenantId']
+  ]
+};
+
+/**
+ * 拡張ユーザープロファイルスキーマ
+ * 既存のusersコレクションに追加されるオプショナルフィールド
+ */
+export const EXTENDED_USER_FIELDS = {
+  // 組織情報
+  department: { type: 'string', required: false },
+  jobType: { type: 'string', required: false },
+  level: { type: 'number', required: false },
+  teamId: { type: 'string', required: false },
+  
+  // 人事情報
+  hireDate: { type: 'timestamp', required: false },
+  position: { type: 'string', required: false },
+  
+  // 評価設定
+  evaluationSettings: { type: 'object', default: {} },
+  
+  // メタデータ
+  lastLoginAt: { type: 'timestamp', required: false },
+  profileCompleteness: { type: 'number', default: 0 }
+};
+
+/**
  * データ検証関数
  */
 export function validateI18nData(data, schema) {

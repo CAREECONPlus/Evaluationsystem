@@ -2732,4 +2732,212 @@ async getAllUsers() {
 
     return months;
   }
+
+  // ========================================
+  // 新しいコレクション操作メソッド（Phase 1）
+  // ========================================
+
+  /**
+   * 組織構造の取得
+   */
+  async getOrganizationStructure() {
+    try {
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser?.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      const orgQuery = query(
+        collection(this.db, "organizations"),
+        where("tenantId", "==", currentUser.tenantId)
+      );
+
+      const orgSnapshot = await getDocs(orgQuery);
+      
+      if (orgSnapshot.empty) {
+        // デフォルト組織構造を返す
+        return {
+          departments: ['開発部', '営業部', '管理部', '人事部'],
+          teams: [],
+          hierarchy: {}
+        };
+      }
+
+      const orgDoc = orgSnapshot.docs[0];
+      return orgDoc.data();
+
+    } catch (error) {
+      console.error("API: Error loading organization structure:", error);
+      return {
+        departments: ['開発部', '営業部', '管理部', '人事部'],
+        teams: [],
+        hierarchy: {}
+      };
+    }
+  }
+
+  /**
+   * 評価期間の取得
+   */
+  async getEvaluationPeriods() {
+    try {
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser?.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      const periodsQuery = query(
+        collection(this.db, "evaluation_periods"),
+        where("tenantId", "==", currentUser.tenantId),
+        orderBy("startDate", "desc")
+      );
+
+      const periodsSnapshot = await getDocs(periodsQuery);
+      const periods = [];
+
+      periodsSnapshot.forEach((doc) => {
+        periods.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+
+      return periods;
+
+    } catch (error) {
+      console.error("API: Error loading evaluation periods:", error);
+      return [];
+    }
+  }
+
+  /**
+   * 評価履歴の取得
+   */
+  async getEvaluationHistory(userId, periodId = null) {
+    try {
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser?.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      let historyQuery = query(
+        collection(this.db, "evaluation_history"),
+        where("tenantId", "==", currentUser.tenantId),
+        where("userId", "==", userId),
+        orderBy("createdAt", "desc")
+      );
+
+      if (periodId) {
+        historyQuery = query(
+          collection(this.db, "evaluation_history"),
+          where("tenantId", "==", currentUser.tenantId),
+          where("userId", "==", userId),
+          where("periodId", "==", periodId),
+          orderBy("createdAt", "desc")
+        );
+      }
+
+      const historySnapshot = await getDocs(historyQuery);
+      const history = [];
+
+      historySnapshot.forEach((doc) => {
+        history.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+
+      return history;
+
+    } catch (error) {
+      console.error("API: Error loading evaluation history:", error);
+      return [];
+    }
+  }
+
+  /**
+   * ユーザープロファイルの拡張フィールド更新（オプショナル）
+   */
+  async updateUserExtendedProfile(userId, extendedData) {
+    try {
+      console.log("API: Updating user extended profile:", userId, extendedData);
+
+      // 既存のupdateUserメソッドを使用
+      // extendedDataには department, jobType, level, teamId, hireDate等が含まれる
+      return await this.updateUser(userId, extendedData);
+
+    } catch (error) {
+      console.error("API: Error updating user extended profile:", error);
+      this.handleError(error, '拡張プロファイルの更新');
+      throw error;
+    }
+  }
+
+  /**
+   * 部門別ユーザー取得（新機能）
+   */
+  async getUsersByDepartment(department) {
+    try {
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser?.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      const usersQuery = query(
+        collection(this.db, "users"),
+        where("tenantId", "==", currentUser.tenantId),
+        where("department", "==", department)
+      );
+
+      const usersSnapshot = await getDocs(usersQuery);
+      const users = [];
+
+      usersSnapshot.forEach((doc) => {
+        users.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+
+      return users;
+
+    } catch (error) {
+      console.error("API: Error loading users by department:", error);
+      return [];
+    }
+  }
+
+  /**
+   * 職種別ユーザー取得（新機能）
+   */
+  async getUsersByJobType(jobType) {
+    try {
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser?.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      const usersQuery = query(
+        collection(this.db, "users"),
+        where("tenantId", "==", currentUser.tenantId),
+        where("jobType", "==", jobType)
+      );
+
+      const usersSnapshot = await getDocs(usersQuery);
+      const users = [];
+
+      usersSnapshot.forEach((doc) => {
+        users.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+
+      return users;
+
+    } catch (error) {
+      console.error("API: Error loading users by job type:", error);
+      return [];
+    }
+  }
 }
