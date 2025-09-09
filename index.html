@@ -33,6 +33,8 @@
     
     <!-- カスタムCSS -->
     <link href="./styles.css" rel="stylesheet">
+    <!-- Phase 8: Enhanced Responsive CSS -->
+    <link href="./styles/responsive.css" rel="stylesheet">
     
     <!-- Favicon（データURIで対応） -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23007bff'/><text y='50' x='50' text-anchor='middle' font-size='50' fill='white' dy='.3em'>評</text></svg>">
@@ -151,6 +153,14 @@
             }
         });
         
+        // Phase 8: UX Enhancement Integration
+        console.log('Initializing Phase 8 UX enhancements...');
+        import('./utils/phase8-integration.js').then(module => {
+            console.log('Phase 8 integration loaded successfully');
+        }).catch(error => {
+            console.warn('Failed to load Phase 8 enhancements:', error);
+        });
+
         // アプリケーションの初期化
         console.log('Initializing application...');
         window.app = new App();
