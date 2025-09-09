@@ -161,6 +161,14 @@
             console.warn('Failed to load Phase 8 enhancements:', error);
         });
 
+        // Phase 9: System Integration & Security Enhancement
+        console.log('Initializing Phase 9 system integration...');
+        import('./utils/phase9-integration.js').then(module => {
+            console.log('Phase 9 integration loaded successfully');
+        }).catch(error => {
+            console.warn('Failed to load Phase 9 enhancements:', error);
+        });
+
         // アプリケーションの初期化
         console.log('Initializing application...');
         window.app = new App();
