@@ -1,3 +1,5 @@
+import { ValidationUtils, EvaluationValidationRules } from '../utils/validation.js';
+
 export class DataSettingsPage {
   constructor(app) {
     this.app = app;
@@ -1061,6 +1063,13 @@ export class DataSettingsPage {
     try {
       const formData = this.collectFormData();
       
+      // バリデーション実行
+      const validationResult = this.validateModalData(formData);
+      if (!validationResult.isValid) {
+        this.displayValidationErrors(validationResult.errors);
+        return;
+      }
+      
       if (this.currentModalMode === 'add') {
         await this.createItem(this.currentModalType, formData);
       } else {
@@ -1072,8 +1081,84 @@ export class DataSettingsPage {
       this.showSuccess('データが正常に保存されました');
     } catch (error) {
       console.error('Error saving data:', error);
-      this.showError('保存中にエラーが発生しました');
+      this.showError(error.message || '保存中にエラーが発生しました');
     }
+  }
+
+  /**
+   * モーダルデータのバリデーション
+   */
+  validateModalData(formData) {
+    let rules;
+    
+    switch (this.currentModalType) {
+      case 'evaluation-item':
+        rules = EvaluationValidationRules.evaluationItemForm;
+        break;
+      case 'category':
+        rules = {
+          categoryName_ja: [
+            { type: 'required', fieldName: 'カテゴリ名（日本語）' },
+            { type: 'stringLength', min: 2, max: 50, fieldName: 'カテゴリ名（日本語）' }
+          ],
+          displayOrder: [
+            { type: 'number', min: 0, max: 9999, fieldName: '表示順' }
+          ]
+        };
+        break;
+      case 'job-type':
+        rules = {
+          jobTypeName_ja: [
+            { type: 'required', fieldName: '職種名（日本語）' },
+            { type: 'stringLength', min: 2, max: 50, fieldName: '職種名（日本語）' }
+          ]
+        };
+        break;
+      case 'benchmark':
+        rules = {
+          name: [
+            { type: 'required', fieldName: 'ベンチマーク名' },
+            { type: 'stringLength', min: 2, max: 100, fieldName: 'ベンチマーク名' }
+          ],
+          type: [
+            { type: 'required', fieldName: 'タイプ' }
+          ],
+          value: [
+            { type: 'required', fieldName: '基準値' },
+            { type: 'number', min: 0, max: 5, fieldName: '基準値' }
+          ]
+        };
+        break;
+      default:
+        return { isValid: true, errors: {} };
+    }
+    
+    return ValidationUtils.validateForm(formData, rules);
+  }
+
+  /**
+   * バリデーションエラーの表示
+   */
+  displayValidationErrors(errors) {
+    const modalBody = document.getElementById('modal-body');
+    if (!modalBody) return;
+    
+    // 既存のエラーメッセージをクリア
+    modalBody.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+    modalBody.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    
+    // エラーメッセージを表示
+    Object.entries(errors).forEach(([fieldName, message]) => {
+      const field = modalBody.querySelector(`[name="${fieldName}"]`);
+      if (field) {
+        field.classList.add('is-invalid');
+        
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'invalid-feedback';
+        errorDiv.textContent = message;
+        field.parentNode.appendChild(errorDiv);
+      }
+    });
   }
 
   collectFormData() {

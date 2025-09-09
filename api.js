@@ -33,18 +33,22 @@ export class API {
     this.contentTranslator = new DynamicContentTranslator(app);
   }
 
-  // ===== Validation Methods =====
+  // ===== Enhanced Validation Methods =====
 
   /**
    * メールアドレスの検証
    */
   validateEmail(email) {
     if (!email || typeof email !== 'string') {
-      return false;
+      return { isValid: false, message: 'メールアドレスを入力してください' };
     }
     
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email.trim());
+    if (!emailRegex.test(email.trim())) {
+      return { isValid: false, message: '有効なメールアドレスを入力してください' };
+    }
+    
+    return { isValid: true };
   }
 
   /**
@@ -52,10 +56,19 @@ export class API {
    */
   validatePassword(password) {
     if (!password || typeof password !== 'string') {
-      return false;
+      return { isValid: false, message: 'パスワードを入力してください' };
     }
     
-    return password.length >= 6;
+    if (password.length < 6) {
+      return { isValid: false, message: 'パスワードは6文字以上で入力してください' };
+    }
+    
+    // 複雑さチェック
+    if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(password)) {
+      return { isValid: false, message: 'パスワードは英字と数字を両方含む必要があります' };
+    }
+    
+    return { isValid: true };
   }
 
   /**
@@ -63,9 +76,19 @@ export class API {
    */
   validateName(name) {
     if (!name || typeof name !== 'string') {
-      return false;
+      return { isValid: false, message: '名前を入力してください' };
     }
-    return name.trim().length >= 2;
+    
+    const trimmedName = name.trim();
+    if (trimmedName.length < 2) {
+      return { isValid: false, message: '名前は2文字以上で入力してください' };
+    }
+    
+    if (trimmedName.length > 50) {
+      return { isValid: false, message: '名前は50文字以下で入力してください' };
+    }
+    
+    return { isValid: true };
   }
 
   /**
@@ -73,9 +96,200 @@ export class API {
    */
   validateCompanyName(companyName) {
     if (!companyName || typeof companyName !== 'string') {
-      return false;
+      return { isValid: false, message: '企業名を入力してください' };
     }
-    return companyName.trim().length >= 2;
+    
+    const trimmedName = companyName.trim();
+    if (trimmedName.length < 2) {
+      return { isValid: false, message: '企業名は2文字以上で入力してください' };
+    }
+    
+    if (trimmedName.length > 100) {
+      return { isValid: false, message: '企業名は100文字以下で入力してください' };
+    }
+    
+    return { isValid: true };
+  }
+
+  /**
+   * 評価期間データの検証
+   */
+  validateEvaluationPeriod(periodData) {
+    const errors = [];
+    
+    // 期間名検証
+    if (!periodData.periodName || typeof periodData.periodName !== 'string') {
+      errors.push('期間名を入力してください');
+    } else if (periodData.periodName.trim().length < 3) {
+      errors.push('期間名は3文字以上で入力してください');
+    } else if (periodData.periodName.trim().length > 100) {
+      errors.push('期間名は100文字以下で入力してください');
+    }
+    
+    // 日付検証
+    if (!periodData.startDate) {
+      errors.push('開始日を入力してください');
+    }
+    
+    if (!periodData.endDate) {
+      errors.push('終了日を入力してください');
+    }
+    
+    if (periodData.startDate && periodData.endDate) {
+      const startDate = new Date(periodData.startDate);
+      const endDate = new Date(periodData.endDate);
+      
+      if (isNaN(startDate.getTime())) {
+        errors.push('有効な開始日を入力してください');
+      }
+      
+      if (isNaN(endDate.getTime())) {
+        errors.push('有効な終了日を入力してください');
+      }
+      
+      if (startDate >= endDate) {
+        errors.push('終了日は開始日より後の日付を入力してください');
+      }
+    }
+    
+    // タイプ検証
+    const validTypes = ['quarterly', 'semi-annual', 'annual'];
+    if (!periodData.type || !validTypes.includes(periodData.type)) {
+      errors.push('有効な期間タイプを選択してください');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors: errors
+    };
+  }
+
+  /**
+   * 組織データの検証
+   */
+  validateOrganizationData(orgData) {
+    const errors = [];
+    
+    // 部門データ検証
+    if (orgData.departments && Array.isArray(orgData.departments)) {
+      orgData.departments.forEach((dept, index) => {
+        if (typeof dept === 'string') {
+          if (dept.trim().length < 2) {
+            errors.push(`部門${index + 1}の名前は2文字以上で入力してください`);
+          }
+        } else if (typeof dept === 'object' && dept.name) {
+          if (dept.name.trim().length < 2) {
+            errors.push(`部門「${dept.name}」の名前は2文字以上で入力してください`);
+          }
+        }
+      });
+      
+      // 重複チェック
+      const deptNames = orgData.departments.map(d => 
+        typeof d === 'string' ? d.trim() : d.name?.trim()
+      ).filter(Boolean);
+      const uniqueDeptNames = [...new Set(deptNames)];
+      if (deptNames.length !== uniqueDeptNames.length) {
+        errors.push('部門名に重複があります');
+      }
+    }
+    
+    // チームデータ検証
+    if (orgData.teams && Array.isArray(orgData.teams)) {
+      orgData.teams.forEach((team, index) => {
+        if (!team.name || team.name.trim().length < 2) {
+          errors.push(`チーム${index + 1}の名前は2文字以上で入力してください`);
+        }
+        
+        if (!team.department) {
+          errors.push(`チーム「${team.name}」の所属部門を選択してください`);
+        }
+      });
+      
+      // 重複チェック
+      const teamNames = orgData.teams.map(t => t.name?.trim()).filter(Boolean);
+      const uniqueTeamNames = [...new Set(teamNames)];
+      if (teamNames.length !== uniqueTeamNames.length) {
+        errors.push('チーム名に重複があります');
+      }
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors: errors
+    };
+  }
+
+  /**
+   * 多言語データの検証
+   */
+  validateI18nData(data, requiredLanguages = ['ja']) {
+    const errors = [];
+    
+    // 必須言語のチェック
+    for (const lang of requiredLanguages) {
+      if (!data[`itemName_${lang}`] && !data[`categoryName_${lang}`] && !data[`jobTypeName_${lang}`]) {
+        errors.push(`${lang.toUpperCase()}の名前は必須です`);
+      }
+    }
+    
+    // 並び順の検証
+    if (data.sortOrder !== undefined && data.sortOrder !== null) {
+      const sortOrder = parseInt(data.sortOrder);
+      if (isNaN(sortOrder) || sortOrder < 0 || sortOrder > 9999) {
+        errors.push('並び順は0から9999の間で入力してください');
+      }
+    }
+    
+    // 表示順の検証
+    if (data.displayOrder !== undefined && data.displayOrder !== null) {
+      const displayOrder = parseInt(data.displayOrder);
+      if (isNaN(displayOrder) || displayOrder < 0 || displayOrder > 9999) {
+        errors.push('表示順は0から9999の間で入力してください');
+      }
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors: errors
+    };
+  }
+
+  /**
+   * ベンチマークデータの検証
+   */
+  validateBenchmarkData(benchmarkData) {
+    const errors = [];
+    
+    // 名前検証
+    if (!benchmarkData.name || typeof benchmarkData.name !== 'string') {
+      errors.push('ベンチマーク名を入力してください');
+    } else if (benchmarkData.name.trim().length < 2) {
+      errors.push('ベンチマーク名は2文字以上で入力してください');
+    } else if (benchmarkData.name.trim().length > 100) {
+      errors.push('ベンチマーク名は100文字以下で入力してください');
+    }
+    
+    // タイプ検証
+    const validTypes = ['general', 'technical', 'communication', 'leadership', 'problem_solving'];
+    if (!benchmarkData.type || !validTypes.includes(benchmarkData.type)) {
+      errors.push('有効なベンチマークタイプを選択してください');
+    }
+    
+    // 値検証
+    if (benchmarkData.value === undefined || benchmarkData.value === null) {
+      errors.push('基準値を入力してください');
+    } else {
+      const value = parseFloat(benchmarkData.value);
+      if (isNaN(value) || value < 0 || value > 5) {
+        errors.push('基準値は0から5の間で入力してください');
+      }
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors: errors
+    };
   }
 
   // ===== Error Handling =====
@@ -2805,6 +3019,12 @@ async getAllUsers() {
         throw new Error("テナント情報が見つかりません");
       }
 
+      // サーバーサイドバリデーション
+      const validation = this.validateOrganizationData(organizationData);
+      if (!validation.isValid) {
+        throw new Error(validation.errors.join(', '));
+      }
+
       const orgQuery = query(
         collection(this.db, "organizations"),
         where("tenantId", "==", currentUser.tenantId)
@@ -3023,6 +3243,12 @@ async getAllUsers() {
       const currentUser = await this.getCurrentUserData();
       if (!currentUser?.tenantId) {
         throw new Error("テナント情報が見つかりません");
+      }
+
+      // サーバーサイドバリデーション
+      const validation = this.validateEvaluationPeriod(periodData);
+      if (!validation.isValid) {
+        throw new Error(validation.errors.join(', '));
       }
 
       // 期間の重複チェック
@@ -3452,6 +3678,12 @@ async getAllUsers() {
       const currentUser = await this.getCurrentUserData();
       if (!currentUser?.tenantId) {
         throw new Error("テナント情報が見つかりません");
+      }
+
+      // サーバーサイドバリデーション
+      const validation = this.validateBenchmarkData(benchmarkData);
+      if (!validation.isValid) {
+        throw new Error(validation.errors.join(', '));
       }
 
       const docRef = doc(collection(this.db, "benchmarks"));
