@@ -13,36 +13,68 @@ export class LoginPage {
       <div class="login-page">
         <div class="container-fluid vh-100">
           <div class="row h-100">
-            <div class="col-lg-6 d-none d-lg-flex align-items-center justify-content-center bg-primary text-white">
-              <div class="text-center p-5">
-                <i class="fas fa-hard-hat fa-5x mb-4 opacity-75"></i>
-                <h1 class="display-4 fw-bold" data-i18n="app.system_name">評価管理システム</h1>
-                <p class="lead" data-i18n="login.lead_text">建設業の特性に合わせた従業員評価管理システム</p>
+            <div class="col-lg-6 d-none d-lg-flex align-items-center justify-content-center login-hero-section">
+              <div class="text-center p-5 text-white">
+                <div class="login-hero-icon mb-4">
+                  <i class="fas fa-hard-hat fa-5x"></i>
+                </div>
+                <h1 class="display-4 fw-bold mb-3" data-i18n="app.system_name">評価管理システム</h1>
+                <p class="lead opacity-90 mb-4" data-i18n="login.lead_text">建設業の特性に合わせた従業員評価管理システム</p>
+                <div class="feature-badges">
+                  <span class="feature-badge">
+                    <i class="fas fa-shield-alt me-2"></i>セキュア
+                  </span>
+                  <span class="feature-badge">
+                    <i class="fas fa-mobile-alt me-2"></i>レスポンシブ
+                  </span>
+                  <span class="feature-badge">
+                    <i class="fas fa-globe me-2"></i>多言語対応
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div class="col-lg-6 d-flex align-items-center justify-content-center bg-light">
-              <div class="login-form-container w-100" style="max-width: 400px;">
-                <div class="card shadow-lg border-0">
+            <div class="col-lg-6 d-flex align-items-center justify-content-center login-form-section">
+              <div class="login-form-container w-100" style="max-width: 420px;">
+                <div class="login-card">
                   <div class="card-body p-5">
-                    <div class="text-center mb-4">
-                      <h2 class="card-title h3 mb-2" data-i18n="auth.login">ログイン</h2>
+                    <div class="text-center mb-5">
+                      <div class="login-form-icon mb-3">
+                        <i class="fas fa-user-circle fa-3x text-primary"></i>
+                      </div>
+                      <h2 class="card-title h3 mb-2 text-dark" data-i18n="auth.login">ログイン</h2>
                       <p class="text-muted" data-i18n="login.sign_in_hint">アカウント情報を入力してください</p>
                     </div>
 
                     <form id="loginForm">
-                      <div class="mb-3">
-                        <label for="email" class="form-label fw-bold" data-i18n="auth.email_label">メールアドレス</label>
-                        <input type="email" class="form-control form-control-lg" id="email" required autocomplete="email" placeholder="user@example.com">
+                      <div class="mb-4">
+                        <label for="email" class="form-label fw-semibold text-dark" data-i18n="auth.email_label">メールアドレス</label>
+                        <div class="input-group input-group-lg">
+                          <span class="input-group-text bg-light border-end-0">
+                            <i class="fas fa-envelope text-muted"></i>
+                          </span>
+                          <input type="email" class="form-control border-start-0 ps-0" id="email" required autocomplete="email" placeholder="user@example.com">
+                        </div>
                       </div>
                       <div class="mb-4">
-                        <label for="password" class="form-label fw-bold" data-i18n="auth.password_label">パスワード</label>
-                        <input type="password" class="form-control form-control-lg" id="password" required autocomplete="current-password" placeholder="6文字以上">
+                        <label for="password" class="form-label fw-semibold text-dark" data-i18n="auth.password_label">パスワード</label>
+                        <div class="input-group input-group-lg">
+                          <span class="input-group-text bg-light border-end-0">
+                            <i class="fas fa-lock text-muted"></i>
+                          </span>
+                          <input type="password" class="form-control border-start-0 ps-0" id="password" required autocomplete="current-password" placeholder="6文字以上">
+                        </div>
                       </div>
-                      <div class="d-grid">
-                          <button type="submit" class="btn btn-primary btn-lg" id="loginButton">
-                            <span class="login-text"><i class="fas fa-sign-in-alt me-2"></i><span data-i18n="auth.login">ログイン</span></span>
-                            <span class="login-spinner d-none"><span class="spinner-border spinner-border-sm me-2"></span><span data-i18n="auth.logging_in">ログイン中...</span></span>
+                      <div class="d-grid mb-3">
+                          <button type="submit" class="btn btn-primary btn-lg login-button" id="loginButton">
+                            <span class="login-text">
+                              <i class="fas fa-sign-in-alt me-2"></i>
+                              <span data-i18n="auth.login">ログイン</span>
+                            </span>
+                            <span class="login-spinner d-none">
+                              <span class="spinner-border spinner-border-sm me-2"></span>
+                              <span data-i18n="auth.logging_in">ログイン中...</span>
+                            </span>
                           </button>
                       </div>
                     </form>

@@ -48,7 +48,7 @@ class App {
       try {
         await Promise.race([
           this.auth.listenForAuthChanges(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error("Auth timeout")), 10000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Auth timeout")), 15000))
         ])
       } catch (authError) {
         if (authError.message === "Auth timeout") {
@@ -56,7 +56,7 @@ class App {
         } else if (authError.message && authError.message.includes("Operation cancelled")) {
           console.warn("⚠ Auth operation cancelled, continuing with initialization")
         } else {
-          throw authError
+          console.warn("⚠ Auth initialization error, continuing:", authError.message)
         }
       }
 
