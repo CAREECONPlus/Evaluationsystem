@@ -328,14 +328,36 @@ export class APIOptimizer {
     const groups = {};
     
     batch.forEach(item => {
-      const baseUrl = new URL(item.request.url).pathname;
-      const groupKey = `${item.request.options.method || 'GET'}-${baseUrl}`;
-      
-      if (!groups[groupKey]) {
-        groups[groupKey] = [];
+      try {
+        // URLが有効かチェック
+        if (!item.request || !item.request.url) {
+          console.warn('API Optimizer: 無効なリクエスト:', item);
+          return;
+        }
+        
+        let baseUrl;
+        try {
+          baseUrl = new URL(item.request.url).pathname;
+        } catch (urlError) {
+          // 相対URLの場合は現在のオリジンをベースとして使用
+          try {
+            baseUrl = new URL(item.request.url, window.location.origin).pathname;
+          } catch (fallbackError) {
+            console.warn('API Optimizer: URL解析失敗:', item.request.url);
+            baseUrl = item.request.url; // フォールバック
+          }
+        }
+        
+        const groupKey = `${item.request.options?.method || 'GET'}-${baseUrl}`;
+        
+        if (!groups[groupKey]) {
+          groups[groupKey] = [];
+        }
+        
+        groups[groupKey].push(item);
+      } catch (error) {
+        console.warn('API Optimizer: リクエストグループ化エラー:', error, item);
       }
-      
-      groups[groupKey].push(item);
     });
     
     return groups;

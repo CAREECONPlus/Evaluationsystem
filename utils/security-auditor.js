@@ -506,9 +506,9 @@ export class SecurityAuditor {
     // IPアドレス、ユーザーエージェント等の組み合わせでの識別
     const userAgent = navigator.userAgent;
     const language = navigator.language;
-    const screen = `${screen.width}x${screen.height}`;
+    const screenInfo = `${window.screen.width}x${window.screen.height}`;
     
-    return btoa(`${userAgent}-${language}-${screen}`).substring(0, 32);
+    return btoa(`${userAgent}-${language}-${screenInfo}`).substring(0, 32);
   }
 
   /**

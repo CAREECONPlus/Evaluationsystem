@@ -396,6 +396,19 @@ export class EnhancedI18n {
       text = fallbackTranslations[key];
     }
     
+    // Fallback to main i18n system
+    if (!text && window.i18n && typeof window.i18n.t === 'function') {
+      try {
+        text = window.i18n.t(key, variables);
+        // i18nのtメソッドがキー自体を返した場合は使わない
+        if (text === key) {
+          text = null;
+        }
+      } catch (e) {
+        // i18nエラーは無視
+      }
+    }
+    
     // Final fallback to key itself
     if (!text) {
       text = key;

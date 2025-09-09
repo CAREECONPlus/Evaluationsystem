@@ -94,6 +94,12 @@ const BUILT_IN_TRANSLATIONS = {
       "register_admin_success": "登録申請が完了しました",
       "register_admin_success_detail": "システム開発者による承認をお待ちください。"
     },
+
+    // ===== ログイン関連 =====
+    "login": {
+      "lead_text": "アカウント情報でログインしてください",
+      "sign_in_hint": "メールアドレスとパスワードを入力してください"
+    },
     
     // ===== 評価関連翻訳 =====
     "evaluations": {
@@ -560,6 +566,12 @@ const BUILT_IN_TRANSLATIONS = {
       "sign_in_hint": "Please enter your account information",
       "register_admin_success": "Registration application completed",
       "register_admin_success_detail": "Please wait for approval by the system developer."
+    },
+
+    // ===== Login Related =====
+    "login": {
+      "lead_text": "Please log in with your account information",
+      "sign_in_hint": "Enter your email address and password"
     },
     
     // ===== Evaluations =====
@@ -1052,6 +1064,12 @@ const BUILT_IN_TRANSLATIONS = {
       "sign_in_hint": "Vui lòng nhập thông tin tài khoản của bạn",
       "register_admin_success": "Đơn đăng ký hoàn tất",
       "register_admin_success_detail": "Vui lòng chờ phê duyệt từ nhà phát triển hệ thống."
+    },
+
+    // ===== Login Related =====
+    "login": {
+      "lead_text": "Vui lòng đăng nhập bằng thông tin tài khoản của bạn",
+      "sign_in_hint": "Nhập địa chỉ email và mật khẩu của bạn"
     },
     
     // ===== Evaluations =====
