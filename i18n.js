@@ -36,7 +36,8 @@ const BUILT_IN_TRANSLATIONS = {
       "reports": "レポート",
       "developer": "開発者管理",
       "multilingual_admin": "多言語管理",
-      "self_evaluation": "自己評価"
+      "self_evaluation": "自己評価",
+      "job_types": "職種管理"
     },
     
     // ===== ダッシュボード翻訳 =====
@@ -239,6 +240,13 @@ const BUILT_IN_TRANSLATIONS = {
       "actions": "操作"
     },
 
+    // ===== ユーザー関連 =====
+    "user": {
+      "profile": "プロフィール",
+      "account": "アカウント",
+      "preferences": "設定"
+    },
+
     // ===== ユーザー管理 =====
     "users": {
       "title": "ユーザー管理",
@@ -271,6 +279,19 @@ const BUILT_IN_TRANSLATIONS = {
       "pending": "承認待ち",
       "all_roles": "すべての役割",
       "invitation_message": "招待メッセージ（任意）"
+    },
+
+    // ===== 設定 =====
+    "settings": {
+      "title": "設定",
+      "general": "一般設定",
+      "account": "アカウント設定",
+      "security": "セキュリティ設定",
+      "notifications": "通知設定",
+      "language": "言語設定",
+      "theme": "テーマ設定",
+      "data": "データ設定",
+      "system": "システム設定"
     },
 
     // ===== 目標管理 =====
@@ -482,7 +503,8 @@ const BUILT_IN_TRANSLATIONS = {
       "reports": "Reports",
       "developer": "Developer Management",
       "multilingual_admin": "Multilingual Management",
-      "self_evaluation": "Self-Evaluation"
+      "self_evaluation": "Self-Evaluation",
+      "job_types": "Job Type Management"
     },
     
     // ===== Dashboard =====
@@ -686,6 +708,13 @@ const BUILT_IN_TRANSLATIONS = {
       "retry": "Retry"
     },
 
+    // ===== User Related =====
+    "user": {
+      "profile": "Profile",
+      "account": "Account",
+      "preferences": "Preferences"
+    },
+
     // ===== User Management =====
     "users": {
       "title": "User Management",
@@ -718,6 +747,19 @@ const BUILT_IN_TRANSLATIONS = {
       "pending": "Pending",
       "all_roles": "All Roles",
       "invitation_message": "Invitation Message (Optional)"
+    },
+
+    // ===== Settings =====
+    "settings": {
+      "title": "Settings",
+      "general": "General Settings",
+      "account": "Account Settings",
+      "security": "Security Settings",
+      "notifications": "Notification Settings",
+      "language": "Language Settings",
+      "theme": "Theme Settings",
+      "data": "Data Settings",
+      "system": "System Settings"
     },
 
     // ===== Goal Management =====
@@ -953,7 +995,8 @@ const BUILT_IN_TRANSLATIONS = {
       "reports": "Báo cáo",
       "developer": "Quản lý nhà phát triển",
       "multilingual_admin": "Quản lý đa ngôn ngữ",
-      "self_evaluation": "Tự đánh giá"
+      "self_evaluation": "Tự đánh giá",
+      "job_types": "Quản lý loại công việc"
     },
     
     // ===== Dashboard =====
@@ -1157,6 +1200,13 @@ const BUILT_IN_TRANSLATIONS = {
       "retry": "Thử lại"
     },
 
+    // ===== User Related =====
+    "user": {
+      "profile": "Hồ sơ",
+      "account": "Tài khoản",
+      "preferences": "Tùy chọn"
+    },
+
     // ===== User Management =====
     "users": {
       "title": "Quản lý người dùng",
@@ -1189,6 +1239,19 @@ const BUILT_IN_TRANSLATIONS = {
       "pending": "Chờ xử lý",
       "all_roles": "Tất cả vai trò",
       "invitation_message": "Tin nhắn mời (Tùy chọn)"
+    },
+
+    // ===== Settings =====
+    "settings": {
+      "title": "Cài đặt",
+      "general": "Cài đặt chung",
+      "account": "Cài đặt tài khoản",
+      "security": "Cài đặt bảo mật",
+      "notifications": "Cài đặt thông báo",
+      "language": "Cài đặt ngôn ngữ",
+      "theme": "Cài đặt giao diện",
+      "data": "Cài đặt dữ liệu",
+      "system": "Cài đặt hệ thống"
     },
 
     // ===== Goal Management =====

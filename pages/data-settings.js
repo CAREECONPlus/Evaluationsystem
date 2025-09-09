@@ -3,8 +3,8 @@ import { ValidationUtils, EvaluationValidationRules } from '../utils/validation.
 export class DataSettingsPage {
   constructor(app) {
     this.app = app;
-    this.currentLanguage = app.getCurrentLanguage();
-    this.translations = app.translations;
+    this.currentLanguage = app.i18n.getCurrentLanguage();
+    this.translations = app.i18n.translations;
     this.currentCategory = 'evaluation-items';
   }
 

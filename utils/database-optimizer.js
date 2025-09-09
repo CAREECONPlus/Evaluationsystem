@@ -30,7 +30,6 @@ export class DatabaseOptimizer {
     this.setupQueryCaching();
     this.setupBatchOperations();
     this.setupPerformanceMonitoring();
-    this.generateIndexRecommendations();
     
     console.log('Database Optimizer: システムが初期化されました');
   }
