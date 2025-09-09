@@ -8,6 +8,9 @@ import { databaseOptimizer } from './database-optimizer.js';
 import { apiOptimizer } from './api-optimizer.js';
 import { errorRecoverySystem } from './error-recovery-system.js';
 
+// Global flag to prevent multiple initialization
+let globalPhase9Initialized = false;
+
 class Phase9Integration {
   constructor() {
     this.initialized = false;
@@ -28,11 +31,12 @@ class Phase9Integration {
    * Phase 9統合システムの初期化
    */
   async init() {
-    if (this.initialized) {
+    if (this.initialized || globalPhase9Initialized) {
       console.warn('Phase 9: 既に初期化済みです');
       return;
     }
 
+    globalPhase9Initialized = true;
     console.log('Phase 9: システム統合とセキュリティ強化を初期化中...');
 
     try {

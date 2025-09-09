@@ -7,6 +7,9 @@ import { performanceOptimizer } from './performance-optimizer.js';
 import { accessibilityEnhancer } from './accessibility-enhancer.js';
 import { enhancedI18n } from './i18n-enhanced.js';
 
+// Global flag to prevent multiple initialization
+let globalPhase8Initialized = false;
+
 class Phase8Integration {
   constructor() {
     this.initialized = false;
@@ -19,11 +22,12 @@ class Phase8Integration {
    * Initialize Phase 8 enhancements
    */
   async init() {
-    if (this.initialized) {
+    if (this.initialized || globalPhase8Initialized) {
       console.warn('Phase 8: 既に初期化済みです');
       return;
     }
 
+    globalPhase8Initialized = true;
     console.log('Phase 8: Initializing UX enhancements...');
 
     try {

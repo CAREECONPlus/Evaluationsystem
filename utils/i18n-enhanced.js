@@ -175,17 +175,9 @@ export class EnhancedI18n {
    * Fetch translations from server or local storage
    */
   async fetchTranslations(language) {
-    try {
-      // First try to load from server
-      const response = await fetch(`/locales/${language}.json`);
-      if (response.ok) {
-        return await response.json();
-      }
-    } catch (error) {
-      console.warn(`Failed to load translations from server for ${language}`);
-    }
-
-    // Fallback to embedded translations
+    // Skip server loading and use embedded translations directly
+    // This prevents 404 errors when locales directory doesn't exist
+    console.log(`i18n-enhanced: Using embedded translations for ${language}`);
     return this.getEmbeddedTranslations(language);
   }
 
