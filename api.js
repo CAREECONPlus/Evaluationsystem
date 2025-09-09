@@ -344,7 +344,7 @@ export class API {
 /**
    * テナント内のユーザー一覧を取得（修正版）
    */
-  async getUsers(statusFilter = null) {
+  async getUsers(statusFilter = null, options = {}) {
     try {
       console.log("API: Loading users...", statusFilter ? `with status filter: ${statusFilter}` : '');
       
@@ -378,6 +378,22 @@ export class API {
           users.push(userData);
         }
       });
+
+      // Phase 2: 組織データの追加読み込み（オプション）
+      if (options.includeOrgData) {
+        try {
+          const orgStructure = await this.getOrganizationStructure();
+          users.forEach(user => {
+            user._orgData = {
+              departmentName: user.department || '未設定',
+              jobTypeName: user.jobType || '未設定',
+              levelName: user.level ? `レベル${user.level}` : '未設定'
+            };
+          });
+        } catch (orgError) {
+          console.warn("API: Failed to load organization data:", orgError);
+        }
+      }
 
       users.sort((a, b) => {
         const aTime = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
@@ -923,7 +939,7 @@ export class API {
   /**
    * 評価一覧を取得
    */
-  async getEvaluations(filters = {}) {
+  async getEvaluations(filters = {}, options = {}) {
     try {
       
       const currentUser = await this.getCurrentUserData();
@@ -1607,7 +1623,7 @@ async getAllUsers() {
   /**
    * 評価一覧を取得
    */
-  async getEvaluations(filters = {}) {
+  async getEvaluations(filters = {}, options = {}) {
     try {
       
       const currentUser = await this.getCurrentUserData();
@@ -2939,5 +2955,224 @@ async getAllUsers() {
       console.error("API: Error loading users by job type:", error);
       return [];
     }
+  }
+
+  // ========================================
+  // Phase 2: 統計・分析API（新規）
+  // ========================================
+
+  /**
+   * 部門別統計データ取得
+   */
+  async getDepartmentStats() {
+    try {
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser?.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      // 部門別ユーザー数
+      const departments = ['開発部', '営業部', '管理部', '人事部'];
+      const departmentStats = {};
+
+      for (const dept of departments) {
+        const users = await this.getUsersByDepartment(dept);
+        const evaluations = await this.getEvaluations({ department: dept });
+        
+        departmentStats[dept] = {
+          userCount: users.length,
+          evaluationCount: evaluations.length,
+          completionRate: users.length > 0 ? (evaluations.filter(e => e.status === 'completed').length / users.length) * 100 : 0,
+          averageScore: this.calculateAverageScore(evaluations.filter(e => e.status === 'completed'))
+        };
+      }
+
+      return departmentStats;
+
+    } catch (error) {
+      console.error("API: Error loading department stats:", error);
+      return {};
+    }
+  }
+
+  /**
+   * スキル分析データ取得
+   */
+  async getSkillAnalysisData() {
+    try {
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser?.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      const evaluations = await this.getEvaluations({ status: 'completed' });
+      const skillAverages = {};
+      const skillCounts = {};
+
+      // スキル別平均スコア計算
+      evaluations.forEach(evaluation => {
+        if (evaluation.ratings) {
+          Object.entries(evaluation.ratings).forEach(([skill, rating]) => {
+            if (!skillAverages[skill]) {
+              skillAverages[skill] = 0;
+              skillCounts[skill] = 0;
+            }
+            skillAverages[skill] += rating;
+            skillCounts[skill]++;
+          });
+        }
+      });
+
+      // 平均値を計算
+      Object.keys(skillAverages).forEach(skill => {
+        skillAverages[skill] = skillAverages[skill] / skillCounts[skill];
+      });
+
+      // 強み・弱みの抽出
+      const skillEntries = Object.entries(skillAverages);
+      const topSkills = skillEntries
+        .filter(([_, score]) => score >= 4.0)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+
+      const improvementAreas = skillEntries
+        .filter(([_, score]) => score < 3.0)
+        .sort((a, b) => a[1] - b[1])
+        .slice(0, 5);
+
+      return {
+        skillAverages,
+        topSkills,
+        improvementAreas,
+        totalEvaluations: evaluations.length
+      };
+
+    } catch (error) {
+      console.error("API: Error loading skill analysis data:", error);
+      return {
+        skillAverages: {},
+        topSkills: [],
+        improvementAreas: [],
+        totalEvaluations: 0
+      };
+    }
+  }
+
+  /**
+   * 時系列データ取得（トレンド分析）
+   */
+  async getTrendData(timeRange = 'last6months') {
+    try {
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser?.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      const evaluations = await this.getEvaluations({ status: 'completed' });
+      const months = this.generateMonthRange(timeRange);
+      const trendData = {};
+
+      months.forEach(month => {
+        trendData[month] = {
+          evaluationCount: 0,
+          averageScore: 0,
+          completionRate: 0
+        };
+      });
+
+      // 月別データ集計
+      evaluations.forEach(evaluation => {
+        if (evaluation.completedAt) {
+          const completedDate = evaluation.completedAt.toDate ? evaluation.completedAt.toDate() : new Date(evaluation.completedAt);
+          const monthKey = `${completedDate.getFullYear()}/${String(completedDate.getMonth() + 1).padStart(2, '0')}`;
+          
+          if (trendData[monthKey]) {
+            trendData[monthKey].evaluationCount++;
+            if (evaluation.totalScore) {
+              trendData[monthKey].averageScore += evaluation.totalScore;
+            }
+          }
+        }
+      });
+
+      // 平均値計算
+      Object.keys(trendData).forEach(month => {
+        if (trendData[month].evaluationCount > 0) {
+          trendData[month].averageScore = trendData[month].averageScore / trendData[month].evaluationCount;
+        }
+      });
+
+      return trendData;
+
+    } catch (error) {
+      console.error("API: Error loading trend data:", error);
+      return {};
+    }
+  }
+
+  /**
+   * ベンチマーク比較データ取得
+   */
+  async getBenchmarkData(userId) {
+    try {
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser?.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      // 個人の評価データ
+      const userEvaluations = await this.getEvaluations({ targetUserId: userId, status: 'completed' });
+      
+      // 同じ部門・職種のユーザーデータ
+      const targetUser = await this.getUser(userId);
+      let peerEvaluations = [];
+      
+      if (targetUser?.department) {
+        const peerUsers = await this.getUsersByDepartment(targetUser.department);
+        const peerEvaluationPromises = peerUsers.map(user => 
+          this.getEvaluations({ targetUserId: user.id, status: 'completed' })
+        );
+        const peerResults = await Promise.all(peerEvaluationPromises);
+        peerEvaluations = peerResults.flat();
+      }
+
+      // 組織全体のデータ
+      const allEvaluations = await this.getEvaluations({ status: 'completed' });
+
+      return {
+        personal: {
+          averageScore: this.calculateAverageScore(userEvaluations),
+          evaluationCount: userEvaluations.length
+        },
+        peer: {
+          averageScore: this.calculateAverageScore(peerEvaluations),
+          evaluationCount: peerEvaluations.length
+        },
+        organization: {
+          averageScore: this.calculateAverageScore(allEvaluations),
+          evaluationCount: allEvaluations.length
+        }
+      };
+
+    } catch (error) {
+      console.error("API: Error loading benchmark data:", error);
+      return {
+        personal: { averageScore: 0, evaluationCount: 0 },
+        peer: { averageScore: 0, evaluationCount: 0 },
+        organization: { averageScore: 0, evaluationCount: 0 }
+      };
+    }
+  }
+
+  /**
+   * ヘルパー: 平均スコア計算
+   */
+  calculateAverageScore(evaluations) {
+    if (!evaluations || evaluations.length === 0) return 0;
+    
+    const validScores = evaluations.filter(e => e.totalScore).map(e => e.totalScore);
+    if (validScores.length === 0) return 0;
+    
+    return validScores.reduce((sum, score) => sum + score, 0) / validScores.length;
   }
 }
