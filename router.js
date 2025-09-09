@@ -19,6 +19,9 @@ import { HelpPage } from "./pages/help.js"
 import { MultilingualAdminPage } from "./pages/multilingual-admin.js"
 import { TranslationQualityManagementPage } from "./pages/translation-quality-management.js"
 import { SelfEvaluationPage } from "./pages/self-evaluation.js"
+import { OrganizationManagementPage } from "./pages/organization-management.js"
+import { EvaluationPeriodsPage } from "./pages/evaluation-periods.js"
+import { DataSettingsPage } from "./pages/data-settings.js"
 
 export class Router {
   constructor(app) {
@@ -132,6 +135,24 @@ export class Router {
         auth: true,
         roles: ["worker", "evaluator", "admin"],
         title: "自己評価",
+      },
+      "/organization-management": {
+        component: OrganizationManagementPage,
+        auth: true,
+        roles: ["admin"],
+        title: "組織管理",
+      },
+      "/evaluation-periods": {
+        component: EvaluationPeriodsPage,
+        auth: true,
+        roles: ["admin"],
+        title: "評価期間設定",
+      },
+      "/data-settings": {
+        component: DataSettingsPage,
+        auth: true,
+        roles: ["admin"],
+        title: "データ設定",
       },
     }
 

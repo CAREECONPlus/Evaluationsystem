@@ -216,6 +216,61 @@ export class SidebarComponent {
                 <span data-i18n="nav.multilingual_admin">多言語管理</span>
               </a>
             </li>
+
+            <!-- 管理機能セクション -->
+            <li class="nav-divider my-2" role="none">
+              <hr class="border-light border-opacity-30 mx-3">
+            </li>
+            <li class="nav-item" role="none">
+              <div class="nav-section-header px-3 py-1">
+                <small class="text-white-50 fw-semibold">管理機能</small>
+              </div>
+            </li>
+
+            <!-- 組織管理（管理者のみ） -->
+            <li class="nav-item" role="none">
+              <a 
+                class="nav-link text-white d-flex align-items-center ${this.isActive('/organization-management') ? 'active' : ''}" 
+                href="#/organization-management" 
+                data-link
+                role="menuitem"
+                aria-current="${this.isActive('/organization-management') ? 'page' : 'false'}"
+                tabindex="0"
+              >
+                <i class="fas fa-sitemap nav-icon me-3" aria-hidden="true"></i>
+                <span data-i18n="nav.organization_management">組織管理</span>
+              </a>
+            </li>
+
+            <!-- 評価期間設定（管理者のみ） -->
+            <li class="nav-item" role="none">
+              <a 
+                class="nav-link text-white d-flex align-items-center ${this.isActive('/evaluation-periods') ? 'active' : ''}" 
+                href="#/evaluation-periods" 
+                data-link
+                role="menuitem"
+                aria-current="${this.isActive('/evaluation-periods') ? 'page' : 'false'}"
+                tabindex="0"
+              >
+                <i class="fas fa-calendar-alt nav-icon me-3" aria-hidden="true"></i>
+                <span data-i18n="nav.evaluation_periods">評価期間設定</span>
+              </a>
+            </li>
+
+            <!-- データ設定（管理者のみ） -->
+            <li class="nav-item" role="none">
+              <a 
+                class="nav-link text-white d-flex align-items-center ${this.isActive('/data-settings') ? 'active' : ''}" 
+                href="#/data-settings" 
+                data-link
+                role="menuitem"
+                aria-current="${this.isActive('/data-settings') ? 'page' : 'false'}"
+                tabindex="0"
+              >
+                <i class="fas fa-database nav-icon me-3" aria-hidden="true"></i>
+                <span data-i18n="nav.data_settings">データ設定</span>
+              </a>
+            </li>
             ` : ''}
 
             ${isDeveloper ? `
