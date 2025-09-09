@@ -1,3 +1,5 @@
+import { AnalyticsService } from '../services/analytics-service.js';
+
 /**
  * Reports Overview Page Component
  * レポート概要ページコンポーネント - 過去の評価との比較と統計情報
@@ -9,6 +11,14 @@ export class EvaluationReportPage {
     this.chartInstances = {};
     this.isInitialized = false;
     this.currentTimeRange = 'last6months';
+    
+    // Phase 7: AnalyticsServiceの初期化
+    this.analytics = new AnalyticsService();
+    
+    // リアルタイム更新設定
+    this.refreshInterval = null;
+    this.autoRefreshEnabled = true;
+    this.refreshIntervalMs = 300000; // 5分間隔
     
     // 権限別設定
     this.currentUser = null;
@@ -101,10 +111,10 @@ export class EvaluationReportPage {
       
       const baseData = {
         evaluations: filteredEvaluations,
-        statistics: this.calculateWorkerStatistics(filteredEvaluations),
-        trends: this.calculatePersonalTrends(filteredEvaluations),
-        improvements: this.analyzeImprovements(filteredEvaluations),
-        strengths: this.analyzeStrengths(filteredEvaluations)
+        statistics: await this.analytics.calculateWorkerStatistics(filteredEvaluations),
+        trends: await this.analytics.calculatePersonalTrends(filteredEvaluations),
+        improvements: await this.analytics.analyzeImprovements(filteredEvaluations),
+        strengths: await this.analytics.analyzeStrengths(filteredEvaluations)
       };
 
       if (benchmarkData) {
@@ -154,7 +164,7 @@ export class EvaluationReportPage {
         subordinates: filteredEvaluations,
         subordinateList: subordinateUsers,
         progress: this.calculateEvaluationProgress(filteredEvaluations),
-        subordinateStats: this.calculateSubordinateStatistics(filteredEvaluations)
+        subordinateStats: await this.analytics.calculateSubordinateStatistics(filteredEvaluations)
       };
     } catch (error) {
       console.error('Reports: Failed to load evaluator data:', error);
@@ -227,30 +237,31 @@ export class EvaluationReportPage {
     try {
       console.log('Reports: Attempting to load real organization data');
       
-      // Phase 2 新APIを使用してデータ取得
-      const departmentStats = await this.app.api.getDepartmentStats();
-      const skillAnalysis = await this.app.api.getSkillAnalysisData();
-      const trendData = await this.app.api.getTrendData(this.currentTimeRange);
+      // Phase 7: AnalyticsServiceを使用してデータ取得・分析
+      const allEvaluations = await this.app.api.getEvaluations({});
+      const allUsers = await this.app.api.getUsers({});
       
-      // データが十分に存在するかチェック
-      const hasValidData = (
-        Object.keys(departmentStats).length > 0 ||
-        skillAnalysis.totalEvaluations > 0 ||
-        Object.keys(trendData).length > 0
-      );
-
-      if (hasValidData) {
-        console.log('Reports: Real organization data loaded successfully');
-        return {
-          departmentStats,
-          skillAnalysis,
-          trendData,
-          dataSource: 'real'
-        };
-      } else {
-        console.log('Reports: Insufficient real data, falling back to defaults');
+      if (!allEvaluations || allEvaluations.length === 0) {
+        console.log('Reports: No evaluation data found');
         return null;
       }
+
+      // 時間範囲でフィルタリング
+      const filteredEvaluations = this.filterEvaluationsByTimeRange(allEvaluations);
+      
+      // AnalyticsServiceで高度な分析を実行
+      const departmentAnalysis = await this.analytics.analyzeDepartmentPerformance(filteredEvaluations, allUsers);
+      const trendAnalysis = await this.analytics.analyzeTrendData(filteredEvaluations, this.currentTimeRange);
+      const skillAnalysis = await this.analytics.analyzeSkillData(filteredEvaluations);
+      
+      console.log('Reports: Real organization data loaded and analyzed successfully');
+      return {
+        departmentStats: departmentAnalysis.departmentStats,
+        skillAnalysis: skillAnalysis,
+        trendData: trendAnalysis,
+        departmentAnalysis: departmentAnalysis,
+        dataSource: 'real'
+      };
 
     } catch (error) {
       console.error('Reports: Failed to load real organization data:', error);
@@ -265,18 +276,29 @@ export class EvaluationReportPage {
     try {
       console.log('Reports: Loading real department data');
       
-      const orgStructure = await this.app.api.getOrganizationStructure();
-      const departmentStats = await this.app.api.getDepartmentStats();
+      // Phase 7: AnalyticsServiceを使用して部門データ取得・分析
+      const allEvaluations = await this.app.api.getEvaluations({});
+      const allUsers = await this.app.api.getUsers({});
       
-      // 実際の部門データが存在するかチェック
-      if (orgStructure.departments && orgStructure.departments.length > 0) {
-        const realDepartments = orgStructure.departments.map(dept => ({
-          name: dept,
-          stats: departmentStats[dept] || {
-            userCount: 0,
-            evaluationCount: 0,
-            completionRate: 0,
-            averageScore: 0
+      if (!allEvaluations || allEvaluations.length === 0 || !allUsers || allUsers.length === 0) {
+        console.log('Reports: Insufficient data for department analysis');
+        return null;
+      }
+
+      // 時間範囲でフィルタリング
+      const filteredEvaluations = this.filterEvaluationsByTimeRange(allEvaluations);
+      
+      // AnalyticsServiceで部門分析を実行
+      const departmentAnalysis = await this.analytics.analyzeDepartmentPerformance(filteredEvaluations, allUsers);
+      
+      if (departmentAnalysis.departments && departmentAnalysis.departments.length > 0) {
+        const realDepartments = departmentAnalysis.departments.map(dept => ({
+          name: dept.name,
+          stats: {
+            userCount: dept.userCount,
+            evaluationCount: dept.evaluationCount,
+            completionRate: dept.completionRate,
+            averageScore: dept.averageScore
           }
         }));
 
@@ -2575,6 +2597,188 @@ export class EvaluationReportPage {
     document.querySelectorAll('.time-range-btn').forEach(btn => {
       btn.replaceWith(btn.cloneNode(true));
     });
+    
+    // リアルタイム更新のクリーンアップ
+    this.stopAutoRefresh();
+  }
+
+  /**
+   * Phase 7: リアルタイム更新機能
+   */
+  startAutoRefresh() {
+    if (!this.autoRefreshEnabled || this.refreshInterval) return;
+    
+    console.log('Reports: Starting auto refresh');
+    this.refreshInterval = setInterval(async () => {
+      try {
+        await this.refreshData();
+      } catch (error) {
+        console.error('Reports: Auto refresh failed:', error);
+      }
+    }, this.refreshIntervalMs);
+  }
+
+  stopAutoRefresh() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = null;
+      console.log('Reports: Auto refresh stopped');
+    }
+  }
+
+  async refreshData() {
+    console.log('Reports: Refreshing data...');
+    
+    try {
+      // 現在のローディング状態を表示
+      this.showRefreshIndicator();
+      
+      // データを再取得
+      await this.loadRoleBasedData();
+      
+      // チャートとUI要素を更新
+      if (this.isWorker) {
+        await this.renderWorkerCharts();
+        this.updateWorkerStats();
+      } else if (this.isEvaluator) {
+        await this.renderEvaluatorCharts();
+        this.updateEvaluatorStats();
+      } else if (this.isAdmin) {
+        await this.renderAdminCharts();
+        this.updateAdminStats();
+      }
+      
+      this.hideRefreshIndicator();
+      console.log('Reports: Data refreshed successfully');
+    } catch (error) {
+      this.hideRefreshIndicator();
+      console.error('Reports: Failed to refresh data:', error);
+    }
+  }
+
+  showRefreshIndicator() {
+    const indicator = document.getElementById('refreshIndicator');
+    if (indicator) {
+      indicator.style.display = 'block';
+      indicator.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> データ更新中...';
+    }
+  }
+
+  hideRefreshIndicator() {
+    const indicator = document.getElementById('refreshIndicator');
+    if (indicator) {
+      indicator.style.display = 'none';
+    }
+  }
+
+  toggleAutoRefresh() {
+    this.autoRefreshEnabled = !this.autoRefreshEnabled;
+    
+    if (this.autoRefreshEnabled) {
+      this.startAutoRefresh();
+    } else {
+      this.stopAutoRefresh();
+    }
+    
+    // UI更新
+    const toggleBtn = document.getElementById('autoRefreshToggle');
+    if (toggleBtn) {
+      toggleBtn.textContent = this.autoRefreshEnabled ? '自動更新: ON' : '自動更新: OFF';
+      toggleBtn.className = this.autoRefreshEnabled ? 'btn btn-success btn-sm' : 'btn btn-secondary btn-sm';
+    }
+  }
+
+  /**
+   * Phase 7: エクスポート機能
+   */
+  async exportReportData(format = 'excel') {
+    try {
+      console.log(`Reports: Exporting report data in ${format} format`);
+      
+      if (!this.reportData) {
+        throw new Error('レポートデータが読み込まれていません');
+      }
+
+      const exportData = await this.analytics.generateExportData(this.reportData, {
+        format: format,
+        timeRange: this.currentTimeRange,
+        userRole: this.userRole,
+        includeCharts: true,
+        includeStatistics: true,
+        includeTrends: true
+      });
+
+      const filename = this.generateExportFilename(format);
+      await this.downloadExportFile(exportData, filename, format);
+      
+      console.log('Reports: Export completed successfully');
+    } catch (error) {
+      console.error('Reports: Export failed:', error);
+      alert('エクスポートに失敗しました: ' + error.message);
+    }
+  }
+
+  generateExportFilename(format) {
+    const date = new Date().toISOString().split('T')[0];
+    const rolePrefix = this.userRole === 'admin' ? '組織全体' : 
+                      this.userRole === 'evaluator' ? '評価者' : '個人';
+    return `評価レポート_${rolePrefix}_${date}.${format === 'excel' ? 'xlsx' : format}`;
+  }
+
+  async downloadExportFile(data, filename, format) {
+    let blob;
+    let mimeType;
+
+    switch (format) {
+      case 'excel':
+        // Excelファイル生成（実際の実装では外部ライブラリが必要）
+        blob = new Blob([data], { 
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+        });
+        break;
+      case 'pdf':
+        blob = new Blob([data], { type: 'application/pdf' });
+        break;
+      case 'csv':
+        blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
+        break;
+      default:
+        blob = new Blob([JSON.stringify(data, null, 2)], { 
+          type: 'application/json' 
+        });
+    }
+
+    // ダウンロード処理
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = filename;
+    
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  }
+
+  // エクスポート用のUI要素を動的に追加
+  addExportButtons() {
+    const exportContainer = document.getElementById('exportContainer');
+    if (!exportContainer) return;
+
+    exportContainer.innerHTML = `
+      <div class="btn-group" role="group">
+        <button type="button" class="btn btn-primary btn-sm" onclick="evaluationReportPage.exportReportData('excel')">
+          <i class="fas fa-file-excel"></i> Excel出力
+        </button>
+        <button type="button" class="btn btn-success btn-sm" onclick="evaluationReportPage.exportReportData('csv')">
+          <i class="fas fa-file-csv"></i> CSV出力
+        </button>
+        <button type="button" class="btn btn-danger btn-sm" onclick="evaluationReportPage.exportReportData('pdf')">
+          <i class="fas fa-file-pdf"></i> PDF出力
+        </button>
+      </div>
+    `;
   }
 
   /**
