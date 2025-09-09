@@ -396,20 +396,19 @@ export class EvaluationReportPage {
 
   getDefaultSkillData() {
     return {
-      strengths: [
-        { skill: '責任感', score: 4.6, coverage: 92 },
-        { skill: '協調性', score: 4.4, coverage: 89 },
-        { skill: '学習意欲', score: 4.3, coverage: 85 },
-        { skill: '時間管理', score: 4.2, coverage: 88 },
-        { skill: '問題解決', score: 4.1, coverage: 83 }
+      topSkills: [
+        { name: '責任感', score: '4.6' },
+        { name: '協調性', score: '4.4' },
+        { name: '学習意欲', score: '4.3' },
+        { name: '時間管理', score: '4.2' },
+        { name: '問題解決', score: '4.1' }
       ],
-      weaknesses: [
-        { skill: 'リーダーシップ', score: 3.4, coverage: 58 },
-        { skill: '技術力（新技術）', score: 3.6, coverage: 62 },
-        { skill: 'コミュニケーション', score: 3.7, coverage: 71 }
+      improvementAreas: [
+        { name: 'リーダーシップ', score: '2.4' },
+        { name: '技術力', score: '2.6' },
+        { name: 'コミュニケーション', score: '2.7' }
       ],
-      skillMap: [],
-      distribution: {
+      skillDistribution: {
         '初級': 25,
         '中級': 35,
         '上級': 30,
@@ -1110,25 +1109,27 @@ export class EvaluationReportPage {
     // 総合評価
     const overallElement = document.getElementById('personalOverallScore');
     if (overallElement) {
-      const latestScore = evaluations.length > 0 ? evaluations[evaluations.length - 1].finalScore : 0;
+      const latestScore = evaluations.length > 0 ? evaluations[evaluations.length - 1]?.finalScore : 0;
       overallElement.textContent = latestScore ? latestScore.toFixed(1) : '-';
     }
 
     // 前回比較
     const changeElement = document.getElementById('personalScoreChange');
     if (changeElement && evaluations.length >= 2) {
-      const current = evaluations[evaluations.length - 1].finalScore || 0;
-      const previous = evaluations[evaluations.length - 2].finalScore || 0;
+      const current = evaluations[evaluations.length - 1]?.finalScore || 0;
+      const previous = evaluations[evaluations.length - 2]?.finalScore || 0;
       const change = current - previous;
       changeElement.textContent = change >= 0 ? `+${change.toFixed(1)}` : change.toFixed(1);
       changeElement.className = `card-title mb-0 text-${change >= 0 ? 'success' : 'danger'}`;
     }
 
-    // 改善項目数と強み項目数（ダミーデータ）
+    // 改善項目数と強み項目数
     const improvementElement = document.getElementById('improvementCount');
     const strengthElement = document.getElementById('strengthCount');
-    if (improvementElement) improvementElement.textContent = '3';
-    if (strengthElement) strengthElement.textContent = '5';
+    const improvements = this.reportData?.improvements || [];
+    const strengths = this.reportData?.strengths || [];
+    if (improvementElement) improvementElement.textContent = improvements.length.toString();
+    if (strengthElement) strengthElement.textContent = strengths.length.toString();
   }
 
   /**
@@ -1339,8 +1340,8 @@ export class EvaluationReportPage {
     // 個人評価
     const personalElement = document.getElementById('personalScore');
     if (personalElement) {
-      const personalEvaluations = data.personal.evaluations || [];
-      const latestScore = personalEvaluations.length > 0 ? personalEvaluations[personalEvaluations.length - 1].finalScore : 0;
+      const personalEvaluations = data?.personal?.evaluations || [];
+      const latestScore = personalEvaluations.length > 0 ? personalEvaluations[personalEvaluations.length - 1]?.finalScore : 0;
       personalElement.textContent = latestScore ? latestScore.toFixed(1) : '-';
     }
   }
@@ -1557,26 +1558,29 @@ export class EvaluationReportPage {
     // 組織平均
     const averageScoreElement = document.getElementById('orgAverageScore');
     if (averageScoreElement) {
-      averageScoreElement.textContent = orgStats.averageScore.toFixed(1);
+      const avgScore = orgStats?.averageScore || 0;
+      averageScoreElement.textContent = avgScore.toFixed(1);
     }
 
     // 強いスキル
     const topSkillElement = document.getElementById('topSkillCount');
     if (topSkillElement) {
-      topSkillElement.textContent = skillAnalysis.strengths.length.toString();
+      const topSkills = skillAnalysis?.topSkills || [];
+      topSkillElement.textContent = topSkills.length.toString();
     }
 
     // 弱いスキル
     const weakSkillElement = document.getElementById('weakSkillCount');
     if (weakSkillElement) {
-      weakSkillElement.textContent = skillAnalysis.weaknesses.length.toString();
+      const improvementAreas = skillAnalysis?.improvementAreas || [];
+      weakSkillElement.textContent = improvementAreas.length.toString();
     }
 
     // 個人評価
     const personalElement = document.getElementById('adminPersonalScore');
     if (personalElement) {
-      const personalEvaluations = data.personal.evaluations || [];
-      const latestScore = personalEvaluations.length > 0 ? personalEvaluations[personalEvaluations.length - 1].finalScore : 0;
+      const personalEvaluations = data?.personal?.evaluations || [];
+      const latestScore = personalEvaluations.length > 0 ? personalEvaluations[personalEvaluations.length - 1]?.finalScore : 0;
       personalElement.textContent = latestScore ? latestScore.toFixed(1) : '-';
     }
   }
