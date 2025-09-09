@@ -89,6 +89,9 @@ export class EvaluationReportPage {
       const userId = this.currentUser.uid || this.currentUser.id;
       console.log('Reports: Loading worker data for user:', userId);
       
+      // Phase 3: ベンチマークデータ取得を試行
+      const benchmarkData = await this.loadPersonalBenchmark(userId);
+      
       // 実際の評価データを取得
       const evaluations = await this.app.api.getEvaluations({
         targetUserId: userId
@@ -96,12 +99,26 @@ export class EvaluationReportPage {
 
       const filteredEvaluations = this.filterEvaluationsByTimeRange(evaluations);
       
-      return {
+      const baseData = {
         evaluations: filteredEvaluations,
         statistics: this.calculateWorkerStatistics(filteredEvaluations),
         trends: this.calculatePersonalTrends(filteredEvaluations),
         improvements: this.analyzeImprovements(filteredEvaluations),
         strengths: this.analyzeStrengths(filteredEvaluations)
+      };
+
+      if (benchmarkData) {
+        console.log('Reports: Enhanced worker data with benchmark');
+        return {
+          ...baseData,
+          benchmark: benchmarkData,
+          dataSource: 'real'
+        };
+      }
+
+      return {
+        ...baseData,
+        dataSource: 'basic'
       };
     } catch (error) {
       console.error('Reports: Failed to load worker data:', error);
@@ -155,6 +172,32 @@ export class EvaluationReportPage {
       // 個人の評価データ
       const personalData = await this.loadWorkerData();
 
+      // Phase 3: 実データ取得を試行
+      const realOrgData = await this.loadRealOrgData();
+      const realDepartmentData = await this.loadRealDepartmentData();
+
+      if (realOrgData && realDepartmentData) {
+        console.log('Reports: Using real organization data');
+        return {
+          personal: personalData,
+          allEvaluations: [], // 新API経由で取得済み
+          organizationStats: {
+            totalEmployees: realDepartmentData.departments.reduce((sum, dept) => sum + dept.stats.userCount, 0),
+            evaluationRate: this.calculateOverallCompletionRate(realDepartmentData.departments),
+            averageScore: this.calculateOverallAverageScore(realDepartmentData.departments),
+            strongSkills: realOrgData.skillAnalysis.topSkills.length,
+            weakSkills: realOrgData.skillAnalysis.improvementAreas.length
+          },
+          skillAnalysis: realOrgData.skillAnalysis,
+          departmentAnalysis: realDepartmentData,
+          trendData: realOrgData.trendData,
+          dataSource: 'real'
+        };
+      }
+
+      // フォールバック: 既存の実装
+      console.log('Reports: Falling back to existing data loading method');
+      
       // 組織全体の評価データを取得
       const allEvaluations = await this.app.api.getEvaluations({});
       const filteredEvaluations = this.filterEvaluationsByTimeRange(allEvaluations);
@@ -168,11 +211,114 @@ export class EvaluationReportPage {
         organizationStats: this.calculateOrganizationStatistics(filteredEvaluations),
         skillAnalysis: this.analyzeOrganizationSkills(filteredEvaluations),
         departmentAnalysis: this.analyzeDepartmentPerformance(filteredEvaluations, allUsers),
-        userList: allUsers
+        userList: allUsers,
+        dataSource: 'fallback'
       };
     } catch (error) {
       console.error('Reports: Failed to load admin data:', error);
       return this.getDefaultAdminData();
+    }
+  }
+
+  /**
+   * Phase 3: 実データ取得メソッド（フォールバック付き）
+   */
+  async loadRealOrgData() {
+    try {
+      console.log('Reports: Attempting to load real organization data');
+      
+      // Phase 2 新APIを使用してデータ取得
+      const departmentStats = await this.app.api.getDepartmentStats();
+      const skillAnalysis = await this.app.api.getSkillAnalysisData();
+      const trendData = await this.app.api.getTrendData(this.currentTimeRange);
+      
+      // データが十分に存在するかチェック
+      const hasValidData = (
+        Object.keys(departmentStats).length > 0 ||
+        skillAnalysis.totalEvaluations > 0 ||
+        Object.keys(trendData).length > 0
+      );
+
+      if (hasValidData) {
+        console.log('Reports: Real organization data loaded successfully');
+        return {
+          departmentStats,
+          skillAnalysis,
+          trendData,
+          dataSource: 'real'
+        };
+      } else {
+        console.log('Reports: Insufficient real data, falling back to defaults');
+        return null;
+      }
+
+    } catch (error) {
+      console.error('Reports: Failed to load real organization data:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 実データベースの部門データ取得（新機能）
+   */
+  async loadRealDepartmentData() {
+    try {
+      console.log('Reports: Loading real department data');
+      
+      const orgStructure = await this.app.api.getOrganizationStructure();
+      const departmentStats = await this.app.api.getDepartmentStats();
+      
+      // 実際の部門データが存在するかチェック
+      if (orgStructure.departments && orgStructure.departments.length > 0) {
+        const realDepartments = orgStructure.departments.map(dept => ({
+          name: dept,
+          stats: departmentStats[dept] || {
+            userCount: 0,
+            evaluationCount: 0,
+            completionRate: 0,
+            averageScore: 0
+          }
+        }));
+
+        return {
+          departments: realDepartments,
+          hierarchy: orgStructure.hierarchy,
+          dataSource: 'real'
+        };
+      }
+
+      return null;
+
+    } catch (error) {
+      console.error('Reports: Failed to load real department data:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 個人ベンチマーク データ取得（新機能）
+   */
+  async loadPersonalBenchmark(userId) {
+    try {
+      console.log('Reports: Loading personal benchmark data for:', userId);
+      
+      const benchmarkData = await this.app.api.getBenchmarkData(userId);
+      
+      // ベンチマークデータが有効かチェック
+      if (benchmarkData.personal.evaluationCount > 0) {
+        return {
+          personal: benchmarkData.personal,
+          peer: benchmarkData.peer,
+          organization: benchmarkData.organization,
+          dataSource: 'real'
+        };
+      }
+
+      return null;
+
+    } catch (error) {
+      console.error('Reports: Failed to load personal benchmark data:', error);
+      return null;
     }
   }
 
@@ -2429,5 +2575,35 @@ export class EvaluationReportPage {
     document.querySelectorAll('.time-range-btn').forEach(btn => {
       btn.replaceWith(btn.cloneNode(true));
     });
+  }
+
+  /**
+   * Phase 3: 新データ処理ヘルパーメソッド
+   */
+  calculateOverallCompletionRate(departments) {
+    const totalUsers = departments.reduce((sum, dept) => sum + dept.stats.userCount, 0);
+    const totalCompleted = departments.reduce((sum, dept) => sum + dept.stats.evaluationCount, 0);
+    
+    return totalUsers > 0 ? (totalCompleted / totalUsers) * 100 : 0;
+  }
+
+  calculateOverallAverageScore(departments) {
+    const validDepts = departments.filter(dept => dept.stats.averageScore > 0);
+    if (validDepts.length === 0) return 0;
+    
+    const totalScore = validDepts.reduce((sum, dept) => sum + dept.stats.averageScore, 0);
+    return totalScore / validDepts.length;
+  }
+
+  /**
+   * データソース表示用ヘルパー
+   */
+  getDataSourceIndicator() {
+    if (this.reportData?.dataSource === 'real') {
+      return '<span class="badge bg-success ms-2">実データ</span>';
+    } else if (this.reportData?.dataSource === 'fallback') {
+      return '<span class="badge bg-warning ms-2">基本データ</span>';
+    }
+    return '<span class="badge bg-secondary ms-2">デフォルト</span>';
   }
 }
