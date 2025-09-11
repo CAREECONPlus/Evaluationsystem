@@ -112,7 +112,12 @@
     
     <!-- Firebase設定とアプリケーション初期化 -->
     <script type="module">
-        import App from './app.js?v=' + Date.now();
+        const timestamp = Date.now();
+        import(`./app.js?v=${timestamp}`).then(module => {
+            const App = module.default;
+            window.app = new App();
+            window.app.init().catch(console.error);
+        }).catch(console.error);
         
         // グローバルエラーハンドリング
         window.addEventListener('error', (event) => {
@@ -181,9 +186,7 @@
             console.warn('Failed to load Phase 9 enhancements:', error);
         });
 
-        // アプリケーションの初期化
-        console.log('Initializing application...');
-        window.app = new App();
+        // アプリケーションの初期化は上記の動的importで実行されます
         
         // 初期化タイムアウト設定（30秒）
         const initTimeout = setTimeout(() => {
