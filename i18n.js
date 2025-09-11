@@ -459,6 +459,13 @@ class UnifiedI18n {
   }
 
   /**
+   * UI更新メソッド（login.jsとの互換性のため）
+   */
+  updateUI() {
+    this.applyTranslations();
+  }
+
+  /**
    * キャッシュをクリア
    */
   clearCache() {
