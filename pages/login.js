@@ -79,6 +79,51 @@ export class LoginPage {
                       </div>
                     </form>
 
+                    <!-- Demo Accounts Section -->
+                    <div class="demo-accounts-section mt-4 p-3 bg-light rounded">
+                      <h6 class="text-center mb-3 text-muted">
+                        <i class="fas fa-info-circle me-2"></i>デモアカウント
+                      </h6>
+                      <div class="row text-sm">
+                        <div class="col-12 mb-2">
+                          <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                              <strong class="text-primary">管理者:</strong><br>
+                              <small><code>admin@demo.com</code> / <code>admin123</code></small>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="fillDemoCredentials('admin@demo.com', 'admin123')">
+                              <i class="fas fa-user-cog"></i>
+                            </button>
+                          </div>
+                        </div>
+                        <div class="col-12 mb-2">
+                          <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                              <strong class="text-success">評価者:</strong><br>
+                              <small><code>evaluator@demo.com</code> / <code>eval123</code></small>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-success" onclick="fillDemoCredentials('evaluator@demo.com', 'eval123')">
+                              <i class="fas fa-user-check"></i>
+                            </button>
+                          </div>
+                        </div>
+                        <div class="col-12 mb-2">
+                          <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                              <strong class="text-info">作業員:</strong><br>
+                              <small><code>worker@demo.com</code> / <code>work123</code></small>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-info" onclick="fillDemoCredentials('worker@demo.com', 'work123')">
+                              <i class="fas fa-user"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <small class="text-muted d-block text-center mt-2">
+                        <i class="fas fa-clock me-1"></i>一時認証システム使用中
+                      </small>
+                    </div>
+
                     <div class="text-center mt-4">
                         <a href="#/register-admin" data-link data-i18n="auth.register_admin_link">管理者アカウントの新規登録はこちら</a>
                     </div>
@@ -102,6 +147,26 @@ export class LoginPage {
       });
     }
     this.app.i18n.updateUI();
+    
+    // デモアカウント自動入力機能
+    window.fillDemoCredentials = (email, password) => {
+      const emailInput = document.getElementById('email');
+      const passwordInput = document.getElementById('password');
+      
+      if (emailInput && passwordInput) {
+        emailInput.value = email;
+        passwordInput.value = password;
+        
+        // 入力フィールドをハイライト
+        emailInput.classList.add('is-valid');
+        passwordInput.classList.add('is-valid');
+        
+        setTimeout(() => {
+          emailInput.classList.remove('is-valid');
+          passwordInput.classList.remove('is-valid');
+        }, 1000);
+      }
+    };
   }
 
   async handleLogin() {
