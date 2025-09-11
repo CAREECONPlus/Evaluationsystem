@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase認証状態確認</title>
+    
+    <!-- Firebase Configuration Meta Tags -->
+    <meta name="firebase-api-key" content="AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk">
+    <meta name="firebase-auth-domain" content="hyouka-db.firebaseapp.com">
+    <meta name="firebase-project-id" content="hyouka-db">
+    <meta name="firebase-storage-bucket" content="hyouka-db.appspot.com">
+    <meta name="firebase-messaging-sender-id" content="861016804589">
+    <meta name="firebase-app-id" content="1:861016804589:web:d911d516d6c79aa73690e4">
+    
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section { 
+            background: #f5f5f5; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .info { border-left-color: #17a2b8; background: #d1ecf1; }
+        pre { 
+            background: #f8f9fa; 
+            padding: 10px; 
+            border-radius: 3px; 
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover { background: #0056b3; }
+        #console-output {
+            background: #1e1e1e;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔥 Firebase認証状態確認システム</h1>
+    
+    <div class="test-section info">
+        <h3>📋 確認項目</h3>
+        <ul>
+            <li>Firebase設定の読み込み状況</li>
+            <li>Firebase認証サービスの接続性</li>
+            <li>既存アカウントの使用可能性</li>
+            <li>一時認証システムの動作状況</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>🎯 テスト実行</h3>
+        <button class="btn" onclick="runTest()">認証状態確認開始</button>
+        <button class="btn" onclick="clearConsole()">ログクリア</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 結果表示</h3>
+        <div id="console-output">テストを開始してください...</div>
+    </div>
+
+    <div class="test-section">
+        <h3>🔧 技術詳細</h3>
+        <p><strong>現在のURL:</strong> <span id="current-url"></span></p>
+        <p><strong>検出環境:</strong> <span id="detected-env"></span></p>
+        <p><strong>Firebase プロジェクト:</strong> hyouka-db</p>
+        <p><strong>認証ドメイン:</strong> hyouka-db.firebaseapp.com</p>
+    </div>
+
+    <script src="env.js"></script>
+    <script src="temp-auth.js"></script>
+    <script type="module">
+        import { testFirebaseAuth } from './firebase-auth-test.js';
+        
+        // 現在のページ情報を表示
+        document.getElementById('current-url').textContent = window.location.href;
+        document.getElementById('detected-env').textContent = window.env ? window.env.getEnvironment() : '未検出';
+        
+        // コンソールログをキャプチャ
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        let consoleOutput = '';
+        
+        function captureLog(type, ...args) {
+            const timestamp = new Date().toLocaleTimeString();
+            const message = args.join(' ');
+            consoleOutput += `[${timestamp}] ${type}: ${message}\n`;
+            updateConsoleDisplay();
+        }
+        
+        console.log = (...args) => {
+            captureLog('LOG', ...args);
+            originalLog.apply(console, args);
+        };
+        
+        console.error = (...args) => {
+            captureLog('ERROR', ...args);
+            originalError.apply(console, args);
+        };
+        
+        console.warn = (...args) => {
+            captureLog('WARN', ...args);
+            originalWarn.apply(console, args);
+        };
+        
+        function updateConsoleDisplay() {
+            document.getElementById('console-output').textContent = consoleOutput;
+            document.getElementById('console-output').scrollTop = document.getElementById('console-output').scrollHeight;
+        }
+        
+        window.runTest = async () => {
+            consoleOutput = '';
+            updateConsoleDisplay();
+            
+            console.log('🚀 Firebase認証状態確認テスト開始');
+            console.log('====================================');
+            
+            try {
+                const result = await testFirebaseAuth();
+                
+                console.log('====================================');
+                console.log('✅ テスト完了');
+                console.log('結果:', result);
+                
+            } catch (error) {
+                console.error('❌ テスト実行エラー:', error);
+            }
+        };
+        
+        window.clearConsole = () => {
+            consoleOutput = '';
+            updateConsoleDisplay();
+        };
+        
+        // 自動テスト実行
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                console.log('ページロード完了 - 自動テストを開始します...');
+                runTest();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

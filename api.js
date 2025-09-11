@@ -567,6 +567,24 @@ export class API {
         throw new Error("ユーザー情報またはテナント情報が見つかりません");
       }
 
+      // 一時認証システム使用時はモックデータを返す
+      if (currentUser.isTemp) {
+        console.log("API: Using mock dashboard stats for temporary authentication");
+        if (window.TempAuth) {
+          const tempAuth = new window.TempAuth();
+          return tempAuth.getMockDashboardStats();
+        }
+        // フォールバック用モックデータ
+        return {
+          totalUsers: 45,
+          activeUsers: 42,
+          totalEvaluations: 128,
+          completedEvaluations: 115,
+          totalGoals: 67,
+          completedGoals: 54
+        };
+      }
+
       const tenantId = currentUser.tenantId;
       console.log("API: Loading users for tenant:", tenantId);
 
@@ -1000,6 +1018,24 @@ export class API {
         throw new Error("ユーザー情報またはテナント情報が見つかりません");
       }
 
+      // 一時認証システム使用時はモックデータを返す
+      if (currentUser.isTemp) {
+        console.log("API: Using mock dashboard stats for temporary authentication");
+        if (window.TempAuth) {
+          const tempAuth = new window.TempAuth();
+          return tempAuth.getMockDashboardStats();
+        }
+        // フォールバック用モックデータ
+        return {
+          totalUsers: 45,
+          activeUsers: 42,
+          totalEvaluations: 128,
+          completedEvaluations: 115,
+          totalGoals: 67,
+          completedGoals: 54
+        };
+      }
+
       const tenantId = currentUser.tenantId;
 
       // 各統計データを並行取得
@@ -1061,6 +1097,34 @@ export class API {
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
         throw new Error("ユーザー情報またはテナント情報が見つかりません");
+      }
+
+      // 一時認証システム使用時はモックデータを返す
+      if (currentUser.isTemp) {
+        console.log("API: Using mock recent evaluations for temporary authentication");
+        if (window.TempAuth) {
+          const tempAuth = new window.TempAuth();
+          return tempAuth.getMockRecentEvaluations();
+        }
+        // フォールバック用モックデータ
+        return [
+          {
+            id: 'mock_eval_1',
+            targetName: '田中太郎',
+            evaluatorName: '佐藤管理者',
+            score: 4.5,
+            createdAt: Date.now() - 86400000,
+            status: 'completed'
+          },
+          {
+            id: 'mock_eval_2', 
+            targetName: '鈴木花子',
+            evaluatorName: '田中評価者',
+            score: 4.1,
+            createdAt: Date.now() - 172800000,
+            status: 'completed'
+          }
+        ];
       }
 
       const tenantId = currentUser.tenantId;
@@ -1159,6 +1223,24 @@ export class API {
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
         throw new Error("ユーザー情報またはテナント情報が見つかりません");
+      }
+
+      // 一時認証システム使用時はモックデータを返す
+      if (currentUser.isTemp) {
+        console.log("API: Using mock dashboard stats for temporary authentication");
+        if (window.TempAuth) {
+          const tempAuth = new window.TempAuth();
+          return tempAuth.getMockDashboardStats();
+        }
+        // フォールバック用モックデータ
+        return {
+          totalUsers: 45,
+          activeUsers: 42,
+          totalEvaluations: 128,
+          completedEvaluations: 115,
+          totalGoals: 67,
+          completedGoals: 54
+        };
       }
 
       const tenantId = currentUser.tenantId;
@@ -1308,6 +1390,24 @@ async getAllUsers() {
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
         throw new Error("ユーザー情報またはテナント情報が見つかりません");
+      }
+
+      // 一時認証システム使用時はモックデータを返す
+      if (currentUser.isTemp) {
+        console.log("API: Using mock dashboard stats for temporary authentication");
+        if (window.TempAuth) {
+          const tempAuth = new window.TempAuth();
+          return tempAuth.getMockDashboardStats();
+        }
+        // フォールバック用モックデータ
+        return {
+          totalUsers: 45,
+          activeUsers: 42,
+          totalEvaluations: 128,
+          completedEvaluations: 115,
+          totalGoals: 67,
+          completedGoals: 54
+        };
       }
 
       const tenantId = currentUser.tenantId;
@@ -1684,6 +1784,24 @@ async getAllUsers() {
         throw new Error("ユーザー情報またはテナント情報が見つかりません");
       }
 
+      // 一時認証システム使用時はモックデータを返す
+      if (currentUser.isTemp) {
+        console.log("API: Using mock dashboard stats for temporary authentication");
+        if (window.TempAuth) {
+          const tempAuth = new window.TempAuth();
+          return tempAuth.getMockDashboardStats();
+        }
+        // フォールバック用モックデータ
+        return {
+          totalUsers: 45,
+          activeUsers: 42,
+          totalEvaluations: 128,
+          completedEvaluations: 115,
+          totalGoals: 67,
+          completedGoals: 54
+        };
+      }
+
       const tenantId = currentUser.tenantId;
 
       // 各統計データを並行取得
@@ -1745,6 +1863,34 @@ async getAllUsers() {
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
         throw new Error("ユーザー情報またはテナント情報が見つかりません");
+      }
+
+      // 一時認証システム使用時はモックデータを返す
+      if (currentUser.isTemp) {
+        console.log("API: Using mock recent evaluations for temporary authentication");
+        if (window.TempAuth) {
+          const tempAuth = new window.TempAuth();
+          return tempAuth.getMockRecentEvaluations();
+        }
+        // フォールバック用モックデータ
+        return [
+          {
+            id: 'mock_eval_1',
+            targetName: '田中太郎',
+            evaluatorName: '佐藤管理者',
+            score: 4.5,
+            createdAt: Date.now() - 86400000,
+            status: 'completed'
+          },
+          {
+            id: 'mock_eval_2', 
+            targetName: '鈴木花子',
+            evaluatorName: '田中評価者',
+            score: 4.1,
+            createdAt: Date.now() - 172800000,
+            status: 'completed'
+          }
+        ];
       }
 
       const tenantId = currentUser.tenantId;
@@ -1843,6 +1989,24 @@ async getAllUsers() {
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
         throw new Error("ユーザー情報またはテナント情報が見つかりません");
+      }
+
+      // 一時認証システム使用時はモックデータを返す
+      if (currentUser.isTemp) {
+        console.log("API: Using mock dashboard stats for temporary authentication");
+        if (window.TempAuth) {
+          const tempAuth = new window.TempAuth();
+          return tempAuth.getMockDashboardStats();
+        }
+        // フォールバック用モックデータ
+        return {
+          totalUsers: 45,
+          activeUsers: 42,
+          totalEvaluations: 128,
+          completedEvaluations: 115,
+          totalGoals: 67,
+          completedGoals: 54
+        };
       }
 
       const tenantId = currentUser.tenantId;
@@ -2689,6 +2853,24 @@ async getAllUsers() {
         throw new Error("ユーザー情報またはテナント情報が見つかりません");
       }
 
+      // 一時認証システム使用時はモックデータを返す
+      if (currentUser.isTemp) {
+        console.log("API: Using mock dashboard stats for temporary authentication");
+        if (window.TempAuth) {
+          const tempAuth = new window.TempAuth();
+          return tempAuth.getMockDashboardStats();
+        }
+        // フォールバック用モックデータ
+        return {
+          totalUsers: 45,
+          activeUsers: 42,
+          totalEvaluations: 128,
+          completedEvaluations: 115,
+          totalGoals: 67,
+          completedGoals: 54
+        };
+      }
+
       const tenantId = currentUser.tenantId;
       console.log("API: Using tenantId for statistics:", tenantId);
 
@@ -2961,1371 +3143,5 @@ async getAllUsers() {
     }
 
     return months;
-  }
-
-  // ========================================
-  // 新しいコレクション操作メソッド（Phase 1）
-  // ========================================
-
-  /**
-   * 組織構造の取得
-   */
-  async getOrganizationStructure() {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const orgQuery = query(
-        collection(this.db, "organizations"),
-        where("tenantId", "==", currentUser.tenantId)
-      );
-
-      const orgSnapshot = await getDocs(orgQuery);
-      
-      if (orgSnapshot.empty) {
-        // デフォルト組織構造を返す
-        return {
-          departments: ['開発部', '営業部', '管理部', '人事部'],
-          teams: [],
-          hierarchy: {}
-        };
-      }
-
-      const orgDoc = orgSnapshot.docs[0];
-      return {
-        id: orgDoc.id,
-        ...orgDoc.data()
-      };
-
-    } catch (error) {
-      console.error("API: Error loading organization structure:", error);
-      return {
-        departments: ['開発部', '営業部', '管理部', '人事部'],
-        teams: [],
-        hierarchy: {}
-      };
-    }
-  }
-
-  /**
-   * 組織構造の更新
-   */
-  async updateOrganizationStructure(organizationData) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      // サーバーサイドバリデーション
-      const validation = this.validateOrganizationData(organizationData);
-      if (!validation.isValid) {
-        throw new Error(validation.errors.join(', '));
-      }
-
-      const orgQuery = query(
-        collection(this.db, "organizations"),
-        where("tenantId", "==", currentUser.tenantId)
-      );
-
-      const orgSnapshot = await getDocs(orgQuery);
-      
-      const updateData = {
-        ...organizationData,
-        tenantId: currentUser.tenantId,
-        updatedAt: serverTimestamp()
-      };
-
-      let docRef;
-      if (!orgSnapshot.empty) {
-        // 既存の組織構造を更新
-        docRef = orgSnapshot.docs[0].ref;
-        await updateDoc(docRef, updateData);
-      } else {
-        // 新規作成
-        docRef = doc(collection(this.db, "organizations"));
-        updateData.organizationId = docRef.id;
-        updateData.createdAt = serverTimestamp();
-        await setDoc(docRef, updateData);
-      }
-
-      console.log("API: Organization structure updated successfully");
-      return { success: true, id: docRef.id };
-
-    } catch (error) {
-      console.error("API: Error updating organization structure:", error);
-      this.handleError(error, '組織構造の更新');
-      throw error;
-    }
-  }
-
-  /**
-   * 部門の作成
-   */
-  async createDepartment(departmentData) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const orgStructure = await this.getOrganizationStructure();
-      
-      // 部門の重複チェック
-      if (orgStructure.departments && orgStructure.departments.some(dept => 
-        (typeof dept === 'string' ? dept : dept.name) === departmentData.name)) {
-        throw new Error("同名の部門が既に存在します");
-      }
-
-      // 新しい部門を追加
-      const newDepartments = [...(orgStructure.departments || []), departmentData];
-      
-      await this.updateOrganizationStructure({
-        ...orgStructure,
-        departments: newDepartments
-      });
-
-      console.log("API: Department created successfully");
-      return { success: true, department: departmentData };
-
-    } catch (error) {
-      console.error("API: Error creating department:", error);
-      this.handleError(error, '部門の作成');
-      throw error;
-    }
-  }
-
-  /**
-   * チームの作成
-   */
-  async createTeam(teamData) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const orgStructure = await this.getOrganizationStructure();
-      
-      // チームの重複チェック
-      if (orgStructure.teams && orgStructure.teams.some(team => team.name === teamData.name)) {
-        throw new Error("同名のチームが既に存在します");
-      }
-
-      // 新しいチームを追加
-      const newTeams = [...(orgStructure.teams || []), {
-        ...teamData,
-        id: `team_${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        members: teamData.members || []
-      }];
-      
-      await this.updateOrganizationStructure({
-        ...orgStructure,
-        teams: newTeams
-      });
-
-      console.log("API: Team created successfully");
-      return { success: true, team: newTeams[newTeams.length - 1] };
-
-    } catch (error) {
-      console.error("API: Error creating team:", error);
-      this.handleError(error, 'チームの作成');
-      throw error;
-    }
-  }
-
-  /**
-   * ユーザーの組織配属を更新
-   */
-  async assignUserToOrganization(userId, assignmentData) {
-    try {
-      const userRef = doc(this.db, "users", userId);
-      
-      const updateData = {
-        department: assignmentData.department,
-        jobType: assignmentData.jobType,
-        level: assignmentData.level,
-        teamId: assignmentData.teamId,
-        position: assignmentData.position,
-        updatedAt: serverTimestamp()
-      };
-
-      await updateDoc(userRef, updateData);
-
-      console.log("API: User organization assignment updated");
-      return { success: true };
-
-    } catch (error) {
-      console.error("API: Error assigning user to organization:", error);
-      this.handleError(error, 'ユーザー配属の更新');
-      throw error;
-    }
-  }
-
-  /**
-   * 評価期間の取得
-   */
-  async getEvaluationPeriods(statusFilter = null) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      let periodsQuery = query(
-        collection(this.db, "evaluation_periods"),
-        where("tenantId", "==", currentUser.tenantId),
-        orderBy("startDate", "desc")
-      );
-
-      // ステータスフィルタがある場合
-      if (statusFilter) {
-        periodsQuery = query(periodsQuery, where("status", "==", statusFilter));
-      }
-
-      const periodsSnapshot = await getDocs(periodsQuery);
-      const periods = [];
-
-      periodsSnapshot.forEach((doc) => {
-        periods.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-
-      // フォールバック: データがない場合はデフォルト期間を返す
-      if (periods.length === 0) {
-        const now = new Date();
-        const defaultPeriod = {
-          id: `default_${now.getFullYear()}`,
-          periodId: `period_${now.getFullYear()}`,
-          tenantId: currentUser.tenantId,
-          periodName: `${now.getFullYear()}年度評価期間`,
-          startDate: new Date(now.getFullYear(), 3, 1), // 4月1日
-          endDate: new Date(now.getFullYear() + 1, 2, 31), // 3月31日
-          type: 'annual',
-          status: 'active',
-          createdAt: now,
-          updatedAt: now
-        };
-        periods.push(defaultPeriod);
-      }
-
-      console.log("API: Evaluation periods loaded:", periods.length);
-      return periods;
-
-    } catch (error) {
-      console.error("API: Error loading evaluation periods:", error);
-      // エラー時もフォールバックデータを返す
-      const now = new Date();
-      return [{
-        id: `fallback_${now.getFullYear()}`,
-        periodId: `period_${now.getFullYear()}`,
-        periodName: `${now.getFullYear()}年度評価期間`,
-        startDate: new Date(now.getFullYear(), 3, 1),
-        endDate: new Date(now.getFullYear() + 1, 2, 31),
-        type: 'annual',
-        status: 'active',
-        createdAt: now,
-        updatedAt: now
-      }];
-    }
-  }
-
-  /**
-   * 評価期間の作成
-   */
-  async createEvaluationPeriod(periodData) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      // サーバーサイドバリデーション
-      const validation = this.validateEvaluationPeriod(periodData);
-      if (!validation.isValid) {
-        throw new Error(validation.errors.join(', '));
-      }
-
-      // 期間の重複チェック
-      const existingPeriods = await this.getEvaluationPeriods();
-      const overlapping = existingPeriods.some(period => {
-        const newStart = new Date(periodData.startDate);
-        const newEnd = new Date(periodData.endDate);
-        const existingStart = period.startDate.toDate ? period.startDate.toDate() : new Date(period.startDate);
-        const existingEnd = period.endDate.toDate ? period.endDate.toDate() : new Date(period.endDate);
-        
-        return (newStart <= existingEnd && newEnd >= existingStart);
-      });
-
-      if (overlapping) {
-        throw new Error("指定された期間は既存の評価期間と重複しています");
-      }
-
-      const docRef = doc(collection(this.db, "evaluation_periods"));
-      const newPeriod = {
-        periodId: docRef.id,
-        tenantId: currentUser.tenantId,
-        periodName: periodData.periodName,
-        startDate: new Date(periodData.startDate),
-        endDate: new Date(periodData.endDate),
-        type: periodData.type || 'quarterly',
-        status: periodData.status || 'scheduled',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
-
-      await setDoc(docRef, newPeriod);
-
-      console.log("API: Evaluation period created successfully");
-      return { success: true, id: docRef.id, period: newPeriod };
-
-    } catch (error) {
-      console.error("API: Error creating evaluation period:", error);
-      this.handleError(error, '評価期間の作成');
-      throw error;
-    }
-  }
-
-  /**
-   * 評価期間の更新
-   */
-  async updateEvaluationPeriod(periodId, updateData) {
-    try {
-      const periodRef = doc(this.db, "evaluation_periods", periodId);
-      
-      const cleanUpdateData = {
-        ...updateData,
-        updatedAt: serverTimestamp()
-      };
-
-      // 日付フィールドの処理
-      if (updateData.startDate) {
-        cleanUpdateData.startDate = new Date(updateData.startDate);
-      }
-      if (updateData.endDate) {
-        cleanUpdateData.endDate = new Date(updateData.endDate);
-      }
-
-      await updateDoc(periodRef, cleanUpdateData);
-
-      console.log("API: Evaluation period updated successfully");
-      return { success: true };
-
-    } catch (error) {
-      console.error("API: Error updating evaluation period:", error);
-      this.handleError(error, '評価期間の更新');
-      throw error;
-    }
-  }
-
-  /**
-   * 評価期間の削除
-   */
-  async deleteEvaluationPeriod(periodId) {
-    try {
-      // 関連する評価データがあるかチェック
-      const evaluationsQuery = query(
-        collection(this.db, "evaluations"),
-        where("periodId", "==", periodId)
-      );
-      
-      const evaluationsSnapshot = await getDocs(evaluationsQuery);
-      
-      if (!evaluationsSnapshot.empty) {
-        throw new Error("この評価期間に関連する評価データが存在するため削除できません");
-      }
-
-      await deleteDoc(doc(this.db, "evaluation_periods", periodId));
-
-      console.log("API: Evaluation period deleted successfully");
-      return { success: true };
-
-    } catch (error) {
-      console.error("API: Error deleting evaluation period:", error);
-      this.handleError(error, '評価期間の削除');
-      throw error;
-    }
-  }
-
-  /**
-   * アクティブな評価期間の取得
-   */
-  async getActiveEvaluationPeriod() {
-    try {
-      const activePeriods = await this.getEvaluationPeriods('active');
-      return activePeriods.length > 0 ? activePeriods[0] : null;
-
-    } catch (error) {
-      console.error("API: Error getting active evaluation period:", error);
-      return null;
-    }
-  }
-
-  /**
-   * 評価期間のステータス更新
-   */
-  async updateEvaluationPeriodStatus(periodId, status) {
-    try {
-      await this.updateEvaluationPeriod(periodId, { status });
-      
-      // active に変更する場合、他の期間を inactive にする
-      if (status === 'active') {
-        const currentUser = await this.getCurrentUserData();
-        const allPeriods = await this.getEvaluationPeriods();
-        
-        const batch = writeBatch(this.db);
-        allPeriods.forEach(period => {
-          if (period.id !== periodId && period.status === 'active') {
-            const periodRef = doc(this.db, "evaluation_periods", period.id);
-            batch.update(periodRef, { 
-              status: 'completed',
-              updatedAt: serverTimestamp()
-            });
-          }
-        });
-        
-        await batch.commit();
-      }
-
-      console.log("API: Evaluation period status updated successfully");
-      return { success: true };
-
-    } catch (error) {
-      console.error("API: Error updating evaluation period status:", error);
-      this.handleError(error, '評価期間ステータスの更新');
-      throw error;
-    }
-  }
-
-  // ========================================
-  // データ設定API（多言語対応）
-  // ========================================
-
-  /**
-   * 評価項目（多言語）の取得
-   */
-  async getEvaluationItemsI18n(languageCode = 'ja') {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const itemsQuery = query(
-        collection(this.db, "evaluation_items_i18n"),
-        where("tenantId", "==", currentUser.tenantId),
-        where("languageCode", "==", languageCode),
-        orderBy("sortOrder", "asc")
-      );
-
-      const itemsSnapshot = await getDocs(itemsQuery);
-      const items = [];
-
-      itemsSnapshot.forEach((doc) => {
-        items.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-
-      return items;
-
-    } catch (error) {
-      console.error("API: Error loading evaluation items:", error);
-      return [];
-    }
-  }
-
-  /**
-   * 評価項目の作成（多言語）
-   */
-  async createEvaluationItemI18n(itemData) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const batch = writeBatch(this.db);
-      const itemId = `item_${Date.now()}`;
-      const languages = ['ja', 'en', 'vi'];
-
-      // 各言語でドキュメントを作成
-      for (const lang of languages) {
-        const docRef = doc(collection(this.db, "evaluation_items_i18n"));
-        const itemDoc = {
-          itemId: itemId,
-          languageCode: lang,
-          categoryName: itemData[`categoryName_${lang}`] || itemData.categoryName,
-          itemName: itemData[`itemName_${lang}`] || itemData.itemName,
-          itemDescription: itemData[`itemDescription_${lang}`] || itemData.itemDescription || '',
-          sortOrder: parseInt(itemData.sortOrder) || 0,
-          tenantId: currentUser.tenantId,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        };
-
-        batch.set(docRef, itemDoc);
-      }
-
-      await batch.commit();
-
-      console.log("API: Evaluation item created successfully");
-      return { success: true, itemId: itemId };
-
-    } catch (error) {
-      console.error("API: Error creating evaluation item:", error);
-      this.handleError(error, '評価項目の作成');
-      throw error;
-    }
-  }
-
-  /**
-   * カテゴリ（多言語）の取得
-   */
-  async getCategoriesI18n(languageCode = 'ja') {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const categoriesQuery = query(
-        collection(this.db, "categories_i18n"),
-        where("tenantId", "==", currentUser.tenantId),
-        where("languageCode", "==", languageCode),
-        orderBy("displayOrder", "asc")
-      );
-
-      const categoriesSnapshot = await getDocs(categoriesQuery);
-      const categories = [];
-
-      categoriesSnapshot.forEach((doc) => {
-        categories.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-
-      return categories;
-
-    } catch (error) {
-      console.error("API: Error loading categories:", error);
-      return [];
-    }
-  }
-
-  /**
-   * カテゴリの作成（多言語）
-   */
-  async createCategoryI18n(categoryData) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const batch = writeBatch(this.db);
-      const categoryId = `category_${Date.now()}`;
-      const languages = ['ja', 'en', 'vi'];
-
-      for (const lang of languages) {
-        const docRef = doc(collection(this.db, "categories_i18n"));
-        const categoryDoc = {
-          categoryId: categoryId,
-          languageCode: lang,
-          categoryName: categoryData[`categoryName_${lang}`] || categoryData.categoryName,
-          categoryDescription: categoryData[`categoryDescription_${lang}`] || categoryData.categoryDescription || '',
-          displayOrder: parseInt(categoryData.displayOrder) || 0,
-          tenantId: currentUser.tenantId,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        };
-
-        batch.set(docRef, categoryDoc);
-      }
-
-      await batch.commit();
-
-      console.log("API: Category created successfully");
-      return { success: true, categoryId: categoryId };
-
-    } catch (error) {
-      console.error("API: Error creating category:", error);
-      this.handleError(error, 'カテゴリの作成');
-      throw error;
-    }
-  }
-
-  /**
-   * 職種（多言語）の取得
-   */
-  async getJobTypesI18n(languageCode = 'ja') {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const jobTypesQuery = query(
-        collection(this.db, "job_types_i18n"),
-        where("tenantId", "==", currentUser.tenantId),
-        where("languageCode", "==", languageCode)
-      );
-
-      const jobTypesSnapshot = await getDocs(jobTypesQuery);
-      const jobTypes = [];
-
-      jobTypesSnapshot.forEach((doc) => {
-        jobTypes.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-
-      return jobTypes;
-
-    } catch (error) {
-      console.error("API: Error loading job types:", error);
-      return [];
-    }
-  }
-
-  /**
-   * 職種の作成（多言語）
-   */
-  async createJobTypeI18n(jobTypeData) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const batch = writeBatch(this.db);
-      const jobTypeId = `jobtype_${Date.now()}`;
-      const languages = ['ja', 'en', 'vi'];
-
-      for (const lang of languages) {
-        const docRef = doc(collection(this.db, "job_types_i18n"));
-        const jobTypeDoc = {
-          jobTypeId: jobTypeId,
-          languageCode: lang,
-          jobTypeName: jobTypeData[`jobTypeName_${lang}`] || jobTypeData.jobTypeName,
-          jobTypeDescription: jobTypeData[`jobTypeDescription_${lang}`] || jobTypeData.jobTypeDescription || '',
-          tenantId: currentUser.tenantId,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        };
-
-        batch.set(docRef, jobTypeDoc);
-      }
-
-      await batch.commit();
-
-      console.log("API: Job type created successfully");
-      return { success: true, jobTypeId: jobTypeId };
-
-    } catch (error) {
-      console.error("API: Error creating job type:", error);
-      this.handleError(error, '職種の作成');
-      throw error;
-    }
-  }
-
-  /**
-   * ベンチマークデータの取得
-   */
-  async getBenchmarkData() {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const benchmarksQuery = query(
-        collection(this.db, "benchmarks"),
-        where("tenantId", "==", currentUser.tenantId)
-      );
-
-      const benchmarksSnapshot = await getDocs(benchmarksQuery);
-      const benchmarks = [];
-
-      benchmarksSnapshot.forEach((doc) => {
-        benchmarks.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-
-      return benchmarks;
-
-    } catch (error) {
-      console.error("API: Error loading benchmark data:", error);
-      return [];
-    }
-  }
-
-  /**
-   * ベンチマークの作成
-   */
-  async createBenchmark(benchmarkData) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      // サーバーサイドバリデーション
-      const validation = this.validateBenchmarkData(benchmarkData);
-      if (!validation.isValid) {
-        throw new Error(validation.errors.join(', '));
-      }
-
-      const docRef = doc(collection(this.db, "benchmarks"));
-      const benchmark = {
-        name: benchmarkData.name,
-        type: benchmarkData.type,
-        value: parseFloat(benchmarkData.value),
-        description: benchmarkData.description || '',
-        tenantId: currentUser.tenantId,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
-
-      await setDoc(docRef, benchmark);
-
-      console.log("API: Benchmark created successfully");
-      return { success: true, id: docRef.id };
-
-    } catch (error) {
-      console.error("API: Error creating benchmark:", error);
-      this.handleError(error, 'ベンチマークの作成');
-      throw error;
-    }
-  }
-
-  /**
-   * 更新メソッド群（多言語データ）
-   */
-  async updateEvaluationItemI18n(itemId, updateData) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const batch = writeBatch(this.db);
-      const languages = ['ja', 'en', 'vi'];
-
-      // 各言語のドキュメントを更新
-      for (const lang of languages) {
-        const itemQuery = query(
-          collection(this.db, "evaluation_items_i18n"),
-          where("itemId", "==", itemId),
-          where("languageCode", "==", lang),
-          where("tenantId", "==", currentUser.tenantId)
-        );
-
-        const itemSnapshot = await getDocs(itemQuery);
-        
-        if (!itemSnapshot.empty) {
-          const docRef = itemSnapshot.docs[0].ref;
-          const updateDoc = {
-            categoryName: updateData[`categoryName_${lang}`] || updateData.categoryName,
-            itemName: updateData[`itemName_${lang}`] || updateData.itemName,
-            itemDescription: updateData[`itemDescription_${lang}`] || updateData.itemDescription,
-            sortOrder: parseInt(updateData.sortOrder) || 0,
-            updatedAt: serverTimestamp()
-          };
-
-          batch.update(docRef, updateDoc);
-        }
-      }
-
-      await batch.commit();
-      return { success: true };
-
-    } catch (error) {
-      console.error("API: Error updating evaluation item:", error);
-      this.handleError(error, '評価項目の更新');
-      throw error;
-    }
-  }
-
-  /**
-   * 削除メソッド群
-   */
-  async deleteEvaluationItemI18n(itemId) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const itemsQuery = query(
-        collection(this.db, "evaluation_items_i18n"),
-        where("itemId", "==", itemId),
-        where("tenantId", "==", currentUser.tenantId)
-      );
-
-      const itemsSnapshot = await getDocs(itemsQuery);
-      const batch = writeBatch(this.db);
-
-      itemsSnapshot.forEach((doc) => {
-        batch.delete(doc.ref);
-      });
-
-      await batch.commit();
-      return { success: true };
-
-    } catch (error) {
-      console.error("API: Error deleting evaluation item:", error);
-      this.handleError(error, '評価項目の削除');
-      throw error;
-    }
-  }
-
-  /**
-   * カテゴリ更新（多言語）
-   */
-  async updateCategoryI18n(categoryId, updateData) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const batch = writeBatch(this.db);
-      const languages = ['ja', 'en', 'vi'];
-
-      for (const lang of languages) {
-        const categoryQuery = query(
-          collection(this.db, "categories_i18n"),
-          where("categoryId", "==", categoryId),
-          where("languageCode", "==", lang),
-          where("tenantId", "==", currentUser.tenantId)
-        );
-
-        const categorySnapshot = await getDocs(categoryQuery);
-        
-        if (!categorySnapshot.empty) {
-          const docRef = categorySnapshot.docs[0].ref;
-          const updateDoc = {
-            categoryName: updateData[`categoryName_${lang}`] || updateData.categoryName,
-            categoryDescription: updateData[`categoryDescription_${lang}`] || updateData.categoryDescription,
-            displayOrder: parseInt(updateData.displayOrder) || 0,
-            updatedAt: serverTimestamp()
-          };
-
-          batch.update(docRef, updateDoc);
-        }
-      }
-
-      await batch.commit();
-      return { success: true };
-
-    } catch (error) {
-      console.error("API: Error updating category:", error);
-      this.handleError(error, 'カテゴリの更新');
-      throw error;
-    }
-  }
-
-  /**
-   * カテゴリ削除（多言語）
-   */
-  async deleteCategoryI18n(categoryId) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const categoriesQuery = query(
-        collection(this.db, "categories_i18n"),
-        where("categoryId", "==", categoryId),
-        where("tenantId", "==", currentUser.tenantId)
-      );
-
-      const categoriesSnapshot = await getDocs(categoriesQuery);
-      const batch = writeBatch(this.db);
-
-      categoriesSnapshot.forEach((doc) => {
-        batch.delete(doc.ref);
-      });
-
-      await batch.commit();
-      return { success: true };
-
-    } catch (error) {
-      console.error("API: Error deleting category:", error);
-      this.handleError(error, 'カテゴリの削除');
-      throw error;
-    }
-  }
-
-  /**
-   * 職種更新（多言語）
-   */
-  async updateJobTypeI18n(jobTypeId, updateData) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const batch = writeBatch(this.db);
-      const languages = ['ja', 'en', 'vi'];
-
-      for (const lang of languages) {
-        const jobTypeQuery = query(
-          collection(this.db, "job_types_i18n"),
-          where("jobTypeId", "==", jobTypeId),
-          where("languageCode", "==", lang),
-          where("tenantId", "==", currentUser.tenantId)
-        );
-
-        const jobTypeSnapshot = await getDocs(jobTypeQuery);
-        
-        if (!jobTypeSnapshot.empty) {
-          const docRef = jobTypeSnapshot.docs[0].ref;
-          const updateDoc = {
-            jobTypeName: updateData[`jobTypeName_${lang}`] || updateData.jobTypeName,
-            jobTypeDescription: updateData[`jobTypeDescription_${lang}`] || updateData.jobTypeDescription,
-            updatedAt: serverTimestamp()
-          };
-
-          batch.update(docRef, updateDoc);
-        }
-      }
-
-      await batch.commit();
-      return { success: true };
-
-    } catch (error) {
-      console.error("API: Error updating job type:", error);
-      this.handleError(error, '職種の更新');
-      throw error;
-    }
-  }
-
-  /**
-   * 職種削除（多言語）
-   */
-  async deleteJobTypeI18n(jobTypeId) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const jobTypesQuery = query(
-        collection(this.db, "job_types_i18n"),
-        where("jobTypeId", "==", jobTypeId),
-        where("tenantId", "==", currentUser.tenantId)
-      );
-
-      const jobTypesSnapshot = await getDocs(jobTypesQuery);
-      const batch = writeBatch(this.db);
-
-      jobTypesSnapshot.forEach((doc) => {
-        batch.delete(doc.ref);
-      });
-
-      await batch.commit();
-      return { success: true };
-
-    } catch (error) {
-      console.error("API: Error deleting job type:", error);
-      this.handleError(error, '職種の削除');
-      throw error;
-    }
-  }
-
-  async updateBenchmark(benchmarkId, updateData) {
-    try {
-      const benchmarkRef = doc(this.db, "benchmarks", benchmarkId);
-      
-      const cleanUpdateData = {
-        ...updateData,
-        value: parseFloat(updateData.value),
-        updatedAt: serverTimestamp()
-      };
-
-      await updateDoc(benchmarkRef, cleanUpdateData);
-      return { success: true };
-
-    } catch (error) {
-      console.error("API: Error updating benchmark:", error);
-      this.handleError(error, 'ベンチマークの更新');
-      throw error;
-    }
-  }
-
-  async deleteBenchmark(benchmarkId) {
-    try {
-      await deleteDoc(doc(this.db, "benchmarks", benchmarkId));
-      return { success: true };
-
-    } catch (error) {
-      console.error("API: Error deleting benchmark:", error);
-      this.handleError(error, 'ベンチマークの削除');
-      throw error;
-    }
-  }
-
-  /**
-   * 評価履歴の取得
-   */
-  async getEvaluationHistory(userId, periodId = null) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      let historyQuery = query(
-        collection(this.db, "evaluation_history"),
-        where("tenantId", "==", currentUser.tenantId),
-        where("userId", "==", userId),
-        orderBy("createdAt", "desc")
-      );
-
-      if (periodId) {
-        historyQuery = query(
-          collection(this.db, "evaluation_history"),
-          where("tenantId", "==", currentUser.tenantId),
-          where("userId", "==", userId),
-          where("periodId", "==", periodId),
-          orderBy("createdAt", "desc")
-        );
-      }
-
-      const historySnapshot = await getDocs(historyQuery);
-      const history = [];
-
-      historySnapshot.forEach((doc) => {
-        history.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-
-      return history;
-
-    } catch (error) {
-      console.error("API: Error loading evaluation history:", error);
-      return [];
-    }
-  }
-
-  /**
-   * ユーザープロファイルの拡張フィールド更新（オプショナル）
-   */
-  async updateUserExtendedProfile(userId, extendedData) {
-    try {
-      console.log("API: Updating user extended profile:", userId, extendedData);
-
-      // 既存のupdateUserメソッドを使用
-      // extendedDataには department, jobType, level, teamId, hireDate等が含まれる
-      return await this.updateUser(userId, extendedData);
-
-    } catch (error) {
-      console.error("API: Error updating user extended profile:", error);
-      this.handleError(error, '拡張プロファイルの更新');
-      throw error;
-    }
-  }
-
-  /**
-   * 部門別ユーザー取得（新機能）
-   */
-  async getUsersByDepartment(department) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const usersQuery = query(
-        collection(this.db, "users"),
-        where("tenantId", "==", currentUser.tenantId),
-        where("department", "==", department)
-      );
-
-      const usersSnapshot = await getDocs(usersQuery);
-      const users = [];
-
-      usersSnapshot.forEach((doc) => {
-        users.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-
-      return users;
-
-    } catch (error) {
-      console.error("API: Error loading users by department:", error);
-      return [];
-    }
-  }
-
-  /**
-   * 職種別ユーザー取得（新機能）
-   */
-  async getUsersByJobType(jobType) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const usersQuery = query(
-        collection(this.db, "users"),
-        where("tenantId", "==", currentUser.tenantId),
-        where("jobType", "==", jobType)
-      );
-
-      const usersSnapshot = await getDocs(usersQuery);
-      const users = [];
-
-      usersSnapshot.forEach((doc) => {
-        users.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-
-      return users;
-
-    } catch (error) {
-      console.error("API: Error loading users by job type:", error);
-      return [];
-    }
-  }
-
-  // ========================================
-  // Phase 2: 統計・分析API（新規）
-  // ========================================
-
-  /**
-   * 部門別統計データ取得
-   */
-  async getDepartmentStats() {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      // 部門別ユーザー数
-      const departments = ['開発部', '営業部', '管理部', '人事部'];
-      const departmentStats = {};
-
-      for (const dept of departments) {
-        const users = await this.getUsersByDepartment(dept);
-        const evaluations = await this.getEvaluations({ department: dept });
-        
-        departmentStats[dept] = {
-          userCount: users.length,
-          evaluationCount: evaluations.length,
-          completionRate: users.length > 0 ? (evaluations.filter(e => e.status === 'completed').length / users.length) * 100 : 0,
-          averageScore: this.calculateAverageScore(evaluations.filter(e => e.status === 'completed'))
-        };
-      }
-
-      return departmentStats;
-
-    } catch (error) {
-      console.error("API: Error loading department stats:", error);
-      return {};
-    }
-  }
-
-  /**
-   * スキル分析データ取得
-   */
-  async getSkillAnalysisData() {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const evaluations = await this.getEvaluations({ status: 'completed' });
-      const skillAverages = {};
-      const skillCounts = {};
-
-      // スキル別平均スコア計算
-      evaluations.forEach(evaluation => {
-        if (evaluation.ratings) {
-          Object.entries(evaluation.ratings).forEach(([skill, rating]) => {
-            if (!skillAverages[skill]) {
-              skillAverages[skill] = 0;
-              skillCounts[skill] = 0;
-            }
-            skillAverages[skill] += rating;
-            skillCounts[skill]++;
-          });
-        }
-      });
-
-      // 平均値を計算
-      Object.keys(skillAverages).forEach(skill => {
-        skillAverages[skill] = skillAverages[skill] / skillCounts[skill];
-      });
-
-      // 強み・弱みの抽出
-      const skillEntries = Object.entries(skillAverages);
-      const topSkills = skillEntries
-        .filter(([_, score]) => score >= 4.0)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5);
-
-      const improvementAreas = skillEntries
-        .filter(([_, score]) => score < 3.0)
-        .sort((a, b) => a[1] - b[1])
-        .slice(0, 5);
-
-      return {
-        skillAverages,
-        topSkills,
-        improvementAreas,
-        totalEvaluations: evaluations.length
-      };
-
-    } catch (error) {
-      console.error("API: Error loading skill analysis data:", error);
-      return {
-        skillAverages: {},
-        topSkills: [],
-        improvementAreas: [],
-        totalEvaluations: 0
-      };
-    }
-  }
-
-  /**
-   * 時系列データ取得（トレンド分析）
-   */
-  async getTrendData(timeRange = 'last6months') {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      const evaluations = await this.getEvaluations({ status: 'completed' });
-      const months = this.generateMonthRange(timeRange);
-      const trendData = {};
-
-      months.forEach(month => {
-        trendData[month] = {
-          evaluationCount: 0,
-          averageScore: 0,
-          completionRate: 0
-        };
-      });
-
-      // 月別データ集計
-      evaluations.forEach(evaluation => {
-        if (evaluation.completedAt) {
-          const completedDate = evaluation.completedAt.toDate ? evaluation.completedAt.toDate() : new Date(evaluation.completedAt);
-          const monthKey = `${completedDate.getFullYear()}/${String(completedDate.getMonth() + 1).padStart(2, '0')}`;
-          
-          if (trendData[monthKey]) {
-            trendData[monthKey].evaluationCount++;
-            if (evaluation.totalScore) {
-              trendData[monthKey].averageScore += evaluation.totalScore;
-            }
-          }
-        }
-      });
-
-      // 平均値計算
-      Object.keys(trendData).forEach(month => {
-        if (trendData[month].evaluationCount > 0) {
-          trendData[month].averageScore = trendData[month].averageScore / trendData[month].evaluationCount;
-        }
-      });
-
-      return trendData;
-
-    } catch (error) {
-      console.error("API: Error loading trend data:", error);
-      return {};
-    }
-  }
-
-  /**
-   * ベンチマーク比較データ取得
-   */
-  async getBenchmarkData(userId) {
-    try {
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser?.tenantId) {
-        throw new Error("テナント情報が見つかりません");
-      }
-
-      // 個人の評価データ
-      const userEvaluations = await this.getEvaluations({ targetUserId: userId, status: 'completed' });
-      
-      // 同じ部門・職種のユーザーデータ
-      const targetUser = await this.getUser(userId);
-      let peerEvaluations = [];
-      
-      if (targetUser?.department) {
-        const peerUsers = await this.getUsersByDepartment(targetUser.department);
-        const peerEvaluationPromises = peerUsers.map(user => 
-          this.getEvaluations({ targetUserId: user.id, status: 'completed' })
-        );
-        const peerResults = await Promise.all(peerEvaluationPromises);
-        peerEvaluations = peerResults.flat();
-      }
-
-      // 組織全体のデータ
-      const allEvaluations = await this.getEvaluations({ status: 'completed' });
-
-      return {
-        personal: {
-          averageScore: this.calculateAverageScore(userEvaluations),
-          evaluationCount: userEvaluations.length
-        },
-        peer: {
-          averageScore: this.calculateAverageScore(peerEvaluations),
-          evaluationCount: peerEvaluations.length
-        },
-        organization: {
-          averageScore: this.calculateAverageScore(allEvaluations),
-          evaluationCount: allEvaluations.length
-        }
-      };
-
-    } catch (error) {
-      console.error("API: Error loading benchmark data:", error);
-      return {
-        personal: { averageScore: 0, evaluationCount: 0 },
-        peer: { averageScore: 0, evaluationCount: 0 },
-        organization: { averageScore: 0, evaluationCount: 0 }
-      };
-    }
-  }
-
-  /**
-   * ヘルパー: 平均スコア計算
-   */
-  calculateAverageScore(evaluations) {
-    if (!evaluations || evaluations.length === 0) return 0;
-    
-    const validScores = evaluations.filter(e => e.totalScore).map(e => e.totalScore);
-    if (validScores.length === 0) return 0;
-    
-    return validScores.reduce((sum, score) => sum + score, 0) / validScores.length;
   }
 }
