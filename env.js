@@ -56,7 +56,7 @@ class Environment {
 
     try {
 
-      // GitHub Pages環境では代替設定を使用（CORS回避）
+      // 開発環境では現在の設定を使用（後で削除予定）
       if (this.environment === 'development') {
         this.config = {
           FIREBASE_API_KEY: "AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk",
@@ -66,18 +66,6 @@ class Environment {
           FIREBASE_MESSAGING_SENDER_ID: "861016804589",
           FIREBASE_APP_ID: "1:861016804589:web:d911d516d6c79aa73690e4",
           ENVIRONMENT: this.environment
-        };
-      } else if (hostname.includes('github.io')) {
-        // GitHub Pages環境の設定
-        console.log("Environment: Detected GitHub Pages environment");
-        this.config = {
-          FIREBASE_API_KEY: "AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk",
-          FIREBASE_AUTH_DOMAIN: "hyouka-db.firebaseapp.com",
-          FIREBASE_PROJECT_ID: "hyouka-db",
-          FIREBASE_STORAGE_BUCKET: "hyouka-db.appspot.com",
-          FIREBASE_MESSAGING_SENDER_ID: "861016804589",
-          FIREBASE_APP_ID: "1:861016804589:web:d911d516d6c79aa73690e4",
-          ENVIRONMENT: 'github-pages'
         };
       } else {
         // 本番環境では環境変数から読み込み

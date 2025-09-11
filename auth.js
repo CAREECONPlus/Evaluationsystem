@@ -1,4 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"
 import {
   getAuth,
   onAuthStateChanged,
@@ -6,14 +6,13 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
-  connectAuthEmulator,
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"
 import {
   getFirestore,
   doc,
   setDoc,
   serverTimestamp,
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
 import environment from "./env.js"
 
 export class Auth {
@@ -40,29 +39,8 @@ export class Auth {
       }
       
       // Firebase初期化
-      console.log("Auth: Initializing Firebase with config:", {
-        ...firebaseConfig,
-        apiKey: firebaseConfig.apiKey.substring(0, 10) + "..."
-      })
-      
-      // GitHub Pages 環境向けの設定
-      if (window.location.hostname.includes('github.io')) {
-        // authDomain を明示的に設定してCORS問題を回避
-        firebaseConfig.authDomain = "hyouka-db.firebaseapp.com"
-        console.log("Auth: Using explicit authDomain for GitHub Pages:", firebaseConfig.authDomain)
-      }
-      
       this.firebaseApp = initializeApp(firebaseConfig)
       this.auth = getAuth(this.firebaseApp)
-      
-      // Auth オブジェクトの設定を確認
-      console.log("Auth: Auth instance created with domain:", this.auth.config?.authDomain)
-      
-      // Firebase Auth の設定を確認
-      console.log("Auth: Firebase Auth initialized", {
-        currentUser: this.auth.currentUser,
-        authDomain: this.auth.config.authDomain
-      })
       
       // Firestore初期化を遅延させる
       setTimeout(() => {
@@ -221,23 +199,9 @@ export class Auth {
 
   async login(email, password) {
     try {
-      console.log("Auth: Attempting login with Firebase SDK...")
-      
-      // Firebase SDK を使用して認証
-      const userCredential = await signInWithEmailAndPassword(this.auth, email, password)
-      console.log("Auth: Login successful", userCredential.user.uid)
-      
-      return userCredential
+      await signInWithEmailAndPassword(this.auth, email, password)
     } catch (error) {
       console.error("Auth: Login error:", error)
-      
-      // Firebase Auth エラーをより詳細にログ出力
-      if (error.code === 'auth/network-request-failed') {
-        console.error("Auth: Network request failed - CORS or connectivity issue")
-        console.error("Auth: Current domain:", window.location.origin)
-        console.error("Auth: Auth domain:", this.auth.config.authDomain)
-      }
-      
       throw error
     }
   }
