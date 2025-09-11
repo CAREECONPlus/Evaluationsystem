@@ -25,6 +25,8 @@ class Environment {
       hostname === '127.0.0.1' || 
       hostname.includes('local') ||
       hostname.includes('github.io') ||  // GitHub Pages も開発環境として扱う
+      hostname.includes('firebaseapp.com') ||  // Firebase Hosting も開発設定を使用
+      hostname.includes('web.app') ||  // Firebase Hosting カスタムドメイン
       port === '3000' ||
       port === '5000' ||
       port === '8000' ||
