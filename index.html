@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!-- 建設業評価管理システム - Firebase Hosting配信 -->
 <!-- Live URL: https://hyouka-db.web.app -->
+<!-- Version: 2025-01-11-v2 - CORS Fix & Cache Busting -->
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -27,12 +28,15 @@
     <link rel="manifest" href="./manifest.json">
     
     <!-- Firebase Configuration Meta Tags -->
+    <!-- CORS Fix: Using both firebaseapp.com and web.app domains -->
     <meta name="firebase-api-key" content="AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk">
     <meta name="firebase-auth-domain" content="hyouka-db.firebaseapp.com">
     <meta name="firebase-project-id" content="hyouka-db">
     <meta name="firebase-storage-bucket" content="hyouka-db.appspot.com">
     <meta name="firebase-messaging-sender-id" content="861016804589">
     <meta name="firebase-app-id" content="1:861016804589:web:d911d516d6c79aa73690e4">
+    <!-- Alternative auth domain for web.app -->
+    <meta name="firebase-alt-auth-domain" content="hyouka-db.web.app">
     
     <title data-i18n="app.system_name">建設業評価管理システム</title>
     
