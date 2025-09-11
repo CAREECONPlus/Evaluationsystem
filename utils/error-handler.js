@@ -31,21 +31,46 @@ export class AppError extends Error {
   }
 
   /**
-   * ユーザー向けメッセージを生成
+   * ユーザー向けメッセージを生成（国際化対応）
    */
   generateUserMessage() {
+    const lang = window.i18n?.getCurrentLanguage() || 'ja';
+    
     const messages = {
-      [ErrorTypes.VALIDATION]: '入力内容に問題があります。',
-      [ErrorTypes.PERMISSION]: 'この操作を実行する権限がありません。',
-      [ErrorTypes.NETWORK]: 'ネットワーク接続に問題があります。',
-      [ErrorTypes.FIREBASE]: 'データベース操作中にエラーが発生しました。',
-      [ErrorTypes.AUTHENTICATION]: 'ログインが必要です。',
-      [ErrorTypes.NOT_FOUND]: '指定されたデータが見つかりません。',
-      [ErrorTypes.TIMEOUT]: '処理がタイムアウトしました。',
-      [ErrorTypes.SYSTEM]: 'システムエラーが発生しました。'
+      ja: {
+        [ErrorTypes.VALIDATION]: '入力内容に問題があります。',
+        [ErrorTypes.PERMISSION]: 'この操作を実行する権限がありません。',
+        [ErrorTypes.NETWORK]: 'ネットワーク接続に問題があります。',
+        [ErrorTypes.FIREBASE]: 'データベース操作中にエラーが発生しました。',
+        [ErrorTypes.AUTHENTICATION]: 'ログインが必要です。',
+        [ErrorTypes.NOT_FOUND]: '指定されたデータが見つかりません。',
+        [ErrorTypes.TIMEOUT]: '処理がタイムアウトしました。',
+        [ErrorTypes.SYSTEM]: 'システムエラーが発生しました。'
+      },
+      en: {
+        [ErrorTypes.VALIDATION]: 'There is an issue with your input.',
+        [ErrorTypes.PERMISSION]: 'You do not have permission to perform this operation.',
+        [ErrorTypes.NETWORK]: 'There is a network connection problem.',
+        [ErrorTypes.FIREBASE]: 'An error occurred during database operation.',
+        [ErrorTypes.AUTHENTICATION]: 'Login is required.',
+        [ErrorTypes.NOT_FOUND]: 'The specified data was not found.',
+        [ErrorTypes.TIMEOUT]: 'The operation timed out.',
+        [ErrorTypes.SYSTEM]: 'A system error occurred.'
+      },
+      vi: {
+        [ErrorTypes.VALIDATION]: 'Có vấn đề với đầu vào của bạn.',
+        [ErrorTypes.PERMISSION]: 'Bạn không có quyền thực hiện thao tác này.',
+        [ErrorTypes.NETWORK]: 'Có vấn đề kết nối mạng.',
+        [ErrorTypes.FIREBASE]: 'Đã xảy ra lỗi trong quá trình vận hành cơ sở dữ liệu.',
+        [ErrorTypes.AUTHENTICATION]: 'Cần đăng nhập.',
+        [ErrorTypes.NOT_FOUND]: 'Không tìm thấy dữ liệu được chỉ định.',
+        [ErrorTypes.TIMEOUT]: 'Thao tác đã hết thời gian chờ.',
+        [ErrorTypes.SYSTEM]: 'Đã xảy ra lỗi hệ thống.'
+      }
     };
 
-    return messages[this.type] || '予期せぬエラーが発生しました。';
+    const langMessages = messages[lang] || messages.ja;
+    return langMessages[this.type] || (lang === 'ja' ? '予期せぬエラーが発生しました。' : 'An unexpected error occurred.');
   }
 
   /**
