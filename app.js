@@ -38,9 +38,6 @@ class App {
     }, 15000) // 15秒のタイムアウト
 
     try {
-      await this.i18n.init()
-      
-
       await this.auth.init()
 
       this.api = new API(this)

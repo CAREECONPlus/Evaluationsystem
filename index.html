@@ -225,33 +225,6 @@
         }, 30000);
         
         // アプリケーション初期化は動的インポート内で実行済み
-        // initTimeout処理は不要（動的インポートでハンドリング済み)
-                document.getElementById('loading-screen').innerHTML = `
-                    <div class="loading-content text-center">
-                        <div class="text-danger mb-3">
-                            <i class="fas fa-exclamation-circle fa-4x"></i>
-                        </div>
-                        <h2 class="text-white">システムエラー</h2>
-                        <p class="text-white-50">アプリケーションの起動に失敗しました。</p>
-                        <div class="mt-4">
-                            <button class="btn btn-light me-2" onclick="location.reload()">
-                                <i class="fas fa-redo me-2"></i>再読み込み
-                            </button>
-                            <a href="mailto:support@example.com" class="btn btn-outline-light">
-                                <i class="fas fa-envelope me-2"></i>サポートに連絡
-                            </a>
-                        </div>
-                        <details class="mt-4 text-start">
-                            <summary class="text-white-50" style="cursor: pointer;">エラー詳細</summary>
-                            <div class="bg-dark p-3 rounded mt-2">
-                                <small class="text-white-50">
-                                    <code>${error?.stack || error?.message || 'Unknown error'}</code>
-                                </small>
-                            </div>
-                        </details>
-                    </div>
-                `;
-            });
         
         // ページ離脱時の確認（未保存データがある場合）
         window.addEventListener('beforeunload', (event) => {
