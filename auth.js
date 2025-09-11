@@ -1,4 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js"
 import {
   getAuth,
   onAuthStateChanged,
@@ -6,13 +6,13 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js"
 import {
   getFirestore,
   doc,
   setDoc,
   serverTimestamp,
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js"
 import environment from "./env.js"
 
 export class Auth {
@@ -39,8 +39,19 @@ export class Auth {
       }
       
       // Firebase初期化
+      console.log("Auth: Initializing Firebase with config:", {
+        ...firebaseConfig,
+        apiKey: firebaseConfig.apiKey.substring(0, 10) + "..."
+      })
+      
       this.firebaseApp = initializeApp(firebaseConfig)
       this.auth = getAuth(this.firebaseApp)
+      
+      // Firebase Auth の設定を確認
+      console.log("Auth: Firebase Auth initialized", {
+        currentUser: this.auth.currentUser,
+        authDomain: this.auth.config.authDomain
+      })
       
       // Firestore初期化を遅延させる
       setTimeout(() => {
@@ -199,9 +210,23 @@ export class Auth {
 
   async login(email, password) {
     try {
-      await signInWithEmailAndPassword(this.auth, email, password)
+      console.log("Auth: Attempting login with Firebase SDK...")
+      
+      // Firebase SDK を使用して認証
+      const userCredential = await signInWithEmailAndPassword(this.auth, email, password)
+      console.log("Auth: Login successful", userCredential.user.uid)
+      
+      return userCredential
     } catch (error) {
       console.error("Auth: Login error:", error)
+      
+      // Firebase Auth エラーをより詳細にログ出力
+      if (error.code === 'auth/network-request-failed') {
+        console.error("Auth: Network request failed - CORS or connectivity issue")
+        console.error("Auth: Current domain:", window.location.origin)
+        console.error("Auth: Auth domain:", this.auth.config.authDomain)
+      }
+      
       throw error
     }
   }

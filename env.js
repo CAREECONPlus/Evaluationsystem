@@ -68,7 +68,8 @@ class Environment {
           ENVIRONMENT: this.environment
         };
       } else if (hostname.includes('github.io')) {
-        // GitHub Pages用の代替認証設定
+        // GitHub Pages環境の設定
+        console.log("Environment: Detected GitHub Pages environment");
         this.config = {
           FIREBASE_API_KEY: "AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk",
           FIREBASE_AUTH_DOMAIN: "hyouka-db.firebaseapp.com",
@@ -76,8 +77,7 @@ class Environment {
           FIREBASE_STORAGE_BUCKET: "hyouka-db.appspot.com",
           FIREBASE_MESSAGING_SENDER_ID: "861016804589",
           FIREBASE_APP_ID: "1:861016804589:web:d911d516d6c79aa73690e4",
-          ENVIRONMENT: 'github-pages',
-          USE_PROXY_AUTH: true  // プロキシ認証フラグ
+          ENVIRONMENT: 'github-pages'
         };
       } else {
         // 本番環境では環境変数から読み込み
