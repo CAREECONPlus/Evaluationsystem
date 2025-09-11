@@ -198,6 +198,31 @@ export class Auth {
   }
 
   async login(email, password) {
+    // EMERGENCY: Force temporary authentication if flag is set
+    if (window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+      console.warn("EMERGENCY: Using temporary authentication (bypassing Firebase)")
+      
+      // 一時認証システムの動的読み込み
+      if (!window.TempAuth) {
+        const tempAuthModule = await import('./temp-auth.js');
+        window.TempAuth = tempAuthModule.TempAuth;
+      }
+      
+      const tempAuth = new window.TempAuth();
+      const result = await tempAuth.login(email, password);
+      
+      if (result.success) {
+        console.log("EMERGENCY: Temporary authentication successful");
+        this.currentUser = result.user;
+        this.isAuthenticated = true;
+        this.authState = 'authenticated';
+        this.notify();
+        return;
+      } else {
+        throw new Error(result.error || 'Temporary authentication failed');
+      }
+    }
+    
     try {
       await signInWithEmailAndPassword(this.auth, email, password)
     } catch (error) {
