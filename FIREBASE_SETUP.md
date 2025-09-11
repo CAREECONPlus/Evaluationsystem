@@ -49,3 +49,8 @@ GitHub Actions が設定されると、main ブランチへのプッシュで自
 - GitHub Secrets設定後、次回プッシュで自動デプロイが開始されます
 - デプロイには2-3分かかります
 - Firebase認証のCORS問題が完全に解決されます
+
+## デプロイ状況
+
+🔄 **Firebase Hosting への移行準備完了**
+⏰ **更新日時**: $(date)

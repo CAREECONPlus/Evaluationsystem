@@ -19,6 +19,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="評価管理">
+    <link rel="manifest" href="/manifest.json">
     
     <title data-i18n="app.system_name">建設業評価管理システム</title>
     
@@ -39,9 +40,16 @@
     <!-- Favicon（データURIで対応） -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23007bff'/><text y='50' x='50' text-anchor='middle' font-size='50' fill='white' dy='.3em'>評</text></svg>">
     
-    <!-- DNS Prefetch -->
+    <!-- DNS Prefetch for Firebase -->
     <link rel="dns-prefetch" href="https://www.gstatic.com">
     <link rel="dns-prefetch" href="https://firestore.googleapis.com">
+    <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
+    
+    <!-- Critical resource preloads -->
+    <link rel="preload" href="./styles.css" as="style">
+    <link rel="preload" href="./app.js" as="script">
+    <link rel="preload" href="./auth.js" as="script">
+    <link rel="preload" href="./env.js" as="script">
 </head>
 <body>
     <!-- ローディング画面 -->
@@ -266,6 +274,19 @@
                     location.reload();
                 }
             };
+        }
+        
+        // Service Worker 登録
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
         }
         
         // パフォーマンス計測
