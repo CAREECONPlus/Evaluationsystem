@@ -1,4 +1,4 @@
-import { I18n } from "./i18n.js"
+import { UnifiedI18n, i18n } from "./i18n.js"
 import { API } from "./api.js"
 import { Auth } from "./auth.js"
 import { Router } from "./router.js"
@@ -9,7 +9,7 @@ class App {
   constructor() {
     this.currentUser = null
     this.currentPage = null
-    this.i18n = new I18n()
+    this.i18n = i18n
     this.auth = new Auth(this)
     this.api = null
     this.router = new Router(this)
@@ -155,12 +155,14 @@ class App {
   performI18nCheck() {
     // i18nシステムが利用可能になるまで待機
     if (window.i18n) {
-      window.i18n.debug(); // デバッグ情報表示
+      console.log("I18n System: Ready, current language:", window.i18n.getCurrentLanguage());
+      window.i18n.applyTranslations(); // 翻訳を適用
     } else {
       // i18nが読み込まれるまで少し待つ
       setTimeout(() => {
         if (window.i18n) {
-          window.i18n.debug();
+          console.log("I18n System: Ready, current language:", window.i18n.getCurrentLanguage());
+          window.i18n.applyTranslations(); // 翻訳を適用
         }
       }, 100);
     }
