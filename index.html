@@ -19,7 +19,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="評価管理">
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="./manifest.json">
     
     <!-- Firebase Configuration Meta Tags -->
     <meta name="firebase-api-key" content="AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk">
@@ -53,11 +53,7 @@
     <link rel="dns-prefetch" href="https://firestore.googleapis.com">
     <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
     
-    <!-- Critical resource preloads -->
-    <link rel="preload" href="./styles.css" as="style">
-    <link rel="preload" href="./app.js" as="script">
-    <link rel="preload" href="./auth.js" as="script">
-    <link rel="preload" href="./env.js" as="script">
+    <!-- Resource hints removed to prevent console warnings -->
 </head>
 <body>
     <!-- ローディング画面 -->
@@ -116,7 +112,7 @@
     
     <!-- Firebase設定とアプリケーション初期化 -->
     <script type="module">
-        import App from './app.js';
+        import App from './app.js?v=' + Date.now();
         
         // グローバルエラーハンドリング
         window.addEventListener('error', (event) => {
