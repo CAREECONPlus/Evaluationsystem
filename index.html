@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+<!-- 建設業評価管理システム - Firebase Hosting配信 -->
+<!-- Live URL: https://hyouka-db.web.app -->
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -8,7 +10,7 @@
     <meta name="author" content="Construction Evaluation System">
     
     <!-- Content Security Policy -->
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.gstatic.com https://fonts.googleapis.com https://careeconplus.github.io; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://careeconplus.github.io; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; connect-src 'self' https://*.googleapis.com https://*.firebaseapp.com https://*.cloudfunctions.net https://careeconplus.github.io">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.gstatic.com https://fonts.googleapis.com https://careeconplus.github.io *.gstatic.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://careeconplus.github.io; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; connect-src 'self' https://*.googleapis.com https://*.firebaseapp.com https://*.cloudfunctions.net https://careeconplus.github.io">
     
     <!-- OGP設定 -->
     <meta property="og:title" content="建設業評価管理システム">
@@ -189,21 +191,8 @@
             }
         });
         
-        // Phase 8: UX Enhancement Integration
-        console.log('Initializing Phase 8 UX enhancements...');
-        import('./utils/phase8-integration.js').then(module => {
-            console.log('Phase 8 integration loaded successfully');
-        }).catch(error => {
-            console.warn('Failed to load Phase 8 enhancements:', error);
-        });
-
-        // Phase 9: System Integration & Security Enhancement
-        console.log('Initializing Phase 9 system integration...');
-        import('./utils/phase9-integration.js').then(module => {
-            console.log('Phase 9 integration loaded successfully');
-        }).catch(error => {
-            console.warn('Failed to load Phase 9 enhancements:', error);
-        });
+        // Phase 8 and Phase 9 integration temporarily disabled for stability
+        console.log('Phase 8 and 9 integrations disabled for system stability');
 
         // アプリケーションの初期化は上記の動的importで実行されます
         
