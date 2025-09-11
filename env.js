@@ -56,8 +56,8 @@ class Environment {
 
     try {
 
-      // 開発環境では現在の設定を使用（後で削除予定）
-      if (this.environment === 'development') {
+      // GitHub Pages環境も開発環境として扱い、一時的な設定を使用
+      if (this.environment === 'development' || hostname.includes('github.io')) {
         this.config = {
           FIREBASE_API_KEY: "AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk",
           FIREBASE_AUTH_DOMAIN: "hyouka-db.firebaseapp.com",
