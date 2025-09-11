@@ -1,4 +1,4 @@
-import { i18n } from "./i18n.js"
+import { i18n } from "./i18n-v2.js"
 import { API } from "./api.js"
 import { Auth } from "./auth.js"
 import { Router } from "./router.js"
