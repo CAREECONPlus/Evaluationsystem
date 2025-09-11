@@ -217,7 +217,10 @@ export class Auth {
         const result = await tempAuth.login(email, password);
         
         // 一時認証成功の通知
-        this.app.showNotification('一時認証システムでログインしました。Firebase Console設定完了後、通常認証に切り替わります。', 'warning');
+        console.log('TempAuth: Login successful with temporary authentication system');
+        if (this.app.showNotification) {
+          this.app.showNotification('一時認証システムでログインしました。Firebase Console設定完了後、通常認証に切り替わります。', 'warning');
+        }
         
         return result;
       }

@@ -288,7 +288,32 @@ async login(email, password) {
         throw new Error("パスワードは6文字以上で入力してください")
       }
 
-      await this.auth.login(email.trim(), password)
+      const result = await this.auth.login(email.trim(), password)
+      
+      // 一時認証の場合の処理
+      if (result && result.user && result.user.isTemp) {
+        console.log('App: Processing temporary authentication result');
+        
+        // 一時ユーザー情報を設定
+        this.currentUser = {
+          uid: result.user.uid,
+          email: result.user.email,
+          displayName: result.user.displayName,
+          role: result.user.role,
+          tenantId: result.user.tenantId,
+          status: result.user.status,
+          isTemp: true
+        };
+        
+        // UI更新
+        this.updateUIForAuthState(this.currentUser);
+        
+        // ダッシュボードに遷移
+        this.navigate('#/dashboard');
+        
+        return;
+      }
+      
     } catch (error) {
       this.handleError(error, "Login")
       throw error
