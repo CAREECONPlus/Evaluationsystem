@@ -202,6 +202,26 @@ export class Auth {
       await signInWithEmailAndPassword(this.auth, email, password)
     } catch (error) {
       console.error("Auth: Login error:", error)
+      
+      // CORS エラーの場合、一時認証システムを使用
+      if (error.code === 'auth/network-request-failed') {
+        console.warn("Auth: Firebase CORS error detected, switching to temporary authentication")
+        
+        // 一時認証システムの動的読み込み
+        if (!window.TempAuth) {
+          const tempAuthModule = await import('./temp-auth.js');
+          window.TempAuth = tempAuthModule.TempAuth;
+        }
+        
+        const tempAuth = new window.TempAuth();
+        const result = await tempAuth.login(email, password);
+        
+        // 一時認証成功の通知
+        this.app.showNotification('一時認証システムでログインしました。Firebase Console設定完了後、通常認証に切り替わります。', 'warning');
+        
+        return result;
+      }
+      
       throw error
     }
   }
