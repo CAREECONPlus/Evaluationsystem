@@ -40,10 +40,17 @@ export class MultilingualAPI {
    * テナントIDを取得
    */
   async getTenantId() {
-    if (!this.auth.user) {
+    // 一時認証システム使用時の対応
+    if (window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE || this.app.currentUser?.isTemp) {
+      return this.app.currentUser?.tenantId || 'demo-tenant';
+    }
+
+    const currentUser = this.auth.user || this.auth.currentUser || this.app.currentUser;
+    
+    if (!currentUser) {
       throw new Error('User not authenticated');
     }
-    return this.auth.user.tenantId || 'default';
+    return currentUser.tenantId || 'default';
   }
 
   // ===== 評価項目多言語管理 =====

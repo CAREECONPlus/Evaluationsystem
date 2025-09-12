@@ -29,10 +29,19 @@ export class Auth {
   async init() {
     try {
       
-      // 一時認証モード（FORCE_TEMP_AUTH）の場合はFirebase初期化をスキップ
-      if (window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
-        console.log("Auth: Skipping Firebase initialization (temporary auth mode)")
+      // 複数の条件で一時認証モードを検出
+      const isEmergencyMode = 
+        window.FORCE_TEMP_AUTH || 
+        window.DISABLE_FIREBASE ||
+        document.documentElement.innerHTML.includes('EMERGENCY MODE') ||
+        window.location.search.includes('temp_auth=true') ||
+        localStorage.getItem('temp_auth_mode') === 'true' ||
+        sessionStorage.getItem('emergency_mode') === 'true'
+      
+      if (isEmergencyMode) {
+        console.log("Auth: Detected emergency/temporary authentication mode - skipping Firebase initialization")
         this.isInitialized = true
+        this.useTemporaryAuth = true
         return
       }
       
@@ -205,8 +214,15 @@ export class Auth {
   }
 
   async login(email, password) {
-    // EMERGENCY: Force temporary authentication if flag is set
-    if (window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+    // EMERGENCY: Force temporary authentication with multiple detection methods
+    const isEmergencyMode = 
+      window.FORCE_TEMP_AUTH || 
+      window.DISABLE_FIREBASE ||
+      this.useTemporaryAuth ||
+      document.documentElement.innerHTML.includes('EMERGENCY MODE') ||
+      !this.auth || !this.db
+
+    if (isEmergencyMode) {
       console.warn("EMERGENCY: Using temporary authentication (bypassing Firebase)")
       
       // 一時認証システムの動的読み込み
