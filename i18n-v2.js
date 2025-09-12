@@ -24,17 +24,30 @@ const TRANSLATIONS = {
       users: "ユーザー管理",
       settings: "設定",
       logout: "ログアウト",
-      reports: "レポート"
+      reports: "レポート",
+      help: "ヘルプ",
+      job_types: "職種管理",
+      self_evaluation: "自己評価",
+      goal_approvals: "目標承認",
+      multilingual_admin: "多言語管理",
+      organization_management: "組織管理",
+      evaluation_periods: "評価期間",
+      data_settings: "データ設定",
+      profile: "プロフィール"
     },
 
     // ===== ダッシュボード =====
     dashboard: {
       title: "ダッシュボード",
       total_users: "総ユーザー数",
-      active_users: "アクティブユーザー",
+      active_users: "アクティブユーザー", 
       completed_evaluations: "完了済み評価",
       recent_evaluations: "最近の評価",
-      system_stats: "システム統計"
+      system_stats: "システム統計",
+      total_evaluations: "総評価数",
+      pending_evaluations: "承認待ち",
+      system_overview: "システム概要",
+      performance_chart: "パフォーマンス推移"
     },
 
     // ===== 認証関連 =====
@@ -130,6 +143,75 @@ const TRANSLATIONS = {
       evaluator: "評価者", 
       supervisor: "監督者",
       worker: "作業員"
+    },
+
+    // ===== 評価フォーム =====
+    evaluations: {
+      form_title: "評価フォーム",
+      target_info: "評価対象者情報",
+      evaluation_period: "評価期間",
+      save_draft: "下書き保存",
+      submit: "提出"
+    },
+
+    // ===== 設定 =====
+    settings: {
+      title: "設定",
+      save_changes: "変更を保存",
+      job_types: "職種設定",
+      evaluation_periods: "評価期間設定"
+    },
+
+    // ===== 目標管理 =====
+    goals: {
+      approvals_title: "目標承認",
+      pending_goals: "承認待ち目標", 
+      approved_goals: "承認済み目標"
+    },
+
+    // ===== プロフィール =====
+    profile: {
+      subtitle: "プロフィール情報",
+      user_id: "ユーザーID",
+      registration_date: "登録日",
+      last_login: "最終ログイン",
+      account_status: "アカウント状態",
+      account_info: "アカウント情報",
+      password_change: "パスワード変更",
+      current_password: "現在のパスワード",
+      new_password: "新しいパスワード",
+      password_requirements: "パスワード要件",
+      confirm_password: "パスワード確認",
+      change_password: "パスワード変更",
+      email_change_note: "メールアドレス変更は管理者に連絡してください",
+      bio: "自己紹介"
+    },
+
+    // ===== バリデーション =====
+    validation: {
+      last_name_required: "姓は必須です",
+      first_name_required: "名は必須です",
+      email_invalid: "有効なメールアドレスを入力してください",
+      current_password_required: "現在のパスワードは必須です",
+      password_length: "パスワードは8文字以上で入力してください",
+      password_mismatch: "パスワードが一致しません"
+    },
+
+    // ===== 共通フィールド =====
+    common_fields: {
+      last_name: "姓",
+      first_name: "名",
+      phone_number: "電話番号",
+      department: "部署",
+      position: "役職",
+      job_types: "職種",
+      language: "言語",
+      select: "選択してください"
+    },
+
+    // ===== ユーザー =====
+    user: {
+      profile: "ユーザープロフィール"
     },
 
     // ===== エラー・メッセージ =====
@@ -557,6 +639,17 @@ class UnifiedI18n {
    */
   updateUI() {
     this.applyTranslations();
+  }
+
+  /**
+   * 個別要素の翻訳更新（report.jsとの互換性のため）
+   */
+  updateElement(selector, key) {
+    const element = document.querySelector(selector);
+    if (element && key) {
+      const translation = this.t(key);
+      element.textContent = translation;
+    }
   }
 
   /**

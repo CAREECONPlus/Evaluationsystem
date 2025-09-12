@@ -588,21 +588,11 @@ export class API {
       }
 
       // 一時認証システム使用時はモックデータを返す
-      if (currentUser.isTemp) {
-        console.log("API: Using mock dashboard stats for temporary authentication");
-        if (window.TempAuth) {
-          const tempAuth = new window.TempAuth();
-          return tempAuth.getMockDashboardStats();
-        }
-        // フォールバック用モックデータ
-        return {
-          totalUsers: 45,
-          activeUsers: 42,
-          totalEvaluations: 128,
-          completedEvaluations: 115,
-          totalGoals: 67,
-          completedGoals: 54
-        };
+      if (currentUser.isTemp || window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+        console.log("API: Using mock evaluations for temporary authentication");
+        const tempAuthModule = await import('./temp-auth-v2.js');
+        const tempAuth = new tempAuthModule.TempAuth();
+        return tempAuth.getMockEvaluations(filters);
       }
 
       const tenantId = currentUser.tenantId;
@@ -1039,21 +1029,11 @@ export class API {
       }
 
       // 一時認証システム使用時はモックデータを返す
-      if (currentUser.isTemp) {
-        console.log("API: Using mock dashboard stats for temporary authentication");
-        if (window.TempAuth) {
-          const tempAuth = new window.TempAuth();
-          return tempAuth.getMockDashboardStats();
-        }
-        // フォールバック用モックデータ
-        return {
-          totalUsers: 45,
-          activeUsers: 42,
-          totalEvaluations: 128,
-          completedEvaluations: 115,
-          totalGoals: 67,
-          completedGoals: 54
-        };
+      if (currentUser.isTemp || window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+        console.log("API: Using mock evaluations for temporary authentication");
+        const tempAuthModule = await import('./temp-auth-v2.js');
+        const tempAuth = new tempAuthModule.TempAuth();
+        return tempAuth.getMockEvaluations(filters);
       }
 
       const tenantId = currentUser.tenantId;
@@ -1246,21 +1226,11 @@ export class API {
       }
 
       // 一時認証システム使用時はモックデータを返す
-      if (currentUser.isTemp) {
-        console.log("API: Using mock dashboard stats for temporary authentication");
-        if (window.TempAuth) {
-          const tempAuth = new window.TempAuth();
-          return tempAuth.getMockDashboardStats();
-        }
-        // フォールバック用モックデータ
-        return {
-          totalUsers: 45,
-          activeUsers: 42,
-          totalEvaluations: 128,
-          completedEvaluations: 115,
-          totalGoals: 67,
-          completedGoals: 54
-        };
+      if (currentUser.isTemp || window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+        console.log("API: Using mock evaluations for temporary authentication");
+        const tempAuthModule = await import('./temp-auth-v2.js');
+        const tempAuth = new tempAuthModule.TempAuth();
+        return tempAuth.getMockEvaluations(filters);
       }
 
       const tenantId = currentUser.tenantId;
@@ -1318,11 +1288,15 @@ async getUsers(statusFilter = null) {
     }
 
     // 一時認証システム使用時はモックデータを返す
-    if (currentUser.isTemp) {
-      return this.app.auth.currentUser ? 
-        (await import('./temp-auth-v2.js')).then(module => 
-          new module.TempAuth().getMockUsers(statusFilter)
-        ) : [];
+    if (currentUser && currentUser.isTemp) {
+      const tempAuthModule = await import('./temp-auth-v2.js');
+      return new tempAuthModule.TempAuth().getMockUsers(statusFilter);
+    }
+
+    // FORCE_TEMP_AUTHグローバルフラグをチェック
+    if (window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+      const tempAuthModule = await import('./temp-auth-v2.js');
+      return new tempAuthModule.TempAuth().getMockUsers(statusFilter);
     }
 
     const tenantId = currentUser.tenantId;
@@ -1427,21 +1401,11 @@ async getAllUsers() {
       }
 
       // 一時認証システム使用時はモックデータを返す
-      if (currentUser.isTemp) {
-        console.log("API: Using mock dashboard stats for temporary authentication");
-        if (window.TempAuth) {
-          const tempAuth = new window.TempAuth();
-          return tempAuth.getMockDashboardStats();
-        }
-        // フォールバック用モックデータ
-        return {
-          totalUsers: 45,
-          activeUsers: 42,
-          totalEvaluations: 128,
-          completedEvaluations: 115,
-          totalGoals: 67,
-          completedGoals: 54
-        };
+      if (currentUser.isTemp || window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+        console.log("API: Using mock evaluations for temporary authentication");
+        const tempAuthModule = await import('./temp-auth-v2.js');
+        const tempAuth = new tempAuthModule.TempAuth();
+        return tempAuth.getMockEvaluations(filters);
       }
 
       const tenantId = currentUser.tenantId;
@@ -1819,21 +1783,11 @@ async getAllUsers() {
       }
 
       // 一時認証システム使用時はモックデータを返す
-      if (currentUser.isTemp) {
-        console.log("API: Using mock dashboard stats for temporary authentication");
-        if (window.TempAuth) {
-          const tempAuth = new window.TempAuth();
-          return tempAuth.getMockDashboardStats();
-        }
-        // フォールバック用モックデータ
-        return {
-          totalUsers: 45,
-          activeUsers: 42,
-          totalEvaluations: 128,
-          completedEvaluations: 115,
-          totalGoals: 67,
-          completedGoals: 54
-        };
+      if (currentUser.isTemp || window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+        console.log("API: Using mock evaluations for temporary authentication");
+        const tempAuthModule = await import('./temp-auth-v2.js');
+        const tempAuth = new tempAuthModule.TempAuth();
+        return tempAuth.getMockEvaluations(filters);
       }
 
       const tenantId = currentUser.tenantId;
@@ -2026,21 +1980,11 @@ async getAllUsers() {
       }
 
       // 一時認証システム使用時はモックデータを返す
-      if (currentUser.isTemp) {
-        console.log("API: Using mock dashboard stats for temporary authentication");
-        if (window.TempAuth) {
-          const tempAuth = new window.TempAuth();
-          return tempAuth.getMockDashboardStats();
-        }
-        // フォールバック用モックデータ
-        return {
-          totalUsers: 45,
-          activeUsers: 42,
-          totalEvaluations: 128,
-          completedEvaluations: 115,
-          totalGoals: 67,
-          completedGoals: 54
-        };
+      if (currentUser.isTemp || window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+        console.log("API: Using mock evaluations for temporary authentication");
+        const tempAuthModule = await import('./temp-auth-v2.js');
+        const tempAuth = new tempAuthModule.TempAuth();
+        return tempAuth.getMockEvaluations(filters);
       }
 
       const tenantId = currentUser.tenantId;
@@ -2888,21 +2832,11 @@ async getAllUsers() {
       }
 
       // 一時認証システム使用時はモックデータを返す
-      if (currentUser.isTemp) {
-        console.log("API: Using mock dashboard stats for temporary authentication");
-        if (window.TempAuth) {
-          const tempAuth = new window.TempAuth();
-          return tempAuth.getMockDashboardStats();
-        }
-        // フォールバック用モックデータ
-        return {
-          totalUsers: 45,
-          activeUsers: 42,
-          totalEvaluations: 128,
-          completedEvaluations: 115,
-          totalGoals: 67,
-          completedGoals: 54
-        };
+      if (currentUser.isTemp || window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+        console.log("API: Using mock evaluations for temporary authentication");
+        const tempAuthModule = await import('./temp-auth-v2.js');
+        const tempAuth = new tempAuthModule.TempAuth();
+        return tempAuth.getMockEvaluations(filters);
       }
 
       const tenantId = currentUser.tenantId;
@@ -3177,5 +3111,62 @@ async getAllUsers() {
     }
 
     return months;
+  }
+
+  // ベンチマークデータ取得
+  async getBenchmarkData(userId) {
+    try {
+      // 一時認証システム使用時はモックデータを返す
+      if (window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE || 
+          (this.app.currentUser && this.app.currentUser.isTemp)) {
+        const tempAuthModule = await import('./temp-auth-v2.js');
+        return new tempAuthModule.TempAuth().getMockBenchmarkData();
+      }
+
+      // Firestore実装（未実装の場合はモックデータ返す）
+      const tempAuthModule = await import('./temp-auth-v2.js');
+      return new tempAuthModule.TempAuth().getMockBenchmarkData();
+    } catch (error) {
+      console.error("API: Error loading benchmark data:", error);
+      throw error;
+    }
+  }
+
+  // 評価期間取得
+  async getEvaluationPeriods() {
+    try {
+      // 一時認証システム使用時はモックデータを返す
+      if (window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE || 
+          (this.app.currentUser && this.app.currentUser.isTemp)) {
+        const tempAuthModule = await import('./temp-auth-v2.js');
+        return new tempAuthModule.TempAuth().getMockEvaluationPeriods();
+      }
+
+      // Firestore実装（未実装の場合はモックデータ返す）
+      const tempAuthModule = await import('./temp-auth-v2.js');
+      return new tempAuthModule.TempAuth().getMockEvaluationPeriods();
+    } catch (error) {
+      console.error("API: Error loading evaluation periods:", error);
+      throw error;
+    }
+  }
+
+  // 組織構造取得  
+  async getOrganizationStructure() {
+    try {
+      // 一時認証システム使用時はモックデータを返す
+      if (window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE || 
+          (this.app.currentUser && this.app.currentUser.isTemp)) {
+        const tempAuthModule = await import('./temp-auth-v2.js');
+        return new tempAuthModule.TempAuth().getMockOrganizationStructure();
+      }
+
+      // Firestore実装（未実装の場合はモックデータ返す）
+      const tempAuthModule = await import('./temp-auth-v2.js');
+      return new tempAuthModule.TempAuth().getMockOrganizationStructure();
+    } catch (error) {
+      console.error("API: Error loading organization structure:", error);
+      throw error;
+    }
   }
 }
