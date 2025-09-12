@@ -222,7 +222,8 @@ export class Auth {
           this.app.onAuthStateChanged(this.currentUser);
         }
         
-        return;
+        // 一時認証結果をapp-v2.jsに返す
+        return result;
       } else {
         throw new Error(result.error || 'Temporary authentication failed');
       }
