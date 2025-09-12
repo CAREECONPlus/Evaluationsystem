@@ -70,7 +70,7 @@ class TempAuth {
     localStorage.setItem(this.sessionKey, JSON.stringify(session));
     console.log('TempAuth: Temporary authentication successful');
     
-    return { user: session };
+    return { success: true, user: session };
   }
 
   async logout() {
