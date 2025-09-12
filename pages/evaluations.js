@@ -305,24 +305,29 @@ export class EvaluationsPage {
       // 役割に応じて異なるデータを読み込み
       if (currentUser.role === 'admin') {
         // 管理者：すべての評価を取得
-        this.evaluations = await this.app.api.getEvaluations();
-        this.users = await this.app.api.getUsers();
+        const evaluationsData = await this.app.api.getEvaluations();
+        this.evaluations = Array.isArray(evaluationsData) ? evaluationsData : [];
+        const usersData = await this.app.api.getUsers();
+        this.users = Array.isArray(usersData) ? usersData : [];
       } else if (currentUser.role === 'evaluator') {
         // 評価者：すべての評価を取得（フィルタリングで担当分を表示）
-        this.evaluations = await this.app.api.getEvaluations();
-        this.users = await this.app.api.getUsersByEvaluator(currentUser.uid || currentUser.id);
+        const evaluationsData = await this.app.api.getEvaluations();
+        this.evaluations = Array.isArray(evaluationsData) ? evaluationsData : [];
+        const usersData = await this.app.api.getUsersByEvaluator(currentUser.uid || currentUser.id);
+        this.users = Array.isArray(usersData) ? usersData : [];
       } else {
         // 一般ユーザー：自分の評価のみ
-        this.evaluations = await this.app.api.getEvaluations({
+        const evaluationsData = await this.app.api.getEvaluations({
           targetUserId: currentUser.uid || currentUser.id
         });
+        this.evaluations = Array.isArray(evaluationsData) ? evaluationsData : [];
         this.users = [currentUser];
       }
       
       // 評価期間データを取得
       try {
         const settings = await this.app.api.getSettings();
-        this.periods = settings.periods || [];
+        this.periods = Array.isArray(settings?.periods) ? settings.periods : [];
       } catch (error) {
         console.warn('EvaluationsPage: Could not load periods:', error);
         this.periods = [];

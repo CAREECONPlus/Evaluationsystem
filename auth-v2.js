@@ -223,6 +223,7 @@ export class Auth {
         }
         
         // 一時認証結果をapp-v2.jsに返す
+        console.log("DEBUG: Returning result to app-v2.js:", result);
         return result;
       } else {
         throw new Error(result.error || 'Temporary authentication failed');

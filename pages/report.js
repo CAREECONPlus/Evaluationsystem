@@ -103,9 +103,10 @@ export class EvaluationReportPage {
       const benchmarkData = await this.loadPersonalBenchmark(userId);
       
       // 実際の評価データを取得
-      const evaluations = await this.app.api.getEvaluations({
+      const evaluationsData = await this.app.api.getEvaluations({
         targetUserId: userId
       });
+      const evaluations = Array.isArray(evaluationsData) ? evaluationsData : [];
 
       const filteredEvaluations = this.filterEvaluationsByTimeRange(evaluations);
       
@@ -148,16 +149,18 @@ export class EvaluationReportPage {
       const personalData = await this.loadWorkerData();
 
       // 担当者の評価データを取得
-      const allEvaluations = await this.app.api.getEvaluations({
+      const allEvaluationsData = await this.app.api.getEvaluations({
         evaluatorId: userId
       });
+      const allEvaluations = Array.isArray(allEvaluationsData) ? allEvaluationsData : [];
 
       const filteredEvaluations = this.filterEvaluationsByTimeRange(allEvaluations);
       
       // 担当者リストを取得
-      const subordinateUsers = await this.app.api.getUsers({
+      const subordinateUsersData = await this.app.api.getUsers({
         evaluatorId: userId
-      }) || [];
+      });
+      const subordinateUsers = Array.isArray(subordinateUsersData) ? subordinateUsersData : [];
 
       return {
         personal: personalData,
@@ -238,10 +241,13 @@ export class EvaluationReportPage {
       console.log('Reports: Attempting to load real organization data');
       
       // Phase 7: AnalyticsServiceを使用してデータ取得・分析
-      const allEvaluations = await this.app.api.getEvaluations({});
-      const allUsers = await this.app.api.getUsers({});
+      const allEvaluationsData = await this.app.api.getEvaluations({});
+      const allUsersData = await this.app.api.getUsers({});
       
-      if (!allEvaluations || allEvaluations.length === 0) {
+      const allEvaluations = Array.isArray(allEvaluationsData) ? allEvaluationsData : [];
+      const allUsers = Array.isArray(allUsersData) ? allUsersData : [];
+      
+      if (allEvaluations.length === 0) {
         console.log('Reports: No evaluation data found');
         return null;
       }
@@ -277,10 +283,13 @@ export class EvaluationReportPage {
       console.log('Reports: Loading real department data');
       
       // Phase 7: AnalyticsServiceを使用して部門データ取得・分析
-      const allEvaluations = await this.app.api.getEvaluations({});
-      const allUsers = await this.app.api.getUsers({});
+      const allEvaluationsData = await this.app.api.getEvaluations({});
+      const allUsersData = await this.app.api.getUsers({});
       
-      if (!allEvaluations || allEvaluations.length === 0 || !allUsers || allUsers.length === 0) {
+      const allEvaluations = Array.isArray(allEvaluationsData) ? allEvaluationsData : [];
+      const allUsers = Array.isArray(allUsersData) ? allUsersData : [];
+      
+      if (allEvaluations.length === 0 || allUsers.length === 0) {
         console.log('Reports: Insufficient data for department analysis');
         return null;
       }

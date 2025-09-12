@@ -242,6 +242,195 @@ class TempAuth {
       ]
     };
   }
+
+  // 追加APIメソッドのモックデータ
+  getMockOrganizationStructure() {
+    return [
+      {
+        id: 'org_001',
+        name: '建設部',
+        parentId: null,
+        level: 0,
+        tenantId: 'demo-tenant'
+      },
+      {
+        id: 'org_002', 
+        name: '現場A班',
+        parentId: 'org_001',
+        level: 1,
+        tenantId: 'demo-tenant'
+      },
+      {
+        id: 'org_003',
+        name: '現場B班', 
+        parentId: 'org_001',
+        level: 1,
+        tenantId: 'demo-tenant'
+      }
+    ];
+  }
+
+  getMockEvaluationPeriods() {
+    return [
+      {
+        id: 'period_2024q1',
+        name: '2024年第1四半期',
+        startDate: '2024-01-01',
+        endDate: '2024-03-31',
+        status: 'active',
+        tenantId: 'demo-tenant'
+      },
+      {
+        id: 'period_2024q2',
+        name: '2024年第2四半期', 
+        startDate: '2024-04-01',
+        endDate: '2024-06-30',
+        status: 'upcoming',
+        tenantId: 'demo-tenant'
+      }
+    ];
+  }
+
+  getMockBenchmarkData() {
+    return {
+      averageScores: {
+        overall: 4.2,
+        byRole: {
+          worker: 4.1,
+          supervisor: 4.4,
+          evaluator: 4.3
+        },
+        byPeriod: {
+          'period_2024q1': 4.0,
+          'period_2024q2': 4.3
+        }
+      },
+      trends: [
+        { period: '2024-01', avgScore: 3.9 },
+        { period: '2024-02', avgScore: 4.1 },
+        { period: '2024-03', avgScore: 4.3 }
+      ]
+    };
+  }
+
+  getMockEvaluationStructures() {
+    return [
+      {
+        id: 'struct_basic',
+        name: '基本評価構造',
+        categories: [
+          {
+            id: 'cat_safety',
+            name: '安全性',
+            weight: 30,
+            items: [
+              { id: 'item_helmet', name: 'ヘルメット着用', maxScore: 5 },
+              { id: 'item_safety_check', name: '安全確認', maxScore: 5 }
+            ]
+          },
+          {
+            id: 'cat_skill',
+            name: '技術力',
+            weight: 40,
+            items: [
+              { id: 'item_accuracy', name: '作業精度', maxScore: 5 },
+              { id: 'item_efficiency', name: '作業効率', maxScore: 5 }
+            ]
+          },
+          {
+            id: 'cat_attitude',
+            name: '勤務態度',
+            weight: 30,
+            items: [
+              { id: 'item_punctuality', name: '時間厳守', maxScore: 5 },
+              { id: 'item_teamwork', name: 'チームワーク', maxScore: 5 }
+            ]
+          }
+        ],
+        tenantId: 'demo-tenant'
+      }
+    ];
+  }
+
+  getMockNotifications() {
+    return [
+      {
+        id: 'notif_001',
+        title: '新しい評価が追加されました',
+        message: '作業員（デモ）の評価が完了しました',
+        type: 'evaluation_completed',
+        read: false,
+        createdAt: Date.now() - 86400000,
+        userId: 'demo_admin',
+        tenantId: 'demo-tenant'
+      },
+      {
+        id: 'notif_002',
+        title: 'システムメンテナンス予定',
+        message: '明日午前2時よりシステムメンテナンスを実施します',
+        type: 'system',
+        read: true,
+        createdAt: Date.now() - 172800000,
+        userId: 'demo_admin',
+        tenantId: 'demo-tenant'
+      }
+    ];
+  }
+
+  getMockTenantInfo() {
+    return {
+      id: 'demo-tenant',
+      name: 'デモ建設会社',
+      settings: {
+        evaluationCycle: 'quarterly',
+        defaultRole: 'worker',
+        maxUsers: 100
+      },
+      createdAt: Date.now() - 86400000 * 90
+    };
+  }
+
+  getMockJobTypes() {
+    return [
+      {
+        id: 'job_construction',
+        name: '建設作業員',
+        description: '一般的な建設作業',
+        tenantId: 'demo-tenant'
+      },
+      {
+        id: 'job_electrician',
+        name: '電気工事士',
+        description: '電気設備工事',
+        tenantId: 'demo-tenant'
+      },
+      {
+        id: 'job_plumber',
+        name: '配管工',
+        description: '配管設備工事',
+        tenantId: 'demo-tenant'
+      }
+    ];
+  }
+
+  getMockReports() {
+    return [
+      {
+        id: 'report_001',
+        title: '2024年第1四半期評価レポート',
+        type: 'quarterly',
+        period: 'period_2024q1',
+        createdAt: Date.now() - 86400000 * 7,
+        data: {
+          totalEvaluations: 45,
+          averageScore: 4.2,
+          topPerformers: ['demo_worker'],
+          improvementAreas: ['安全性', '時間管理']
+        },
+        tenantId: 'demo-tenant'
+      }
+    ];
+  }
 }
 
 // グローバルに公開

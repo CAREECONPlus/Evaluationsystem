@@ -66,8 +66,8 @@ const TRANSLATIONS = {
 
     // ===== 評価システム =====
     evaluations: {
-      title: "評価システム",
-      new_evaluation: "新規評価",
+      title: "評価一覧",
+      new_evaluation: "新規評価作成",
       edit_evaluation: "評価編集",
       target_user: "評価対象者",
       evaluator: "評価者",
@@ -77,7 +77,20 @@ const TRANSLATIONS = {
       communication: "コミュニケーション",
       leadership: "リーダーシップ",
       problem_solving: "問題解決能力",
-      safety_awareness: "安全意識"
+      safety_awareness: "安全意識",
+      my_assignments: "私の担当",
+      in_progress: "進行中",
+      all_status: "すべてのステータス",
+      all_users: "すべてのユーザー",
+      all_assignments: "すべての担当",
+      assigned: "担当割り当て済み",
+      unassigned: "担当未割り当て",
+      my_evaluations: "私が評価者",
+      other_evaluators: "他の評価者",
+      urgent: "緊急（承認待ち）",
+      this_week: "今週作成",
+      own_evaluations_only: "あなたの評価のみ表示されます",
+      reset_filters: "フィルターリセット"
     },
 
     // ===== 共通UI要素 =====
@@ -95,7 +108,28 @@ const TRANSLATIONS = {
       sort: "ソート",
       refresh: "更新",
       export: "エクスポート",
-      import: "インポート"
+      import: "インポート",
+      all: "すべて",
+      loading: "読み込み中...",
+      actions: "操作",
+      reset: "リセット"
+    },
+
+    // ===== ステータス =====
+    status: {
+      draft: "下書き",
+      self_assessed: "自己評価完了",
+      pending_approval: "承認待ち",
+      completed: "完了",
+      in_progress: "進行中"
+    },
+
+    // ===== 役割 =====
+    roles: {
+      admin: "管理者",
+      evaluator: "評価者", 
+      supervisor: "監督者",
+      worker: "作業員"
     },
 
     // ===== エラー・メッセージ =====
@@ -193,7 +227,7 @@ const TRANSLATIONS = {
     },
 
     evaluations: {
-      title: "Evaluation System",
+      title: "Evaluations",
       new_evaluation: "New Evaluation",
       edit_evaluation: "Edit Evaluation",
       target_user: "Target User",
@@ -204,7 +238,20 @@ const TRANSLATIONS = {
       communication: "Communication",
       leadership: "Leadership",
       problem_solving: "Problem Solving",
-      safety_awareness: "Safety Awareness"
+      safety_awareness: "Safety Awareness",
+      my_assignments: "My Assignments",
+      in_progress: "In Progress",
+      all_status: "All Status",
+      all_users: "All Users",
+      all_assignments: "All Assignments",
+      assigned: "Assigned",
+      unassigned: "Unassigned",
+      my_evaluations: "My Evaluations",
+      other_evaluators: "Other Evaluators",
+      urgent: "Urgent (Pending Approval)",
+      this_week: "This Week",
+      own_evaluations_only: "Only your evaluations are displayed",
+      reset_filters: "Reset Filters"
     },
 
     common: {
@@ -221,7 +268,26 @@ const TRANSLATIONS = {
       sort: "Sort",
       refresh: "Refresh",
       export: "Export",
-      import: "Import"
+      import: "Import",
+      all: "All",
+      loading: "Loading...",
+      actions: "Actions",
+      reset: "Reset"
+    },
+
+    status: {
+      draft: "Draft",
+      self_assessed: "Self-Assessed",
+      pending_approval: "Pending Approval",
+      completed: "Completed",
+      in_progress: "In Progress"
+    },
+
+    roles: {
+      admin: "Administrator",
+      evaluator: "Evaluator",
+      supervisor: "Supervisor", 
+      worker: "Worker"
     },
 
     messages: {

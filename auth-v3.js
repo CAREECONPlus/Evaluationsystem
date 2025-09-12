@@ -29,6 +29,13 @@ export class Auth {
   async init() {
     try {
       
+      // 一時認証モード（FORCE_TEMP_AUTH）の場合はFirebase初期化をスキップ
+      if (window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+        console.log("Auth: Skipping Firebase initialization (temporary auth mode)")
+        this.isInitialized = true
+        return
+      }
+      
       // 環境変数からFirebase設定を取得
       const firebaseConfig = await environment.getFirebaseConfig()
       

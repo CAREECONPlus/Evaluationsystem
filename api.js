@@ -325,6 +325,26 @@ export class API {
   async getUserProfile(uid) {
     try {
       
+      // 一時認証システム使用時はモックデータを返す
+      if (this.app.auth.currentUser && this.app.auth.currentUser.isTemp) {
+        return {
+          id: uid,
+          uid: uid,
+          email: this.app.auth.currentUser.email,
+          displayName: this.app.auth.currentUser.displayName,
+          role: this.app.auth.currentUser.role,
+          tenantId: this.app.auth.currentUser.tenantId,
+          status: this.app.auth.currentUser.status,
+          isTemp: true
+        };
+      }
+
+      // Firestoreが初期化されていない場合はエラーを回避
+      if (!this.db) {
+        console.warn("API: Firestore not initialized for getUserProfile");
+        return null;
+      }
+      
       // まずusersコレクションから取得を試みる
       const userDoc = await getDoc(doc(this.db, "users", uid));
       if (userDoc.exists()) {
@@ -1297,8 +1317,22 @@ async getUsers(statusFilter = null) {
       throw new Error("ユーザー情報またはテナント情報が見つかりません");
     }
 
+    // 一時認証システム使用時はモックデータを返す
+    if (currentUser.isTemp) {
+      return this.app.auth.currentUser ? 
+        (await import('./temp-auth-v2.js')).then(module => 
+          new module.TempAuth().getMockUsers(statusFilter)
+        ) : [];
+    }
+
     const tenantId = currentUser.tenantId;
     console.log("API: Loading users for tenant:", tenantId);
+
+    // Firestoreが初期化されていない場合はエラーを回避
+    if (!this.db) {
+      console.warn("API: Firestore not initialized, returning empty users array");
+      return [];
+    }
 
     // Firestoreクエリを構築
     const usersQuery = query(
