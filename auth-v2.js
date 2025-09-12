@@ -216,7 +216,12 @@ export class Auth {
         this.currentUser = result.user;
         this.isAuthenticated = true;
         this.authState = 'authenticated';
-        this.notify();
+        
+        // 認証状態変更イベントを発火
+        if (this.app && this.app.onAuthStateChanged) {
+          this.app.onAuthStateChanged(this.currentUser);
+        }
+        
         return;
       } else {
         throw new Error(result.error || 'Temporary authentication failed');
