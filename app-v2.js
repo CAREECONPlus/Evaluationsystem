@@ -1,6 +1,6 @@
 import { i18n } from "./i18n-v2.js"
 import { API } from "./api.js"
-import { Auth } from "./auth-v2.js"
+import { Auth } from "./auth-v3.js"
 import { Router } from "./router.js"
 import { HeaderComponent } from "./components/header.js"
 import { SidebarComponent } from "./components/sidebar.js"
@@ -288,6 +288,8 @@ async login(email, password) {
       }
 
       const result = await this.auth.login(email.trim(), password)
+      
+      console.log("DEBUG: app-v2.js received result:", result);
       
       // 一時認証の場合の処理
       if (result && result.user && result.user.isTemp) {
