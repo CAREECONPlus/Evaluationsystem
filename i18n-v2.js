@@ -107,6 +107,34 @@ const TRANSLATIONS = {
       network_error: "ネットワークエラーが発生しました",
       loading_error: "データの読み込みに失敗しました",
       validation_error: "入力内容を確認してください"
+    },
+
+    // ===== ログイン =====
+    login: {
+      lead_text: "ログインしてシステムをご利用ください",
+      sign_in_hint: "デモアカウントでお試しいただけます"
+    },
+
+    // ===== 認証 =====
+    auth: {
+      login: "ログイン",
+      logout: "ログアウト",
+      email: "メールアドレス",
+      password: "パスワード",
+      email_label: "メールアドレス",
+      password_label: "パスワード",
+      login_button: "ログイン",
+      logging_in: "ログイン中...",
+      login_error: "ログインに失敗しました",
+      temp_auth_notice: "一時認証でログインしています",
+      register_admin_link: "管理者登録"
+    },
+
+    // ===== エラーメッセージ =====
+    errors: {
+      login_failed_generic: "ログインに失敗しました。メールアドレスとパスワードを確認してください。",
+      auth_network_failed: "認証サーバーに接続できません",
+      invalid_credentials: "認証情報が正しくありません"
     }
   },
 

@@ -10,7 +10,7 @@ class TempAuth {
       {
         id: 'demo_admin',
         email: 'admin@demo.com',
-        password: 'admin123',
+        password: 'password123',
         name: '管理者（デモ）',
         role: 'admin',
         tenantId: 'demo-tenant',
@@ -19,16 +19,25 @@ class TempAuth {
       {
         id: 'demo_evaluator',
         email: 'evaluator@demo.com', 
-        password: 'eval123',
+        password: 'password123',
         name: '評価者（デモ）',
         role: 'evaluator',
         tenantId: 'demo-tenant',
         status: 'active'
       },
       {
+        id: 'demo_supervisor',
+        email: 'supervisor@demo.com',
+        password: 'password123',
+        name: '監督者（デモ）',
+        role: 'supervisor',
+        tenantId: 'demo-tenant',
+        status: 'active'
+      },
+      {
         id: 'demo_worker',
         email: 'worker@demo.com',
-        password: 'work123',
+        password: 'password123',
         name: '作業員（デモ）',
         role: 'worker',
         tenantId: 'demo-tenant',
