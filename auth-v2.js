@@ -204,7 +204,7 @@ export class Auth {
       
       // 一時認証システムの動的読み込み
       if (!window.TempAuth) {
-        const tempAuthModule = await import('./temp-auth.js');
+        const tempAuthModule = await import('./temp-auth-v2.js');
         window.TempAuth = tempAuthModule.TempAuth;
       }
       
