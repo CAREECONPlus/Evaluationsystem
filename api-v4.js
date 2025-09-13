@@ -600,7 +600,7 @@ export class API {
         console.log("API: Using mock evaluations for temporary authentication");
         const tempAuthModule = await import('./temp-auth-v2.js');
         const tempAuth = new tempAuthModule.TempAuth();
-        return tempAuth.getMockEvaluations(filters);
+        return tempAuth.getMockDashboardStats();
       }
 
       const tenantId = currentUser.tenantId;
@@ -1041,7 +1041,7 @@ export class API {
         console.log("API: Using mock evaluations for temporary authentication");
         const tempAuthModule = await import('./temp-auth-v2.js');
         const tempAuth = new tempAuthModule.TempAuth();
-        return tempAuth.getMockEvaluations(filters);
+        return tempAuth.getMockDashboardStats();
       }
 
       const tenantId = currentUser.tenantId;
@@ -1238,7 +1238,7 @@ export class API {
         console.log("API: Using mock evaluations for temporary authentication");
         const tempAuthModule = await import('./temp-auth-v2.js');
         const tempAuth = new tempAuthModule.TempAuth();
-        return tempAuth.getMockEvaluations(filters);
+        return tempAuth.getMockDashboardStats();
       }
 
       const tenantId = currentUser.tenantId;
@@ -1413,7 +1413,7 @@ async getAllUsers() {
         console.log("API: Using mock evaluations for temporary authentication");
         const tempAuthModule = await import('./temp-auth-v2.js');
         const tempAuth = new tempAuthModule.TempAuth();
-        return tempAuth.getMockEvaluations(filters);
+        return tempAuth.getMockDashboardStats();
       }
 
       const tenantId = currentUser.tenantId;
@@ -1795,7 +1795,7 @@ async getAllUsers() {
         console.log("API: Using mock evaluations for temporary authentication");
         const tempAuthModule = await import('./temp-auth-v2.js');
         const tempAuth = new tempAuthModule.TempAuth();
-        return tempAuth.getMockEvaluations(filters);
+        return tempAuth.getMockDashboardStats();
       }
 
       const tenantId = currentUser.tenantId;
@@ -1992,7 +1992,7 @@ async getAllUsers() {
         console.log("API: Using mock evaluations for temporary authentication");
         const tempAuthModule = await import('./temp-auth-v2.js');
         const tempAuth = new tempAuthModule.TempAuth();
-        return tempAuth.getMockEvaluations(filters);
+        return tempAuth.getMockDashboardStats();
       }
 
       const tenantId = currentUser.tenantId;
@@ -2292,14 +2292,21 @@ async getAllUsers() {
    */
   async getGoalsByStatus(status) {
     try {
-      
+
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
         throw new Error("テナント情報が見つかりません");
       }
 
+      // 一時認証システム使用時はモックデータを返す
+      if (currentUser.isTemp || window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+        console.log("API: Using mock goals for temporary authentication");
+        // 簡単なモックデータを返す
+        return [];
+      }
+
       const tenantId = currentUser.tenantId;
-      
+
       const goalsQuery = query(
         collection(this.db, "qualitativeGoals"),
         where("tenantId", "==", tenantId),
@@ -2440,14 +2447,21 @@ async getAllUsers() {
    */
   async getSettings() {
     try {
-      
+
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
         throw new Error("テナント情報が見つかりません");
       }
 
-      const tenantId = currentUser.tenantId;
+      // 一時認証システム使用時はモックデータを返す
+      if (currentUser.isTemp || window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+        console.log("API: Using mock settings for temporary authentication");
+        const tempAuthModule = await import('./temp-auth-v2.js');
+        const tempAuth = new tempAuthModule.TempAuth();
+        return tempAuth.getMockSettings();
+      }
 
+      const tenantId = currentUser.tenantId;
 
       // 各設定データを並行取得
       const [jobTypesSnapshot, periodsSnapshot, structuresSnapshot] = await Promise.all([
@@ -2747,6 +2761,15 @@ async getAllUsers() {
       if (!currentUser || !currentUser.tenantId) {
         throw new Error("ユーザー情報またはテナント情報が見つかりません");
       }
+
+      // 一時認証システム使用時はモックデータを返す
+      if (currentUser.isTemp || window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+        console.log("API: Using mock job types for temporary authentication");
+        const tempAuthModule = await import('./temp-auth-v2.js');
+        const tempAuth = new tempAuthModule.TempAuth();
+        return tempAuth.getMockJobTypes();
+      }
+
       const tenantId = currentUser.tenantId;
       const snapshot = await getDocs(
         query(
@@ -2844,7 +2867,7 @@ async getAllUsers() {
         console.log("API: Using mock evaluations for temporary authentication");
         const tempAuthModule = await import('./temp-auth-v2.js');
         const tempAuth = new tempAuthModule.TempAuth();
-        return tempAuth.getMockEvaluations(filters);
+        return tempAuth.getMockDashboardStats();
       }
 
       const tenantId = currentUser.tenantId;
