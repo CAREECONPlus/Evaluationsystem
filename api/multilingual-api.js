@@ -68,6 +68,16 @@ export class MultilingualAPI {
    */
   async getEvaluationItemsI18n(languageCode = 'ja', categoryName = null) {
     try {
+      // 緊急モード時はモックデータを返す
+      if (!this.db || window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+        console.log("MultilingualAPI: Using mock evaluation items for emergency mode");
+        return [
+          { id: 'item_1', itemName: 'コミュニケーション', description: 'コミュニケーション能力', sortOrder: 1 },
+          { id: 'item_2', itemName: '技術力', description: '技術的スキル', sortOrder: 2 },
+          { id: 'item_3', itemName: 'チームワーク', description: 'チームでの協調性', sortOrder: 3 }
+        ];
+      }
+
       const tenantId = await this.getTenantId();
       
       let q = query(
@@ -149,6 +159,16 @@ export class MultilingualAPI {
    */
   async getCategoriesI18n(languageCode = 'ja') {
     try {
+      // 緑急モード時はモックデータを返す
+      if (!this.db || window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+        console.log("MultilingualAPI: Using mock categories for emergency mode");
+        return [
+          { id: 'cat_1', categoryName: '技術スキル', description: '技術的な能力', displayOrder: 1 },
+          { id: 'cat_2', categoryName: 'コミュニケーション', description: 'コミュニケーション能力', displayOrder: 2 },
+          { id: 'cat_3', categoryName: 'チームワーク', description: 'チームでの協調性', displayOrder: 3 }
+        ];
+      }
+
       const tenantId = await this.getTenantId();
       
       const q = query(
@@ -220,6 +240,16 @@ export class MultilingualAPI {
    */
   async getJobTypesI18n(languageCode = 'ja') {
     try {
+      // 緑急モード時はモックデータを返す
+      if (!this.db || window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+        console.log("MultilingualAPI: Using mock job types for emergency mode");
+        return [
+          { id: 'job_1', jobTypeName: '一般作業員', description: '一般的な作業員', displayOrder: 1 },
+          { id: 'job_2', jobTypeName: '主任', description: 'プロジェクト主任', displayOrder: 2 },
+          { id: 'job_3', jobTypeName: '管理者', description: '管理者ポジション', displayOrder: 3 }
+        ];
+      }
+
       const tenantId = await this.getTenantId();
       
       const q = query(
@@ -290,6 +320,15 @@ export class MultilingualAPI {
    */
   async getEvaluationPeriodsI18n(languageCode = 'ja') {
     try {
+      // 緑急モード時はモックデータを返す
+      if (!this.db || window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+        console.log("MultilingualAPI: Using mock evaluation periods for emergency mode");
+        return [
+          { id: 'period_1', periodName: '2024年前期', description: '2024年前期評価', displayOrder: 1 },
+          { id: 'period_2', periodName: '2024年後期', description: '2024年後期評価', displayOrder: 2 }
+        ];
+      }
+
       const tenantId = await this.getTenantId();
       
       const q = query(
@@ -416,6 +455,25 @@ export class MultilingualAPI {
    */
   async getAllI18nData(languageCode = 'ja') {
     try {
+      // 緑急モード時はモックデータを返す
+      if (!this.db || window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
+        console.log("MultilingualAPI: Using mock all i18n data for emergency mode");
+        return {
+          categories: [
+            { id: 'cat_1', categoryName: '技術スキル', description: '技術的な能力', displayOrder: 1 }
+          ],
+          jobTypes: [
+            { id: 'job_1', jobTypeName: '一般作業員', description: '一般的な作業員', displayOrder: 1 }
+          ],
+          evaluationItems: [
+            { id: 'item_1', itemName: 'コミュニケーション', description: 'コミュニケーション能力', sortOrder: 1 }
+          ],
+          evaluationPeriods: [
+            { id: 'period_1', periodName: '2024年前期', description: '2024年前期評価', displayOrder: 1 }
+          ]
+        };
+      }
+
       const [categories, jobTypes, evaluationItems, evaluationPeriods] = await Promise.all([
         this.getCategoriesI18n(languageCode),
         this.getJobTypesI18n(languageCode),

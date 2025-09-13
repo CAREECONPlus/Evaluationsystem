@@ -600,7 +600,7 @@ export class API {
         console.log("API: Using mock evaluations for temporary authentication");
         const tempAuthModule = await import('./temp-auth-v2.js');
         const tempAuth = new tempAuthModule.TempAuth();
-        return tempAuth.getMockDashboardStats();
+        return tempAuth.getMockEvaluations(filters);
       }
 
       const tenantId = currentUser.tenantId;
@@ -1041,7 +1041,7 @@ export class API {
         console.log("API: Using mock evaluations for temporary authentication");
         const tempAuthModule = await import('./temp-auth-v2.js');
         const tempAuth = new tempAuthModule.TempAuth();
-        return tempAuth.getMockDashboardStats();
+        return tempAuth.getMockEvaluations(filters);
       }
 
       const tenantId = currentUser.tenantId;
@@ -1238,7 +1238,7 @@ export class API {
         console.log("API: Using mock evaluations for temporary authentication");
         const tempAuthModule = await import('./temp-auth-v2.js');
         const tempAuth = new tempAuthModule.TempAuth();
-        return tempAuth.getMockDashboardStats();
+        return tempAuth.getMockEvaluations(filters);
       }
 
       const tenantId = currentUser.tenantId;
@@ -1413,7 +1413,7 @@ async getAllUsers() {
         console.log("API: Using mock evaluations for temporary authentication");
         const tempAuthModule = await import('./temp-auth-v2.js');
         const tempAuth = new tempAuthModule.TempAuth();
-        return tempAuth.getMockDashboardStats();
+        return tempAuth.getMockEvaluations(filters);
       }
 
       const tenantId = currentUser.tenantId;
@@ -1795,7 +1795,7 @@ async getAllUsers() {
         console.log("API: Using mock evaluations for temporary authentication");
         const tempAuthModule = await import('./temp-auth-v2.js');
         const tempAuth = new tempAuthModule.TempAuth();
-        return tempAuth.getMockDashboardStats();
+        return tempAuth.getMockEvaluations(filters);
       }
 
       const tenantId = currentUser.tenantId;
@@ -1992,7 +1992,7 @@ async getAllUsers() {
         console.log("API: Using mock evaluations for temporary authentication");
         const tempAuthModule = await import('./temp-auth-v2.js');
         const tempAuth = new tempAuthModule.TempAuth();
-        return tempAuth.getMockDashboardStats();
+        return tempAuth.getMockEvaluations(filters);
       }
 
       const tenantId = currentUser.tenantId;
@@ -2867,7 +2867,7 @@ async getAllUsers() {
         console.log("API: Using mock evaluations for temporary authentication");
         const tempAuthModule = await import('./temp-auth-v2.js');
         const tempAuth = new tempAuthModule.TempAuth();
-        return tempAuth.getMockDashboardStats();
+        return tempAuth.getMockEvaluations(filters);
       }
 
       const tenantId = currentUser.tenantId;

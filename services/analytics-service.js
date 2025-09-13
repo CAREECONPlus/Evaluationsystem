@@ -819,6 +819,151 @@ export class AnalyticsService {
     }
   }
 
+  /**
+   * 個人トレンド分析 - report.jsで使用
+   */
+  async calculatePersonalTrends(evaluations, userId, timeRange = '6months') {
+    try {
+      const personalTrends = {
+        userId: userId,
+        timeRange: timeRange,
+        periods: [],
+        overallTrend: 'stable',
+        skillTrends: {},
+        improvements: [],
+        recommendations: []
+      };
+
+      // ユーザーの評価をフィルター
+      const userEvaluations = evaluations.filter(e =>
+        (e.targetUserId === userId || e.evaluatorId === userId) &&
+        e.status === 'completed' &&
+        e.ratings
+      );
+
+      if (userEvaluations.length === 0) {
+        return personalTrends;
+      }
+
+      // 期間設定
+      const currentDate = new Date();
+      let months = 6;
+      switch (timeRange) {
+        case '3months': months = 3; break;
+        case '12months': months = 12; break;
+        case 'thisyear': months = currentDate.getMonth() + 1; break;
+      }
+
+      // 月別データ構造を初期化
+      for (let i = months - 1; i >= 0; i--) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+        personalTrends.periods.push({
+          period: `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}`,
+          month: date.getMonth() + 1,
+          year: date.getFullYear(),
+          averageScore: 0,
+          evaluationCount: 0,
+          skills: {}
+        });
+      }
+
+      // 評価を月別に分類
+      userEvaluations.forEach(evaluation => {
+        const completedDate = evaluation.completedAt?.toDate ?
+          evaluation.completedAt.toDate() : new Date(evaluation.completedAt || evaluation.createdAt);
+
+        const monthKey = `${completedDate.getFullYear()}/${String(completedDate.getMonth() + 1).padStart(2, '0')}`;
+        const period = personalTrends.periods.find(p => p.period === monthKey);
+
+        if (period) {
+          period.evaluationCount++;
+
+          let totalScore = 0;
+          let skillCount = 0;
+
+          Object.entries(evaluation.ratings).forEach(([skill, rating]) => {
+            if (!period.skills[skill]) {
+              period.skills[skill] = { total: 0, count: 0, average: 0 };
+            }
+            period.skills[skill].total += rating;
+            period.skills[skill].count++;
+
+            totalScore += rating;
+            skillCount++;
+          });
+
+          // 期間平均スコア更新
+          const evaluationAverage = skillCount > 0 ? totalScore / skillCount : 0;
+          period.averageScore = period.evaluationCount === 1 ?
+            evaluationAverage :
+            ((period.averageScore * (period.evaluationCount - 1)) + evaluationAverage) / period.evaluationCount;
+        }
+      });
+
+      // スキル別平均を計算
+      personalTrends.periods.forEach(period => {
+        Object.keys(period.skills).forEach(skill => {
+          const skillData = period.skills[skill];
+          skillData.average = skillData.count > 0 ?
+            parseFloat((skillData.total / skillData.count).toFixed(2)) : 0;
+        });
+        period.averageScore = parseFloat(period.averageScore.toFixed(2));
+      });
+
+      // 全体的なスキルトレンドを計算
+      const allSkills = new Set();
+      personalTrends.periods.forEach(period => {
+        Object.keys(period.skills).forEach(skill => allSkills.add(skill));
+      });
+
+      allSkills.forEach(skill => {
+        const skillScores = personalTrends.periods
+          .filter(p => p.skills[skill] && p.skills[skill].count > 0)
+          .map(p => p.skills[skill].average);
+
+        if (skillScores.length >= 2) {
+          const firstScore = skillScores[0];
+          const lastScore = skillScores[skillScores.length - 1];
+          const growthRate = firstScore > 0 ?
+            ((lastScore - firstScore) / firstScore) * 100 : 0;
+
+          personalTrends.skillTrends[skill] = {
+            scores: skillScores,
+            growthRate: parseFloat(growthRate.toFixed(1)),
+            trend: growthRate > 5 ? 'improving' : growthRate < -5 ? 'declining' : 'stable',
+            currentScore: lastScore,
+            initialScore: firstScore
+          };
+        }
+      });
+
+      // 総合トレンド判定
+      const validPeriods = personalTrends.periods.filter(p => p.evaluationCount > 0);
+      if (validPeriods.length >= 2) {
+        const firstPeriod = validPeriods[0];
+        const lastPeriod = validPeriods[validPeriods.length - 1];
+        const overallGrowth = firstPeriod.averageScore > 0 ?
+          ((lastPeriod.averageScore - firstPeriod.averageScore) / firstPeriod.averageScore) * 100 : 0;
+
+        personalTrends.overallTrend = overallGrowth > 5 ? 'improving' :
+          overallGrowth < -5 ? 'declining' : 'stable';
+      }
+
+      return personalTrends;
+    } catch (error) {
+      console.error('Analytics: Error calculating personal trends:', error);
+      return {
+        userId: userId,
+        timeRange: timeRange,
+        periods: [],
+        overallTrend: 'stable',
+        skillTrends: {},
+        improvements: [],
+        recommendations: []
+      };
+    }
+  }
+
   async calculateDepartmentEmployeeCounts(departmentStats, organizationData) {
     try {
       if (organizationData && organizationData.departments) {

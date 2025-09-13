@@ -126,7 +126,19 @@ const TRANSLATIONS = {
       loading: "読み込み中...",
       actions: "操作",
       reset: "リセット",
-      access_denied: "この機能にはアクセス権限がありません。"
+      access_denied: "この機能にはアクセス権限がありません。",
+      save_draft: "下書き保存",
+      submit: "提出",
+      select: "選択してください",
+      no_data: "データがありません",
+      language: "言語",
+      last_name: "姓",
+      first_name: "名",
+      email: "メールアドレス",
+      phone_number: "電話番号",
+      department: "部門",
+      position: "役職",
+      job_types: "職種"
     },
 
     // ===== ステータス =====
@@ -390,7 +402,19 @@ const TRANSLATIONS = {
       loading: "Loading...",
       actions: "Actions",
       reset: "Reset",
-      access_denied: "You do not have access to this feature."
+      access_denied: "You do not have access to this feature.",
+      save_draft: "Save Draft",
+      submit: "Submit",
+      select: "Please select",
+      no_data: "No data available",
+      language: "Language",
+      last_name: "Last Name",
+      first_name: "First Name",
+      email: "Email",
+      phone_number: "Phone Number",
+      department: "Department",
+      position: "Position",
+      job_types: "Job Types"
     },
 
     status: {
@@ -509,7 +533,19 @@ const TRANSLATIONS = {
       refresh: "Làm mới",
       export: "Xuất",
       import: "Nhập",
-      access_denied: "Bạn không có quyền truy cập tính năng này."
+      access_denied: "Bạn không có quyền truy cập tính năng này.",
+      save_draft: "Lưu Nháp",
+      submit: "Gửi",
+      select: "Vui lòng chọn",
+      no_data: "Không có dữ liệu",
+      language: "Ngôn ngữ",
+      last_name: "Họ",
+      first_name: "Tên",
+      email: "Email",
+      phone_number: "Số điện thoại",
+      department: "Phòng ban",
+      position: "Vị trí",
+      job_types: "Loại công việc"
     },
 
     messages: {
@@ -750,7 +786,23 @@ class UnifiedI18n {
    * 個別要素の翻訳更新（report.jsとの互換性のため）
    */
   updateElement(selector, key) {
-    const element = document.querySelector(selector);
+    let element;
+
+    // セレクターが既にHTMLElementの場合はそのまま使用
+    if (selector && typeof selector === 'object' && selector.nodeType === Node.ELEMENT_NODE) {
+      element = selector;
+    } else if (typeof selector === 'string') {
+      try {
+        element = document.querySelector(selector);
+      } catch (error) {
+        console.warn('I18n: Invalid selector:', selector);
+        return;
+      }
+    } else {
+      console.warn('I18n: Invalid selector type:', typeof selector, selector);
+      return;
+    }
+
     if (element && key) {
       const translation = this.t(key);
       element.textContent = translation;

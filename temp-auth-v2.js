@@ -243,6 +243,52 @@ class TempAuth {
     };
   }
 
+  getMockEvaluationPeriods() {
+    return [
+      {
+        id: '2024q1',
+        name: '2024年第1四半期',
+        status: 'active',
+        tenantId: 'demo-tenant',
+        startDate: '2024-01-01',
+        endDate: '2024-03-31'
+      },
+      {
+        id: '2024q2',
+        name: '2024年第2四半期',
+        status: 'draft',
+        tenantId: 'demo-tenant',
+        startDate: '2024-04-01',
+        endDate: '2024-06-30'
+      }
+    ];
+  }
+
+  getMockBenchmarkData() {
+    return [
+      {
+        id: 'bench_1',
+        type: 'construction',
+        value: 3.5,
+        name: '建設作業員平均',
+        tenantId: 'demo-tenant',
+        evaluationCount: 25,
+        averageScore: 3.5,
+        lastUpdated: Date.now()
+      },
+      {
+        id: 'bench_2',
+        type: 'technical',
+        value: 4.0,
+        name: '技術力平均',
+        tenantId: 'demo-tenant',
+        evaluationCount: 30,
+        averageScore: 4.0,
+        lastUpdated: Date.now()
+      }
+    ];
+  }
+
   // 追加APIメソッドのモックデータ
   getMockOrganizationStructure() {
     return [
