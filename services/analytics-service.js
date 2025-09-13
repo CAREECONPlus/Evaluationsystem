@@ -579,19 +579,259 @@ export class AnalyticsService {
     return recommendations;
   }
 
+  /**
+   * 作業員統計の計算 - report.jsで使用
+   */
+  async calculateWorkerStatistics(evaluations) {
+    try {
+      const stats = {
+        totalWorkers: 0,
+        completedEvaluations: 0,
+        averageScore: 0,
+        skillBreakdown: {},
+        departmentStats: {},
+        performanceDistribution: { excellent: 0, good: 0, average: 0, poor: 0 },
+        participationRate: 0
+      };
+
+      // 完了した評価のみを対象
+      const completedEvaluations = evaluations.filter(e =>
+        e.status === 'completed' && e.ratings && Object.keys(e.ratings).length > 0
+      );
+
+      if (completedEvaluations.length === 0) {
+        return stats;
+      }
+
+      stats.completedEvaluations = completedEvaluations.length;
+
+      // ユニークワーカーの計算
+      const uniqueWorkers = new Set(completedEvaluations.map(e => e.targetUserId));
+      stats.totalWorkers = uniqueWorkers.size;
+
+      // 全スコアを収集
+      const allScores = [];
+      const skillTotals = {};
+      const skillCounts = {};
+      const departments = {};
+
+      completedEvaluations.forEach(evaluation => {
+        const department = evaluation.targetUserDepartment || '未配属';
+
+        // 部門統計
+        if (!departments[department]) {
+          departments[department] = {
+            count: 0,
+            totalScore: 0,
+            averageScore: 0
+          };
+        }
+        departments[department].count++;
+
+        // スキル別集計
+        let evaluationScore = 0;
+        let skillCount = 0;
+
+        Object.entries(evaluation.ratings).forEach(([skill, rating]) => {
+          if (!skillTotals[skill]) {
+            skillTotals[skill] = 0;
+            skillCounts[skill] = 0;
+          }
+          skillTotals[skill] += rating;
+          skillCounts[skill]++;
+          evaluationScore += rating;
+          skillCount++;
+          allScores.push(rating);
+        });
+
+        const avgScore = skillCount > 0 ? evaluationScore / skillCount : 0;
+        departments[department].totalScore += avgScore;
+
+        // パフォーマンス分布
+        if (avgScore >= 4.5) stats.performanceDistribution.excellent++;
+        else if (avgScore >= 3.5) stats.performanceDistribution.good++;
+        else if (avgScore >= 2.5) stats.performanceDistribution.average++;
+        else stats.performanceDistribution.poor++;
+      });
+
+      // 平均スコア計算
+      stats.averageScore = allScores.length > 0 ?
+        parseFloat((allScores.reduce((sum, score) => sum + score, 0) / allScores.length).toFixed(2)) : 0;
+
+      // スキル別平均
+      Object.keys(skillTotals).forEach(skill => {
+        stats.skillBreakdown[skill] = {
+          average: parseFloat((skillTotals[skill] / skillCounts[skill]).toFixed(2)),
+          count: skillCounts[skill]
+        };
+      });
+
+      // 部門別平均
+      Object.keys(departments).forEach(dept => {
+        departments[dept].averageScore = departments[dept].count > 0 ?
+          parseFloat((departments[dept].totalScore / departments[dept].count).toFixed(2)) : 0;
+      });
+      stats.departmentStats = departments;
+
+      // 参加率（仮定: 全従業員数が分からないため、完了評価数 / ユニークワーカー数）
+      stats.participationRate = stats.totalWorkers > 0 ?
+        parseFloat(((stats.completedEvaluations / stats.totalWorkers) * 100).toFixed(1)) : 0;
+
+      return stats;
+    } catch (error) {
+      console.error('Analytics: Error calculating worker statistics:', error);
+      return {
+        totalWorkers: 0,
+        completedEvaluations: 0,
+        averageScore: 0,
+        skillBreakdown: {},
+        departmentStats: {},
+        performanceDistribution: { excellent: 0, good: 0, average: 0, poor: 0 },
+        participationRate: 0
+      };
+    }
+  }
+
+  /**
+   * トレンドデータの分析 - report.jsで使用
+   */
+  async analyzeTrendData(evaluations, timeRange = '6months') {
+    try {
+      const trendAnalysis = {
+        periods: [],
+        overallTrend: 'stable',
+        growthRate: 0,
+        insights: [],
+        recommendations: []
+      };
+
+      // 期間設定
+      const currentDate = new Date();
+      let months = 6;
+      switch (timeRange) {
+        case '3months': months = 3; break;
+        case '12months': months = 12; break;
+        case 'thisyear': months = currentDate.getMonth() + 1; break;
+      }
+
+      // 完了した評価をフィルター
+      const completedEvaluations = evaluations.filter(e =>
+        e.status === 'completed' && e.completedAt && e.ratings
+      );
+
+      if (completedEvaluations.length === 0) {
+        return trendAnalysis;
+      }
+
+      // 月別データ構造を初期化
+      for (let i = months - 1; i >= 0; i--) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+        trendAnalysis.periods.push({
+          period: `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}`,
+          month: date.getMonth() + 1,
+          year: date.getFullYear(),
+          averageScore: 0,
+          completedCount: 0,
+          workerCount: 0,
+          skillTrends: {}
+        });
+      }
+
+      // 評価を月別に分類して統計を計算
+      completedEvaluations.forEach(evaluation => {
+        const completedDate = evaluation.completedAt.toDate ?
+          evaluation.completedAt.toDate() : new Date(evaluation.completedAt);
+
+        const monthKey = `${completedDate.getFullYear()}/${String(completedDate.getMonth() + 1).padStart(2, '0')}`;
+        const period = trendAnalysis.periods.find(p => p.period === monthKey);
+
+        if (period) {
+          period.completedCount++;
+
+          // スコア集計
+          let totalScore = 0;
+          let skillCount = 0;
+
+          Object.entries(evaluation.ratings).forEach(([skill, rating]) => {
+            if (!period.skillTrends[skill]) {
+              period.skillTrends[skill] = { total: 0, count: 0, average: 0 };
+            }
+
+            period.skillTrends[skill].total += rating;
+            period.skillTrends[skill].count++;
+            totalScore += rating;
+            skillCount++;
+          });
+
+          // 期間内の平均スコアを更新
+          const evaluationAverage = skillCount > 0 ? totalScore / skillCount : 0;
+          period.averageScore = period.completedCount === 1 ?
+            evaluationAverage :
+            ((period.averageScore * (period.completedCount - 1)) + evaluationAverage) / period.completedCount;
+        }
+      });
+
+      // スキル別平均を計算
+      trendAnalysis.periods.forEach(period => {
+        Object.keys(period.skillTrends).forEach(skill => {
+          const skillData = period.skillTrends[skill];
+          skillData.average = skillData.count > 0 ?
+            parseFloat((skillData.total / skillData.count).toFixed(2)) : 0;
+        });
+
+        // ユニークワーカー数の計算（近似）
+        period.workerCount = Math.ceil(period.completedCount * 0.8); // 仮定値
+        period.averageScore = parseFloat(period.averageScore.toFixed(2));
+      });
+
+      // トレンド分析
+      const validPeriods = trendAnalysis.periods.filter(p => p.completedCount > 0);
+      if (validPeriods.length >= 2) {
+        const firstPeriod = validPeriods[0];
+        const lastPeriod = validPeriods[validPeriods.length - 1];
+
+        trendAnalysis.growthRate = firstPeriod.averageScore > 0 ?
+          parseFloat((((lastPeriod.averageScore - firstPeriod.averageScore) / firstPeriod.averageScore) * 100).toFixed(1)) : 0;
+
+        if (trendAnalysis.growthRate > 5) trendAnalysis.overallTrend = 'improving';
+        else if (trendAnalysis.growthRate < -5) trendAnalysis.overallTrend = 'declining';
+        else trendAnalysis.overallTrend = 'stable';
+
+        // インサイト生成
+        if (trendAnalysis.overallTrend === 'improving') {
+          trendAnalysis.insights.push('パフォーマンスが継続的に改善しています');
+        } else if (trendAnalysis.overallTrend === 'declining') {
+          trendAnalysis.insights.push('パフォーマンスの低下傾向が見られます');
+          trendAnalysis.recommendations.push('改善施策の検討が必要です');
+        }
+      }
+
+      return trendAnalysis;
+    } catch (error) {
+      console.error('Analytics: Error analyzing trend data:', error);
+      return {
+        periods: [],
+        overallTrend: 'stable',
+        growthRate: 0,
+        insights: [],
+        recommendations: []
+      };
+    }
+  }
+
   async calculateDepartmentEmployeeCounts(departmentStats, organizationData) {
     try {
       if (organizationData && organizationData.departments) {
         // 組織データから各部門の従業員数を取得
         const allUsers = await this.app.api.getUsers();
-        
+
         Object.keys(departmentStats).forEach(deptName => {
           const deptUsers = allUsers.filter(user => user.department === deptName);
           departmentStats[deptName].totalEmployees = deptUsers.length;
-          
+
           // 参加率を計算
           if (departmentStats[deptName].totalEmployees > 0) {
-            departmentStats[deptName].participationRate = 
+            departmentStats[deptName].participationRate =
               (departmentStats[deptName].completedEvaluations / departmentStats[deptName].totalEmployees) * 100;
           }
         });

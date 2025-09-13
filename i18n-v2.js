@@ -125,7 +125,8 @@ const TRANSLATIONS = {
       all: "すべて",
       loading: "読み込み中...",
       actions: "操作",
-      reset: "リセット"
+      reset: "リセット",
+      access_denied: "この機能にはアクセス権限がありません。"
     },
 
     // ===== ステータス =====
@@ -251,6 +252,40 @@ const TRANSLATIONS = {
       login_failed_generic: "ログインに失敗しました。メールアドレスとパスワードを確認してください。",
       auth_network_failed: "認証サーバーに接続できません",
       invalid_credentials: "認証情報が正しくありません"
+    },
+
+    // ===== 翻訳品質管理 =====
+    translation_quality: {
+      title: "翻訳品質管理",
+      total_translations: "総翻訳数",
+      manual_verified: "手動検証済み",
+      average_quality: "平均品質スコア",
+      needs_review: "要レビュー",
+      filter_by_quality: "品質でフィルタ",
+      high_quality: "高品質 (0.8+)",
+      medium_quality: "中品質 (0.5-0.8)",
+      low_quality: "低品質 (<0.5)",
+      unverified: "未検証",
+      language_pair: "言語ペア",
+      translation_service: "翻訳サービス",
+      automatic: "自動翻訳",
+      fallback: "フォールバック",
+      manual: "手動翻訳",
+      translations_list: "翻訳一覧",
+      edit_translation: "翻訳の編集",
+      original_text: "原文",
+      current_translation: "現在の翻訳",
+      improved_translation: "改善された翻訳",
+      quality_score: "品質スコア",
+      improvement_notes: "改善メモ",
+      quality_analysis: "品質分析",
+      no_translations: "該当する翻訳が見つかりません",
+      source_text: "原文",
+      translated_text: "翻訳文",
+      languages: "言語",
+      quality: "品質",
+      service: "サービス",
+      status: "状態"
     }
   },
 
@@ -339,7 +374,7 @@ const TRANSLATIONS = {
     common: {
       save: "Save",
       cancel: "Cancel",
-      edit: "Edit", 
+      edit: "Edit",
       delete: "Delete",
       confirm: "Confirm",
       yes: "Yes",
@@ -354,7 +389,8 @@ const TRANSLATIONS = {
       all: "All",
       loading: "Loading...",
       actions: "Actions",
-      reset: "Reset"
+      reset: "Reset",
+      access_denied: "You do not have access to this feature."
     },
 
     status: {
@@ -375,11 +411,45 @@ const TRANSLATIONS = {
     messages: {
       save_success: "Saved successfully",
       save_error: "Save failed",
-      delete_success: "Deleted successfully", 
+      delete_success: "Deleted successfully",
       delete_error: "Delete failed",
       network_error: "Network error occurred",
       loading_error: "Failed to load data",
       validation_error: "Please check your input"
+    },
+
+    // ===== Translation Quality Management =====
+    translation_quality: {
+      title: "Translation Quality Management",
+      total_translations: "Total Translations",
+      manual_verified: "Manually Verified",
+      average_quality: "Average Quality Score",
+      needs_review: "Needs Review",
+      filter_by_quality: "Filter by Quality",
+      high_quality: "High Quality (0.8+)",
+      medium_quality: "Medium Quality (0.5-0.8)",
+      low_quality: "Low Quality (<0.5)",
+      unverified: "Unverified",
+      language_pair: "Language Pair",
+      translation_service: "Translation Service",
+      automatic: "Automatic",
+      fallback: "Fallback",
+      manual: "Manual",
+      translations_list: "Translations List",
+      edit_translation: "Edit Translation",
+      original_text: "Original Text",
+      current_translation: "Current Translation",
+      improved_translation: "Improved Translation",
+      quality_score: "Quality Score",
+      improvement_notes: "Improvement Notes",
+      quality_analysis: "Quality Analysis",
+      no_translations: "No matching translations found",
+      source_text: "Source Text",
+      translated_text: "Translated Text",
+      languages: "Languages",
+      quality: "Quality",
+      service: "Service",
+      status: "Status"
     }
   },
 
@@ -438,7 +508,8 @@ const TRANSLATIONS = {
       sort: "Sắp xếp",
       refresh: "Làm mới",
       export: "Xuất",
-      import: "Nhập"
+      import: "Nhập",
+      access_denied: "Bạn không có quyền truy cập tính năng này."
     },
 
     messages: {
@@ -449,6 +520,40 @@ const TRANSLATIONS = {
       network_error: "Lỗi mạng xảy ra",
       loading_error: "Không thể tải dữ liệu",
       validation_error: "Vui lòng kiểm tra đầu vào"
+    },
+
+    // ===== Translation Quality Management =====
+    translation_quality: {
+      title: "Quản lý Chất lượng Dịch thuật",
+      total_translations: "Tổng số Bản dịch",
+      manual_verified: "Được xác minh Thủ công",
+      average_quality: "Điểm Chất lượng Trung bình",
+      needs_review: "Cần Xem lại",
+      filter_by_quality: "Lọc theo Chất lượng",
+      high_quality: "Chất lượng Cao (0.8+)",
+      medium_quality: "Chất lượng Trung bình (0.5-0.8)",
+      low_quality: "Chất lượng Thấp (<0.5)",
+      unverified: "Chưa xác minh",
+      language_pair: "Cặp Ngôn ngữ",
+      translation_service: "Dịch vụ Dịch thuật",
+      automatic: "Tự động",
+      fallback: "Dự phòng",
+      manual: "Thủ công",
+      translations_list: "Danh sách Bản dịch",
+      edit_translation: "Chỉnh sửa Bản dịch",
+      original_text: "Văn bản Gốc",
+      current_translation: "Bản dịch Hiện tại",
+      improved_translation: "Bản dịch Cải thiện",
+      quality_score: "Điểm Chất lượng",
+      improvement_notes: "Ghi chú Cải thiện",
+      quality_analysis: "Phân tích Chất lượng",
+      no_translations: "Không tìm thấy bản dịch phù hợp",
+      source_text: "Văn bản Nguồn",
+      translated_text: "Văn bản Dịch",
+      languages: "Ngôn ngữ",
+      quality: "Chất lượng",
+      service: "Dịch vụ",
+      status: "Trạng thái"
     }
   }
 };
