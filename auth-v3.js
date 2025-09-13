@@ -40,6 +40,14 @@ export class Auth {
       
       if (isEmergencyMode) {
         console.log("Auth: Detected emergency/temporary authentication mode - skipping Firebase initialization")
+        console.log("Auth: Emergency mode flags:", {
+          FORCE_TEMP_AUTH: window.FORCE_TEMP_AUTH,
+          DISABLE_FIREBASE: window.DISABLE_FIREBASE,
+          hasEmergencyText: document.documentElement.innerHTML.includes('EMERGENCY MODE'),
+          urlParam: window.location.search.includes('temp_auth=true'),
+          localStorage: localStorage.getItem('temp_auth_mode'),
+          sessionStorage: sessionStorage.getItem('emergency_mode')
+        })
         this.isInitialized = true
         this.useTemporaryAuth = true
         return
