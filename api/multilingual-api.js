@@ -32,7 +32,15 @@ export class MultilingualAPI {
   constructor(app) {
     this.app = app;
     this.auth = app.auth;
-    this.db = getFirestore(app.auth.firebaseApp);
+
+    // 緊急モード時はFirestoreを初期化しない
+    if (window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE || app.auth.useTemporaryAuth) {
+      console.log("MultilingualAPI: Emergency mode detected - skipping Firestore initialization");
+      this.db = null;
+    } else {
+      this.db = getFirestore(app.auth.firebaseApp);
+    }
+
     this.supportedLanguages = ['ja', 'en', 'vi'];
   }
 
