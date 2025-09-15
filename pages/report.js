@@ -1319,6 +1319,12 @@ export class EvaluationReportPage {
       return;
     }
 
+    // 既存のチャートインスタンスがあれば破棄
+    if (this.chartInstances && this.chartInstances.personalTrend) {
+      this.chartInstances.personalTrend.destroy();
+      delete this.chartInstances.personalTrend;
+    }
+
     const ctx = canvas.getContext('2d');
     const trends = this.reportData.trends || { labels: [], datasets: [] };
 
@@ -1770,6 +1776,12 @@ export class EvaluationReportPage {
     if (!canvas || typeof Chart === 'undefined') {
       console.warn("Reports: Cannot render organization skill map");
       return;
+    }
+
+    // 既存のチャートインスタンスがあれば破棄
+    if (this.chartInstances && this.chartInstances.organizationSkillMap) {
+      this.chartInstances.organizationSkillMap.destroy();
+      delete this.chartInstances.organizationSkillMap;
     }
 
     const ctx = canvas.getContext('2d');

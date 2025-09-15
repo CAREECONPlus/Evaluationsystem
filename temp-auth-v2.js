@@ -234,8 +234,33 @@ class TempAuth {
         { id: 'construction', name: '建設作業員', tenantId: 'demo-tenant' },
         { id: 'electrician', name: '電気工事士', tenantId: 'demo-tenant' }
       ],
-      evaluationPeriods: [
-        { id: '2024q1', name: '2024年第1四半期', status: 'active', tenantId: 'demo-tenant' }
+      periods: [  // periodsとして返す（settingsページで期待される形式）
+        {
+          id: '2024q1',
+          name: '2024年第1四半期',
+          status: 'active',
+          tenantId: 'demo-tenant',
+          startDate: '2024-01-01',
+          endDate: '2024-03-31'
+        },
+        {
+          id: '2024q2',
+          name: '2024年第2四半期',
+          status: 'draft',
+          tenantId: 'demo-tenant',
+          startDate: '2024-04-01',
+          endDate: '2024-06-30'
+        }
+      ],
+      evaluationPeriods: [  // 後方互換性のため両方提供
+        {
+          id: '2024q1',
+          name: '2024年第1四半期',
+          status: 'active',
+          tenantId: 'demo-tenant',
+          startDate: '2024-01-01',
+          endDate: '2024-03-31'
+        }
       ],
       evaluationStructures: [
         { id: 'basic', name: '基本評価項目', tenantId: 'demo-tenant' }

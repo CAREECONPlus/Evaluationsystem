@@ -549,7 +549,7 @@ export class SettingsPage {
     const list = document.getElementById('periods-list');
     if (!list) return;
     
-    if (this.settings.periods.length === 0) {
+    if (!this.settings.periods || this.settings.periods.length === 0) {
       list.innerHTML = `
         <div class="list-group-item text-muted text-center p-4">
           <i class="fas fa-info-circle me-2"></i>
@@ -561,7 +561,7 @@ export class SettingsPage {
       return;
     }
 
-    list.innerHTML = this.settings.periods.map(p => `
+    list.innerHTML = (this.settings.periods || []).map(p => `
       <div class="list-group-item d-flex justify-content-between align-items-center">
         <div>
           <div class="fw-bold">${this.app.sanitizeHtml(p.name)}</div>

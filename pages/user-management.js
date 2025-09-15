@@ -448,10 +448,17 @@ export class UserManagementPage {
     const pendingCount = this.users.filter(u => u.status === 'pending').length;
     const adminCount = this.users.filter(u => u.role === 'admin').length;
 
-    document.getElementById('total-users-count').textContent = totalCount;
-    document.getElementById('active-users-count').textContent = activeCount;
-    document.getElementById('pending-users-count').textContent = pendingCount;
-    document.getElementById('admin-users-count').textContent = adminCount;
+    const totalElement = document.getElementById('total-users-count');
+    if (totalElement) totalElement.textContent = totalCount;
+
+    const activeElement = document.getElementById('active-users-count');
+    if (activeElement) activeElement.textContent = activeCount;
+
+    const pendingElement = document.getElementById('pending-users-count');
+    if (pendingElement) pendingElement.textContent = pendingCount;
+
+    const adminElement = document.getElementById('admin-users-count');
+    if (adminElement) adminElement.textContent = adminCount;
   }
 
   applyFilters() {

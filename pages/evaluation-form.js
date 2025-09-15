@@ -188,7 +188,7 @@ export class EvaluationFormPage {
     
     select.innerHTML = `
       <option value="" data-i18n="common.select">選択してください</option>
-      ${this.periods.map(period => 
+      ${(this.periods || []).map(period =>
         `<option value="${period.id}">${this.app.sanitizeHtml(period.name)}</option>`
       ).join('')}
     `;

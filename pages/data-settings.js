@@ -4,12 +4,12 @@ export class DataSettingsPage {
   constructor(app) {
     this.app = app;
     this.currentLanguage = app.i18n.getCurrentLanguage();
-    this.translations = app.i18n.translations;
+    this.translations = app.i18n?.translations || {};
     this.currentCategory = 'evaluation-items';
   }
 
   async render() {
-    const t = this.translations[this.currentLanguage];
+    const t = this.translations[this.currentLanguage] || this.translations['ja'] || {};
     return `
       <div class="data-settings-page">
         <div class="page-header">
