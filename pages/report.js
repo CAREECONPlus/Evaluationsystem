@@ -1370,6 +1370,12 @@ export class EvaluationReportPage {
       return;
     }
 
+    // Destroy existing chart if it exists
+    if (this.chartInstances && this.chartInstances.personalRadar) {
+      this.chartInstances.personalRadar.destroy();
+      delete this.chartInstances.personalRadar;
+    }
+
     const ctx = canvas.getContext('2d');
     
     // 実際の評価データからレーダーチャートデータを生成
@@ -1590,6 +1596,12 @@ export class EvaluationReportPage {
       return;
     }
 
+    // Destroy existing chart if it exists
+    if (this.chartInstances && this.chartInstances.evaluatorPersonal) {
+      this.chartInstances.evaluatorPersonal.destroy();
+      delete this.chartInstances.evaluatorPersonal;
+    }
+
     const ctx = canvas.getContext('2d');
     const data = this.reportData || this.getDefaultEvaluatorData();
     const personalTrends = data.personal.trends || { labels: [], datasets: [] };
@@ -1634,6 +1646,12 @@ export class EvaluationReportPage {
     if (!canvas || typeof Chart === 'undefined') {
       console.warn("Reports: Cannot render subordinate comparison chart");
       return;
+    }
+
+    // Destroy existing chart if it exists
+    if (this.chartInstances && this.chartInstances.subordinateComparison) {
+      this.chartInstances.subordinateComparison.destroy();
+      delete this.chartInstances.subordinateComparison;
     }
 
     const ctx = canvas.getContext('2d');
@@ -1852,6 +1870,12 @@ export class EvaluationReportPage {
       return;
     }
 
+    // Destroy existing chart if it exists
+    if (this.chartInstances && this.chartInstances.skillDistribution) {
+      this.chartInstances.skillDistribution.destroy();
+      delete this.chartInstances.skillDistribution;
+    }
+
     const ctx = canvas.getContext('2d');
     
     // スキルレベル分布のダミーデータ
@@ -2005,6 +2029,12 @@ export class EvaluationReportPage {
       return;
     }
 
+    // Destroy existing chart if it exists
+    if (this.chartInstances && this.chartInstances.departmentPerformance) {
+      this.chartInstances.departmentPerformance.destroy();
+      delete this.chartInstances.departmentPerformance;
+    }
+
     const ctx = canvas.getContext('2d');
     
     // 実際の部門データから生成
@@ -2066,6 +2096,12 @@ export class EvaluationReportPage {
     if (!canvas || typeof Chart === 'undefined') {
       console.warn("Reports: Cannot render job type skill chart");
       return;
+    }
+
+    // Destroy existing chart if it exists
+    if (this.chartInstances && this.chartInstances.jobTypeSkill) {
+      this.chartInstances.jobTypeSkill.destroy();
+      delete this.chartInstances.jobTypeSkill;
     }
 
     const ctx = canvas.getContext('2d');

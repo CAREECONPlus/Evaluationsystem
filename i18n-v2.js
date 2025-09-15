@@ -138,7 +138,8 @@ const TRANSLATIONS = {
       phone_number: "電話番号",
       department: "部門",
       position: "役職",
-      job_types: "職種"
+      job_types: "職種",
+      view_all: "すべて表示"
     },
 
     // ===== ステータス =====
@@ -414,7 +415,8 @@ const TRANSLATIONS = {
       phone_number: "Phone Number",
       department: "Department",
       position: "Position",
-      job_types: "Job Types"
+      job_types: "Job Types",
+      view_all: "View All"
     },
 
     status: {
@@ -533,6 +535,10 @@ const TRANSLATIONS = {
       refresh: "Làm mới",
       export: "Xuất",
       import: "Nhập",
+      all: "Tất cả",
+      loading: "Đang tải...",
+      actions: "Hành động",
+      reset: "Đặt lại",
       access_denied: "Bạn không có quyền truy cập tính năng này.",
       save_draft: "Lưu Nháp",
       submit: "Gửi",
@@ -545,7 +551,8 @@ const TRANSLATIONS = {
       phone_number: "Số điện thoại",
       department: "Phòng ban",
       position: "Vị trí",
-      job_types: "Loại công việc"
+      job_types: "Loại công việc",
+      view_all: "Xem tất cả"
     },
 
     messages: {

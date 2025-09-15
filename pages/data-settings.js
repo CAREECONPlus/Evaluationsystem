@@ -679,6 +679,11 @@ export class DataSettingsPage {
       let benchmarks = [];
       try {
         benchmarks = await this.app.api.getBenchmarkData();
+        // Ensure benchmarks is always an array
+        if (!Array.isArray(benchmarks)) {
+          console.warn('getBenchmarkData returned non-array:', benchmarks);
+          benchmarks = [];
+        }
       } catch (error) {
         console.log('Using fallback benchmark data');
         benchmarks = this.generateFallbackBenchmarks();

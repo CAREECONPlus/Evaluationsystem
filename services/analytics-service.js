@@ -964,6 +964,173 @@ export class AnalyticsService {
     }
   }
 
+  /**
+   * 改善分析 - report.jsで使用
+   */
+  async analyzeImprovements(evaluations, userId) {
+    try {
+      const userEvaluations = evaluations.filter(e =>
+        e.targetUserId === userId && e.status === 'completed' && e.ratings
+      );
+
+      if (userEvaluations.length === 0) {
+        return {
+          suggestions: [],
+          priorityAreas: [],
+          strengths: [],
+          overallImprovement: 0
+        };
+      }
+
+      // 最新の評価を取得
+      const latestEvaluation = userEvaluations
+        .sort((a, b) => new Date(b.completedAt || b.createdAt) - new Date(a.completedAt || a.createdAt))[0];
+
+      const improvements = {
+        suggestions: [],
+        priorityAreas: [],
+        strengths: [],
+        overallImprovement: 0
+      };
+
+      // スキル別分析
+      Object.entries(latestEvaluation.ratings).forEach(([skill, rating]) => {
+        if (rating < 3.0) {
+          improvements.priorityAreas.push({
+            skill: skill,
+            currentScore: rating,
+            priority: rating < 2.5 ? 'high' : 'medium',
+            suggestion: `${skill}の向上が必要です`
+          });
+        } else if (rating >= 4.0) {
+          improvements.strengths.push({
+            skill: skill,
+            score: rating
+          });
+        }
+      });
+
+      // 改善提案生成
+      improvements.priorityAreas.forEach(area => {
+        improvements.suggestions.push({
+          category: area.skill,
+          suggestion: area.suggestion,
+          priority: area.priority
+        });
+      });
+
+      return improvements;
+    } catch (error) {
+      console.error('Analytics: Error analyzing improvements:', error);
+      return {
+        suggestions: [],
+        priorityAreas: [],
+        strengths: [],
+        overallImprovement: 0
+      };
+    }
+  }
+
+  /**
+   * スキルデータ分析 - report.jsで使用
+   */
+  async analyzeSkillData(evaluations, organizationData) {
+    try {
+      const completedEvaluations = evaluations.filter(e =>
+        e.status === 'completed' && e.ratings
+      );
+
+      if (completedEvaluations.length === 0) {
+        return {
+          skillMap: {},
+          departmentSkills: {},
+          overallAverage: 0,
+          skillDistribution: {}
+        };
+      }
+
+      const skillAnalysis = {
+        skillMap: {},
+        departmentSkills: {},
+        overallAverage: 0,
+        skillDistribution: {}
+      };
+
+      // 全スキルデータを収集
+      const allSkills = new Set();
+      const skillTotals = {};
+      const skillCounts = {};
+
+      completedEvaluations.forEach(evaluation => {
+        const department = evaluation.targetUserDepartment || '未配属';
+
+        if (!skillAnalysis.departmentSkills[department]) {
+          skillAnalysis.departmentSkills[department] = {};
+        }
+
+        Object.entries(evaluation.ratings).forEach(([skill, rating]) => {
+          allSkills.add(skill);
+
+          // 全体統計
+          if (!skillTotals[skill]) {
+            skillTotals[skill] = 0;
+            skillCounts[skill] = 0;
+          }
+          skillTotals[skill] += rating;
+          skillCounts[skill]++;
+
+          // 部門別統計
+          if (!skillAnalysis.departmentSkills[department][skill]) {
+            skillAnalysis.departmentSkills[department][skill] = {
+              total: 0,
+              count: 0,
+              average: 0
+            };
+          }
+          skillAnalysis.departmentSkills[department][skill].total += rating;
+          skillAnalysis.departmentSkills[department][skill].count++;
+        });
+      });
+
+      // スキル別平均を計算
+      allSkills.forEach(skill => {
+        skillAnalysis.skillMap[skill] = {
+          average: parseFloat((skillTotals[skill] / skillCounts[skill]).toFixed(2)),
+          count: skillCounts[skill],
+          distribution: this.calculateDistribution(
+            completedEvaluations
+              .map(e => e.ratings[skill])
+              .filter(rating => rating !== undefined)
+          )
+        };
+      });
+
+      // 部門別平均を計算
+      Object.keys(skillAnalysis.departmentSkills).forEach(department => {
+        Object.keys(skillAnalysis.departmentSkills[department]).forEach(skill => {
+          const skillData = skillAnalysis.departmentSkills[department][skill];
+          skillData.average = parseFloat((skillData.total / skillData.count).toFixed(2));
+        });
+      });
+
+      // 全体平均を計算
+      const allScores = completedEvaluations.flatMap(e => Object.values(e.ratings));
+      skillAnalysis.overallAverage = parseFloat(
+        (allScores.reduce((sum, score) => sum + score, 0) / allScores.length).toFixed(2)
+      );
+
+      return skillAnalysis;
+    } catch (error) {
+      console.error('Analytics: Error analyzing skill data:', error);
+      return {
+        skillMap: {},
+        departmentSkills: {},
+        overallAverage: 0,
+        skillDistribution: {}
+      };
+    }
+  }
+
   async calculateDepartmentEmployeeCounts(departmentStats, organizationData) {
     try {
       if (organizationData && organizationData.departments) {
