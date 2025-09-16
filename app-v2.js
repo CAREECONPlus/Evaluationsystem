@@ -1,6 +1,6 @@
 import { i18n } from "./i18n-v2.js?v=20250116-2"
 import { API } from "./api-v4.js?v=20250116-2"
-import { Auth } from "./auth-v3.js?v=20250116-2"
+import { Auth } from "./auth-v4.js"
 import { Router } from "./router.js?v=20250116-2"
 import { HeaderComponent } from "./components/header.js?v=20250116-2"
 import { SidebarComponent } from "./components/sidebar.js?v=20250116-2"
