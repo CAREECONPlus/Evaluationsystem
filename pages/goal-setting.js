@@ -86,9 +86,68 @@ export class GoalSettingPage {
   }
 
   setupEventListeners() {
-    document.getElementById('period-select').addEventListener('change', (e) => this.onPeriodChange(e));
-    document.getElementById('add-goal-btn').addEventListener('click', () => this.addGoal());
-    document.getElementById('submit-goals-btn').addEventListener('click', () => this.submitGoals());
+    // Remove existing event listeners to prevent duplicates
+    this.removeEventListeners();
+
+    // Bind methods to prevent memory leaks
+    this.boundOnPeriodChange = (e) => this.onPeriodChange(e);
+    this.boundAddGoal = () => this.addGoal();
+    this.boundSubmitGoals = () => this.submitGoals();
+
+    // Add event listeners
+    document.getElementById('period-select').addEventListener('change', this.boundOnPeriodChange);
+    document.getElementById('add-goal-btn').addEventListener('click', this.boundAddGoal);
+    document.getElementById('submit-goals-btn').addEventListener('click', this.boundSubmitGoals);
+  }
+
+  removeEventListeners() {
+    if (this.boundOnPeriodChange) {
+      const periodSelect = document.getElementById('period-select');
+      if (periodSelect) periodSelect.removeEventListener('change', this.boundOnPeriodChange);
+    }
+    if (this.boundAddGoal) {
+      const addBtn = document.getElementById('add-goal-btn');
+      if (addBtn) addBtn.removeEventListener('click', this.boundAddGoal);
+    }
+    if (this.boundSubmitGoals) {
+      const submitBtn = document.getElementById('submit-goals-btn');
+      if (submitBtn) submitBtn.removeEventListener('click', this.boundSubmitGoals);
+    }
+
+    // Remove goal input listeners
+    const container = document.getElementById('goals-container');
+    if (container && this.boundGoalInputHandler) {
+      container.removeEventListener('change', this.boundGoalInputHandler);
+    }
+  }
+
+  setupGoalInputListeners() {
+    const container = document.getElementById('goals-container');
+    if (!container) return;
+
+    // Remove existing listener to prevent duplicates
+    if (this.boundGoalInputHandler) {
+      container.removeEventListener('change', this.boundGoalInputHandler);
+    }
+
+    // Create bound handler
+    this.boundGoalInputHandler = (e) => {
+      if (e.target.classList.contains('goal-text')) {
+        const index = parseInt(e.target.dataset.index);
+        if (!isNaN(index) && this.goals[index]) {
+          this.goals[index].text = e.target.value;
+        }
+      } else if (e.target.classList.contains('goal-weight')) {
+        const index = parseInt(e.target.dataset.index);
+        if (!isNaN(index) && this.goals[index]) {
+          this.goals[index].weight = parseInt(e.target.value) || 0;
+          this.updateTotalWeight();
+        }
+      }
+    };
+
+    // Add single delegated event listener
+    container.addEventListener('change', this.boundGoalInputHandler);
   }
 
   async onPeriodChange(e) {
@@ -201,21 +260,8 @@ export class GoalSettingPage {
       </div>
     `).join('');
 
-    // イベントリスナーを設定
-    container.querySelectorAll('.goal-text').forEach(input => {
-      input.addEventListener('change', (e) => {
-        const index = parseInt(e.target.dataset.index);
-        this.goals[index].text = e.target.value;
-      });
-    });
-
-    container.querySelectorAll('.goal-weight').forEach(input => {
-      input.addEventListener('change', (e) => {
-        const index = parseInt(e.target.dataset.index);
-        this.goals[index].weight = parseInt(e.target.value) || 0;
-        this.updateTotalWeight();
-      });
-    });
+    // Event delegation to avoid duplicate listeners
+    this.setupGoalInputListeners();
   }
 
   updateTotalWeight() {
@@ -275,5 +321,10 @@ export class GoalSettingPage {
         btn.innerHTML = `<i class="fas fa-paper-plane me-2"></i><span data-i18n="goals.apply"></span>`;
         this.app.i18n.updateUI(btn);
     }
+  }
+
+  // Cleanup method to prevent memory leaks
+  cleanup() {
+    this.removeEventListeners();
   }
 }
