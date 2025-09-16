@@ -22,14 +22,12 @@
     <link rel="manifest" href="./manifest.json">
     
     <!-- Firebase Configuration Meta Tags -->
-    <!-- EMERGENCY: Force temporary authentication -->
     <meta name="firebase-api-key" content="AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk">
     <meta name="firebase-auth-domain" content="hyouka-db.firebaseapp.com">
     <meta name="firebase-project-id" content="hyouka-db">
     <meta name="firebase-storage-bucket" content="hyouka-db.appspot.com">
     <meta name="firebase-messaging-sender-id" content="861016804589">
     <meta name="firebase-app-id" content="1:861016804589:web:d911d516d6c79aa73690e4">
-    <meta name="emergency-temp-auth" content="true">
     
     <title>建設業評価管理システム</title>
     
@@ -96,13 +94,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
     
-    <!-- EMERGENCY MODE: Minimal system initialization -->
+    <!-- Application Initialization -->
     <script type="module">
-        console.log('EMERGENCY MODE: Initializing minimal system...');
-        
-        // Force enable temporary authentication
-        window.FORCE_TEMP_AUTH = true;
-        window.DISABLE_FIREBASE = true;
+        console.log('Initializing Construction Evaluation Management System...');
+
+        // Firebase production mode
+        window.FORCE_TEMP_AUTH = false;
+        window.DISABLE_FIREBASE = false;
         
         const timestamp = Date.now();
         
@@ -111,63 +109,59 @@
                 const App = module.default;
                 window.app = new App();
                 
-                // Override auth to force temp auth
+                // Firebase authentication enabled
                 if (window.app && window.app.auth) {
-                    console.log('EMERGENCY: Forcing temporary authentication mode');
-                    window.app.auth.forceTemporaryAuth = true;
+                    console.log('Firebase authentication system initialized');
                 }
                 
                 return window.app.init();
             }).then(() => {
-                console.log('EMERGENCY MODE: Application initialized successfully');
+                console.log('Application initialized successfully');
             }).catch(error => {
-                console.error('EMERGENCY: Failed to initialize application:', error);
-                
-                // Emergency fallback UI
+                console.error('Failed to initialize application:', error);
+
+                // Error fallback UI
                 document.getElementById('loading-screen').innerHTML = `
                     <div class="loading-content text-center">
                         <div class="text-warning mb-3">
                             <i class="fas fa-exclamation-triangle fa-4x"></i>
                         </div>
-                        <h2 class="text-white">緊急メンテナンス</h2>
-                        <p class="text-white-50">システムを復旧中です。しばらくお待ちください。</p>
+                        <h2 class="text-white">システムエラー</h2>
+                        <p class="text-white-50">アプリケーションの初期化に失敗しました。</p>
                         <button class="btn btn-light mt-3" onclick="location.reload()">
-                            <i class="fas fa-redo me-2"></i>再試行
+                            <i class="fas fa-redo me-2"></i>再読み込み
                         </button>
                     </div>
                 `;
             });
         } catch (error) {
-            console.error('EMERGENCY: Critical initialization error:', error);
+            console.error('Critical initialization error:', error);
         }
-        
-        // No Phase 8/9 integrations - EMERGENCY MODE
-        console.log('EMERGENCY MODE: Phase integrations disabled');
         
         // Global error handling
         window.addEventListener('error', (event) => {
-            console.error('EMERGENCY: Global error:', event.error);
+            console.error('Global error:', event.error);
         });
-        
+
         window.addEventListener('unhandledrejection', (event) => {
-            console.error('EMERGENCY: Unhandled promise rejection:', event.reason);
+            console.error('Unhandled promise rejection:', event.reason);
             event.preventDefault();
         });
-        
-        // Service Worker (minimal)
+
+        // Service Worker registration
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
                     .then((registration) => {
-                        console.log('EMERGENCY: SW registered');
+                        console.log('Service Worker registered successfully');
                     })
-                    .catch(() => {
-                        console.log('EMERGENCY: SW registration failed - continuing');
+                    .catch((error) => {
+                        console.log('Service Worker registration failed:', error);
                     });
             });
         }
-        
-        console.log('EMERGENCY MODE: Minimal system ready');
+
+        console.log('System ready for production use');
     </script>
 
     <!-- ノンスクリプト対応 -->
