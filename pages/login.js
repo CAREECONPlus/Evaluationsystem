@@ -77,6 +77,12 @@ export class LoginPage {
                             </span>
                           </button>
                       </div>
+
+                      <div class="text-center mt-3">
+                        <button type="button" class="btn btn-link text-muted" id="forgot-password-btn">
+                          <i class="fas fa-key me-1"></i>パスワードを忘れた方はこちら
+                        </button>
+                      </div>
                     </form>
 
                     <!-- Demo Accounts Section -->
@@ -146,6 +152,15 @@ export class LoginPage {
         this.handleLogin();
       });
     }
+
+    // パスワードリセットボタン
+    const forgotPasswordBtn = document.getElementById("forgot-password-btn");
+    if (forgotPasswordBtn) {
+      forgotPasswordBtn.addEventListener("click", () => {
+        this.handleForgotPassword();
+      });
+    }
+
     this.app.i18n.updateUI();
     
     // デモアカウント自動入力機能
@@ -181,6 +196,31 @@ export class LoginPage {
       this.app.showError(this.app.auth.getFirebaseAuthErrorMessage(error));
     } finally {
       this.setLoadingState(false);
+    }
+  }
+
+  async handleForgotPassword() {
+    const email = document.getElementById("email").value.trim();
+
+    if (!email) {
+      const userEmail = prompt("パスワードリセットメールを送信するメールアドレスを入力してください:");
+      if (!userEmail) return;
+
+      try {
+        await this.app.auth.sendPasswordResetEmail(userEmail);
+        this.app.showSuccess(`${userEmail} にパスワードリセットメールを送信しました。`);
+      } catch (error) {
+        console.error("Password reset error:", error);
+        this.app.showError("パスワードリセットメールの送信に失敗しました: " + error.message);
+      }
+    } else {
+      try {
+        await this.app.auth.sendPasswordResetEmail(email);
+        this.app.showSuccess(`${email} にパスワードリセットメールを送信しました。`);
+      } catch (error) {
+        console.error("Password reset error:", error);
+        this.app.showError("パスワードリセットメールの送信に失敗しました: " + error.message);
+      }
     }
   }
 

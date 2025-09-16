@@ -82,6 +82,9 @@ export class DeveloperPage {
           <li class="nav-item">
             <button class="nav-link" id="tenants-tab-btn" data-i18n="developer.tenant_management">テナント管理</button>
           </li>
+          <li class="nav-item">
+            <button class="nav-link" id="users-tab-btn">ユーザー管理</button>
+          </li>
         </ul>
 
         <div class="tab-content">
@@ -107,6 +110,25 @@ export class DeveloperPage {
                               <span class="visually-hidden">Loading...</span>
                             </div>
                           </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="users-view" class="d-none">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Firebase Authentication ユーザー</h5>
+                        <button class="btn btn-primary btn-sm" onclick="window.app.currentPage.refreshUsersList()">
+                            <i class="fas fa-sync-alt me-1"></i>更新
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="firebase-users-list">
+                            <div class="text-center p-3">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -207,6 +229,7 @@ export class DeveloperPage {
     // タブ切り替え
     document.getElementById('approvals-tab-btn').addEventListener('click', () => this.switchTab('approvals'));
     document.getElementById('tenants-tab-btn').addEventListener('click', () => this.switchTab('tenants'));
+    document.getElementById('users-tab-btn').addEventListener('click', () => this.switchTab('users'));
 
     // 管理者招待ボタン
     document.getElementById('invite-admin-btn').addEventListener('click', () => this.openInviteAdminModal());
@@ -579,8 +602,15 @@ export class DeveloperPage {
     this.selectedTab = tab;
     document.getElementById('approvals-view').classList.toggle('d-none', tab !== 'approvals');
     document.getElementById('tenants-view').classList.toggle('d-none', tab !== 'tenants');
+    document.getElementById('users-view').classList.toggle('d-none', tab !== 'users');
     document.getElementById('approvals-tab-btn').classList.toggle('active', tab === 'approvals');
     document.getElementById('tenants-tab-btn').classList.toggle('active', tab === 'tenants');
+    document.getElementById('users-tab-btn').classList.toggle('active', tab === 'users');
+
+    // ユーザータブが選択された場合、ユーザーリストを読み込み
+    if (tab === 'users') {
+      this.loadFirebaseUsers();
+    }
   }
 
   async approveAdmin(requestId, userId) {
@@ -788,5 +818,158 @@ export class DeveloperPage {
   async viewTenantDetails(tenantId) {
     // テナント詳細表示の実装（モーダルなど）
     this.app.showInfo(`テナントID: ${tenantId} の詳細表示機能は開発中です`);
+  }
+
+  async loadFirebaseUsers() {
+    const container = document.getElementById('firebase-users-list');
+
+    try {
+      container.innerHTML = `
+        <div class="text-center p-3">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-2 text-muted">Firestore からユーザーデータを読み込み中...</p>
+        </div>
+      `;
+
+      const db = getFirestore(this.app.auth.firebaseApp);
+
+      // global_usersコレクションから全ユーザーを取得
+      const globalUsersSnapshot = await getDocs(collection(db, "global_users"));
+      const globalUsers = globalUsersSnapshot.docs.map(doc => ({
+        id: doc.id,
+        email: doc.id,
+        ...doc.data()
+      }));
+
+      // usersコレクションからも取得（レガシー対応）
+      const usersSnapshot = await getDocs(collection(db, "users"));
+      const legacyUsers = usersSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      // 重複除去とマージ
+      const allUsers = [...globalUsers];
+      legacyUsers.forEach(user => {
+        if (!allUsers.find(gu => gu.email === user.email || gu.uid === user.uid)) {
+          allUsers.push(user);
+        }
+      });
+
+      this.renderFirebaseUsersList(allUsers);
+
+    } catch (error) {
+      console.error("Error loading Firebase users:", error);
+      container.innerHTML = `
+        <div class="alert alert-danger">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          ユーザーデータの読み込みに失敗しました: ${error.message}
+        </div>
+      `;
+    }
+  }
+
+  renderFirebaseUsersList(users) {
+    const container = document.getElementById('firebase-users-list');
+
+    if (users.length === 0) {
+      container.innerHTML = `
+        <div class="text-center p-4 text-muted">
+          <i class="fas fa-users fa-3x mb-3"></i>
+          <p>登録済みユーザーはありません</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>メールアドレス</th>
+              <th>ユーザー名</th>
+              <th>ロール</th>
+              <th>ステータス</th>
+              <th>テナント</th>
+              <th>作成日</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${users.map(user => this.renderFirebaseUserRow(user)).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  renderFirebaseUserRow(user) {
+    const statusBadge = user.status === 'active' ?
+      '<span class="badge bg-success">アクティブ</span>' :
+      '<span class="badge bg-warning">非アクティブ</span>';
+
+    const roleBadge = {
+      'admin': '<span class="badge bg-primary">管理者</span>',
+      'evaluator': '<span class="badge bg-info">評価者</span>',
+      'worker': '<span class="badge bg-secondary">作業員</span>',
+      'developer': '<span class="badge bg-danger">開発者</span>'
+    }[user.role] || '<span class="badge bg-light text-dark">不明</span>';
+
+    const createdDate = user.createdAt ?
+      new Date(user.createdAt.seconds * 1000).toLocaleDateString('ja-JP') :
+      '不明';
+
+    return `
+      <tr>
+        <td>${this.app.sanitizeHtml(user.email || user.id)}</td>
+        <td>${this.app.sanitizeHtml(user.name || 'N/A')}</td>
+        <td>${roleBadge}</td>
+        <td>${statusBadge}</td>
+        <td><small class="text-muted">${this.app.sanitizeHtml(user.tenantId || 'N/A')}</small></td>
+        <td><small class="text-muted">${createdDate}</small></td>
+        <td>
+          <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-warning btn-sm reset-password-btn"
+                    data-email="${user.email || user.id}"
+                    title="パスワードリセットメール送信">
+              <i class="fas fa-key"></i>
+            </button>
+            <button class="btn btn-outline-info btn-sm"
+                    onclick="window.app.currentPage.viewUserDetails('${user.uid || user.id}')"
+                    title="詳細表示">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  async refreshUsersList() {
+    if (this.selectedTab === 'users') {
+      await this.loadFirebaseUsers();
+    }
+  }
+
+  async sendPasswordReset(email) {
+    if (!email) return;
+
+    if (!confirm(`${email} にパスワードリセットメールを送信しますか？`)) return;
+
+    try {
+      await this.app.auth.sendPasswordResetEmail(email);
+      this.app.showSuccess(`${email} にパスワードリセットメールを送信しました。`);
+    } catch (error) {
+      console.error("Password reset error:", error);
+      this.app.showError(`パスワードリセットメールの送信に失敗しました: ${error.message}`);
+    }
+  }
+
+  async viewUserDetails(userId) {
+    // ユーザー詳細表示機能（今後実装）
+    this.app.showInfo('ユーザー詳細表示機能は開発中です。');
   }
 }
