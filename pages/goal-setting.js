@@ -59,10 +59,19 @@ export class GoalSettingPage {
   }
 
   async init() {
+    console.log('GoalSettingPage init called');
+    console.log('Current page instance:', this);
+    console.log('App current page before:', this.app.currentPage);
+
     this.app.currentPage = this;
+
+    console.log('App current page after:', this.app.currentPage);
+
     await this.loadInitialData();
     this.setupEventListeners();
     this.app.i18n.updateUI();
+
+    console.log('GoalSettingPage init completed');
   }
   
   async loadInitialData() {
@@ -218,6 +227,7 @@ export class GoalSettingPage {
 
   addGoal() {
     console.log('addGoal called - current goals:', this.goals.length);
+    console.log('addGoal stack trace:', new Error().stack);
 
     // Prevent duplicate processing
     if (this.isProcessing) {
@@ -233,10 +243,12 @@ export class GoalSettingPage {
         return;
       }
 
+      console.log('Before pushing goal - goals array:', JSON.stringify(this.goals));
       this.goals.push({
         text: '',
         weight: 0
       });
+      console.log('After pushing goal - goals array:', JSON.stringify(this.goals));
 
       console.log('Goal added - new count:', this.goals.length);
       this.renderGoals();
@@ -274,25 +286,25 @@ export class GoalSettingPage {
       return;
     }
 
-    container.innerHTML = this.goals.map((goal, index) => `
-      <div class="goal-item mb-3 p-3 border rounded">
+    const renderedHTML = this.goals.map((goal, index) => `
+      <div class="goal-item mb-3 p-3 border rounded" data-goal-id="${index}">
         <div class="row">
           <div class="col-md-7">
             <label class="form-label">目標 ${index + 1}</label>
-            <input type="text" class="form-control goal-text" 
-                   data-index="${index}" 
+            <input type="text" class="form-control goal-text"
+                   data-index="${index}"
                    value="${this.app.sanitizeHtml(goal.text)}"
                    placeholder="目標を入力してください">
           </div>
           <div class="col-md-3">
             <label class="form-label">ウェイト (%)</label>
-            <input type="number" class="form-control goal-weight" 
-                   data-index="${index}" 
+            <input type="number" class="form-control goal-weight"
+                   data-index="${index}"
                    value="${goal.weight}"
                    min="0" max="100" step="5">
           </div>
           <div class="col-md-2 d-flex align-items-end">
-            <button class="btn btn-outline-danger btn-sm w-100" 
+            <button class="btn btn-outline-danger btn-sm w-100"
                     onclick="window.app.currentPage.removeGoal(${index})">
               <i class="fas fa-trash"></i> 削除
             </button>
@@ -300,6 +312,14 @@ export class GoalSettingPage {
         </div>
       </div>
     `).join('');
+
+    console.log('Rendered HTML length:', renderedHTML.length);
+    console.log('Container children before:', container.children.length);
+
+    container.innerHTML = renderedHTML;
+
+    console.log('Container children after:', container.children.length);
+    console.log('Actual container innerHTML:', container.innerHTML.substring(0, 200) + '...');
 
     // Event delegation to avoid duplicate listeners
     console.log('Setting up goal input listeners');
