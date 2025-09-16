@@ -122,16 +122,22 @@ export class GoalSettingPage {
   }
 
   setupGoalInputListeners() {
+    console.log('setupGoalInputListeners called');
     const container = document.getElementById('goals-container');
-    if (!container) return;
+    if (!container) {
+      console.warn('Goals container not found in setupGoalInputListeners');
+      return;
+    }
 
     // Remove existing listener to prevent duplicates
     if (this.boundGoalInputHandler) {
+      console.log('Removing existing boundGoalInputHandler');
       container.removeEventListener('change', this.boundGoalInputHandler);
     }
 
     // Create bound handler
     this.boundGoalInputHandler = (e) => {
+      console.log('boundGoalInputHandler triggered for:', e.target.className);
       if (e.target.classList.contains('goal-text')) {
         const index = parseInt(e.target.dataset.index);
         if (!isNaN(index) && this.goals[index]) {
@@ -147,6 +153,7 @@ export class GoalSettingPage {
     };
 
     // Add single delegated event listener
+    console.log('Adding event listener to goals container');
     container.addEventListener('change', this.boundGoalInputHandler);
   }
 
@@ -201,6 +208,8 @@ export class GoalSettingPage {
   }
 
   addGoal() {
+    console.log('addGoal called - current goals:', this.goals.length);
+
     if (this.goals.length >= this.maxGoals) {
       this.app.showError(`最大${this.maxGoals}つまでの目標を設定できます`);
       return;
@@ -210,7 +219,8 @@ export class GoalSettingPage {
       text: '',
       weight: 0
     });
-    
+
+    console.log('Goal added - new count:', this.goals.length);
     this.renderGoals();
   }
 
@@ -221,8 +231,14 @@ export class GoalSettingPage {
   }
 
   renderGoals() {
+    console.log('renderGoals called - goals count:', this.goals.length);
     const container = document.getElementById('goals-container');
-    
+
+    if (!container) {
+      console.warn('Goals container not found');
+      return;
+    }
+
     if (this.goals.length === 0) {
       container.innerHTML = `
         <div class="text-center py-4 text-muted">
@@ -261,6 +277,7 @@ export class GoalSettingPage {
     `).join('');
 
     // Event delegation to avoid duplicate listeners
+    console.log('Setting up goal input listeners');
     this.setupGoalInputListeners();
   }
 
