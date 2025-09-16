@@ -586,7 +586,7 @@ export class API {
   async getUsers(statusFilter = null, options = {}) {
     try {
       console.log("API: Loading users...", statusFilter ? `with status filter: ${statusFilter}` : '');
-      
+
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
         throw new Error("ユーザー情報またはテナント情報が見つかりません");
@@ -594,10 +594,10 @@ export class API {
 
       // 一時認証システム使用時はモックデータを返す
       if (currentUser.isTemp || window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
-        console.log("API: Using mock evaluations for temporary authentication");
+        console.log("API: Using mock users for temporary authentication");
         const tempAuthModule = await import('./temp-auth-v2.js');
         const tempAuth = new tempAuthModule.TempAuth();
-        return tempAuth.getMockEvaluations(filters);
+        return tempAuth.getMockUsers(statusFilter);
       }
 
       const tenantId = currentUser.tenantId;
