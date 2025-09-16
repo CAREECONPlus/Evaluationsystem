@@ -541,7 +541,6 @@ export class OrganizationManagementPage {
       if (!this.organizationData.departments.includes(name)) {
         this.organizationData.departments.push(name);
         
-        // TODO: APIで保存（将来実装）
         console.log('Organization Management: Department added:', name);
         
         this.renderDepartmentsList();

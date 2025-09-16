@@ -66,7 +66,6 @@ export class EvaluationReportPage {
         this.subordinateIds = await this.getSubordinateIds();
       }
 
-      console.log(`Reports: User role initialized - ${this.userRole}`);
     } catch (error) {
       console.error('Reports: Failed to initialize user permissions:', error);
       this.userRole = 'worker';
@@ -97,7 +96,6 @@ export class EvaluationReportPage {
   async loadWorkerData() {
     try {
       const userId = this.currentUser.uid || this.currentUser.id;
-      console.log('Reports: Loading worker data for user:', userId);
       
       // Phase 3: ベンチマークデータ取得を試行
       const benchmarkData = await this.loadPersonalBenchmark(userId);
@@ -119,7 +117,6 @@ export class EvaluationReportPage {
       };
 
       if (benchmarkData) {
-        console.log('Reports: Enhanced worker data with benchmark');
         return {
           ...baseData,
           benchmark: benchmarkData,
@@ -143,7 +140,6 @@ export class EvaluationReportPage {
   async loadEvaluatorData() {
     try {
       const userId = this.currentUser.uid || this.currentUser.id;
-      console.log('Reports: Loading evaluator data for user:', userId);
 
       // 個人の評価データ
       const personalData = await this.loadWorkerData();
@@ -180,7 +176,6 @@ export class EvaluationReportPage {
    */
   async loadAdminData() {
     try {
-      console.log('Reports: Loading admin data for organization');
 
       // 個人の評価データ
       const personalData = await this.loadWorkerData();
@@ -190,7 +185,6 @@ export class EvaluationReportPage {
       const realDepartmentData = await this.loadRealDepartmentData();
 
       if (realOrgData && realDepartmentData) {
-        console.log('Reports: Using real organization data');
         return {
           personal: personalData,
           allEvaluations: [], // 新API経由で取得済み
@@ -209,7 +203,6 @@ export class EvaluationReportPage {
       }
 
       // フォールバック: 既存の実装
-      console.log('Reports: Falling back to existing data loading method');
       
       // 組織全体の評価データを取得
       const allEvaluations = await this.app.api.getEvaluations({});
@@ -238,7 +231,6 @@ export class EvaluationReportPage {
    */
   async loadRealOrgData() {
     try {
-      console.log('Reports: Attempting to load real organization data');
       
       // Phase 7: AnalyticsServiceを使用してデータ取得・分析
       const allEvaluationsData = await this.app.api.getEvaluations({});
@@ -248,7 +240,6 @@ export class EvaluationReportPage {
       const allUsers = Array.isArray(allUsersData) ? allUsersData : [];
       
       if (allEvaluations.length === 0) {
-        console.log('Reports: No evaluation data found');
         return null;
       }
 
@@ -260,7 +251,6 @@ export class EvaluationReportPage {
       const trendAnalysis = await this.analytics.analyzeTrendData(filteredEvaluations, this.currentTimeRange);
       const skillAnalysis = await this.analytics.analyzeSkillData(filteredEvaluations);
       
-      console.log('Reports: Real organization data loaded and analyzed successfully');
       return {
         departmentStats: departmentAnalysis.departmentStats,
         skillAnalysis: skillAnalysis,
@@ -280,7 +270,6 @@ export class EvaluationReportPage {
    */
   async loadRealDepartmentData() {
     try {
-      console.log('Reports: Loading real department data');
       
       // Phase 7: AnalyticsServiceを使用して部門データ取得・分析
       const allEvaluationsData = await this.app.api.getEvaluations({});
@@ -290,7 +279,6 @@ export class EvaluationReportPage {
       const allUsers = Array.isArray(allUsersData) ? allUsersData : [];
       
       if (allEvaluations.length === 0 || allUsers.length === 0) {
-        console.log('Reports: Insufficient data for department analysis');
         return null;
       }
 
@@ -331,7 +319,6 @@ export class EvaluationReportPage {
    */
   async loadPersonalBenchmark(userId) {
     try {
-      console.log('Reports: Loading personal benchmark data for:', userId);
       
       const benchmarkData = await this.app.api.getBenchmarkData(userId);
       
@@ -1270,7 +1257,6 @@ export class EvaluationReportPage {
       await this.renderImprovementPoints();
       await this.renderStrengthPoints();
 
-      console.log("Reports: Worker charts rendered successfully");
     } catch (error) {
       console.error("Reports: Failed to render worker charts:", error);
     }
@@ -1493,7 +1479,6 @@ export class EvaluationReportPage {
       await this.renderEvaluatorPersonalChart();
       await this.renderSubordinateComparisonChart();
 
-      console.log("Reports: Evaluator charts rendered successfully");
     } catch (error) {
       console.error("Reports: Failed to render evaluator charts:", error);
     }
@@ -1729,7 +1714,6 @@ export class EvaluationReportPage {
       await this.renderDepartmentPerformanceChart();
       await this.renderJobTypeSkillChart();
 
-      console.log("Reports: Admin charts rendered successfully");
     } catch (error) {
       console.error("Reports: Failed to render admin charts:", error);
     }
@@ -2665,7 +2649,6 @@ export class EvaluationReportPage {
   startAutoRefresh() {
     if (!this.autoRefreshEnabled || this.refreshInterval) return;
     
-    console.log('Reports: Starting auto refresh');
     this.refreshInterval = setInterval(async () => {
       try {
         await this.refreshData();
@@ -2679,12 +2662,10 @@ export class EvaluationReportPage {
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval);
       this.refreshInterval = null;
-      console.log('Reports: Auto refresh stopped');
     }
   }
 
   async refreshData() {
-    console.log('Reports: Refreshing data...');
     
     try {
       // 現在のローディング状態を表示
@@ -2706,7 +2687,6 @@ export class EvaluationReportPage {
       }
       
       this.hideRefreshIndicator();
-      console.log('Reports: Data refreshed successfully');
     } catch (error) {
       this.hideRefreshIndicator();
       console.error('Reports: Failed to refresh data:', error);
@@ -2750,7 +2730,6 @@ export class EvaluationReportPage {
    */
   async exportReportData(format = 'excel') {
     try {
-      console.log(`Reports: Exporting report data in ${format} format`);
       
       if (!this.reportData) {
         throw new Error('レポートデータが読み込まれていません');
@@ -2768,7 +2747,6 @@ export class EvaluationReportPage {
       const filename = this.generateExportFilename(format);
       await this.downloadExportFile(exportData, filename, format);
       
-      console.log('Reports: Export completed successfully');
     } catch (error) {
       console.error('Reports: Export failed:', error);
       alert('エクスポートに失敗しました: ' + error.message);

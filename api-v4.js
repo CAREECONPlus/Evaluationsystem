@@ -30,7 +30,6 @@ export class API {
 
     // 緊急モード時はFirestoreを初期化しない
     if (window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE || app.auth.useTemporaryAuth) {
-      console.log("API: Emergency mode detected - skipping Firestore initialization");
       this.db = null;
     } else {
       this.db = getFirestore(app.auth.firebaseApp);
@@ -404,8 +403,6 @@ export class API {
       const uid = this.auth.currentUser.uid;
       const email = this.auth.currentUser.email;
       
-      console.log("API: Current user data:");
-      console.log("API: Resolved user UID:", uid);
 
       // グローバルユーザーデータを優先して取得
       if (email) {
@@ -632,7 +629,7 @@ export class API {
       // Phase 2: 組織データの追加読み込み（オプション）
       if (options.includeOrgData) {
         try {
-          const orgStructure = await this.getOrganizationStructure();
+          await this.getOrganizationStructure();
           users.forEach(user => {
             user._orgData = {
               departmentName: user.department || '未設定',
@@ -1225,7 +1222,7 @@ export class API {
   /**
    * 評価一覧を取得
    */
-  async getEvaluations(filters = {}, options = {}) {
+  async getEvaluations(filters = {}) {
     try {
       
       const currentUser = await this.getCurrentUserData();
@@ -1283,95 +1280,6 @@ export class API {
     }
   }
 
-/**　
- * テナント内のユーザー一覧を取得（修正版）
- */
-async getUsers(statusFilter = null) {
-  try {
-    console.log("API: Loading users...", statusFilter ? `with status filter: ${statusFilter}` : '');
-    
-    const currentUser = await this.getCurrentUserData();
-    if (!currentUser || !currentUser.tenantId) {
-      throw new Error("ユーザー情報またはテナント情報が見つかりません");
-    }
-
-    // 一時認証システム使用時はモックデータを返す
-    if (currentUser && currentUser.isTemp) {
-      const tempAuthModule = await import('./temp-auth-v2.js');
-      return new tempAuthModule.TempAuth().getMockUsers(statusFilter);
-    }
-
-    // FORCE_TEMP_AUTHグローバルフラグをチェック
-    if (window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
-      const tempAuthModule = await import('./temp-auth-v2.js');
-      return new tempAuthModule.TempAuth().getMockUsers(statusFilter);
-    }
-
-    const tenantId = currentUser.tenantId;
-    console.log("API: Loading users for tenant:", tenantId);
-
-    // Firestoreが初期化されていない場合はエラーを回避
-    if (!this.db) {
-      console.warn("API: Firestore not initialized, returning empty users array");
-      return [];
-    }
-
-    // Firestoreクエリを構築
-    const usersQuery = query(
-      collection(this.db, "users"),
-      where("tenantId", "==", tenantId)
-    );
-
-    const usersSnapshot = await getDocs(usersQuery);
-    const users = [];
-
-    usersSnapshot.forEach((doc) => {
-      const userData = {
-        id: doc.id,
-        ...doc.data()
-      };
-      
-      // ステータスフィルタリング
-      if (statusFilter) {
-        if (userData.status === statusFilter) {
-          users.push(userData);
-        }
-      } else {
-        users.push(userData);
-      }
-    });
-
-    // クライアント側でソート
-    users.sort((a, b) => {
-      const aTime = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
-      const bTime = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
-      return bTime - aTime; // 降順
-    });
-
-    return users;
-
-  } catch (error) {
-    console.error("API: Error loading users:", error);
-    this.handleError(error, 'ユーザー一覧の読み込み');
-    throw error;
-  }
-}
-
-// ✅ 便利メソッドの追加（オプション）
-
-/**
- * アクティブユーザーのみ取得
- */
-async getActiveUsers() {
-  return await this.getUsers('active');
-}
-
-/**
- * 全ユーザー取得（明示的）
- */
-async getAllUsers() {
-  return await this.getUsers(null);
-}
 
   /**
    * 部下ユーザーの取得（評価者用）
@@ -1979,7 +1887,7 @@ async getAllUsers() {
   /**
    * 評価一覧を取得
    */
-  async getEvaluations(filters = {}, options = {}) {
+  async getEvaluations(filters = {}) {
     try {
       
       const currentUser = await this.getCurrentUserData();
@@ -3145,7 +3053,7 @@ async getAllUsers() {
   }
 
   // ベンチマークデータ取得
-  async getBenchmarkData(userId) {
+  async getBenchmarkData() {
     try {
       // 一時認証システム使用時はモックデータを返す
       if (window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE || 

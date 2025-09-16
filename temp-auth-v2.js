@@ -341,48 +341,7 @@ class TempAuth {
     ];
   }
 
-  getMockEvaluationPeriods() {
-    return [
-      {
-        id: 'period_2024q1',
-        name: '2024年第1四半期',
-        startDate: '2024-01-01',
-        endDate: '2024-03-31',
-        status: 'active',
-        tenantId: 'demo-tenant'
-      },
-      {
-        id: 'period_2024q2',
-        name: '2024年第2四半期', 
-        startDate: '2024-04-01',
-        endDate: '2024-06-30',
-        status: 'upcoming',
-        tenantId: 'demo-tenant'
-      }
-    ];
-  }
 
-  getMockBenchmarkData() {
-    return {
-      averageScores: {
-        overall: 4.2,
-        byRole: {
-          worker: 4.1,
-          supervisor: 4.4,
-          evaluator: 4.3
-        },
-        byPeriod: {
-          'period_2024q1': 4.0,
-          'period_2024q2': 4.3
-        }
-      },
-      trends: [
-        { period: '2024-01', avgScore: 3.9 },
-        { period: '2024-02', avgScore: 4.1 },
-        { period: '2024-03', avgScore: 4.3 }
-      ]
-    };
-  }
 
   getMockEvaluationStructures() {
     return [
