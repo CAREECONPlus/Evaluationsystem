@@ -29,14 +29,19 @@ export class Auth {
   async init() {
     try {
       
-      // 複数の条件で一時認証モードを検出
-      const isEmergencyMode = 
-        window.FORCE_TEMP_AUTH || 
+      // Force production mode - disable emergency mode detection
+      const isEmergencyMode = false;
+
+      // Original emergency mode detection (disabled for production)
+      /*
+      const isEmergencyMode =
+        window.FORCE_TEMP_AUTH ||
         window.DISABLE_FIREBASE ||
         document.documentElement.innerHTML.includes('EMERGENCY MODE') ||
         window.location.search.includes('temp_auth=true') ||
         localStorage.getItem('temp_auth_mode') === 'true' ||
         sessionStorage.getItem('emergency_mode') === 'true'
+      */
       
       if (isEmergencyMode) {
         console.log("Auth: Detected emergency/temporary authentication mode - skipping Firebase initialization")
@@ -54,11 +59,17 @@ export class Auth {
       }
       
       // 環境変数からFirebase設定を取得
+      console.log("Auth: Loading Firebase configuration...");
       const firebaseConfig = await environment.getFirebaseConfig()
-      
-      
+      console.log("Auth: Firebase config loaded:", {
+        projectId: firebaseConfig.projectId,
+        authDomain: firebaseConfig.authDomain,
+        hasApiKey: !!firebaseConfig.apiKey
+      });
+
       // Firebase設定の妥当性チェック
       if (!firebaseConfig.projectId || !firebaseConfig.apiKey) {
+        console.error("Auth: Firebase configuration is incomplete:", firebaseConfig);
         throw new Error("Firebase configuration is incomplete. Missing projectId or apiKey.")
       }
       
@@ -222,13 +233,18 @@ export class Auth {
   }
 
   async login(email, password) {
-    // EMERGENCY: Force temporary authentication with multiple detection methods
-    const isEmergencyMode = 
-      window.FORCE_TEMP_AUTH || 
+    // Force production Firebase authentication
+    const isEmergencyMode = false;
+
+    // Original emergency mode detection (disabled for production)
+    /*
+    const isEmergencyMode =
+      window.FORCE_TEMP_AUTH ||
       window.DISABLE_FIREBASE ||
       this.useTemporaryAuth ||
       document.documentElement.innerHTML.includes('EMERGENCY MODE') ||
       !this.auth || !this.db
+    */
 
     if (isEmergencyMode) {
       console.warn("EMERGENCY: Using temporary authentication (bypassing Firebase)")
