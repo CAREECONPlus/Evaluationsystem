@@ -11,6 +11,7 @@ export class GoalSettingPage {
     this.existingGoalDoc = null;
     this.totalWeight = 0;
     this.maxGoals = 5;
+    this.isProcessing = false; // Prevent duplicate processing
   }
 
   async render() {
@@ -91,8 +92,16 @@ export class GoalSettingPage {
 
     // Bind methods to prevent memory leaks
     this.boundOnPeriodChange = (e) => this.onPeriodChange(e);
-    this.boundAddGoal = () => this.addGoal();
-    this.boundSubmitGoals = () => this.submitGoals();
+    this.boundAddGoal = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.addGoal();
+    };
+    this.boundSubmitGoals = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.submitGoals();
+    };
 
     // Add event listeners
     document.getElementById('period-select').addEventListener('change', this.boundOnPeriodChange);
@@ -210,18 +219,34 @@ export class GoalSettingPage {
   addGoal() {
     console.log('addGoal called - current goals:', this.goals.length);
 
-    if (this.goals.length >= this.maxGoals) {
-      this.app.showError(`最大${this.maxGoals}つまでの目標を設定できます`);
+    // Prevent duplicate processing
+    if (this.isProcessing) {
+      console.log('addGoal already processing, skipping');
       return;
     }
 
-    this.goals.push({
-      text: '',
-      weight: 0
-    });
+    this.isProcessing = true;
 
-    console.log('Goal added - new count:', this.goals.length);
-    this.renderGoals();
+    try {
+      if (this.goals.length >= this.maxGoals) {
+        this.app.showError(`最大${this.maxGoals}つまでの目標を設定できます`);
+        return;
+      }
+
+      this.goals.push({
+        text: '',
+        weight: 0
+      });
+
+      console.log('Goal added - new count:', this.goals.length);
+      this.renderGoals();
+    } finally {
+      // Reset processing flag after a short delay
+      setTimeout(() => {
+        this.isProcessing = false;
+        console.log('addGoal processing flag reset');
+      }, 100);
+    }
   }
 
   removeGoal(index) {
