@@ -10,7 +10,7 @@ class TempAuth {
       {
         id: 'demo_admin',
         email: 'admin@demo.com',
-        password: 'password123',
+        password: 'admin123',
         name: '管理者（デモ）',
         role: 'admin',
         tenantId: 'demo-tenant',
@@ -18,8 +18,8 @@ class TempAuth {
       },
       {
         id: 'demo_evaluator',
-        email: 'evaluator@demo.com', 
-        password: 'password123',
+        email: 'evaluator@demo.com',
+        password: 'eval123',
         name: '評価者（デモ）',
         role: 'evaluator',
         tenantId: 'demo-tenant',
@@ -28,7 +28,7 @@ class TempAuth {
       {
         id: 'demo_supervisor',
         email: 'supervisor@demo.com',
-        password: 'password123',
+        password: 'super123',
         name: '監督者（デモ）',
         role: 'supervisor',
         tenantId: 'demo-tenant',
@@ -37,7 +37,7 @@ class TempAuth {
       {
         id: 'demo_worker',
         email: 'worker@demo.com',
-        password: 'password123',
+        password: 'work123',
         name: '作業員（デモ）',
         role: 'worker',
         tenantId: 'demo-tenant',
@@ -234,7 +234,7 @@ class TempAuth {
         { id: 'construction', name: '建設作業員', tenantId: 'demo-tenant' },
         { id: 'electrician', name: '電気工事士', tenantId: 'demo-tenant' }
       ],
-      periods: [  // periodsとして返す（settingsページで期待される形式）
+      periods: [
         {
           id: '2024q1',
           name: '2024年第1四半期',
@@ -252,19 +252,48 @@ class TempAuth {
           endDate: '2024-06-30'
         }
       ],
-      evaluationPeriods: [  // 後方互換性のため両方提供
-        {
-          id: '2024q1',
-          name: '2024年第1四半期',
-          status: 'active',
+      structures: {
+        'construction': {
+          id: 'construction',
+          jobTypeId: 'construction',
           tenantId: 'demo-tenant',
-          startDate: '2024-01-01',
-          endDate: '2024-03-31'
+          categories: [
+            {
+              id: 'tech_skills',
+              name: '技術スキル',
+              items: [
+                { id: 'safety', name: '安全意識', weight: 30 },
+                { id: 'quality', name: '作業品質', weight: 25 }
+              ]
+            },
+            {
+              id: 'teamwork',
+              name: 'チームワーク',
+              items: [
+                { id: 'communication', name: 'コミュニケーション', weight: 25 },
+                { id: 'cooperation', name: '協調性', weight: 20 }
+              ]
+            }
+          ]
+        },
+        'electrician': {
+          id: 'electrician',
+          jobTypeId: 'electrician',
+          tenantId: 'demo-tenant',
+          categories: [
+            {
+              id: 'electrical_skills',
+              name: '電気工事スキル',
+              items: [
+                { id: 'wiring', name: '配線作業', weight: 40 },
+                { id: 'electrical_safety', name: '電気安全', weight: 35 },
+                { id: 'troubleshooting', name: 'トラブルシューティング', weight: 25 }
+              ]
+            }
+          ]
         }
-      ],
-      evaluationStructures: [
-        { id: 'basic', name: '基本評価項目', tenantId: 'demo-tenant' }
-      ]
+      },
+      tenantId: 'demo-tenant'
     };
   }
 

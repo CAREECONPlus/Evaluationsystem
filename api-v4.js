@@ -1020,6 +1020,7 @@ export class API {
     }
   }
 
+
   // ===== Dashboard Management =====
 
   /**
@@ -1027,7 +1028,6 @@ export class API {
    */
   async getDashboardStats() {
     try {
-      
       const currentUser = await this.getCurrentUserData();
       if (!currentUser || !currentUser.tenantId) {
         throw new Error("ユーザー情報またはテナント情報が見つかりません");
@@ -1035,8 +1035,8 @@ export class API {
 
       // 一時認証システム使用時はモックデータを返す
       if (currentUser.isTemp || window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
-        console.log("API: Using mock evaluations for temporary authentication");
-        const tempAuthModule = await import('./temp-auth-v2.js');
+        console.log("API: Using mock dashboard stats for temporary authentication");
+        const tempAuthModule = await import("./temp-auth-v2.js");
         const tempAuth = new tempAuthModule.TempAuth();
         return tempAuth.getMockDashboardStats();
       }
@@ -1063,7 +1063,7 @@ export class API {
       // ユーザー統計
       usersSnapshot.forEach(doc => {
         const userData = doc.data();
-        if (userData.status === 'active') {
+        if (userData.status === "active") {
           stats.activeUsers++;
         }
       });
@@ -1071,7 +1071,7 @@ export class API {
       // 評価統計
       evaluationsSnapshot.forEach(doc => {
         const evalData = doc.data();
-        if (evalData.status === 'completed') {
+        if (evalData.status === "completed") {
           stats.completedEvaluations++;
         }
       });
@@ -1079,7 +1079,7 @@ export class API {
       // 目標統計
       goalsSnapshot.forEach(doc => {
         const goalData = doc.data();
-        if (goalData.status === 'completed') {
+        if (goalData.status === "completed") {
           stats.completedGoals++;
         }
       });
@@ -1088,7 +1088,7 @@ export class API {
 
     } catch (error) {
       console.error("API: Error loading dashboard stats:", error);
-      this.handleError(error, 'ダッシュボード統計の読み込み');
+      this.handleError(error, "ダッシュボード統計の読み込み");
       throw error;
     }
   }
@@ -1685,78 +1685,6 @@ export class API {
     }
   }
 
-  // ===== Dashboard Management =====
-
-  /**
-   * ダッシュボード統計データを取得
-   */
-  async getDashboardStats() {
-    try {
-      
-      const currentUser = await this.getCurrentUserData();
-      if (!currentUser || !currentUser.tenantId) {
-        throw new Error("ユーザー情報またはテナント情報が見つかりません");
-      }
-
-      // 一時認証システム使用時はモックデータを返す
-      if (currentUser.isTemp || window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE) {
-        console.log("API: Using mock evaluations for temporary authentication");
-        const tempAuthModule = await import('./temp-auth-v2.js');
-        const tempAuth = new tempAuthModule.TempAuth();
-        return tempAuth.getMockDashboardStats();
-      }
-
-      const tenantId = currentUser.tenantId;
-
-      // 各統計データを並行取得
-      const [usersSnapshot, evaluationsSnapshot, goalsSnapshot] = await Promise.all([
-        getDocs(query(collection(this.db, "users"), where("tenantId", "==", tenantId))),
-        getDocs(query(collection(this.db, "evaluations"), where("tenantId", "==", tenantId))),
-        getDocs(query(collection(this.db, "qualitativeGoals"), where("tenantId", "==", tenantId)))
-      ]);
-
-      // 統計を計算
-      const stats = {
-        totalUsers: usersSnapshot.size,
-        activeUsers: 0,
-        totalEvaluations: evaluationsSnapshot.size,
-        completedEvaluations: 0,
-        totalGoals: goalsSnapshot.size,
-        completedGoals: 0
-      };
-
-      // ユーザー統計
-      usersSnapshot.forEach(doc => {
-        const userData = doc.data();
-        if (userData.status === 'active') {
-          stats.activeUsers++;
-        }
-      });
-
-      // 評価統計
-      evaluationsSnapshot.forEach(doc => {
-        const evalData = doc.data();
-        if (evalData.status === 'completed') {
-          stats.completedEvaluations++;
-        }
-      });
-
-      // 目標統計
-      goalsSnapshot.forEach(doc => {
-        const goalData = doc.data();
-        if (goalData.status === 'completed') {
-          stats.completedGoals++;
-        }
-      });
-
-      return stats;
-
-    } catch (error) {
-      console.error("API: Error loading dashboard stats:", error);
-      this.handleError(error, 'ダッシュボード統計の読み込み');
-      throw error;
-    }
-  }
 
   /**
    * 最近の評価を取得
