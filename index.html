@@ -107,7 +107,17 @@
         console.log('Clearing old emergency mode settings...');
         localStorage.removeItem('temp_auth_mode');
         sessionStorage.removeItem('emergency_mode');
-        console.log('Emergency mode settings cleared');
+
+        // Clear additional cache-related items
+        localStorage.removeItem('emergency_mode');
+        sessionStorage.removeItem('temp_auth_mode');
+
+        // Clear any URL parameters that might trigger emergency mode
+        if (window.location.search.includes('temp_auth=true')) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        console.log('Emergency mode settings and URL parameters cleared');
 
         // Firebase production mode
         window.FORCE_TEMP_AUTH = false;
@@ -116,7 +126,6 @@
         console.log('Production mode settings:', {
             FORCE_TEMP_AUTH: window.FORCE_TEMP_AUTH,
             DISABLE_FIREBASE: window.DISABLE_FIREBASE,
-            hasEmergencyInDOM: document.documentElement.innerHTML.includes('EMERGENCY'),
             localStorage_temp_auth: localStorage.getItem('temp_auth_mode'),
             sessionStorage_emergency: sessionStorage.getItem('emergency_mode'),
             url_params: window.location.search
