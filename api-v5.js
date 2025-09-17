@@ -410,14 +410,14 @@ export class API {
         thisDbDetails: {
           type: typeof this.db,
           constructor: this.db?.constructor?.name,
-          isFirestore: this.db?._delegate !== undefined,
+          hasApp: !!this.db?.app,
           hasApp: !!this.db?.app
         },
         dbToUse: dbToUse,
         dbToUseDetails: {
           type: typeof dbToUse,
           constructor: dbToUse?.constructor?.name,
-          isFirestore: dbToUse?._delegate !== undefined,
+          hasApp: !!dbToUse?.app,
           hasApp: !!dbToUse?.app
         },
         collection: "users",
@@ -427,26 +427,59 @@ export class API {
         authDbDetails: {
           type: typeof this.app.auth.db,
           constructor: this.app.auth.db?.constructor?.name,
-          isFirestore: this.app.auth.db?._delegate !== undefined
+          hasApp: !!this.app.auth.db?.app
         }
       });
 
-      // より安全なFirestore参照の取得
+      // より安全なFirestore参照の取得（v10.12.2対応）
       let safeDb = dbToUse;
-      if (!safeDb || typeof safeDb !== 'object' || !safeDb._delegate) {
-        console.log("API v5: Invalid database reference, trying auth.db");
+
+      // Firebase v10.12.2対応の包括的検証
+      const isValidFirestore = (db) => {
+        if (!db || typeof db !== 'object') return false;
+        // 複数の検証方法を試す（バージョン対応）
+        return (
+          db._delegate !== undefined ||  // 旧バージョン
+          db.app !== undefined ||        // v10.x標準
+          db._databaseId !== undefined || // 内部プロパティ
+          typeof db.collection === 'function' || // メソッドチェック（v9）
+          db.type === 'firestore'       // v10+
+        );
+      };
+
+      console.log("API v5: Validating database references:", {
+        dbToUseValid: isValidFirestore(dbToUse),
+        authDbValid: isValidFirestore(this.app.auth.db),
+        hasFirebaseApp: !!this.app.auth.firebaseApp
+      });
+
+      if (!isValidFirestore(safeDb)) {
+        console.log("API v5: Primary database invalid, trying auth.db");
         safeDb = this.app.auth.db;
       }
 
-      if (!safeDb || typeof safeDb !== 'object' || !safeDb._delegate) {
-        console.error("API v5: No valid Firestore database available");
+      if (!isValidFirestore(safeDb)) {
+        console.log("API v5: Auth.db also invalid, creating fresh Firestore instance");
+        try {
+          if (this.app.auth.firebaseApp) {
+            safeDb = getFirestore(this.app.auth.firebaseApp);
+            console.log("API v5: Created fresh Firestore instance:", isValidFirestore(safeDb));
+          }
+        } catch (firestoreError) {
+          console.error("API v5: Failed to create fresh Firestore instance:", firestoreError);
+        }
+      }
+
+      if (!isValidFirestore(safeDb)) {
+        console.error("API v5: No valid Firestore database available after all attempts");
         throw new Error("Firestore database is not properly initialized");
       }
 
       console.log("API v5: Using validated Firestore database:", {
         type: typeof safeDb,
         constructor: safeDb?.constructor?.name,
-        isFirestore: safeDb?._delegate !== undefined
+        hasApp: !!safeDb?.app,
+        appName: safeDb?.app?.name
       });
 
       const userDoc = await getDoc(doc(safeDb, "users", uid));

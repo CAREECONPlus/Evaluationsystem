@@ -1,5 +1,5 @@
 import { i18n } from "./i18n-v2.js?v=20250116-2"
-import { API } from "./api-v5.js?v=20250917-fix1"
+import { API } from "./api-v5.js?v=20250917-fix2"
 import { Auth } from "./auth-v4.js"
 import { Router } from "./router.js?v=20250116-2"
 import { HeaderComponent } from "./components/header.js?v=20250116-2"
