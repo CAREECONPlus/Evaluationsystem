@@ -367,7 +367,14 @@ export class API {
       console.log("API: getUserProfile - Firestore state:", {
         hasDb: !!this.db,
         dbType: typeof this.db,
-        isTemp: this.app.auth.currentUser?.isTemp
+        dbConstructor: this.db?.constructor?.name,
+        dbApp: !!this.db?.app,
+        dbAppName: this.db?.app?.name,
+        dbAppOptions: this.db?.app?.options,
+        authDb: !!this.app.auth.db,
+        authDbSame: this.db === this.app.auth.db,
+        isTemp: this.app.auth.currentUser?.isTemp,
+        actualDbContent: this.db
       });
 
       // 一時認証システム使用時はモックデータを返す
@@ -386,13 +393,27 @@ export class API {
       }
 
       // Firestoreが初期化されていない場合はエラーを回避
-      if (!this.db) {
-        console.warn("API: Firestore not initialized for getUserProfile");
+      let dbToUse = this.db;
+      if (!this.db && this.app.auth.db) {
+        console.log("API: Using auth.db instead of this.db");
+        dbToUse = this.app.auth.db;
+      }
+
+      if (!dbToUse) {
+        console.warn("API: No Firestore database available for getUserProfile");
         return null;
       }
       
       // まずusersコレクションから取得を試みる
-      const userDoc = await getDoc(doc(this.db, "users", uid));
+      console.log("API: About to call doc() with:", {
+        thisDb: this.db,
+        dbToUse: dbToUse,
+        collection: "users",
+        uid: uid,
+        docFunction: typeof doc
+      });
+
+      const userDoc = await getDoc(doc(dbToUse, "users", uid));
       if (userDoc.exists()) {
         const userData = userDoc.data();
         return {
@@ -404,7 +425,7 @@ export class API {
 
       // global_usersからも検索（メールベースなのでcurrentUserからメール取得）
       if (this.auth.currentUser && this.auth.currentUser.email) {
-        const globalUserDoc = await getDoc(doc(this.db, "global_users", this.auth.currentUser.email));
+        const globalUserDoc = await getDoc(doc(dbToUse, "global_users", this.auth.currentUser.email));
         if (globalUserDoc.exists()) {
           const userData = globalUserDoc.data();
           return {
