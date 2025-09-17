@@ -28,11 +28,21 @@ export class API {
     this.app = app;
     this.auth = app.auth;
 
+    console.log("API: Initializing with auth state:", {
+      FORCE_TEMP_AUTH: window.FORCE_TEMP_AUTH,
+      DISABLE_FIREBASE: window.DISABLE_FIREBASE,
+      useTemporaryAuth: app.auth.useTemporaryAuth,
+      hasFirebaseApp: !!app.auth.firebaseApp
+    });
+
     // 緊急モード時はFirestoreを初期化しない
     if (window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE || app.auth.useTemporaryAuth) {
+      console.log("API: Emergency mode detected - skipping Firestore initialization");
       this.db = null;
     } else {
+      console.log("API: Initializing Firestore database");
       this.db = getFirestore(app.auth.firebaseApp);
+      console.log("API: Firestore database initialized:", !!this.db);
     }
 
     this.multilingual = new MultilingualAPI(app);
