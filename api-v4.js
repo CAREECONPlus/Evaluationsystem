@@ -341,9 +341,16 @@ export class API {
    */
   async getUserProfile(uid) {
     try {
-      
+      console.log("API: getUserProfile called with uid:", uid);
+      console.log("API: getUserProfile - Firestore state:", {
+        hasDb: !!this.db,
+        dbType: typeof this.db,
+        isTemp: this.app.auth.currentUser?.isTemp
+      });
+
       // 一時認証システム使用時はモックデータを返す
       if (this.app.auth.currentUser && this.app.auth.currentUser.isTemp) {
+        console.log("API: Using temporary auth user data");
         return {
           id: uid,
           uid: uid,
