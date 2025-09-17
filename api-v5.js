@@ -405,15 +405,51 @@ export class API {
       }
       
       // まずusersコレクションから取得を試みる
-      console.log("API: About to call doc() with:", {
+      console.log("API v5: About to call doc() with enhanced debugging:", {
         thisDb: this.db,
+        thisDbDetails: {
+          type: typeof this.db,
+          constructor: this.db?.constructor?.name,
+          isFirestore: this.db?._delegate !== undefined,
+          hasApp: !!this.db?.app
+        },
         dbToUse: dbToUse,
+        dbToUseDetails: {
+          type: typeof dbToUse,
+          constructor: dbToUse?.constructor?.name,
+          isFirestore: dbToUse?._delegate !== undefined,
+          hasApp: !!dbToUse?.app
+        },
         collection: "users",
         uid: uid,
-        docFunction: typeof doc
+        docFunction: typeof doc,
+        authDb: this.app.auth.db,
+        authDbDetails: {
+          type: typeof this.app.auth.db,
+          constructor: this.app.auth.db?.constructor?.name,
+          isFirestore: this.app.auth.db?._delegate !== undefined
+        }
       });
 
-      const userDoc = await getDoc(doc(dbToUse, "users", uid));
+      // より安全なFirestore参照の取得
+      let safeDb = dbToUse;
+      if (!safeDb || typeof safeDb !== 'object' || !safeDb._delegate) {
+        console.log("API v5: Invalid database reference, trying auth.db");
+        safeDb = this.app.auth.db;
+      }
+
+      if (!safeDb || typeof safeDb !== 'object' || !safeDb._delegate) {
+        console.error("API v5: No valid Firestore database available");
+        throw new Error("Firestore database is not properly initialized");
+      }
+
+      console.log("API v5: Using validated Firestore database:", {
+        type: typeof safeDb,
+        constructor: safeDb?.constructor?.name,
+        isFirestore: safeDb?._delegate !== undefined
+      });
+
+      const userDoc = await getDoc(doc(safeDb, "users", uid));
       if (userDoc.exists()) {
         const userData = userDoc.data();
         return {
@@ -425,7 +461,7 @@ export class API {
 
       // global_usersからも検索（メールベースなのでcurrentUserからメール取得）
       if (this.auth.currentUser && this.auth.currentUser.email) {
-        const globalUserDoc = await getDoc(doc(dbToUse, "global_users", this.auth.currentUser.email));
+        const globalUserDoc = await getDoc(doc(safeDb, "global_users", this.auth.currentUser.email));
         if (globalUserDoc.exists()) {
           const userData = globalUserDoc.data();
           return {
