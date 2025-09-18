@@ -23,6 +23,7 @@ export class Auth {
     this.db = null
     this.authStateUnsubscribe = null
     this.isInitialized = false
+    this.useTemporaryAuth = false // 本番モードで常にfalse
     
   }
 
@@ -80,6 +81,7 @@ export class Auth {
     } catch (error) {
       console.error("Auth: Firebase initialization failed:", error)
       this.isInitialized = false
+      this.useTemporaryAuth = false // エラー時も緊急モードに入らない
       throw error
     }
   }

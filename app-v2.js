@@ -35,7 +35,7 @@ class App {
     const initTimeout = setTimeout(() => {
       console.error("Application initialization timeout")
       this.showInitializationError("初期化がタイムアウトしました。ページを再読み込みしてください。")
-    }, 15000) // 15秒のタイムアウト
+    }, 10000) // 10秒のタイムアウト
 
     try {
       await this.auth.init()
@@ -45,7 +45,7 @@ class App {
       try {
         await Promise.race([
           this.auth.listenForAuthChanges(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error("Auth timeout")), 15000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Auth timeout")), 8000))
         ])
       } catch (authError) {
         if (authError.message === "Auth timeout") {
