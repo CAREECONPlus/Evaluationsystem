@@ -123,7 +123,29 @@ class App {
     // i18nシステムをグローバルに公開
     window.i18n = this.i18n;
     window.app = this;
-    
+
+    // GitHub Pages環境では即座に翻訳を適用
+    if (window.GITHUB_PAGES_MODE) {
+      console.log('[app] Applying translations immediately for GitHub Pages');
+      this.i18n.applyTranslations();
+    }
+
+    // 言語変更イベントリスナーを設定
+    window.addEventListener('languageChanged', (event) => {
+      console.log('[app] Language changed to:', event.detail.language);
+      // 全体の翻訳を再適用
+      setTimeout(() => {
+        this.i18n.applyTranslations();
+        // HeaderとSidebarを再レンダリング
+        if (this.header) {
+          document.getElementById('header-container').innerHTML = this.header.render();
+        }
+        if (this.sidebar) {
+          document.getElementById('sidebar-container').innerHTML = this.sidebar.render();
+        }
+      }, 100);
+    });
+
     // デバッグ用グローバル関数
     window.forceLogout = () => {
       console.log("=== FORCE LOGOUT CALLED ===")

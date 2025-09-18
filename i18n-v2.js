@@ -1013,14 +1013,35 @@ function createLanguageSwitcher() {
   return switcher;
 }
 
-// DOM読み込み完了時の自動初期化
+// DOM読み込み完了時の自動初期化（GitHub Pages対応）
 document.addEventListener('DOMContentLoaded', () => {
+  // GitHub Pages環境での初期化ログ
+  if (window.GITHUB_PAGES_MODE) {
+    console.log('[i18n] Initializing for GitHub Pages mode');
+    console.log('[i18n] Current language:', i18n.getCurrentLanguage());
+    console.log('[i18n] Supported languages:', i18n.getSupportedLanguages());
+  }
+
   // 翻訳を適用
   i18n.applyTranslations();
-  
-  // 言語切り替えボタンを追加（オプション）
-  if (!document.querySelector('.language-switcher')) {
+
+  // GitHub Pages環境では自動言語スイッチャーは作成しない
+  // HeaderComponentが担当
+  if (!window.GITHUB_PAGES_MODE && !document.querySelector('.language-switcher')) {
     document.body.appendChild(createLanguageSwitcher());
+  }
+
+  // GitHub Pages環境での翻訳確認
+  if (window.GITHUB_PAGES_MODE) {
+    const testElements = document.querySelectorAll('[data-i18n]');
+    console.log(`[i18n] Found ${testElements.length} elements with data-i18n attributes`);
+
+    // サンプル翻訳テスト
+    const testKeys = ['app.title', 'nav.dashboard', 'users.title', 'common.save'];
+    testKeys.forEach(key => {
+      const result = i18n.t(key);
+      console.log(`[i18n] Test translation ${key}: ${result}`);
+    });
   }
 });
 
