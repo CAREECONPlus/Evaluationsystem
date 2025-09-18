@@ -139,6 +139,21 @@
 
         console.log('GitHub Pages Cache Busting: Version', cacheVersion);
 
+        // GitHub Pages specific cache invalidation
+        if (window.location.hostname.includes('github.io')) {
+            console.log('GitHub Pages detected - applying enhanced cache busting');
+            // Force reload if we detect stale content
+            const buildVersion = '20250118-v5';
+            const lastVersion = localStorage.getItem('app_version');
+            if (lastVersion && lastVersion !== buildVersion) {
+                console.log('Version mismatch detected, clearing cache');
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.reload(true);
+            }
+            localStorage.setItem('app_version', buildVersion);
+        }
+
         try {
             import(`./app-v2.js?v=${cacheVersion}`).then(module => {
                 const App = module.default;
