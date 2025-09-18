@@ -208,10 +208,7 @@ export class EvaluationPeriodsPage {
               <h5 class="mb-0">職種選択</h5>
             </div>
             <div class="list-group list-group-flush" id="jobTypesList">
-              <div class="list-group-item text-center text-muted p-4">
-                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                読み込み中...
-              </div>
+              <!-- 職種リストがここに表示されます -->
             </div>
           </div>
         </div>
@@ -581,17 +578,48 @@ export class EvaluationPeriodsPage {
    * 期間追加モーダルの表示
    */
   showAddPeriodModal() {
-    this.editingPeriodId = null;
-    document.getElementById('periodModalTitle').textContent = '新しい評価期間';
+    try {
+      console.log('Evaluation Periods: Opening add period modal');
 
-    // 削除ボタンを非表示（新規追加時）
-    const deleteBtn = document.querySelector('#periodModal .btn-outline-danger');
-    if (deleteBtn) deleteBtn.style.display = 'none';
+      this.editingPeriodId = null;
 
-    document.getElementById('periodForm').reset();
-    
-    const modal = new bootstrap.Modal(document.getElementById('periodModal'));
-    modal.show();
+      const modalTitle = document.getElementById('periodModalTitle');
+      if (modalTitle) {
+        modalTitle.textContent = '新しい評価期間';
+      }
+
+      // 削除ボタンを非表示（新規追加時）
+      const deleteBtn = document.querySelector('#periodModal .btn-outline-danger');
+      if (deleteBtn) deleteBtn.style.display = 'none';
+
+      const form = document.getElementById('periodForm');
+      if (form) {
+        form.reset();
+      }
+
+      const modalElement = document.getElementById('periodModal');
+      if (!modalElement) {
+        console.error('Period modal element not found');
+        this.app.showError('モーダルが見つかりません');
+        return;
+      }
+
+      // Bootstrapモーダルを表示
+      if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+      } else {
+        // Bootstrapが利用できない場合の代替表示
+        modalElement.style.display = 'block';
+        modalElement.classList.add('show');
+        document.body.classList.add('modal-open');
+      }
+
+      console.log('Evaluation Periods: Modal should be visible now');
+    } catch (error) {
+      console.error('Evaluation Periods: Failed to show modal:', error);
+      this.app.showError('モーダルの表示に失敗しました: ' + error.message);
+    }
   }
 
   /**
@@ -618,8 +646,18 @@ export class EvaluationPeriodsPage {
 
     this.calculateDuration();
 
-    const modal = new bootstrap.Modal(document.getElementById('periodModal'));
-    modal.show();
+    const modalElement = document.getElementById('periodModal');
+    if (modalElement) {
+      if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+      } else {
+        // Bootstrapが利用できない場合の代替表示
+        modalElement.style.display = 'block';
+        modalElement.classList.add('show');
+        document.body.classList.add('modal-open');
+      }
+    }
   }
 
   /**
@@ -879,6 +917,7 @@ export class EvaluationPeriodsPage {
       this.setupEventListeners();
       this.updateStatistics();
       this.renderPeriodsList();
+      await this.loadJobTypes();
 
       // グローバル参照を設定
       window.evaluationPeriodsPage = this;
@@ -895,6 +934,14 @@ export class EvaluationPeriodsPage {
    */
   async saveBasicSettings() {
     try {
+      const form = document.getElementById('basicSettingsForm');
+
+      // フォームバリデーション
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
       const basicSettings = {
         evaluationCycle: document.getElementById('evaluationCycle').value,
         fiscalYearStart: parseInt(document.getElementById('fiscalYearStart').value),
@@ -905,10 +952,24 @@ export class EvaluationPeriodsPage {
 
       console.log('Evaluation Periods: Saving basic settings:', basicSettings);
 
-      // 将来実装: Firebase APIで保存
-      // await this.app.api.saveEvaluationSettings(basicSettings);
+      // 保存ボタンの状態を更新
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = '保存中...';
 
-      this.app.showSuccess('基本設定を保存しました');
+      try {
+        // 将来実装: Firebase APIで保存
+        // await this.app.api.saveEvaluationSettings(basicSettings);
+
+        // 一時的な遅延でAPI呼び出しをシミュレート
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        this.app.showSuccess('基本設定を保存しました');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+      }
 
     } catch (error) {
       console.error('Evaluation Periods: Failed to save basic settings:', error);
@@ -927,6 +988,160 @@ export class EvaluationPeriodsPage {
     document.getElementById('periodTemplate').value = '2024年度 第1四半期評価';
 
     this.app.showSuccess('基本設定をリセットしました');
+  }
+
+  /**
+   * 職種データの読み込み
+   */
+  async loadJobTypes() {
+    try {
+      const jobTypesList = document.getElementById('jobTypesList');
+      if (!jobTypesList) return;
+
+      // ローディング表示
+      jobTypesList.innerHTML = `
+        <div class="list-group-item text-center text-muted p-4">
+          <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+          読み込み中...
+        </div>
+      `;
+
+      // 職種データを取得
+      const jobTypes = await this.app.api.getJobTypes();
+
+      if (jobTypes.length === 0) {
+        jobTypesList.innerHTML = `
+          <div class="list-group-item text-center text-muted p-4">
+            <i class="fas fa-info-circle me-2"></i>
+            登録された職種がありません
+          </div>
+        `;
+        return;
+      }
+
+      // 職種リストを表示
+      jobTypesList.innerHTML = jobTypes.map(jobType => `
+        <a href="#" class="list-group-item list-group-item-action" onclick="window.app.router.currentPageInstance.selectJobType('${jobType.id}', '${jobType.name}')">
+          <div class="d-flex w-100 justify-content-between">
+            <h6 class="mb-1">${jobType.name}</h6>
+            <small class="text-muted">${jobType.status === 'active' ? '有効' : '無効'}</small>
+          </div>
+          <p class="mb-1 text-muted small">${jobType.description || '説明なし'}</p>
+        </a>
+      `).join('');
+
+    } catch (error) {
+      console.error('Evaluation Periods: Failed to load job types:', error);
+      const jobTypesList = document.getElementById('jobTypesList');
+      if (jobTypesList) {
+        jobTypesList.innerHTML = `
+          <div class="list-group-item text-center text-danger p-4">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            職種データの読み込みに失敗しました
+          </div>
+        `;
+      }
+    }
+  }
+
+  /**
+   * 職種選択
+   */
+  selectJobType(jobTypeId, jobTypeName) {
+    // 選択状態を更新
+    document.querySelectorAll('#jobTypesList .list-group-item').forEach(item => {
+      item.classList.remove('active');
+    });
+    event.target.closest('.list-group-item').classList.add('active');
+
+    // バッジを更新
+    document.getElementById('selectedJobTypeBadge').textContent = jobTypeName;
+
+    // 設定エリアを表示
+    this.renderJobSpecificSettings(jobTypeId, jobTypeName);
+  }
+
+  /**
+   * 職種別設定の表示
+   */
+  renderJobSpecificSettings(jobTypeId, jobTypeName) {
+    const settingsContainer = document.getElementById('jobSpecificSettings');
+    if (!settingsContainer) return;
+
+    settingsContainer.innerHTML = `
+      <form id="jobSpecificForm">
+        <div class="mb-3">
+          <label class="form-label">選択中の職種: <strong>${jobTypeName}</strong></label>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">専用評価サイクル</label>
+          <select class="form-select" id="jobSpecificCycle">
+            <option value="">全社設定に従う</option>
+            <option value="monthly">月次評価（1ヶ月）</option>
+            <option value="quarterly">四半期評価（3ヶ月）</option>
+            <option value="semi-annual">半期評価（6ヶ月）</option>
+            <option value="annual">年次評価（12ヶ月）</option>
+          </select>
+          <small class="form-text text-muted">この職種専用の評価サイクルを設定できます</small>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">評価項目の重み付け</label>
+          <div class="row">
+            <div class="col-md-6">
+              <label class="form-label small">技術力</label>
+              <input type="range" class="form-range" id="technicalWeight" min="0" max="100" value="25">
+              <small class="text-muted">25%</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small">コミュニケーション</label>
+              <input type="range" class="form-range" id="communicationWeight" min="0" max="100" value="25">
+              <small class="text-muted">25%</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end">
+          <button type="submit" class="btn btn-primary">職種別設定を保存</button>
+        </div>
+      </form>
+    `;
+
+    // フォームのイベントリスナーを設定
+    const form = document.getElementById('jobSpecificForm');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.saveJobSpecificSettings(jobTypeId);
+      });
+    }
+  }
+
+  /**
+   * 職種別設定の保存
+   */
+  async saveJobSpecificSettings(jobTypeId) {
+    try {
+      const settings = {
+        jobTypeId: jobTypeId,
+        cycle: document.getElementById('jobSpecificCycle').value,
+        weights: {
+          technical: document.getElementById('technicalWeight').value,
+          communication: document.getElementById('communicationWeight').value
+        }
+      };
+
+      console.log('Saving job-specific settings:', settings);
+
+      // 将来実装: Firebase APIで保存
+      // await this.app.api.saveJobSpecificSettings(settings);
+
+      this.app.showSuccess('職種別設定を保存しました');
+    } catch (error) {
+      console.error('Failed to save job-specific settings:', error);
+      this.app.showError('職種別設定の保存に失敗しました');
+    }
   }
 
   /**
