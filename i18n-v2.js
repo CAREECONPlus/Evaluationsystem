@@ -601,6 +601,7 @@ const TRANSLATIONS = {
       all: "Tất cả",
       loading: "Đang tải...",
       actions: "Hành động",
+      created_at: "Ngày tạo",
       reset: "Đặt lại",
       access_denied: "Bạn không có quyền truy cập tính năng này.",
       save_draft: "Lưu Nháp",
@@ -660,6 +661,69 @@ const TRANSLATIONS = {
       quality: "Chất lượng",
       service: "Dịch vụ",
       status: "Trạng thái"
+    },
+
+    users: {
+      title: "Quản lý người dùng",
+      subtitle: "Quản lý người dùng",
+      add_user: "Thêm người dùng mới",
+      edit_user: "Chỉnh sửa người dùng",
+      delete_user: "Xóa người dùng",
+      name: "Tên",
+      email: "Email",
+      role: "Vai trò",
+      status: "Trạng thái",
+      active: "Hoạt động",
+      inactive: "Không hoạt động",
+      total_users: "Tổng số người dùng",
+      active_users: "Người dùng hoạt động",
+      pending_users: "Người dùng chờ duyệt",
+      admin_users: "Người dùng quản trị",
+      all_status: "Tất cả trạng thái",
+      all_roles: "Tất cả vai trò",
+      search_placeholder: "Tìm kiếm theo tên hoặc email"
+    },
+
+    evaluations: {
+      title: "Danh sách đánh giá",
+      new_evaluation: "Tạo đánh giá mới",
+      edit_evaluation: "Chỉnh sửa đánh giá",
+      target_user: "Người được đánh giá",
+      evaluator: "Người đánh giá",
+      score: "Điểm số",
+      comments: "Nhận xét",
+      technical_skills: "Kỹ năng kỹ thuật",
+      communication: "Giao tiếp",
+      leadership: "Lãnh đạo",
+      problem_solving: "Giải quyết vấn đề",
+      safety_awareness: "Ý thức an toàn",
+      my_assignments: "Nhiệm vụ của tôi",
+      in_progress: "Đang tiến hành",
+      all_status: "Tất cả trạng thái",
+      all_users: "Tất cả người dùng",
+      all_assignments: "Tất cả nhiệm vụ",
+      assigned: "Đã giao",
+      unassigned: "Chưa giao",
+      my_evaluations: "Đánh giá của tôi",
+      other_evaluators: "Người đánh giá khác",
+      urgent: "Khẩn cấp (chờ duyệt)",
+      this_week: "Tuần này",
+      own_evaluations_only: "Chỉ hiển thị đánh giá của bạn",
+      reset_filters: "Đặt lại bộ lọc",
+      items_count: "Số lượng mục",
+      search_placeholder: "Tìm kiếm theo tên người được đánh giá..."
+    },
+
+    settings: {
+      title: "Cài đặt",
+      save_changes: "Lưu thay đổi",
+      job_types: "Loại công việc",
+      evaluation_periods: "Chu kỳ đánh giá",
+      select_job_type_hint: "Vui lòng chọn loại công việc",
+      categories: "Danh mục",
+      description: "Mô tả",
+      order: "Thứ tự",
+      language: "Ngôn ngữ"
     }
   }
 };
@@ -740,16 +804,31 @@ class UnifiedI18n {
   getTranslation(key, language) {
     const keys = key.split('.');
     let current = TRANSLATIONS[language];
-    
+
+    // GitHub Pagesデバッグ用ログ
+    if (window.GITHUB_PAGES_MODE) {
+      console.log(`[i18n] Looking for key: ${key} in language: ${language}`);
+      console.log(`[i18n] Available translations for ${language}:`, Object.keys(TRANSLATIONS[language] || {}));
+    }
+
     for (const k of keys) {
       if (current && current[k]) {
         current = current[k];
       } else {
+        if (window.GITHUB_PAGES_MODE) {
+          console.warn(`[i18n] Translation path broken at: ${k} for key: ${key}`);
+          console.log(`[i18n] Available keys at this level:`, current ? Object.keys(current) : 'null');
+        }
         return null;
       }
     }
-    
-    return typeof current === 'string' ? current : null;
+
+    const result = typeof current === 'string' ? current : null;
+    if (window.GITHUB_PAGES_MODE) {
+      console.log(`[i18n] Translation result for ${key}:`, result);
+    }
+
+    return result;
   }
 
   /**

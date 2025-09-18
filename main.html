@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<!-- 建設業評価管理システム - GitHub Pages完全対応版 -->
-<!-- Live URL: https://careeconplus.github.io/Evaluationsystem/ -->
-<!-- Version: 2025-01-18-GITHUB-PAGES-v1.0 -->
+<!-- 建設業評価管理システム - Firebase Hosting配信 -->
+<!-- Live URL: https://hyouka-db.web.app -->
+<!-- Version: 2025-01-18-v5 - GitHub Pages Cache Busting Fix -->
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -10,17 +10,17 @@
     <meta name="keywords" content="建設業,評価管理,人事評価,作業員管理">
     <meta name="author" content="Construction Evaluation System">
 
-    <!-- 超強力キャッシュ制御 for GitHub Pages -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0, s-maxage=0">
+    <!-- Aggressive Cache Control for GitHub Pages -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, private, max-age=0">
     <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <meta name="cache-control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Expires" content="-1">
+    <meta name="cache-control" content="no-cache">
     <meta name="expires" content="0">
     <meta name="pragma" content="no-cache">
 
     <!-- Content Security Policy -->
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.gstatic.com https://fonts.googleapis.com https://careeconplus.github.io *.gstatic.com https://*.firebaseapp.com https://*.googleapis.com; style-src 'self' 'unsafe-inline' blob: data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://careeconplus.github.io https://*.firebaseapp.com; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; connect-src 'self' blob: data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://*.googleapis.com https://*.firebaseapp.com https://*.cloudfunctions.net https://careeconplus.github.io https://*.firebase.com https://*.gstatic.com wss://*.firebaseio.com; object-src 'none'; base-uri 'self'">
-
+    
     <!-- PWA設定 -->
     <meta name="theme-color" content="#007bff">
     <meta name="mobile-web-app-capable" content="yes">
@@ -28,7 +28,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="評価管理">
     <link rel="manifest" href="./manifest.json">
-
+    
     <!-- Firebase Configuration Meta Tags -->
     <meta name="firebase-api-key" content="AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk">
     <meta name="firebase-auth-domain" content="hyouka-db.firebaseapp.com">
@@ -36,22 +36,22 @@
     <meta name="firebase-storage-bucket" content="hyouka-db.appspot.com">
     <meta name="firebase-messaging-sender-id" content="861016804589">
     <meta name="firebase-app-id" content="1:861016804589:web:d911d516d6c79aa73690e4">
-
+    
     <title>建設業評価管理システム</title>
-
+    
     <!-- 外部CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
-
+    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
+    
     <!-- カスタムCSS -->
-    <link href="./styles.css?v=gh-pages-20250118" rel="stylesheet">
-    <link href="./styles/responsive.css?v=gh-pages-20250118" rel="stylesheet">
-
+    <link href="./styles.css?v=20250118" rel="stylesheet">
+    <link href="./styles/responsive.css?v=20250118" rel="stylesheet">
+    
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23007bff'/><text y='50' x='50' text-anchor='middle' font-size='50' fill='white' dy='.3em'>評</text></svg>">
 </head>
@@ -66,7 +66,7 @@
                 <i class="fas fa-hard-hat me-2"></i>
                 建設業評価管理システム
             </h2>
-            <p class="text-white-50 mt-2">GitHub Pages版を起動しています...</p>
+            <p class="text-white-50 mt-2">システムを起動しています...</p>
             <div class="progress mt-3" style="width: 200px; height: 4px;">
                 <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
             </div>
@@ -84,7 +84,7 @@
             </select>
         </div>
     </header>
-
+    
     <div class="d-flex">
         <nav id="sidebar-container"></nav>
         <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
@@ -97,81 +97,80 @@
 
     <!-- グローバルモーダルコンテナ -->
     <div id="modal-container"></div>
-
+    
     <!-- 外部JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
-
+    
     <!-- Application Initialization -->
     <script type="module">
-        console.log('Initializing Construction Evaluation Management System for GitHub Pages...');
-        console.log('Version: 2025-01-18-GITHUB-PAGES-v1.0');
+        console.log('Initializing Construction Evaluation Management System...');
 
-        // 緊急モード完全無効化
-        console.log('Disabling all emergency mode triggers...');
+        // Clear any old emergency mode settings from browser storage
+        console.log('Clearing old emergency mode settings...');
         localStorage.removeItem('temp_auth_mode');
         sessionStorage.removeItem('emergency_mode');
+
+        // Clear additional cache-related items
         localStorage.removeItem('emergency_mode');
         sessionStorage.removeItem('temp_auth_mode');
 
-        // URL パラメータクリーンアップ
+        // Clear any URL parameters that might trigger emergency mode
         if (window.location.search.includes('temp_auth=true')) {
             window.history.replaceState({}, document.title, window.location.pathname);
         }
 
-        // Firebase本番モード強制
+        console.log('Emergency mode settings and URL parameters cleared');
+
+        // Firebase production mode
         window.FORCE_TEMP_AUTH = false;
         window.DISABLE_FIREBASE = false;
-        window.GITHUB_PAGES_MODE = true;
 
-        console.log('GitHub Pages Mode Settings:', {
+        console.log('Production mode settings:', {
             FORCE_TEMP_AUTH: window.FORCE_TEMP_AUTH,
             DISABLE_FIREBASE: window.DISABLE_FIREBASE,
-            GITHUB_PAGES_MODE: window.GITHUB_PAGES_MODE,
-            hostname: window.location.hostname
+            localStorage_temp_auth: localStorage.getItem('temp_auth_mode'),
+            sessionStorage_emergency: sessionStorage.getItem('emergency_mode'),
+            url_params: window.location.search
         });
-
-        // GitHub Pages専用キャッシュバスティング
+        
         const timestamp = Date.now();
-        const ghVersion = 'gh-pages-20250118-' + timestamp;
+        const cacheVersion = '20250118-' + timestamp;
 
-        console.log('GitHub Pages cache busting version:', ghVersion);
+        console.log('GitHub Pages Cache Busting: Version', cacheVersion);
 
-        // 強制的なキャッシュクリア（GitHub Pagesのみ）
+        // GitHub Pages specific cache invalidation
         if (window.location.hostname.includes('github.io')) {
-            const buildVersion = 'GITHUB-PAGES-v1.0';
-            const lastBuild = localStorage.getItem('gh_pages_version');
-
-            if (lastBuild !== buildVersion) {
-                console.log('GitHub Pages: Clearing all caches for new version');
+            console.log('GitHub Pages detected - applying enhanced cache busting');
+            // Force reload if we detect stale content
+            const buildVersion = '20250118-v5';
+            const lastVersion = localStorage.getItem('app_version');
+            if (lastVersion && lastVersion !== buildVersion) {
+                console.log('Version mismatch detected, clearing cache');
                 localStorage.clear();
                 sessionStorage.clear();
-
-                // Service Workerキャッシュもクリア
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.getRegistrations().then(registrations => {
-                        registrations.forEach(registration => registration.unregister());
-                    });
-                }
-
-                localStorage.setItem('gh_pages_version', buildVersion);
+                window.location.reload(true);
             }
+            localStorage.setItem('app_version', buildVersion);
         }
 
         try {
-            import(`./app-v2.js?v=${ghVersion}`).then(module => {
+            import(`./app-v2.js?v=${cacheVersion}`).then(module => {
                 const App = module.default;
                 window.app = new App();
-
-                console.log('GitHub Pages: Firebase authentication system ready');
-
+                
+                // Firebase authentication enabled
+                if (window.app && window.app.auth) {
+                    console.log('Firebase authentication system initialized');
+                }
+                
                 return window.app.init();
             }).then(() => {
-                console.log('GitHub Pages: Application initialized successfully');
+                console.log('Application initialized successfully');
             }).catch(error => {
-                console.error('GitHub Pages: Failed to initialize application:', error);
+                console.error('Failed to initialize application:', error);
 
-                // エラー時のフォールバックUI
+                // Error fallback UI
                 document.getElementById('loading-screen').innerHTML = `
                     <div class="loading-content text-center">
                         <div class="text-warning mb-3">
@@ -179,7 +178,6 @@
                         </div>
                         <h2 class="text-white">システムエラー</h2>
                         <p class="text-white-50">アプリケーションの初期化に失敗しました。</p>
-                        <p class="text-white-50">GitHub Pages: ${window.location.href}</p>
                         <button class="btn btn-light mt-3" onclick="location.reload()">
                             <i class="fas fa-redo me-2"></i>再読み込み
                         </button>
@@ -187,20 +185,33 @@
                 `;
             });
         } catch (error) {
-            console.error('GitHub Pages: Critical initialization error:', error);
+            console.error('Critical initialization error:', error);
         }
-
-        // グローバルエラーハンドリング
+        
+        // Global error handling
         window.addEventListener('error', (event) => {
-            console.error('GitHub Pages: Global error:', event.error);
+            console.error('Global error:', event.error);
         });
 
         window.addEventListener('unhandledrejection', (event) => {
-            console.error('GitHub Pages: Unhandled promise rejection:', event.reason);
+            console.error('Unhandled promise rejection:', event.reason);
             event.preventDefault();
         });
 
-        console.log('GitHub Pages: System ready for production use');
+        // Service Worker registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((registration) => {
+                        console.log('Service Worker registered successfully');
+                    })
+                    .catch((error) => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+
+        console.log('System ready for production use');
     </script>
 
     <!-- ノンスクリプト対応 -->
