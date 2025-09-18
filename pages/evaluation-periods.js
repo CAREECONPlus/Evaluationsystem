@@ -50,7 +50,7 @@ export class EvaluationPeriodsPage {
   }
 
   /**
-   * ページのレンダリング
+   * ページのレンダリング（統合版：基本設定・職種別設定・期間管理）
    */
   render() {
     return `
@@ -59,8 +59,186 @@ export class EvaluationPeriodsPage {
           <h1 class="page-title h2 mb-1">
             <i class="fas fa-calendar-alt me-2"></i>評価期間管理
           </h1>
-          <p class="page-subtitle text-dark mb-0">評価サイクルとスケジュールの設定</p>
+          <p class="page-subtitle text-dark mb-0">評価サイクル・職種別設定・期間管理の統合管理</p>
         </div>
+
+        <!-- タブナビゲーション -->
+        <ul class="nav nav-tabs mb-4" id="evaluationPeriodsTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="basic-settings-tab" data-bs-toggle="tab" data-bs-target="#basic-settings" type="button" role="tab" aria-controls="basic-settings" aria-selected="true">
+              <i class="fas fa-cog me-2"></i>基本設定
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="job-specific-tab" data-bs-toggle="tab" data-bs-target="#job-specific" type="button" role="tab" aria-controls="job-specific" aria-selected="false">
+              <i class="fas fa-users-cog me-2"></i>職種別設定
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="period-management-tab" data-bs-toggle="tab" data-bs-target="#period-management" type="button" role="tab" aria-controls="period-management" aria-selected="false">
+              <i class="fas fa-calendar-check me-2"></i>期間管理
+            </button>
+          </li>
+        </ul>
+
+        <!-- タブコンテンツ -->
+        <div class="tab-content" id="evaluationPeriodsTabContent">
+
+          <!-- 基本設定タブ -->
+          <div class="tab-pane fade show active" id="basic-settings" role="tabpanel" aria-labelledby="basic-settings-tab">
+            ${this.renderBasicSettingsTab()}
+          </div>
+
+          <!-- 職種別設定タブ -->
+          <div class="tab-pane fade" id="job-specific" role="tabpanel" aria-labelledby="job-specific-tab">
+            ${this.renderJobSpecificTab()}
+          </div>
+
+          <!-- 期間管理タブ -->
+          <div class="tab-pane fade" id="period-management" role="tabpanel" aria-labelledby="period-management-tab">
+            ${this.renderPeriodManagementTab()}
+          </div>
+
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * 基本設定タブのレンダリング
+   */
+  renderBasicSettingsTab() {
+    return `
+      <div class="row">
+        <div class="col-lg-8">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">全社共通評価サイクル設定</h5>
+            </div>
+            <div class="card-body">
+              <form id="basicSettingsForm">
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">評価サイクル</label>
+                    <select class="form-select" id="evaluationCycle" required>
+                      <option value="">選択してください</option>
+                      <option value="quarterly">四半期評価（3ヶ月）</option>
+                      <option value="semi-annual">半期評価（6ヶ月）</option>
+                      <option value="annual">年次評価（12ヶ月）</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">評価年度開始月</label>
+                    <select class="form-select" id="fiscalYearStart" required>
+                      <option value="1">1月</option>
+                      <option value="4" selected>4月</option>
+                      <option value="7">7月</option>
+                      <option value="10">10月</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">評価開始猶予期間（日）</label>
+                    <input type="number" class="form-control" id="gracePeriodStart" value="7" min="0" max="30">
+                    <small class="form-text text-muted">期間開始前に評価を開始できる日数</small>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">評価終了猶予期間（日）</label>
+                    <input type="number" class="form-control" id="gracePeriodEnd" value="7" min="0" max="30">
+                    <small class="form-text text-muted">期間終了後も評価を受け付ける日数</small>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">デフォルト期間テンプレート</label>
+                  <textarea class="form-control" id="periodTemplate" rows="3"
+                    placeholder="例: {year}年度 第{quarter}四半期評価">2024年度 第1四半期評価</textarea>
+                  <small class="form-text text-muted">新しい期間作成時のデフォルト名称パターン</small>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                  <button type="button" class="btn btn-outline-secondary me-2" id="resetBasicSettings">リセット</button>
+                  <button type="submit" class="btn btn-primary">基本設定を保存</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="card">
+            <div class="card-header">
+              <h6 class="mb-0">設定プレビュー</h6>
+            </div>
+            <div class="card-body">
+              <div id="settingsPreview">
+                <p class="text-muted">左側で設定を選択すると、プレビューが表示されます。</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt-3">
+            <div class="card-header">
+              <h6 class="mb-0">設定ガイド</h6>
+            </div>
+            <div class="card-body">
+              <small class="text-muted">
+                <strong>四半期評価:</strong> 3ヶ月ごとの頻繁な評価<br>
+                <strong>半期評価:</strong> 6ヶ月ごとのバランス型<br>
+                <strong>年次評価:</strong> 年1回の包括的な評価
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * 職種別設定タブのレンダリング
+   */
+  renderJobSpecificTab() {
+    return `
+      <div class="row">
+        <div class="col-lg-4">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">職種選択</h5>
+            </div>
+            <div class="list-group list-group-flush" id="jobTypesList">
+              <div class="list-group-item text-center text-muted p-4">
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                読み込み中...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-8">
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">職種別評価期間設定</h5>
+              <span class="badge bg-secondary" id="selectedJobTypeBadge">職種を選択</span>
+            </div>
+            <div class="card-body" id="jobSpecificSettings">
+              <div class="text-center p-5 text-muted">
+                <i class="fas fa-arrow-left fa-2x mb-3"></i>
+                <p>左のリストから職種を選択して、個別の評価期間設定を行ってください。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * 期間管理タブのレンダリング（既存の期間管理機能）
+   */
+  renderPeriodManagementTab() {
+    return `
 
         <!-- 期間概要 -->
         <div class="row mb-4">
@@ -199,27 +377,24 @@ export class EvaluationPeriodsPage {
                   </div>
 
                   <!-- 評価期間の自動設定 -->
-                  <div class="mb-3">
-                    <label class="form-label">クイック設定</label>
-                    <div class="btn-group w-100" role="group">
-                      <button type="button" class="btn btn-outline-secondary" id="currentQuarterBtn">
-                        今四半期
-                      </button>
-                      <button type="button" class="btn btn-outline-secondary" id="nextQuarterBtn">
-                        次四半期
-                      </button>
-                      <button type="button" class="btn btn-outline-secondary" id="currentYearBtn">
-                        今年度
-                      </button>
-                    </div>
+                  <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    開始日・終了日を設定すると、期間日数が自動計算されます。
                   </div>
                 </form>
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-                <button type="button" class="btn btn-danger" id="deletePeriodBtn" style="display: none;">削除</button>
-                <button type="button" class="btn btn-primary" id="savePeriodBtn">保存</button>
+                <button type="submit" class="btn btn-primary" form="periodForm">
+                  <span class="submit-text">保存</span>
+                  <span class="spinner-border spinner-border-sm ms-2 d-none" role="status"></span>
+                </button>
               </div>
+            </div>
+          </div>
+        </div>
+    `;
+  }
             </div>
           </div>
         </div>

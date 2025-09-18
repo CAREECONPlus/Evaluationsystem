@@ -7,7 +7,6 @@ export class SettingsPage {
     this.app = app;
     this.settings = {
       jobTypes: [],
-      periods: [],
       structures: {}
     };
     this.selectedJobTypeId = null;
@@ -36,22 +35,6 @@ export class SettingsPage {
                 </button>
               </div>
               <div class="list-group list-group-flush" id="job-types-list">
-                <div class="list-group-item text-center text-muted p-4">
-                  <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                  読み込み中...
-                </div>
-              </div>
-            </div>
-            
-            <!-- 評価期間管理 -->
-            <div class="card">
-              <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0" data-i18n="settings.evaluation_periods">評価期間</h5>
-                <button class="btn btn-sm btn-primary" id="add-period-btn">
-                  <i class="fas fa-plus"></i>
-                </button>
-              </div>
-              <div class="list-group list-group-flush" id="periods-list">
                 <div class="list-group-item text-center text-muted p-4">
                   <div class="spinner-border spinner-border-sm me-2" role="status"></div>
                   読み込み中...
@@ -102,7 +85,6 @@ export class SettingsPage {
       if (!this.app.currentUser?.tenantId) {
         this.settings = {
           jobTypes: [],
-          periods: [],
           structures: {}
         };
         this.renderAll();
@@ -130,17 +112,14 @@ export class SettingsPage {
     `;
     
     const jobTypesList = document.getElementById('job-types-list');
-    const periodsList = document.getElementById('periods-list');
     const structureEditor = document.getElementById('structure-editor');
-    
+
     if (jobTypesList) jobTypesList.innerHTML = loadingHTML;
-    if (periodsList) periodsList.innerHTML = loadingHTML;
     if (structureEditor) structureEditor.innerHTML = loadingHTML;
   }
 
   showEmptyStateMessage() {
     const jobTypesList = document.getElementById('job-types-list');
-    const periodsList = document.getElementById('periods-list');
     
     if (jobTypesList) {
       jobTypesList.innerHTML = `
@@ -148,16 +127,6 @@ export class SettingsPage {
           <i class="fas fa-info-circle fa-2x mb-3"></i>
           <h6>初期設定が必要です</h6>
           <p class="mb-0 small">「+」ボタンから職種と評価期間を追加してください</p>
-        </div>
-      `;
-    }
-    
-    if (periodsList) {
-      periodsList.innerHTML = `
-        <div class="list-group-item text-center text-info p-4">
-          <i class="fas fa-calendar-plus fa-2x mb-3"></i>
-          <h6>評価期間を追加</h6>
-          <p class="mb-0 small">「+」ボタンから評価期間を設定してください</p>
         </div>
       `;
     }
@@ -175,7 +144,7 @@ export class SettingsPage {
       </div>
     `;
     
-    const containers = ['job-types-list', 'periods-list'];
+    const containers = ['job-types-list'];
     containers.forEach(id => {
       const element = document.getElementById(id);
       if (element) element.innerHTML = errorHTML;
