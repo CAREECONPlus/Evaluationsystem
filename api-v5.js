@@ -3126,16 +3126,36 @@ export class API {
   // 評価期間取得
   async getEvaluationPeriods() {
     try {
-      // 一時認証システム使用時はモックデータを返す
-      if (window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE || 
-          (this.app.currentUser && this.app.currentUser.isTemp)) {
-        const tempAuthModule = await import('./temp-auth-v2.js');
-        return new tempAuthModule.TempAuth().getMockEvaluationPeriods();
+      console.log("API v5: Getting evaluation periods from Firebase");
+
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("No tenant found for current user");
       }
 
-      // Firestore実装（未実装の場合はモックデータ返す）
-      const tempAuthModule = await import('./temp-auth-v2.js');
-      return new tempAuthModule.TempAuth().getMockEvaluationPeriods();
+      const periodsRef = collection(this.db, "evaluationPeriods");
+      const querySnapshot = await getDocs(query(
+        periodsRef,
+        where("tenantId", "==", currentUser.tenantId),
+        orderBy("createdAt", "desc")
+      ));
+
+      const periods = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        periods.push({
+          id: doc.id,
+          name: data.name,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          status: data.status,
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt
+        });
+      });
+
+      console.log(`API v5: Loaded ${periods.length} evaluation periods from Firebase`);
+      return periods;
     } catch (error) {
       console.error("API: Error loading evaluation periods:", error);
       throw error;
