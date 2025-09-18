@@ -452,6 +452,14 @@ export class EvaluationPeriodsPage {
         this.saveBasicSettings();
       });
     }
+
+    // 基本設定のリセットボタン
+    const resetBasicSettings = document.getElementById('resetBasicSettings');
+    if (resetBasicSettings) {
+      resetBasicSettings.addEventListener('click', () => {
+        this.resetBasicSettings();
+      });
+    }
   }
 
   /**
@@ -867,10 +875,13 @@ export class EvaluationPeriodsPage {
    */
   async postRender() {
     try {
-      await this.init();
+      // ルーターが既にinit()を呼び出しているため、ここでは呼び出さない
       this.setupEventListeners();
       this.updateStatistics();
       this.renderPeriodsList();
+
+      // グローバル参照を設定
+      window.evaluationPeriodsPage = this;
 
       console.log("Evaluation Periods: Page rendered successfully");
     } catch (error) {
@@ -880,11 +891,54 @@ export class EvaluationPeriodsPage {
   }
 
   /**
+   * 基本設定の保存
+   */
+  async saveBasicSettings() {
+    try {
+      const basicSettings = {
+        evaluationCycle: document.getElementById('evaluationCycle').value,
+        fiscalYearStart: parseInt(document.getElementById('fiscalYearStart').value),
+        gracePeriodStart: parseInt(document.getElementById('gracePeriodStart').value),
+        gracePeriodEnd: parseInt(document.getElementById('gracePeriodEnd').value),
+        periodTemplate: document.getElementById('periodTemplate').value
+      };
+
+      console.log('Evaluation Periods: Saving basic settings:', basicSettings);
+
+      // 将来実装: Firebase APIで保存
+      // await this.app.api.saveEvaluationSettings(basicSettings);
+
+      this.app.showSuccess('基本設定を保存しました');
+
+    } catch (error) {
+      console.error('Evaluation Periods: Failed to save basic settings:', error);
+      this.app.showError('基本設定の保存に失敗しました: ' + error.message);
+    }
+  }
+
+  /**
+   * 基本設定のリセット
+   */
+  resetBasicSettings() {
+    document.getElementById('evaluationCycle').value = '';
+    document.getElementById('fiscalYearStart').value = '4';
+    document.getElementById('gracePeriodStart').value = '7';
+    document.getElementById('gracePeriodEnd').value = '7';
+    document.getElementById('periodTemplate').value = '2024年度 第1四半期評価';
+
+    this.app.showSuccess('基本設定をリセットしました');
+  }
+
+  /**
    * クリーンアップ
    */
   cleanup() {
     this.isInitialized = false;
     this.editingPeriodId = null;
+    // グローバル参照をクリア
+    if (window.evaluationPeriodsPage === this) {
+      window.evaluationPeriodsPage = null;
+    }
   }
 }
 

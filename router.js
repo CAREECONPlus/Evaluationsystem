@@ -291,6 +291,11 @@ export class Router {
         await this.currentPageInstance.init(params)
       }
 
+      // ページの表示後処理
+      if (typeof this.currentPageInstance.postRender === "function") {
+        await this.currentPageInstance.postRender()
+      }
+
       // 多言語対応の更新
       this.app.i18n.updateUI(contentContainer)
 
