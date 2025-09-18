@@ -125,7 +125,9 @@ const TRANSLATIONS = {
       items_count: "項目数",
       search_placeholder: "評価対象者名で検索...",
       evaluation_period: "評価期間",
-      no_matching_evaluations: "該当する評価がありません"
+      no_matching_evaluations: "該当する評価がありません",
+      save_draft: "下書き保存",
+      submit: "提出"
     },
 
     // ===== 共通UI要素 =====
@@ -182,14 +184,6 @@ const TRANSLATIONS = {
       worker: "作業員"
     },
 
-    // ===== 評価フォーム =====
-    evaluations: {
-      form_title: "評価フォーム",
-      target_info: "評価対象者情報",
-      evaluation_period: "評価期間",
-      save_draft: "下書き保存",
-      submit: "提出"
-    },
 
     // ===== 設定 =====
     settings: {
@@ -435,7 +429,13 @@ const TRANSLATIONS = {
       own_evaluations_only: "Only your evaluations are displayed",
       reset_filters: "Reset Filters",
       items_count: "Items Count",
-      search_placeholder: "Search by target user name..."
+      search_placeholder: "Search by target user name...",
+      form_title: "Evaluation Form",
+      target_info: "Target User Information",
+      evaluation_period: "Evaluation Period",
+      no_matching_evaluations: "No matching evaluations found",
+      save_draft: "Save Draft",
+      submit: "Submit"
     },
 
     common: {
@@ -726,7 +726,13 @@ const TRANSLATIONS = {
       own_evaluations_only: "Chỉ hiển thị đánh giá của bạn",
       reset_filters: "Đặt lại bộ lọc",
       items_count: "Số lượng mục",
-      search_placeholder: "Tìm kiếm theo tên người được đánh giá..."
+      search_placeholder: "Tìm kiếm theo tên người được đánh giá...",
+      form_title: "Mẫu đánh giá",
+      target_info: "Thông tin người được đánh giá",
+      evaluation_period: "Chu kỳ đánh giá",
+      no_matching_evaluations: "Không tìm thấy đánh giá phù hợp",
+      save_draft: "Lưu nháp",
+      submit: "Gửi"
     },
 
     settings: {
