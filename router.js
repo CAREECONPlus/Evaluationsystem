@@ -20,7 +20,7 @@ import { MultilingualAdminPage } from "./pages/multilingual-admin.js"
 import { TranslationQualityManagementPage } from "./pages/translation-quality-management.js"
 import { SelfEvaluationPage } from "./pages/self-evaluation.js"
 import { OrganizationManagementPage } from "./pages/organization-management.js"
-import { EvaluationPeriodsPage } from "./pages/evaluation-periods.js"
+import { EvaluationPeriodsPage } from "./pages/evaluation-periods-v2.js"
 import { DataSettingsPage } from "./pages/data-settings.js"
 
 export class Router {
