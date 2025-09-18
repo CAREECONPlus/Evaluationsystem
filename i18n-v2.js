@@ -42,20 +42,22 @@ const TRANSLATIONS = {
     dashboard: {
       title: "ダッシュボード",
       total_users: "総ユーザー数",
-      active_users: "アクティブユーザー", 
+      active_users: "アクティブユーザー",
       completed_evaluations: "完了済み評価",
       recent_evaluations: "最近の評価",
       system_stats: "システム統計",
       total_evaluations: "総評価数",
       pending_evaluations: "承認待ち",
       system_overview: "システム概要",
-      performance_chart: "パフォーマンス推移"
+      performance_chart: "パフォーマンス推移",
+      no_recent_evaluations: "最近の評価がありません"
     },
 
     // ===== 認証関連 =====
     auth: {
       login: "ログイン",
       logout: "ログアウト",
+      name: "名前",
       email: "メールアドレス",
       password: "パスワード",
       login_button: "ログイン",
@@ -72,27 +74,33 @@ const TRANSLATIONS = {
       add_user: "新規ユーザー追加",
       edit_user: "ユーザー編集",
       delete_user: "ユーザー削除",
+      invite_user: "ユーザー招待",
       name: "名前",
       email: "メールアドレス",
       role: "役割",
       status: "ステータス",
       active: "アクティブ",
       inactive: "非アクティブ",
+      pending: "保留中",
       total_users: "総ユーザー数",
       active_users: "アクティブユーザー",
       pending_users: "保留中ユーザー",
       admin_users: "管理者ユーザー",
       all_status: "すべてのステータス",
       all_roles: "すべての役割",
-      search_placeholder: "ユーザー名またはメールアドレスで検索"
+      search_placeholder: "ユーザー名またはメールアドレスで検索",
+      invitation_message: "招待メッセージ",
+      send_invitation: "招待を送信"
     },
 
     // ===== 評価システム =====
     evaluations: {
       title: "評価一覧",
+      form_title: "評価フォーム",
       new_evaluation: "新規評価作成",
       edit_evaluation: "評価編集",
       target_user: "評価対象者",
+      target_info: "評価対象者情報",
       evaluator: "評価者",
       score: "スコア",
       comments: "コメント",
@@ -115,7 +123,9 @@ const TRANSLATIONS = {
       own_evaluations_only: "あなたの評価のみ表示されます",
       reset_filters: "フィルターリセット",
       items_count: "項目数",
-      search_placeholder: "評価対象者名で検索..."
+      search_placeholder: "評価対象者名で検索...",
+      evaluation_period: "評価期間",
+      no_matching_evaluations: "該当する評価がありません"
     },
 
     // ===== 共通UI要素 =====
@@ -199,6 +209,11 @@ const TRANSLATIONS = {
       approvals_title: "目標承認",
       pending_goals: "承認待ち目標", 
       approved_goals: "承認済み目標"
+    },
+
+    // ===== ユーザープロフィール =====
+    user: {
+      profile: "ユーザープロフィール"
     },
 
     // ===== プロフィール =====

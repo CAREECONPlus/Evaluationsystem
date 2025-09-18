@@ -133,17 +133,29 @@ class App {
     // 言語変更イベントリスナーを設定
     window.addEventListener('languageChanged', (event) => {
       console.log('[app] Language changed to:', event.detail.language);
-      // 全体の翻訳を再適用
-      setTimeout(() => {
-        this.i18n.applyTranslations();
-        // HeaderとSidebarを再レンダリング
-        if (this.header) {
-          document.getElementById('header-container').innerHTML = this.header.render();
+      // 即座に翻訳を再適用
+      this.i18n.applyTranslations();
+
+      // HeaderとSidebarを即座に再レンダリング
+      if (this.header) {
+        const headerContainer = document.getElementById('header-container');
+        if (headerContainer) {
+          headerContainer.innerHTML = this.header.render();
         }
-        if (this.sidebar) {
-          document.getElementById('sidebar-container').innerHTML = this.sidebar.render();
+      }
+      if (this.sidebar) {
+        const sidebarContainer = document.getElementById('sidebar-container');
+        if (sidebarContainer) {
+          sidebarContainer.innerHTML = this.sidebar.render();
         }
-      }, 100);
+      }
+
+      // 現在のページコンテンツも再レンダリング
+      if (this.router && this.router.currentRoute) {
+        setTimeout(() => {
+          this.i18n.applyTranslations();
+        }, 10);
+      }
     });
 
     // デバッグ用グローバル関数
