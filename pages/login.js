@@ -125,9 +125,7 @@ export class LoginPage {
                           </div>
                         </div>
                       </div>
-                      <small class="text-muted d-block text-center mt-2">
-                        <i class="fas fa-clock me-1"></i>一時認証システム使用中
-                      </small>
+                      <!-- 本番モードでは一時認証メッセージを非表示 -->
                     </div>
 
                     <div class="text-center mt-4">
