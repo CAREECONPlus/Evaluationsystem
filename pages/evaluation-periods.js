@@ -395,31 +395,6 @@ export class EvaluationPeriodsPage {
         </div>
     `;
   }
-            </div>
-          </div>
-        </div>
-
-        <!-- 確認モーダル -->
-        <div class="modal fade" id="confirmModal" tabindex="-1">
-          <div class="modal-dialog">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">確認</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-              </div>
-              <div class="modal-body" id="confirmMessage">
-                <!-- 確認メッセージがここに表示されます -->
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-                <button type="button" class="btn btn-primary" id="confirmBtn">確認</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
 
   /**
    * イベントリスナーの設定
