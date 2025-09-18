@@ -68,6 +68,7 @@ const TRANSLATIONS = {
     // ===== ユーザー管理 =====
     users: {
       title: "ユーザー管理",
+      subtitle: "ユーザー管理",
       add_user: "新規ユーザー追加",
       edit_user: "ユーザー編集",
       delete_user: "ユーザー削除",
@@ -76,7 +77,14 @@ const TRANSLATIONS = {
       role: "役割",
       status: "ステータス",
       active: "アクティブ",
-      inactive: "非アクティブ"
+      inactive: "非アクティブ",
+      total_users: "総ユーザー数",
+      active_users: "アクティブユーザー",
+      pending_users: "保留中ユーザー",
+      admin_users: "管理者ユーザー",
+      all_status: "すべてのステータス",
+      all_roles: "すべての役割",
+      search_placeholder: "ユーザー名またはメールアドレスで検索"
     },
 
     // ===== 評価システム =====
@@ -105,7 +113,9 @@ const TRANSLATIONS = {
       urgent: "緊急（承認待ち）",
       this_week: "今週作成",
       own_evaluations_only: "あなたの評価のみ表示されます",
-      reset_filters: "フィルターリセット"
+      reset_filters: "フィルターリセット",
+      items_count: "項目数",
+      search_placeholder: "評価対象者名で検索..."
     },
 
     // ===== 共通UI要素 =====
@@ -127,6 +137,7 @@ const TRANSLATIONS = {
       all: "すべて",
       loading: "読み込み中...",
       actions: "操作",
+      created_at: "作成日時",
       reset: "リセット",
       access_denied: "この機能にはアクセス権限がありません。",
       save_draft: "下書き保存",
@@ -175,7 +186,12 @@ const TRANSLATIONS = {
       title: "設定",
       save_changes: "変更を保存",
       job_types: "職種設定",
-      evaluation_periods: "評価期間設定"
+      evaluation_periods: "評価期間設定",
+      select_job_type_hint: "職種を選択してください",
+      categories: "カテゴリ",
+      description: "説明",
+      order: "並び順",
+      language: "言語"
     },
 
     // ===== 目標管理 =====
@@ -358,6 +374,7 @@ const TRANSLATIONS = {
 
     users: {
       title: "User Management",
+      subtitle: "User Management",
       add_user: "Add New User",
       edit_user: "Edit User",
       delete_user: "Delete User",
@@ -366,7 +383,14 @@ const TRANSLATIONS = {
       role: "Role",
       status: "Status",
       active: "Active",
-      inactive: "Inactive"
+      inactive: "Inactive",
+      total_users: "Total Users",
+      active_users: "Active Users",
+      pending_users: "Pending Users",
+      admin_users: "Admin Users",
+      all_status: "All Status",
+      all_roles: "All Roles",
+      search_placeholder: "Search by name or email"
     },
 
     evaluations: {
@@ -394,7 +418,9 @@ const TRANSLATIONS = {
       urgent: "Urgent (Pending Approval)",
       this_week: "This Week",
       own_evaluations_only: "Only your evaluations are displayed",
-      reset_filters: "Reset Filters"
+      reset_filters: "Reset Filters",
+      items_count: "Items Count",
+      search_placeholder: "Search by target user name..."
     },
 
     common: {
@@ -415,6 +441,7 @@ const TRANSLATIONS = {
       all: "All",
       loading: "Loading...",
       actions: "Actions",
+      created_at: "Created At",
       reset: "Reset",
       access_denied: "You do not have access to this feature.",
       save_draft: "Save Draft",
@@ -489,6 +516,18 @@ const TRANSLATIONS = {
       quality: "Quality",
       service: "Service",
       status: "Status"
+    },
+
+    settings: {
+      title: "Settings",
+      save_changes: "Save Changes",
+      job_types: "Job Types",
+      evaluation_periods: "Evaluation Periods",
+      select_job_type_hint: "Please select a job type",
+      categories: "Categories",
+      description: "Description",
+      order: "Order",
+      language: "Language"
     }
   },
 
