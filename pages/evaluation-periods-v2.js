@@ -384,6 +384,9 @@ export class EvaluationPeriodsPage {
                 </form>
               </div>
               <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger me-auto d-none" onclick="window.app.router.currentPageInstance.confirmDeletePeriod()">
+                  <i class="fas fa-trash me-1"></i>削除
+                </button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
                 <button type="submit" class="btn btn-primary" form="periodForm">
                   <span class="submit-text">保存</span>
@@ -406,16 +409,13 @@ export class EvaluationPeriodsPage {
       addPeriodBtn.addEventListener('click', () => this.showAddPeriodModal());
     }
 
-    // 期間保存ボタン
-    const savePeriodBtn = document.getElementById('savePeriodBtn');
-    if (savePeriodBtn) {
-      savePeriodBtn.addEventListener('click', () => this.savePeriod());
-    }
-
-    // 期間削除ボタン
-    const deletePeriodBtn = document.getElementById('deletePeriodBtn');
-    if (deletePeriodBtn) {
-      deletePeriodBtn.addEventListener('click', () => this.confirmDeletePeriod());
+    // 期間フォーム送信
+    const periodForm = document.getElementById('periodForm');
+    if (periodForm) {
+      periodForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.savePeriod();
+      });
     }
 
     // 更新ボタン
@@ -427,7 +427,7 @@ export class EvaluationPeriodsPage {
     // フィルター変更
     const statusFilter = document.getElementById('statusFilter');
     const typeFilter = document.getElementById('typeFilter');
-    
+
     if (statusFilter) {
       statusFilter.addEventListener('change', () => this.filterPeriods());
     }
@@ -438,16 +438,20 @@ export class EvaluationPeriodsPage {
     // 日付変更で期間計算
     const startDate = document.getElementById('startDate');
     const endDate = document.getElementById('endDate');
-    
+
     if (startDate && endDate) {
       startDate.addEventListener('change', () => this.calculateDuration());
       endDate.addEventListener('change', () => this.calculateDuration());
     }
 
-    // クイック設定ボタン
-    document.getElementById('currentQuarterBtn')?.addEventListener('click', () => this.setCurrentQuarter());
-    document.getElementById('nextQuarterBtn')?.addEventListener('click', () => this.setNextQuarter());
-    document.getElementById('currentYearBtn')?.addEventListener('click', () => this.setCurrentYear());
+    // 基本設定フォーム
+    const basicSettingsForm = document.getElementById('basicSettingsForm');
+    if (basicSettingsForm) {
+      basicSettingsForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.saveBasicSettings();
+      });
+    }
   }
 
   /**
@@ -510,8 +514,8 @@ export class EvaluationPeriodsPage {
             ${filteredPeriods.map(period => `
               <tr>
                 <td>
-                  <strong>${period.periodName}</strong>
-                  ${period.periodDescription ? `<br><small class="text-muted">${period.periodDescription}</small>` : ''}
+                  <strong>${period.name}</strong>
+                  ${period.description ? `<br><small class="text-muted">${period.description}</small>` : ''}
                 </td>
                 <td>
                   <span class="badge bg-info">${this.getTypeLabel(period.type)}</span>
@@ -529,10 +533,10 @@ export class EvaluationPeriodsPage {
                   </span>
                 </td>
                 <td>
-                  <button class="btn btn-outline-primary btn-sm me-1" onclick="evaluationPeriodsPage.editPeriod('${period.id || period.periodId}')">
+                  <button class="btn btn-outline-primary btn-sm me-1" onclick="window.app.router.currentPageInstance.editPeriod('${period.id}')">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button class="btn btn-outline-danger btn-sm" onclick="evaluationPeriodsPage.deletePeriod('${period.id || period.periodId}')">
+                  <button class="btn btn-outline-danger btn-sm" onclick="window.app.router.currentPageInstance.confirmDeletePeriod('${period.id}')">
                     <i class="fas fa-trash"></i>
                   </button>
                 </td>
@@ -571,7 +575,11 @@ export class EvaluationPeriodsPage {
   showAddPeriodModal() {
     this.editingPeriodId = null;
     document.getElementById('periodModalTitle').textContent = '新しい評価期間';
-    document.getElementById('deletePeriodBtn').style.display = 'none';
+
+    // 削除ボタンを非表示（新規追加時）
+    const deleteBtn = document.querySelector('#periodModal .btn-outline-danger');
+    if (deleteBtn) deleteBtn.style.display = 'none';
+
     document.getElementById('periodForm').reset();
     
     const modal = new bootstrap.Modal(document.getElementById('periodModal'));
@@ -582,20 +590,23 @@ export class EvaluationPeriodsPage {
    * 期間編集
    */
   editPeriod(periodId) {
-    const period = this.periods.find(p => (p.id || p.periodId) === periodId);
+    const period = this.periods.find(p => p.id === periodId);
     if (!period) return;
 
     this.editingPeriodId = periodId;
     document.getElementById('periodModalTitle').textContent = '評価期間の編集';
-    document.getElementById('deletePeriodBtn').style.display = 'inline-block';
+
+    // 削除ボタンを表示（編集時）
+    const deleteBtn = document.querySelector('#periodModal .btn-outline-danger');
+    if (deleteBtn) deleteBtn.style.display = 'inline-block';
 
     // フォームにデータを設定
-    document.getElementById('periodName').value = period.periodName || '';
+    document.getElementById('periodName').value = period.name || '';
     document.getElementById('periodType').value = period.type || '';
     document.getElementById('startDate').value = this.formatDateForInput(period.startDate);
     document.getElementById('endDate').value = this.formatDateForInput(period.endDate);
     document.getElementById('periodStatus').value = period.status || 'scheduled';
-    document.getElementById('periodDescription').value = period.periodDescription || '';
+    document.getElementById('periodDescription').value = period.description || '';
 
     this.calculateDuration();
 
@@ -614,39 +625,35 @@ export class EvaluationPeriodsPage {
     }
 
     const periodData = {
-      periodName: document.getElementById('periodName').value,
+      name: document.getElementById('periodName').value,
       type: document.getElementById('periodType').value,
-      startDate: new Date(document.getElementById('startDate').value),
-      endDate: new Date(document.getElementById('endDate').value),
+      startDate: document.getElementById('startDate').value,
+      endDate: document.getElementById('endDate').value,
       status: document.getElementById('periodStatus').value,
-      periodDescription: document.getElementById('periodDescription').value
+      description: document.getElementById('periodDescription').value || ''
     };
 
     try {
+      const submitBtn = document.querySelector('#periodModal .btn-primary');
+      const spinner = submitBtn.querySelector('.spinner-border');
+      const submitText = submitBtn.querySelector('.submit-text');
+
+      submitBtn.disabled = true;
+      spinner.classList.remove('d-none');
+      submitText.textContent = '保存中...';
+
       if (this.editingPeriodId) {
-        // 更新（将来実装）
-        const existingIndex = this.periods.findIndex(p => (p.id || p.periodId) === this.editingPeriodId);
-        if (existingIndex >= 0) {
-          this.periods[existingIndex] = { 
-            ...this.periods[existingIndex], 
-            ...periodData,
-            updatedAt: new Date()
-          };
-        }
+        // 更新処理（将来実装）
+        await this.app.api.updateEvaluationPeriod(this.editingPeriodId, periodData);
         console.log('Evaluation Periods: Period updated:', this.editingPeriodId);
       } else {
-        // 新規追加
-        const newPeriod = {
-          ...periodData,
-          id: 'temp_' + Date.now(),
-          periodId: 'temp_' + Date.now(),
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-        this.periods.push(newPeriod);
-        console.log('Evaluation Periods: New period added');
+        // 新規追加 - Firebase APIを使用
+        await this.app.api.saveEvaluationPeriod(periodData);
+        console.log('Evaluation Periods: New period saved to Firebase');
       }
 
+      // データの再読み込み
+      await this.loadPeriods();
       this.renderPeriodsList();
       this.updateStatistics();
 
@@ -654,61 +661,62 @@ export class EvaluationPeriodsPage {
       const modal = bootstrap.Modal.getInstance(document.getElementById('periodModal'));
       modal.hide();
 
-      alert('評価期間を保存しました');
+      this.app.showSuccess('評価期間を保存しました');
 
     } catch (error) {
       console.error('Evaluation Periods: Failed to save period:', error);
-      alert('評価期間の保存に失敗しました');
+      this.app.showError('評価期間の保存に失敗しました: ' + error.message);
+    } finally {
+      const submitBtn = document.querySelector('#periodModal .btn-primary');
+      const spinner = submitBtn.querySelector('.spinner-border');
+      const submitText = submitBtn.querySelector('.submit-text');
+
+      submitBtn.disabled = false;
+      spinner.classList.add('d-none');
+      submitText.textContent = '保存';
     }
   }
 
   /**
    * 期間削除の確認
    */
-  confirmDeletePeriod() {
-    if (!this.editingPeriodId) return;
+  confirmDeletePeriod(periodId = null) {
+    const targetId = periodId || this.editingPeriodId;
+    if (!targetId) return;
 
-    const period = this.periods.find(p => (p.id || p.periodId) === this.editingPeriodId);
+    const period = this.periods.find(p => p.id === targetId);
     if (!period) return;
 
-    document.getElementById('confirmMessage').innerHTML = `
-      <p>以下の評価期間を削除してもよろしいですか？</p>
-      <div class="alert alert-warning">
-        <strong>${period.periodName}</strong><br>
-        <small>${this.formatDate(period.startDate)} ～ ${this.formatDate(period.endDate)}</small>
-      </div>
-      <p class="text-danger"><strong>注意:</strong> この操作は取り消せません。</p>
-    `;
+    this.editingPeriodId = targetId;
 
-    // 確認ボタンのイベント設定
-    document.getElementById('confirmBtn').onclick = () => this.deletePeriod();
-
-    const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
-    confirmModal.show();
+    if (confirm(`評価期間「${period.name}」を削除してもよろしいですか？\n\n※この操作は取り消せません。`)) {
+      this.deletePeriod();
+    }
   }
 
   /**
    * 期間削除
    */
-  deletePeriod() {
+  async deletePeriod() {
     try {
-      this.periods = this.periods.filter(p => (p.id || p.periodId) !== this.editingPeriodId);
-      
+      // Firebase APIを使用した削除処理（将来実装）
+      // await this.app.api.deleteEvaluationPeriod(this.editingPeriodId);
+
+      // 現在はローカル配列から削除
+      this.periods = this.periods.filter(p => p.id !== this.editingPeriodId);
+
       this.renderPeriodsList();
       this.updateStatistics();
 
       // モーダルを閉じる
       const periodModal = bootstrap.Modal.getInstance(document.getElementById('periodModal'));
-      const confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
-      
       if (periodModal) periodModal.hide();
-      if (confirmModal) confirmModal.hide();
 
-      alert('評価期間を削除しました');
+      this.app.showSuccess('評価期間を削除しました');
 
     } catch (error) {
       console.error('Evaluation Periods: Failed to delete period:', error);
-      alert('評価期間の削除に失敗しました');
+      this.app.showError('評価期間の削除に失敗しました: ' + error.message);
     }
   }
 
@@ -859,6 +867,7 @@ export class EvaluationPeriodsPage {
    */
   async postRender() {
     try {
+      await this.init();
       this.setupEventListeners();
       this.updateStatistics();
       this.renderPeriodsList();
@@ -866,6 +875,7 @@ export class EvaluationPeriodsPage {
       console.log("Evaluation Periods: Page rendered successfully");
     } catch (error) {
       console.error("Evaluation Periods: Failed to post-render:", error);
+      this.app.showError('ページの初期化に失敗しました');
     }
   }
 
@@ -880,3 +890,12 @@ export class EvaluationPeriodsPage {
 
 // グローバル参照用
 window.evaluationPeriodsPage = null;
+
+// ページインスタンスの設定
+if (typeof window !== 'undefined') {
+  window.addEventListener('DOMContentLoaded', () => {
+    if (window.app && window.app.router && window.app.router.currentPageInstance) {
+      window.evaluationPeriodsPage = window.app.router.currentPageInstance;
+    }
+  });
+}
