@@ -45,7 +45,7 @@ class App {
       try {
         await Promise.race([
           this.auth.listenForAuthChanges(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error("Auth timeout")), 8000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Auth timeout")), 12000))
         ])
       } catch (authError) {
         if (authError.message === "Auth timeout") {

@@ -68,10 +68,10 @@ export class Auth {
       this.firebaseApp = initializeApp(firebaseConfig)
       this.auth = getAuth(this.firebaseApp)
       
-      // Firestore初期化を遅延させる
+      // Firestore初期化を遅延させる（安定性向上のため500msに延長）
       setTimeout(() => {
         this.initializeFirestore()
-      }, 100)
+      }, 500)
       
       this.isInitialized = true
       
