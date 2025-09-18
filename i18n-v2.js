@@ -18,9 +18,11 @@ const TRANSLATIONS = {
     // ===== ナビゲーション =====
     nav: {
       dashboard: "ダッシュボード",
-      evaluations: "評価一覧", 
+      evaluations: "評価一覧",
       evaluation: "評価入力",
       goals: "目標設定",
+      goal_setting: "目標設定",
+      goal_approvals: "目標承認",
       users: "ユーザー管理",
       settings: "設定",
       logout: "ログアウト",
@@ -28,11 +30,11 @@ const TRANSLATIONS = {
       help: "ヘルプ",
       job_types: "職種管理",
       self_evaluation: "自己評価",
-      goal_approvals: "目標承認",
       multilingual_admin: "多言語管理",
       organization_management: "組織管理",
-      evaluation_periods: "評価期間",
+      evaluation_periods: "評価期間設定",
       data_settings: "データ設定",
+      developer: "開発者管理",
       profile: "プロフィール"
     },
 
@@ -314,12 +316,23 @@ const TRANSLATIONS = {
     nav: {
       dashboard: "Dashboard",
       evaluations: "Evaluations",
-      evaluation: "New Evaluation", 
+      evaluation: "New Evaluation",
       goals: "Goals",
+      goal_setting: "Goal Setting",
+      goal_approvals: "Goal Approvals",
       users: "User Management",
       settings: "Settings",
       logout: "Logout",
-      reports: "Reports"
+      reports: "Reports",
+      help: "Help",
+      job_types: "Job Types",
+      self_evaluation: "Self Evaluation",
+      multilingual_admin: "Multilingual Admin",
+      organization_management: "Organization Management",
+      evaluation_periods: "Evaluation Periods",
+      data_settings: "Data Settings",
+      developer: "Developer",
+      profile: "Profile"
     },
 
     dashboard: {
@@ -492,11 +505,22 @@ const TRANSLATIONS = {
       dashboard: "Bảng điều khiển",
       evaluations: "Danh sách đánh giá",
       evaluation: "Nhập đánh giá",
-      goals: "Thiết lập mục tiêu", 
+      goals: "Thiết lập mục tiêu",
+      goal_setting: "Thiết lập mục tiêu",
+      goal_approvals: "Phê duyệt mục tiêu",
       users: "Quản lý người dùng",
       settings: "Cài đặt",
       logout: "Đăng xuất",
-      reports: "Báo cáo"
+      reports: "Báo cáo",
+      help: "Trợ giúp",
+      job_types: "Loại công việc",
+      self_evaluation: "Tự đánh giá",
+      multilingual_admin: "Quản lý đa ngôn ngữ",
+      organization_management: "Quản lý tổ chức",
+      evaluation_periods: "Chu kỳ đánh giá",
+      data_settings: "Cài đặt dữ liệu",
+      developer: "Nhà phát triển",
+      profile: "Hồ sơ"
     },
 
     dashboard: {

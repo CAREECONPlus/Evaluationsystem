@@ -37,35 +37,30 @@ export class API {
       authDb: !!app.auth.db
     });
 
-    // 緊急モード時はFirestoreを初期化しない
-    if (window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE || app.auth.useTemporaryAuth) {
-      console.log("API v5: Emergency mode detected - skipping Firestore initialization");
-      this.db = null;
-    } else {
-      console.log("API v5: Initializing Firestore database");
-      this.db = getFirestore(app.auth.firebaseApp);
-      console.log("API v5: Firestore database initialized:", {
-        hasDb: !!this.db,
-        dbType: typeof this.db,
-        dbConstructor: this.db?.constructor?.name,
-        dbApp: !!this.db?.app
-      });
+    // 本番モード: 常にFirestoreを初期化
+    console.log("API v5: Production mode - Initializing Firestore database");
+    this.db = getFirestore(app.auth.firebaseApp);
+    console.log("API v5: Firestore database initialized:", {
+      hasDb: !!this.db,
+      dbType: typeof this.db,
+      dbConstructor: this.db?.constructor?.name,
+      dbApp: !!this.db?.app
+    });
 
-      // Enhanced Firestore validation with detailed logging
-      setInterval(() => {
-        if (this.db) {
-          console.log("API v5: Periodic Firestore validation:", {
-            hasDb: !!this.db,
-            dbType: typeof this.db,
-            dbConstructor: this.db.constructor.name,
-            dbApp: !!this.db.app,
-            authDb: !!this.app.auth.db,
-            authDbSame: this.db === this.app.auth.db,
-            timestamp: new Date().toISOString()
-          });
-        }
-      }, 10000);
-    }
+    // Enhanced Firestore validation with detailed logging
+    setInterval(() => {
+      if (this.db) {
+        console.log("API v5: Periodic Firestore validation:", {
+          hasDb: !!this.db,
+          dbType: typeof this.db,
+          dbConstructor: this.db.constructor.name,
+          dbApp: !!this.db.app,
+          authDb: !!this.app.auth.db,
+          authDbSame: this.db === this.app.auth.db,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }, 10000);
 
     this.multilingual = new MultilingualAPI(app);
     this.translationService = new TranslationService(app);
