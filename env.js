@@ -21,12 +21,9 @@ class Environment {
 
     // 開発環境の判定
     if (
-      hostname === 'localhost' || 
-      hostname === '127.0.0.1' || 
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
       hostname.includes('local') ||
-      hostname.includes('github.io') ||  // GitHub Pages も開発環境として扱う
-      hostname.includes('firebaseapp.com') ||  // Firebase Hosting も開発設定を使用
-      hostname.includes('web.app') ||  // Firebase Hosting カスタムドメイン
       port === '3000' ||
       port === '5000' ||
       port === '8000' ||
@@ -70,8 +67,16 @@ class Environment {
           ENVIRONMENT: this.environment
         };
       } else {
-        // 本番環境では環境変数から読み込み
-        this.config = await this.loadFromServer();
+        // 本番環境では固定設定を使用
+        this.config = {
+          FIREBASE_API_KEY: "AIzaSyAK3wAWIZCultkSQfyse8L8Z-JNMEVK5Wk",
+          FIREBASE_AUTH_DOMAIN: "hyouka-db.firebaseapp.com",
+          FIREBASE_PROJECT_ID: "hyouka-db",
+          FIREBASE_STORAGE_BUCKET: "hyouka-db.appspot.com",
+          FIREBASE_MESSAGING_SENDER_ID: "861016804589",
+          FIREBASE_APP_ID: "1:861016804589:web:d911d516d6c79aa73690e4",
+          ENVIRONMENT: this.environment
+        };
       }
 
       this.isLoaded = true;
