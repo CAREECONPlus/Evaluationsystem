@@ -525,7 +525,10 @@ export class EvaluationReportPage {
     return {
       evaluations: [],
       statistics: this.getDefaultStats(),
-      trends: { labels: [], datasets: [] }
+      trends: { labels: [], datasets: [] },
+      improvements: [],
+      strengths: [],
+      dataSource: 'default'
     };
   }
 
@@ -1291,9 +1294,15 @@ export class EvaluationReportPage {
    * 作業員統計カードの更新
    */
   updateWorkerStats() {
+    // Ensure reportData exists
+    if (!this.reportData) {
+      console.warn('Reports: No report data available for updateWorkerStats');
+      return;
+    }
+
     const stats = this.reportData.statistics || this.getDefaultStats();
     const evaluations = this.reportData.evaluations || [];
-    
+
     // 総合評価
     const overallElement = document.getElementById('personalOverallScore');
     if (overallElement) {
@@ -1314,8 +1323,8 @@ export class EvaluationReportPage {
     // 改善項目数と強み項目数
     const improvementElement = document.getElementById('improvementCount');
     const strengthElement = document.getElementById('strengthCount');
-    const improvements = this.reportData?.improvements || [];
-    const strengths = this.reportData?.strengths || [];
+    const improvements = Array.isArray(this.reportData.improvements) ? this.reportData.improvements : [];
+    const strengths = Array.isArray(this.reportData.strengths) ? this.reportData.strengths : [];
     if (improvementElement) improvementElement.textContent = improvements.length.toString();
     if (strengthElement) strengthElement.textContent = strengths.length.toString();
   }
