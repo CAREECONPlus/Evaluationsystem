@@ -2,6 +2,8 @@
  * Evaluation Report Page Component (完全実装版)
  * 評価レポートページコンポーネント
  */
+import { DynamicContentTranslator } from '../services/dynamic-content-translator.js';
+
 export class EvaluationReportDetailPage {
   constructor(app) {
     this.app = app;
@@ -9,6 +11,13 @@ export class EvaluationReportDetailPage {
     this.history = [];
     this.chart = null;
     this.processedScores = {};
+    this.contentTranslator = new DynamicContentTranslator(app);
+    this.multilingualData = {
+      categories: [],
+      evaluationItems: [],
+      jobTypes: []
+    };
+    this.currentLanguage = app.i18n.getCurrentLanguage();
   }
 
   async render() {
@@ -83,28 +92,73 @@ export class EvaluationReportDetailPage {
         <div class="card">
           <div class="card-body">
             <h4 class="card-title mb-4">評価詳細</h4>
-            <div class="table-responsive">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>カテゴリ</th>
-                    <th>自己評価</th>
-                    <th>評価者評価</th>
-                    <th>最終スコア</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${Object.entries(quantScores).map(([category, scores]) => `
-                    <tr>
-                      <td>${this.app.sanitizeHtml(category)}</td>
-                      <td>${scores.self || '-'}</td>
-                      <td>${scores.evaluator || '-'}</td>
-                      <td><strong>${scores.final || '-'}</strong></td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
+            ${Object.entries(quantScores).map(([category, scores]) => `
+              <div class="mb-4">
+                <h5 class="border-bottom pb-2 mb-3">
+                  ${this.app.sanitizeHtml(category)}
+                  <span class="badge bg-primary float-end">平均: ${scores.final}</span>
+                </h5>
+                <div class="table-responsive">
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>評価項目</th>
+                        <th class="text-center" style="width: 120px;">自己評価</th>
+                        <th class="text-center" style="width: 120px;">評価者評価</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${Object.entries(scores.items || {}).map(([itemName, itemScores]) => `
+                        <tr>
+                          <td>${this.app.sanitizeHtml(itemName)}</td>
+                          <td class="text-center">
+                            ${itemScores.self !== null ? `
+                              <span class="badge bg-info">${itemScores.self}</span>
+                            ` : '-'}
+                          </td>
+                          <td class="text-center">
+                            ${itemScores.evaluator !== null ? `
+                              <span class="badge bg-success">${itemScores.evaluator}</span>
+                            ` : '-'}
+                          </td>
+                        </tr>
+                      `).join('')}
+                      <tr class="table-active fw-bold">
+                        <td>カテゴリ平均</td>
+                        <td class="text-center">${scores.self}</td>
+                        <td class="text-center">${scores.evaluator}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            `).join('')}
+
+            ${this.evaluation.ratings?.comment_self || this.evaluation.ratings?.comment_evaluator ? `
+            <div class="mt-4">
+              <h5 class="border-bottom pb-2 mb-3">コメント</h5>
+              ${this.evaluation.ratings?.comment_self ? `
+              <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                  <i class="fas fa-user me-2"></i>自己評価コメント
+                </div>
+                <div class="card-body">
+                  <p class="mb-0">${this.app.sanitizeHtml(this.evaluation.ratings.comment_self)}</p>
+                </div>
+              </div>
+              ` : ''}
+              ${this.evaluation.ratings?.comment_evaluator ? `
+              <div class="card">
+                <div class="card-header bg-success text-white">
+                  <i class="fas fa-user-tie me-2"></i>評価者コメント
+                </div>
+                <div class="card-body">
+                  <p class="mb-0">${this.app.sanitizeHtml(this.evaluation.ratings.comment_evaluator)}</p>
+                </div>
+              </div>
+              ` : ''}
             </div>
+            ` : ''}
           </div>
         </div>
       </div>
@@ -157,6 +211,9 @@ export class EvaluationReportDetailPage {
     }
 
     try {
+      // 多言語データと評価データを並行で読み込み
+      await this.loadMultilingualData();
+
       [this.evaluation, this.history] = await Promise.all([
         this.app.api.getEvaluationById(evaluationId),
         this.app.api.getEvaluationHistory(evaluationId)
@@ -189,6 +246,32 @@ export class EvaluationReportDetailPage {
     }
   }
 
+  async loadMultilingualData() {
+    try {
+      const data = await this.app.api.multilingualAPI.getAllI18nData(this.currentLanguage);
+      this.multilingualData = {
+        categories: data.categories || [],
+        evaluationItems: data.evaluationItems || [],
+        jobTypes: data.jobTypes || [],
+        periods: data.periods || []
+      };
+      console.log('Loaded multilingual data for report:', this.multilingualData);
+    } catch (error) {
+      console.error('Error loading multilingual data:', error);
+      // エラーが発生してもレポート表示は続行
+    }
+  }
+
+  getCategoryName(categoryId) {
+    const category = this.multilingualData.categories.find(c => c.categoryId === categoryId);
+    return category ? category.categoryName : categoryId;
+  }
+
+  getItemName(itemId) {
+    const item = this.multilingualData.evaluationItems.find(i => i.itemId === itemId);
+    return item ? item.itemName : itemId;
+  }
+
   async processEvaluationData() {
     if (!this.evaluation.ratings) {
       this.processedScores = {
@@ -202,29 +285,52 @@ export class EvaluationReportDetailPage {
     const ratings = this.evaluation.ratings;
     const quantScores = {};
     const qualScores = {};
+    const categoryItems = {};
     let totalScore = 0;
     let scoreCount = 0;
 
     // 定量的評価の処理
     Object.keys(ratings).forEach(key => {
       if (key.startsWith('quant_')) {
-        const [, catIndex, itemIndex, type] = key.split('_');
-        const category = `Category_${catIndex}`;
-        
-        if (!quantScores[category]) {
-          quantScores[category] = { self: 0, evaluator: 0, count: 0 };
+        const parts = key.split('_');
+        const categoryId = parts[1];
+        const itemId = parts[2];
+        const type = parts[3]; // 'self' or 'evaluator'
+
+        // カテゴリ名を取得
+        const categoryName = this.getCategoryName(categoryId) || `カテゴリ ${categoryId}`;
+        const itemName = this.getItemName(itemId) || `項目 ${itemId}`;
+
+        if (!quantScores[categoryName]) {
+          quantScores[categoryName] = {
+            self: 0,
+            evaluator: 0,
+            count: 0,
+            items: []
+          };
         }
-        
+
+        // アイテム詳細を記録
+        if (!categoryItems[categoryName]) {
+          categoryItems[categoryName] = {};
+        }
+        if (!categoryItems[categoryName][itemName]) {
+          categoryItems[categoryName][itemName] = { self: null, evaluator: null };
+        }
+
+        const score = parseInt(ratings[key]);
         if (type === 'self') {
-          quantScores[category].self += ratings[key];
+          quantScores[categoryName].self += score;
+          categoryItems[categoryName][itemName].self = score;
         } else if (type === 'evaluator') {
-          quantScores[category].evaluator += ratings[key];
+          quantScores[categoryName].evaluator += score;
+          categoryItems[categoryName][itemName].evaluator = score;
         }
-        quantScores[category].count++;
+        quantScores[categoryName].count++;
       } else if (key.startsWith('qual_')) {
         const [, index, type] = key.split('_');
-        const goalKey = `Goal_${index}`;
-        
+        const goalKey = `目標 ${index}`;
+
         if (!qualScores[goalKey]) {
           qualScores[goalKey] = {};
         }
@@ -236,12 +342,15 @@ export class EvaluationReportDetailPage {
     Object.keys(quantScores).forEach(category => {
       const scores = quantScores[category];
       if (scores.count > 0) {
-        scores.self = (scores.self / scores.count).toFixed(1);
-        scores.evaluator = (scores.evaluator / scores.count).toFixed(1);
+        const itemCount = scores.count / 2; // self と evaluator の2つずつあるため
+        scores.self = (scores.self / itemCount).toFixed(1);
+        scores.evaluator = (scores.evaluator / itemCount).toFixed(1);
         scores.final = ((parseFloat(scores.self) + parseFloat(scores.evaluator)) / 2).toFixed(1);
         totalScore += parseFloat(scores.final);
         scoreCount++;
       }
+      // アイテム詳細を追加
+      scores.items = categoryItems[category] || {};
     });
 
     // 総合スコアの計算

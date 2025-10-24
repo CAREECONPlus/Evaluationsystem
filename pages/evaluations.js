@@ -606,20 +606,32 @@ export class EvaluationsPage {
                   </td>
                   <td>
                     <div class="btn-group" role="group">
-                      <a href="#/evaluation-form?id=${evaluation.id}" 
-                         class="btn btn-sm btn-outline-primary" data-link>
+                      ${evaluation.status === 'completed' ? `
+                      <a href="#/evaluation-report?id=${evaluation.id}"
+                         class="btn btn-sm btn-success"
+                         data-link
+                         title="レポート表示">
+                        <i class="fas fa-chart-bar"></i>
+                      </a>
+                      ` : ''}
+                      <a href="#/evaluation-form?id=${evaluation.id}"
+                         class="btn btn-sm btn-outline-primary"
+                         data-link
+                         title="詳細表示">
                         <i class="fas fa-eye"></i>
                       </a>
                       ${canEdit && (isMyEvaluation || currentUser.role === 'admin') ? `
-                      <button class="btn btn-sm btn-outline-warning" 
+                      <button class="btn btn-sm btn-outline-warning"
                               onclick="window.app.router.currentPageInstance.quickApprove('${evaluation.id}')"
-                              ${canApprove ? '' : 'disabled'}>
+                              ${canApprove ? '' : 'disabled'}
+                              title="承認">
                         <i class="fas fa-check"></i>
                       </button>
                       ` : ''}
                       ${currentUser.role === 'admin' ? `
-                      <button class="btn btn-sm btn-outline-danger" 
-                              onclick="window.app.router.currentPageInstance.deleteEvaluation('${evaluation.id}')">
+                      <button class="btn btn-sm btn-outline-danger"
+                              onclick="window.app.router.currentPageInstance.deleteEvaluation('${evaluation.id}')"
+                              title="削除">
                         <i class="fas fa-trash"></i>
                       </button>
                       ` : ''}
@@ -909,12 +921,18 @@ export class EvaluationsPage {
                   ` : ''}
                   
                   <div class="d-grid gap-2">
-                    <a href="#/evaluation-form?id=${evaluation.id}" 
+                    ${evaluation.status === 'completed' ? `
+                    <a href="#/evaluation-report?id=${evaluation.id}"
+                       class="btn btn-success btn-sm" data-link>
+                      <i class="fas fa-chart-bar me-1"></i>レポート表示
+                    </a>
+                    ` : ''}
+                    <a href="#/evaluation-form?id=${evaluation.id}"
                        class="btn btn-outline-primary btn-sm" data-link>
                       <i class="fas fa-eye me-1"></i>詳細表示
                     </a>
                     ${canApprove ? `
-                    <button class="btn btn-warning btn-sm" 
+                    <button class="btn btn-warning btn-sm"
                             onclick="window.app.router.currentPageInstance.quickApprove('${evaluation.id}')">
                       <i class="fas fa-check me-1"></i>承認する
                     </button>
