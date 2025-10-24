@@ -77,7 +77,48 @@ const TRANSLATIONS = {
       communication: "コミュニケーション",
       leadership: "リーダーシップ",
       problem_solving: "問題解決能力",
-      safety_awareness: "安全意識"
+      safety_awareness: "安全意識",
+      period: "評価期間",
+      updated_at: "更新日時",
+      assignment_status: "割当状況"
+    },
+
+    // ===== 評価フォーム =====
+    evaluation: {
+      target: "評価対象者"
+    },
+
+    // ===== ステータス =====
+    status: {
+      title: "ステータス",
+      pending: "保留中",
+      in_progress: "進行中",
+      completed: "完了",
+      draft: "下書き"
+    },
+
+    // ===== レポート =====
+    report: {
+      summary: "サマリー",
+      comparison: "比較",
+      history: "履歴",
+      overall_evaluation: "総合評価",
+      detailed_scores: "詳細スコア",
+      score_comparison: "スコア比較",
+      process_history: "処理履歴"
+    },
+
+    // ===== 目標設定 =====
+    goals: {
+      title: "目標設定",
+      apply: "適用",
+      about_goal_setting: "目標設定について",
+      max_goals_info: "最大5つの目標を設定できます",
+      total_weight_100_info: "目標の合計ウェイトは100%になる必要があります",
+      admin_approval_info: "目標は管理者の承認が必要です",
+      select_evaluation_period: "評価期間を選択",
+      add_goal: "目標を追加",
+      total_weight: "合計ウェイト"
     },
 
     // ===== 共通UI要素 =====
@@ -95,7 +136,8 @@ const TRANSLATIONS = {
       sort: "ソート",
       refresh: "更新",
       export: "エクスポート",
-      import: "インポート"
+      import: "インポート",
+      back: "戻る"
     },
 
     // ===== エラー・メッセージ =====
@@ -176,13 +218,50 @@ const TRANSLATIONS = {
       communication: "Communication",
       leadership: "Leadership",
       problem_solving: "Problem Solving",
-      safety_awareness: "Safety Awareness"
+      safety_awareness: "Safety Awareness",
+      period: "Evaluation Period",
+      updated_at: "Updated At",
+      assignment_status: "Assignment Status"
+    },
+
+    evaluation: {
+      target: "Target User"
+    },
+
+    status: {
+      title: "Status",
+      pending: "Pending",
+      in_progress: "In Progress",
+      completed: "Completed",
+      draft: "Draft"
+    },
+
+    report: {
+      summary: "Summary",
+      comparison: "Comparison",
+      history: "History",
+      overall_evaluation: "Overall Evaluation",
+      detailed_scores: "Detailed Scores",
+      score_comparison: "Score Comparison",
+      process_history: "Process History"
+    },
+
+    goals: {
+      title: "Goals",
+      apply: "Apply",
+      about_goal_setting: "About Goal Setting",
+      max_goals_info: "You can set up to 5 goals",
+      total_weight_100_info: "Total weight of goals must be 100%",
+      admin_approval_info: "Goals require administrator approval",
+      select_evaluation_period: "Select Evaluation Period",
+      add_goal: "Add Goal",
+      total_weight: "Total Weight"
     },
 
     common: {
       save: "Save",
       cancel: "Cancel",
-      edit: "Edit", 
+      edit: "Edit",
       delete: "Delete",
       confirm: "Confirm",
       yes: "Yes",
@@ -193,7 +272,8 @@ const TRANSLATIONS = {
       sort: "Sort",
       refresh: "Refresh",
       export: "Export",
-      import: "Import"
+      import: "Import",
+      back: "Back"
     },
 
     messages: {
@@ -248,6 +328,58 @@ const TRANSLATIONS = {
       quick_fill: "Điền nhanh"
     },
 
+    evaluations: {
+      title: "Hệ thống Đánh giá",
+      new_evaluation: "Đánh giá mới",
+      edit_evaluation: "Chỉnh sửa đánh giá",
+      target_user: "Người được đánh giá",
+      evaluator: "Người đánh giá",
+      score: "Điểm số",
+      comments: "Nhận xét",
+      technical_skills: "Kỹ năng kỹ thuật",
+      communication: "Giao tiếp",
+      leadership: "Lãnh đạo",
+      problem_solving: "Giải quyết vấn đề",
+      safety_awareness: "Ý thức an toàn",
+      period: "Kỳ đánh giá",
+      updated_at: "Cập nhật lúc",
+      assignment_status: "Trạng thái phân công"
+    },
+
+    evaluation: {
+      target: "Người được đánh giá"
+    },
+
+    status: {
+      title: "Trạng thái",
+      pending: "Chờ xử lý",
+      in_progress: "Đang tiến hành",
+      completed: "Hoàn thành",
+      draft: "Bản nháp"
+    },
+
+    report: {
+      summary: "Tóm tắt",
+      comparison: "So sánh",
+      history: "Lịch sử",
+      overall_evaluation: "Đánh giá tổng thể",
+      detailed_scores: "Điểm chi tiết",
+      score_comparison: "So sánh điểm",
+      process_history: "Lịch sử xử lý"
+    },
+
+    goals: {
+      title: "Thiết lập mục tiêu",
+      apply: "Áp dụng",
+      about_goal_setting: "Về thiết lập mục tiêu",
+      max_goals_info: "Bạn có thể đặt tối đa 5 mục tiêu",
+      total_weight_100_info: "Tổng trọng số của mục tiêu phải là 100%",
+      admin_approval_info: "Mục tiêu cần được quản trị viên phê duyệt",
+      select_evaluation_period: "Chọn kỳ đánh giá",
+      add_goal: "Thêm mục tiêu",
+      total_weight: "Tổng trọng số"
+    },
+
     common: {
       save: "Lưu",
       cancel: "Hủy bỏ",
@@ -262,7 +394,8 @@ const TRANSLATIONS = {
       sort: "Sắp xếp",
       refresh: "Làm mới",
       export: "Xuất",
-      import: "Nhập"
+      import: "Nhập",
+      back: "Quay lại"
     },
 
     messages: {

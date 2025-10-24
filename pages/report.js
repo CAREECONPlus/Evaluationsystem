@@ -113,7 +113,7 @@ export class EvaluationReportPage {
         statistics: await this.analytics.calculateWorkerStatistics(filteredEvaluations),
         trends: await this.analytics.calculatePersonalTrends(filteredEvaluations),
         improvements: await this.analytics.analyzeImprovements(filteredEvaluations),
-        strengths: this.getTopStrengths(filteredEvaluations)
+        strengths: this.analyzeStrengths(filteredEvaluations)
       };
 
       if (benchmarkData) {
@@ -1393,6 +1393,12 @@ export class EvaluationReportPage {
       delete this.chartInstances.personalRadar;
     }
 
+    // Also check if canvas has an existing Chart instance
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
+    }
+
     const ctx = canvas.getContext('2d');
     
     // 実際の評価データからレーダーチャートデータを生成
@@ -1640,6 +1646,12 @@ export class EvaluationReportPage {
       delete this.chartInstances.evaluatorPersonal;
     }
 
+    // Also check if canvas has an existing Chart instance
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
+    }
+
     const ctx = canvas.getContext('2d');
     const data = this.reportData || this.getDefaultEvaluatorData();
     const personalTrends = data.personal.trends || { labels: [], datasets: [] };
@@ -1690,6 +1702,12 @@ export class EvaluationReportPage {
     if (this.chartInstances && this.chartInstances.subordinateComparison) {
       this.chartInstances.subordinateComparison.destroy();
       delete this.chartInstances.subordinateComparison;
+    }
+
+    // Also check if canvas has an existing Chart instance
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
     }
 
     const ctx = canvas.getContext('2d');
@@ -1839,8 +1857,14 @@ export class EvaluationReportPage {
       delete this.chartInstances.organizationSkillMap;
     }
 
+    // Also check if canvas has an existing Chart instance
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
+    }
+
     const ctx = canvas.getContext('2d');
-    
+
     // スキルマップのダミーデータ
     const skillCategories = ['技術力', 'コミュニケーション', '責任感', '協調性', 'リーダーシップ', '問題解決', '学習意欲', '時間管理'];
     const departmentData = [
@@ -1913,8 +1937,14 @@ export class EvaluationReportPage {
       delete this.chartInstances.skillDistribution;
     }
 
+    // Also check if canvas has an existing Chart instance
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
+    }
+
     const ctx = canvas.getContext('2d');
-    
+
     // スキルレベル分布のダミーデータ
     const skillLevels = ['初級', '中級', '上級', 'エキスパート'];
     const distribution = [25, 35, 30, 10]; // パーセンテージ
@@ -2072,8 +2102,14 @@ export class EvaluationReportPage {
       delete this.chartInstances.departmentPerformance;
     }
 
+    // Also check if canvas has an existing Chart instance
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
+    }
+
     const ctx = canvas.getContext('2d');
-    
+
     // 実際の部門データから生成
     const departmentAnalysis = this.reportData?.departmentAnalysis;
     const departments = departmentAnalysis?.departments || ['開発部', '営業部', '管理部', '人事部'];
@@ -2141,8 +2177,14 @@ export class EvaluationReportPage {
       delete this.chartInstances.jobTypeSkill;
     }
 
+    // Also check if canvas has an existing Chart instance
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
+    }
+
     const ctx = canvas.getContext('2d');
-    
+
     // 職種別スキルデータ
     const jobTypes = ['エンジニア', 'セールス', 'マネージャー', 'スペシャリスト'];
     const skillScores = [4.2, 3.8, 3.9, 4.0];
