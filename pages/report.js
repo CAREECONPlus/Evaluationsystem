@@ -587,47 +587,55 @@ export class EvaluationReportPage {
   renderWorkerView() {
     return `
       <div class="reports-page p-md-4 p-3">
-        <div class="page-header mb-4">
-          <h1 class="page-title h2 mb-1">
-            <i class="fas fa-user-chart me-2"></i>個人レポート
+        <div class="page-header">
+          <h1 class="page-title">
+            <i class="fas fa-chart-line me-2"></i>個人レポート
           </h1>
-          <p class="page-subtitle text-dark mb-0">あなたの評価データの分析と推移</p>
+          <p class="page-subtitle mb-0">あなたの評価データの分析と推移</p>
         </div>
 
         ${this.renderCommonTimeRangeSelector()}
 
         <!-- 個人統計サマリー -->
         <div class="row mb-4">
-          <div class="col-md-3 mb-3">
-            <div class="card border-primary">
-              <div class="card-body text-center">
-                <h6 class="card-subtitle mb-2 text-muted">総合評価</h6>
-                <h3 class="card-title mb-0 text-primary" id="personalOverallScore">-</h3>
+          <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card primary">
+              <div class="stat-icon">
+                <i class="fas fa-star"></i>
               </div>
+              <div class="stat-label">総合評価</div>
+              <div class="stat-value" id="personalOverallScore">-</div>
+              <div class="stat-change positive" id="personalScoreChangeText"></div>
             </div>
           </div>
-          <div class="col-md-3 mb-3">
-            <div class="card border-success">
-              <div class="card-body text-center">
-                <h6 class="card-subtitle mb-2 text-muted">前回比較</h6>
-                <h3 class="card-title mb-0 text-success" id="personalScoreChange">-</h3>
+          <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card success">
+              <div class="stat-icon">
+                <i class="fas fa-arrow-trend-up"></i>
               </div>
+              <div class="stat-label">前回比較</div>
+              <div class="stat-value" id="personalScoreChange">-</div>
+              <div class="stat-change"></div>
             </div>
           </div>
-          <div class="col-md-3 mb-3">
-            <div class="card border-warning">
-              <div class="card-body text-center">
-                <h6 class="card-subtitle mb-2 text-muted">改善項目</h6>
-                <h3 class="card-title mb-0 text-warning" id="improvementCount">-</h3>
+          <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card warning">
+              <div class="stat-icon">
+                <i class="fas fa-exclamation-triangle"></i>
               </div>
+              <div class="stat-label">改善項目</div>
+              <div class="stat-value" id="improvementCount">-</div>
+              <div class="stat-change">フォーカスエリア</div>
             </div>
           </div>
-          <div class="col-md-3 mb-3">
-            <div class="card border-info">
-              <div class="card-body text-center">
-                <h6 class="card-subtitle mb-2 text-muted">強み項目</h6>
-                <h3 class="card-title mb-0 text-info" id="strengthCount">-</h3>
+          <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card info">
+              <div class="stat-icon">
+                <i class="fas fa-trophy"></i>
               </div>
+              <div class="stat-label">強み項目</div>
+              <div class="stat-value" id="strengthCount">-</div>
+              <div class="stat-change">あなたの武器</div>
             </div>
           </div>
         </div>
@@ -635,8 +643,8 @@ export class EvaluationReportPage {
         <!-- スコア推移と項目別分析 -->
         <div class="row mb-4">
           <div class="col-lg-6 mb-4">
-            <div class="card shadow-sm h-100">
-              <div class="card-header bg-white">
+            <div class="chart-card h-100">
+              <div class="card-header">
                 <h5 class="mb-0">
                   <i class="fas fa-chart-line me-2 text-primary"></i>評価推移
                 </h5>
@@ -647,10 +655,10 @@ export class EvaluationReportPage {
             </div>
           </div>
           <div class="col-lg-6 mb-4">
-            <div class="card shadow-sm h-100">
-              <div class="card-header bg-white">
+            <div class="chart-card h-100">
+              <div class="card-header">
                 <h5 class="mb-0">
-                  <i class="fas fa-radar-chart me-2 text-primary"></i>項目別評価
+                  <i class="fas fa-chart-radar me-2 text-primary"></i>項目別評価
                 </h5>
               </div>
               <div class="card-body">
@@ -663,32 +671,34 @@ export class EvaluationReportPage {
         <!-- 改善ポイントと強み -->
         <div class="row mb-4">
           <div class="col-lg-6 mb-4">
-            <div class="card shadow-sm h-100">
-              <div class="card-header bg-white">
+            <div class="chart-card h-100">
+              <div class="card-header">
                 <h5 class="mb-0">
-                  <i class="fas fa-exclamation-triangle me-2 text-warning"></i>改善ポイント
+                  <i class="fas fa-bullseye me-2 text-warning"></i>改善ポイント
                 </h5>
               </div>
               <div class="card-body">
                 <div id="improvementPoints">
-                  <div class="text-center py-4">
-                    <div class="spinner-border text-warning" role="status"></div>
+                  <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>データを読み込んでいます...</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
           <div class="col-lg-6 mb-4">
-            <div class="card shadow-sm h-100">
-              <div class="card-header bg-white">
+            <div class="chart-card h-100">
+              <div class="card-header">
                 <h5 class="mb-0">
-                  <i class="fas fa-star me-2 text-success"></i>あなたの強み
+                  <i class="fas fa-medal me-2 text-success"></i>あなたの強み
                 </h5>
               </div>
               <div class="card-body">
                 <div id="strengthPoints">
-                  <div class="text-center py-4">
-                    <div class="spinner-border text-success" role="status"></div>
+                  <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>データを読み込んでいます...</p>
                   </div>
                 </div>
               </div>
@@ -705,47 +715,56 @@ export class EvaluationReportPage {
   renderEvaluatorView() {
     return `
       <div class="reports-page p-md-4 p-3">
-        <div class="page-header mb-4">
-          <h1 class="page-title h2 mb-1">
+        <div class="page-header">
+          <h1 class="page-title">
             <i class="fas fa-users-cog me-2"></i>評価者レポート
           </h1>
-          <p class="page-subtitle text-dark mb-0">担当者の評価状況と個人データ</p>
+          <p class="page-subtitle mb-0">担当者の評価状況と個人データ</p>
         </div>
 
         ${this.renderCommonTimeRangeSelector()}
 
         <!-- 担当者概要 -->
         <div class="row mb-4">
-          <div class="col-md-3 mb-3">
-            <div class="card border-primary">
-              <div class="card-body text-center">
-                <h6 class="card-subtitle mb-2 text-muted">担当者数</h6>
-                <h3 class="card-title mb-0 text-primary" id="subordinateCount">-</h3>
+          <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card primary">
+              <div class="stat-icon">
+                <i class="fas fa-users"></i>
               </div>
+              <div class="stat-label">担当者数</div>
+              <div class="stat-value" id="subordinateCount">-</div>
+              <div class="stat-change">評価対象</div>
             </div>
           </div>
-          <div class="col-md-3 mb-3">
-            <div class="card border-success">
-              <div class="card-body text-center">
-                <h6 class="card-subtitle mb-2 text-muted">評価完了率</h6>
-                <h3 class="card-title mb-0 text-success" id="evaluationProgress">-</h3>
+          <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card success">
+              <div class="stat-icon">
+                <i class="fas fa-tasks"></i>
               </div>
+              <div class="stat-label">評価完了率</div>
+              <div class="stat-value" id="evaluationProgress">-</div>
+              <div class="stat-change"></div>
             </div>
           </div>
-          <div class="col-md-3 mb-3">
-            <div class="card border-warning">
-              <div class="card-body text-center">
-                <h6 class="card-subtitle mb-2 text-muted">平均評価</h6>
-                <h3 class="card-title mb-0 text-warning" id="averageScore">-</h3>
+          <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card warning">
+              <div class="stat-icon">
+                <i class="fas fa-chart-bar"></i>
               </div>
+              <div class="stat-label">平均評価</div>
+              <div class="stat-value" id="averageScore">-</div>
+              <div class="stat-change">担当者平均</div>
             </div>
           </div>
-          <div class="col-md-3 mb-3">
-            <div class="card border-info">
-              <div class="card-body text-center">
-                <h6 class="card-subtitle mb-2 text-muted">個人評価</h6>
-                <h3 class="card-title mb-0 text-info" id="personalScore">-</h3>
+          <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card info">
+              <div class="stat-icon">
+                <i class="fas fa-user-circle"></i>
               </div>
+              <div class="stat-label">個人評価</div>
+              <div class="stat-value" id="personalScore">-</div>
+              <div class="stat-change">あなたの評価</div>
+            </div>
             </div>
           </div>
         </div>
@@ -814,52 +833,58 @@ export class EvaluationReportPage {
 
         <!-- 組織概要統計 -->
         <div class="row mb-4">
-          <div class="col-md-2 mb-3">
-            <div class="card border-primary">
-              <div class="card-body text-center">
-                <h6 class="card-subtitle mb-2 text-muted">総従業員数</h6>
-                <h3 class="card-title mb-0 text-primary" id="totalEmployees">-</h3>
+          <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <div class="stat-card primary">
+              <div class="stat-icon">
+                <i class="fas fa-building"></i>
               </div>
+              <div class="stat-label">総従業員数</div>
+              <div class="stat-value" id="totalEmployees">-</div>
             </div>
           </div>
-          <div class="col-md-2 mb-3">
-            <div class="card border-success">
-              <div class="card-body text-center">
-                <h6 class="card-subtitle mb-2 text-muted">評価完了率</h6>
-                <h3 class="card-title mb-0 text-success" id="orgEvaluationRate">-</h3>
+          <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <div class="stat-card success">
+              <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
               </div>
+              <div class="stat-label">評価完了率</div>
+              <div class="stat-value" id="orgEvaluationRate">-</div>
             </div>
           </div>
-          <div class="col-md-2 mb-3">
-            <div class="card border-warning">
-              <div class="card-body text-center">
-                <h6 class="card-subtitle mb-2 text-muted">組織平均</h6>
-                <h3 class="card-title mb-0 text-warning" id="orgAverageScore">-</h3>
+          <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <div class="stat-card warning">
+              <div class="stat-icon">
+                <i class="fas fa-chart-pie"></i>
               </div>
+              <div class="stat-label">組織平均</div>
+              <div class="stat-value" id="orgAverageScore">-</div>
             </div>
           </div>
-          <div class="col-md-2 mb-3">
-            <div class="card border-info">
-              <div class="card-body text-center">
-                <h6 class="card-subtitle mb-2 text-muted">強いスキル</h6>
-                <h3 class="card-title mb-0 text-info" id="topSkillCount">-</h3>
+          <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <div class="stat-card info">
+              <div class="stat-icon">
+                <i class="fas fa-thumbs-up"></i>
               </div>
+              <div class="stat-label">強いスキル</div>
+              <div class="stat-value" id="topSkillCount">-</div>
             </div>
           </div>
-          <div class="col-md-2 mb-3">
-            <div class="card border-danger">
-              <div class="card-body text-center">
-                <h6 class="card-subtitle mb-2 text-muted">弱いスキル</h6>
-                <h3 class="card-title mb-0 text-danger" id="weakSkillCount">-</h3>
+          <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <div class="stat-card stat-card-danger">
+              <div class="stat-icon">
+                <i class="fas fa-thumbs-down"></i>
               </div>
+              <div class="stat-label">弱いスキル</div>
+              <div class="stat-value" id="weakSkillCount">-</div>
             </div>
           </div>
-          <div class="col-md-2 mb-3">
-            <div class="card border-secondary">
-              <div class="card-body text-center">
-                <h6 class="card-subtitle mb-2 text-muted">個人評価</h6>
-                <h3 class="card-title mb-0 text-secondary" id="adminPersonalScore">-</h3>
+          <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <div class="stat-card stat-card-secondary">
+              <div class="stat-icon">
+                <i class="fas fa-user-tie"></i>
               </div>
+              <div class="stat-label">個人評価</div>
+              <div class="stat-value" id="adminPersonalScore">-</div>
             </div>
           </div>
         </div>
@@ -1419,21 +1444,31 @@ export class EvaluationReportPage {
     
     if (improvements.length === 0) {
       container.innerHTML = `
-        <div class="text-center py-4">
-          <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-          <p class="text-muted">現在特に改善が必要な項目はありません</p>
+        <div class="empty-state">
+          <i class="fas fa-check-circle"></i>
+          <p>現在特に改善が必要な項目はありません</p>
         </div>
       `;
       return;
     }
 
-    container.innerHTML = improvements.map(item => `
-      <div class="mb-3 p-3 border-start border-warning border-3 bg-light">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h6 class="mb-0 fw-bold">${item.category}</h6>
-          <span class="badge bg-warning text-dark">${item.currentScore} → ${item.targetScore}</span>
+    container.innerHTML = improvements.map((item, index) => `
+      <div class="insight-card improvement" style="animation-delay: ${index * 0.1}s">
+        <div class="insight-title">
+          <span>${item.category}</span>
+          <span class="insight-score">${item.currentScore || '-'}</span>
         </div>
-        <p class="mb-0 text-muted small">${item.advice}</p>
+        <div class="insight-description">${item.advice || '改善に向けて取り組んでいきましょう'}</div>
+        <div class="insight-progress">
+          <div class="progress">
+            <div class="progress-bar" role="progressbar"
+                 style="width: ${((item.currentScore || 0) / 5) * 100}%"
+                 aria-valuenow="${item.currentScore || 0}"
+                 aria-valuemin="0"
+                 aria-valuemax="5"></div>
+          </div>
+          <small class="text-muted mt-1 d-block">目標: ${item.targetScore || '5.0'} / 5.0</small>
+        </div>
       </div>
     `).join('');
   }
@@ -1447,24 +1482,36 @@ export class EvaluationReportPage {
 
     // 実際の評価データから強みポイントを生成
     const strengths = this.reportData?.strengths || [];
-    
+
     if (strengths.length === 0) {
       container.innerHTML = `
-        <div class="text-center py-4">
-          <i class="fas fa-search fa-3x text-muted mb-3"></i>
-          <p class="text-muted">強みを分析するには評価データが必要です</p>
+        <div class="empty-state">
+          <i class="fas fa-search"></i>
+          <p>強みを分析するには評価データが必要です</p>
         </div>
       `;
       return;
     }
 
-    container.innerHTML = strengths.map(item => `
-      <div class="mb-3 p-3 border-start border-success border-3 bg-light">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h6 class="mb-0 fw-bold">${item.category}</h6>
-          <span class="badge bg-success">${item.score}</span>
+    container.innerHTML = strengths.map((item, index) => `
+      <div class="insight-card strength" style="animation-delay: ${index * 0.1}s">
+        <div class="insight-title">
+          <span>${item.category}</span>
+          <span class="insight-score">${item.score || '-'}</span>
         </div>
-        <p class="mb-0 text-muted small">${item.description}</p>
+        <div class="insight-description">${item.description || 'この分野で優れた成果を発揮しています'}</div>
+        <div class="insight-progress">
+          <div class="progress">
+            <div class="progress-bar" role="progressbar"
+                 style="width: ${((item.score || 0) / 5) * 100}%"
+                 aria-valuenow="${item.score || 0}"
+                 aria-valuemin="0"
+                 aria-valuemax="5"></div>
+          </div>
+          <small class="text-success mt-1 d-block">
+            <i class="fas fa-trophy me-1"></i>高評価エリア
+          </small>
+        </div>
       </div>
     `).join('');
   }
