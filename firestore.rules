@@ -1,341 +1,451 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // ===== Helper Functions =====
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+
+    // 安全なユーザーデータ取得（存在チェック付き）
+    function safeGetUserData() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+        : null;
     }
-    
-    function hasRole(role) {
-      return isAuthenticated() && getUserData().role == role;
+
+    function safeGetGlobalUserData() {
+      return exists(/databases/$(database)/documents/global_users/$(request.auth.token.email))
+        ? get(/databases/$(database)/documents/global_users/$(request.auth.token.email)).data
+        : null;
     }
-    
-    function hasAnyRole(roles) {
-      return isAuthenticated() && getUserData().role in roles;
+
+    // 統合ユーザーデータ取得（安全版）- 修正版
+    function safeGetUnifiedUserData() {
+      let globalData = safeGetGlobalUserData();
+      let userData = safeGetUserData();
+
+      // global_usersを優先し、存在しない場合はusersから取得
+      return globalData != null ? globalData : userData;
     }
-    
-    function isSameTenant(tenantId) {
-      return isAuthenticated() && getUserData().tenantId == tenantId;
+
+    // 安全なロールチェック - 修正版
+    function safeHasRole(role) {
+      return isAuthenticated() &&
+             safeGetUnifiedUserData() != null &&
+             safeGetUnifiedUserData().role == role;
     }
-    
+
+    function safeHasAnyRole(roles) {
+      return isAuthenticated() &&
+             safeGetUnifiedUserData() != null &&
+             safeGetUnifiedUserData().role in roles;
+    }
+
+    function safeIsSameTenant(tenantId) {
+      return isAuthenticated() &&
+             safeGetUnifiedUserData() != null &&
+             safeGetUnifiedUserData().tenantId == tenantId;
+    }
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-    
-    function isActiveUser() {
-      return isAuthenticated() && getUserData().status == 'active';
-    }
-    
-    function isUserActiveInTenant(tenantId) {
-      return isActiveUser() && isSameTenant(tenantId);
+
+    function safeIsActiveUser() {
+      return isAuthenticated() &&
+             safeGetUnifiedUserData() != null &&
+             safeGetUnifiedUserData().status == 'active';
     }
 
-    // ===== Users Collection =====
-    match /users/{userId} {
-      // 読み取り権限
-      allow read: if isOwner(userId) 
-                  || hasRole('developer') 
-                  || (hasAnyRole(['admin', 'evaluator']) && isSameTenant(resource.data.tenantId));
-      
-      // 作成権限（開発者のみ、または招待による登録）
-      allow create: if hasRole('developer') 
-                    || (isAuthenticated() && request.auth.uid == userId);
-      
-      // 更新権限
-      allow update: if hasRole('developer') 
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId))
-                    || (isOwner(userId) && 
-                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'updatedAt']));
-      
-      // 削除権限（開発者と管理者）
-      allow delete: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId));
+    // 修正版：評価者権限を含む
+    function safeIsUserActiveInTenant(tenantId) {
+      return safeIsActiveUser() && safeIsSameTenant(tenantId);
     }
-    
+
+    function isDeveloper() {
+      return safeHasRole('developer');
+    }
+
+    // 修正版：評価者も管理権限の一部を持つ
+    function isAdmin(tenantId) {
+      return safeHasAnyRole(['admin']) && safeIsSameTenant(tenantId);
+    }
+
+    function isEvaluator(tenantId) {
+      return safeHasRole('evaluator') && safeIsSameTenant(tenantId);
+    }
+
+    function isAdminOrEvaluator(tenantId) {
+      return safeHasAnyRole(['admin', 'evaluator']) && safeIsSameTenant(tenantId);
+    }
+
+    function isSuperAdmin() {
+      return safeHasRole('developer');
+    }
+
+    // ===== Notifications Collection（修正版） =====
+    match /notifications/{notificationId} {
+      // 読み取り権限：同じテナントのユーザーが読み取り可能
+      allow read: if isAuthenticated() &&
+                     (isDeveloper() ||
+                      (safeGetUnifiedUserData() != null &&
+                       safeIsSameTenant(resource.data.tenantId)));
+
+      // 作成権限：認証済みユーザーが作成可能
+      allow create: if isAuthenticated() &&
+                       (isDeveloper() ||
+                        (safeGetUnifiedUserData() != null &&
+                         request.resource.data.tenantId == safeGetUnifiedUserData().tenantId));
+
+      // 更新権限：既読マーク更新など
+      allow update: if isAuthenticated() &&
+                       (isDeveloper() ||
+                        (safeGetUnifiedUserData() != null &&
+                         safeIsSameTenant(resource.data.tenantId) &&
+                         (resource.data.targetUserId == request.auth.uid ||
+                          safeHasAnyRole(['admin', 'evaluator']))));
+
+      // 削除権限：管理者のみ
+      allow delete: if isDeveloper() ||
+                       (safeHasRole('admin') &&
+                        safeGetUnifiedUserData() != null &&
+                        safeIsSameTenant(resource.data.tenantId));
+    }
+
+    // ===== Admin Requests Collection =====
+    match /admin_requests/{requestId} {
+      // 新規テナント申請：認証済みユーザーなら誰でも可能
+      allow create: if isAuthenticated() &&
+                       request.resource.data.uid == request.auth.uid &&
+                       request.resource.data.requestType == 'new_tenant';
+
+      // 開発者のみ読み取り・更新・削除
+      allow read, update, delete: if isDeveloper();
+    }
+
+    // ===== Global Users Collection =====
+    match /global_users/{email} {
+      // 読み取り権限 - 修正版
+      allow read: if isAuthenticated() &&
+                     (request.auth.token.email == email ||
+                      isDeveloper() ||
+                      // 同じテナントの管理者・評価者は読み取り可能
+                      (safeHasAnyRole(['admin', 'evaluator']) &&
+                       exists(/databases/$(database)/documents/global_users/$(email)) &&
+                       safeIsSameTenant(get(/databases/$(database)/documents/global_users/$(email)).data.tenantId)));
+
+      // 更新権限
+      allow update: if isAuthenticated() &&
+                       (request.auth.token.email == email || isDeveloper());
+
+      // 作成権限（新規登録時）
+      allow create: if isDeveloper() ||
+                       (isAuthenticated() &&
+                        request.auth.token.email == email &&
+                        request.resource.data.uid == request.auth.uid &&
+                        request.resource.data.role in ['admin', 'evaluator', 'worker']);
+
+      // 削除権限
+      allow delete: if isDeveloper();
+    }
+
+    // ===== Legacy Users Collection =====
+    match /users/{userId} {
+      // 読み取り権限 - 修正版（同じテナントのユーザーが読み取り可能）
+      allow read: if isOwner(userId)
+                  || isDeveloper()
+                  || (isAuthenticated() && safeGetUnifiedUserData() != null &&
+                      safeIsSameTenant(resource.data.tenantId));
+
+      // 作成権限（新規登録時）
+      allow create: if isDeveloper()
+                    || (isAuthenticated() && request.auth.uid == userId &&
+                        (request.resource.data.tenantId != null ||
+                         request.resource.data.role == 'developer' ||
+                         request.resource.data.status in ['developer_approval_pending', 'pending_approval']));
+
+      // 更新権限 - 修正版（評価者権限追加）
+      allow update: if isDeveloper()
+                    || (isAdmin(resource.data.tenantId))
+                    || (isEvaluator(resource.data.tenantId) &&
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updatedAt', 'lastLogin', 'evaluatorId']))
+                    || (isOwner(userId) &&
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'updatedAt']));
+
+      // 削除権限
+      allow delete: if isDeveloper()
+                    || (isAdmin(resource.data.tenantId));
+    }
+
     // ===== Tenants Collection =====
     match /tenants/{tenantId} {
-      allow read, write: if hasRole('developer');
-      allow read: if hasRole('admin') && isSameTenant(tenantId);
-      allow update: if hasRole('admin') && isSameTenant(tenantId) 
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['companyName', 'updatedAt']);
+      // 読み取り権限 - 修正版（評価者権限追加）
+      allow read: if isDeveloper()
+                  || (safeHasAnyRole(['admin', 'evaluator']) && safeIsSameTenant(tenantId));
+
+      // 作成・更新・削除（開発者のみ）
+      allow create, update, delete: if isDeveloper();
+
+      // 管理者による限定的な更新
+      allow update: if safeHasRole('admin') && safeIsSameTenant(tenantId)
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['companyName', 'updatedAt']);
     }
-    
+
+    // ===== Legacy Collections - 修正版 =====
+    match /targetJobTypes/{jobTypeId} {
+      allow read: if isDeveloper()
+                  || (isAuthenticated() && safeGetUnifiedUserData() != null &&
+                      safeIsSameTenant(resource.data.tenantId));
+
+      allow create: if isDeveloper()
+                    || (safeHasAnyRole(['admin', 'evaluator']) &&
+                        safeGetUnifiedUserData() != null &&
+                        request.resource.data.tenantId == safeGetUnifiedUserData().tenantId);
+
+      allow update: if isDeveloper()
+                    || (safeHasAnyRole(['admin', 'evaluator']) && safeIsSameTenant(resource.data.tenantId));
+
+      allow delete: if isDeveloper()
+                    || (isAdmin(resource.data.tenantId));
+    }
+
+    match /evaluationPeriods/{periodId} {
+      allow read: if isDeveloper()
+                  || (isAuthenticated() && safeGetUnifiedUserData() != null &&
+                      safeIsSameTenant(resource.data.tenantId));
+
+      allow create: if isDeveloper()
+                    || (safeHasAnyRole(['admin', 'evaluator']) &&
+                        safeGetUnifiedUserData() != null &&
+                        request.resource.data.tenantId == safeGetUnifiedUserData().tenantId);
+
+      allow update: if isDeveloper()
+                    || (safeHasAnyRole(['admin', 'evaluator']) && safeIsSameTenant(resource.data.tenantId));
+
+      allow delete: if isDeveloper()
+                    || (isAdmin(resource.data.tenantId));
+    }
+
+    match /evaluationStructures/{structureId} {
+      allow read: if isDeveloper()
+                  || (isAuthenticated() && safeGetUnifiedUserData() != null &&
+                      safeIsSameTenant(resource.data.tenantId));
+
+      allow create: if isDeveloper()
+                    || (safeHasAnyRole(['admin', 'evaluator']) &&
+                        safeGetUnifiedUserData() != null &&
+                        request.resource.data.tenantId == safeGetUnifiedUserData().tenantId);
+
+      allow update: if isDeveloper()
+                    || (safeHasAnyRole(['admin', 'evaluator']) && safeIsSameTenant(resource.data.tenantId));
+
+      allow delete: if isDeveloper()
+                    || (isAdmin(resource.data.tenantId));
+    }
+
+    match /qualitativeGoals/{goalId} {
+      // 読み取り権限 - 修正版（同じテナントのアクティブユーザーが読み取り可能）
+      allow read: if isDeveloper()
+                  || isOwner(resource.data.userId)
+                  || (isAuthenticated() && safeGetUnifiedUserData() != null &&
+                      safeIsSameTenant(resource.data.tenantId));
+
+      allow create: if isDeveloper()
+                    || (isOwner(request.resource.data.userId) && safeIsActiveUser())
+                    || (safeHasAnyRole(['admin', 'evaluator']) && safeIsSameTenant(request.resource.data.tenantId));
+
+      allow update: if isDeveloper()
+                    || (isOwner(resource.data.userId) && safeIsActiveUser())
+                    || (safeHasAnyRole(['admin', 'evaluator']) && safeIsSameTenant(resource.data.tenantId));
+
+      allow delete: if isDeveloper()
+                    || (isAdmin(resource.data.tenantId));
+    }
+
+    // ===== 修正：Evaluations Collection =====
+    match /evaluations/{evaluationId} {
+      // 読み取り権限を緩和（同じテナントのアクティブユーザーなら読み取り可能）
+      allow read: if isDeveloper()
+                  || (isAuthenticated() && safeGetUnifiedUserData() != null &&
+                      safeIsSameTenant(resource.data.tenantId))
+                  || isOwner(resource.data.targetUserId)
+                  || isOwner(resource.data.evaluatorId);
+
+      allow create: if isDeveloper()
+                    || (isOwner(request.resource.data.targetUserId) && safeIsActiveUser())
+                    || (isOwner(request.resource.data.evaluatorId) && safeIsActiveUser())
+                    || (safeHasAnyRole(['admin', 'evaluator']) && safeIsSameTenant(request.resource.data.tenantId));
+
+      allow update: if isDeveloper()
+                    || (isOwner(resource.data.targetUserId) && safeIsActiveUser())
+                    || (isOwner(resource.data.evaluatorId) && safeIsActiveUser())
+                    || (safeHasAnyRole(['admin', 'evaluator']) && safeIsSameTenant(resource.data.tenantId));
+
+      allow delete: if isDeveloper()
+                    || (isAdmin(resource.data.tenantId));
+    }
+
     // ===== Invitations Collection =====
     match /invitations/{invitationId} {
-      // 読み取り（トークンベースの公開読み取り）
+      // 公開読み取り（招待リンクのため）
       allow read: if true;
-      
-      // 作成（管理者招待は開発者のみ、通常招待は管理者も可）
-      allow create: if (hasRole('developer') && request.resource.data.type == 'admin')
-                    || (hasRole('admin') && request.resource.data.type != 'admin' 
-                        && request.resource.data.tenantId == getUserData().tenantId);
-      
-      // 更新（使用済みマークなど）
-      allow update: if resource.data.used == false 
-                    && request.resource.data.used == true
-                    && request.resource.data.usedBy == request.auth.uid;
-      
-      // 削除（開発者と管理者）
-      allow delete: if hasRole('developer')
-                    || (hasRole('admin') && resource.data.tenantId == getUserData().tenantId);
+
+      // 作成権限（認証済みユーザーなら作成可能）
+      allow create: if isAuthenticated();
+
+      // 更新権限（使用済みマーク更新用）
+      allow update: if isAuthenticated() &&
+                       (
+                         // 使用済みマーク更新
+                         (resource.data.used == false &&
+                          request.resource.data.used == true &&
+                          request.resource.data.usedBy == request.auth.uid) ||
+                         // 一般的な更新（認証済みユーザー）
+                         request.auth != null
+                       );
+
+      // 削除権限（認証済みユーザーなら削除可能）
+      allow delete: if isAuthenticated();
     }
-    
-    // ===== Job Types Collection =====
-    match /targetJobTypes/{jobTypeId} {
-      // 読み取り（同一テナント内のアクティブユーザー）
-      allow read: if hasRole('developer') 
-                  || isUserActiveInTenant(resource.data.tenantId);
-      
-      // 作成・更新・削除（同一テナントの管理者のみ）
-      allow create: if hasRole('developer')
-                    || (hasRole('admin') && request.resource.data.tenantId == getUserData().tenantId);
-      allow update: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId)
-                        && request.resource.data.tenantId == resource.data.tenantId);
-      allow delete: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId));
+
+    // ===== Invite Codes Collection =====
+    match /invite_codes/{codeId} {
+      // 読み取り権限
+      allow read: if resource.data.active == true
+                  || (isAuthenticated() && (isDeveloper() || isAdmin(resource.data.tenantId)));
+
+      // 作成・更新権限
+      allow create: if isAuthenticated() &&
+                       (isDeveloper() || isAdmin(request.resource.data.tenantId));
+
+      allow update: if isAuthenticated() &&
+                       (isDeveloper() || isAdmin(resource.data.tenantId) ||
+                        request.resource.data.diff(resource.data).affectedKeys()
+                           .hasOnly(['used', 'lastUsedAt']));
+
+      allow delete: if isAuthenticated() &&
+                       (isDeveloper() || isAdmin(resource.data.tenantId));
     }
-    
-    // ===== Evaluation Periods Collection =====
-    match /evaluationPeriods/{periodId} {
-      // 読み取り（同一テナント内のアクティブユーザー）
-      allow read: if hasRole('developer') 
-                  || isUserActiveInTenant(resource.data.tenantId);
-      
-      // 作成・更新・削除（同一テナントの管理者のみ）
-      allow create: if hasRole('developer')
-                    || (hasRole('admin') && request.resource.data.tenantId == getUserData().tenantId);
-      allow update: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId)
-                        && request.resource.data.tenantId == resource.data.tenantId);
-      allow delete: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId));
+
+    // ===== Multilingual (i18n) Collections =====
+
+    // ===== Evaluation Items I18n Collection =====
+    match /evaluation_items_i18n/{itemId} {
+      // 読み取り権限（同一テナント内のアクティブユーザー）
+      allow read: if isDeveloper()
+                  || (isAuthenticated() && safeGetUnifiedUserData() != null &&
+                      safeIsSameTenant(resource.data.tenantId));
+
+      // 作成権限
+      allow create: if isDeveloper()
+                    || (safeHasAnyRole(['admin', 'evaluator']) &&
+                        safeGetUnifiedUserData() != null &&
+                        request.resource.data.tenantId == safeGetUnifiedUserData().tenantId);
+
+      // 更新権限
+      allow update: if isDeveloper()
+                    || (safeHasAnyRole(['admin', 'evaluator']) && safeIsSameTenant(resource.data.tenantId));
+
+      // 削除権限
+      allow delete: if isDeveloper()
+                    || (isAdmin(resource.data.tenantId));
     }
-    
-    // ===== Evaluation Structures Collection =====
-    match /evaluationStructures/{structureId} {
-      // 読み取り（同一テナント内のアクティブユーザー）
-      allow read: if hasRole('developer') 
-                  || isUserActiveInTenant(resource.data.tenantId);
-      
-      // 作成・更新・削除（同一テナントの管理者のみ）
-      allow create: if hasRole('developer')
-                    || (hasRole('admin') && request.resource.data.tenantId == getUserData().tenantId);
-      allow update: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId)
-                        && request.resource.data.tenantId == resource.data.tenantId);
-      allow delete: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId));
+
+    // ===== Categories I18n Collection =====
+    match /categories_i18n/{categoryId} {
+      // 読み取り権限（同一テナント内のアクティブユーザー）
+      allow read: if isDeveloper()
+                  || (isAuthenticated() && safeGetUnifiedUserData() != null &&
+                      safeIsSameTenant(resource.data.tenantId));
+
+      // 作成権限
+      allow create: if isDeveloper()
+                    || (safeHasAnyRole(['admin', 'evaluator']) &&
+                        safeGetUnifiedUserData() != null &&
+                        request.resource.data.tenantId == safeGetUnifiedUserData().tenantId);
+
+      // 更新権限
+      allow update: if isDeveloper()
+                    || (safeHasAnyRole(['admin', 'evaluator']) && safeIsSameTenant(resource.data.tenantId));
+
+      // 削除権限
+      allow delete: if isDeveloper()
+                    || (isAdmin(resource.data.tenantId));
     }
-    
-    // ===== Qualitative Goals Collection =====
-    match /qualitativeGoals/{goalId} {
-      // 読み取り（本人、管理者、評価者）
-      allow read: if isOwner(resource.data.userId) 
-                  || (hasRole('admin') && isSameTenant(resource.data.tenantId))
-                  || (hasRole('evaluator') && isSameTenant(resource.data.tenantId))
-                  || hasRole('developer');
-      
-      // 作成・更新（本人または管理者）
-      allow create: if (isOwner(request.resource.data.userId) && isActiveUser())
-                    || (hasRole('admin') && isSameTenant(request.resource.data.tenantId))
-                    || hasRole('developer');
-      
-      allow update: if (isOwner(resource.data.userId) && isActiveUser()
-                        && resource.data.status in ['draft', 'rejected'])
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId))
-                    || hasRole('developer');
-      
-      // 削除（管理者のみ）
-      allow delete: if (hasRole('admin') && isSameTenant(resource.data.tenantId))
-                    || hasRole('developer');
+
+    // ===== Job Types I18n Collection =====
+    match /job_types_i18n/{jobTypeId} {
+      // 読み取り権限（同一テナント内のアクティブユーザー）
+      allow read: if isDeveloper()
+                  || (isAuthenticated() && safeGetUnifiedUserData() != null &&
+                      safeIsSameTenant(resource.data.tenantId));
+
+      // 作成権限
+      allow create: if isDeveloper()
+                    || (safeHasAnyRole(['admin', 'evaluator']) &&
+                        safeGetUnifiedUserData() != null &&
+                        request.resource.data.tenantId == safeGetUnifiedUserData().tenantId);
+
+      // 更新権限
+      allow update: if isDeveloper()
+                    || (safeHasAnyRole(['admin', 'evaluator']) && safeIsSameTenant(resource.data.tenantId));
+
+      // 削除権限
+      allow delete: if isDeveloper()
+                    || (isAdmin(resource.data.tenantId));
     }
-    
-    // ===== Evaluations Collection =====
-    match /evaluations/{evaluationId} {
-      // 読み取り（評価対象者、評価者、管理者、開発者）
-      allow read: if isOwner(resource.data.targetUserId) 
-                  || isOwner(resource.data.evaluatorId)
-                  || (hasRole('admin') && isSameTenant(resource.data.tenantId))
-                  || hasRole('developer');
-      
-      // 作成（評価対象者、評価者、管理者）
-      allow create: if (isOwner(request.resource.data.targetUserId) && isActiveUser())
-                    || (isOwner(request.resource.data.evaluatorId) && isActiveUser())
-                    || (hasRole('admin') && isSameTenant(request.resource.data.tenantId))
-                    || hasRole('developer');
-      
-      // 更新（ステータスに応じた権限制御）
-      allow update: if (isOwner(resource.data.targetUserId) && isActiveUser()
-                        && resource.data.status in ['pending_submission', 'rejected'])
-                    || (isOwner(resource.data.evaluatorId) && isActiveUser()
-                        && resource.data.status in ['self_assessed', 'rejected'])
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId))
-                    || hasRole('developer');
-      
-      // 削除（管理者または開発者のみ）
-      allow delete: if (hasRole('admin') && isSameTenant(resource.data.tenantId))
-                    || hasRole('developer');
+
+    // ===== Evaluation Periods I18n Collection =====
+    match /evaluation_periods_i18n/{periodId} {
+      // 読み取り権限（同一テナント内のアクティブユーザー）
+      allow read: if isDeveloper()
+                  || (isAuthenticated() && safeGetUnifiedUserData() != null &&
+                      safeIsSameTenant(resource.data.tenantId));
+
+      // 作成権限
+      allow create: if isDeveloper()
+                    || (safeHasAnyRole(['admin', 'evaluator']) &&
+                        safeGetUnifiedUserData() != null &&
+                        request.resource.data.tenantId == safeGetUnifiedUserData().tenantId);
+
+      // 更新権限
+      allow update: if isDeveloper()
+                    || (safeHasAnyRole(['admin', 'evaluator']) && safeIsSameTenant(resource.data.tenantId));
+
+      // 削除権限
+      allow delete: if isDeveloper()
+                    || (isAdmin(resource.data.tenantId));
     }
-    
-    // ===== System Collections (開発者専用) =====
+
+    // ===== System Collections =====
     match /systemSettings/{settingId} {
-      allow read, write: if hasRole('developer');
+      allow read, write: if isDeveloper();
     }
-    
+
     match /auditLogs/{logId} {
       allow create: if isAuthenticated();
-      allow read: if hasRole('developer')
-                  || (hasRole('admin') && resource.data.tenantId == getUserData().tenantId);
+      allow read: if isDeveloper()
+                  || (safeHasRole('admin') &&
+                      safeGetUnifiedUserData() != null &&
+                      resource.data.tenantId == safeGetUnifiedUserData().tenantId);
       allow update, delete: if false;
     }
-    
-    // ===== Mail Collection (メール送信用) =====
+
     match /mail/{mailId} {
       allow create: if isAuthenticated();
       allow read, update, delete: if false;
     }
-    
-    // ===== Phase 5 新規コレクション =====
-    
-    // ===== Organizations Collection =====
-    match /organizations/{organizationId} {
-      // 読み取り（同一テナント内のアクティブユーザー）
-      allow read: if hasRole('developer') 
-                  || isUserActiveInTenant(resource.data.tenantId);
-      
-      // 作成・更新・削除（同一テナントの管理者のみ）
-      allow create: if hasRole('developer')
-                    || (hasRole('admin') && request.resource.data.tenantId == getUserData().tenantId);
-      allow update: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId)
-                        && request.resource.data.tenantId == resource.data.tenantId);
-      allow delete: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId));
+
+    // ===== Test Collection =====
+    match /_test/{docId} {
+      allow read, write: if isAuthenticated();
     }
-    
-    // ===== Evaluation Periods Collection (更新版) =====
-    match /evaluation_periods/{periodId} {
-      // 読み取り（同一テナント内のアクティブユーザー）
-      allow read: if hasRole('developer') 
-                  || isUserActiveInTenant(resource.data.tenantId);
-      
-      // 作成・更新・削除（同一テナントの管理者のみ）
-      allow create: if hasRole('developer')
-                    || (hasRole('admin') && request.resource.data.tenantId == getUserData().tenantId);
-      allow update: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId)
-                        && request.resource.data.tenantId == resource.data.tenantId);
-      allow delete: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId));
-    }
-    
-    // ===== Evaluation History Collection =====
-    match /evaluation_history/{historyId} {
-      // 読み取り（評価対象者、管理者、開発者）
-      allow read: if isOwner(resource.data.userId) 
-                  || (hasRole('admin') && isSameTenant(resource.data.tenantId))
-                  || hasRole('developer');
-      
-      // 作成（システムによる自動作成のみ）
-      allow create: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(request.resource.data.tenantId));
-      
-      // 更新・削除は禁止（履歴データの整合性保持）
-      allow update: if hasRole('developer');
-      allow delete: if hasRole('developer');
-    }
-    
-    // ===== Evaluation Items I18n Collection =====
-    match /evaluation_items_i18n/{itemId} {
-      // 読み取り（同一テナント内のアクティブユーザー）
-      allow read: if hasRole('developer') 
-                  || isUserActiveInTenant(resource.data.tenantId);
-      
-      // 作成・更新・削除（同一テナントの管理者のみ）
-      allow create: if hasRole('developer')
-                    || (hasRole('admin') && request.resource.data.tenantId == getUserData().tenantId);
-      allow update: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId)
-                        && request.resource.data.tenantId == resource.data.tenantId);
-      allow delete: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId));
-    }
-    
-    // ===== Categories I18n Collection =====
-    match /categories_i18n/{categoryId} {
-      // 読み取り（同一テナント内のアクティブユーザー）
-      allow read: if hasRole('developer') 
-                  || isUserActiveInTenant(resource.data.tenantId);
-      
-      // 作成・更新・削除（同一テナントの管理者のみ）
-      allow create: if hasRole('developer')
-                    || (hasRole('admin') && request.resource.data.tenantId == getUserData().tenantId);
-      allow update: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId)
-                        && request.resource.data.tenantId == resource.data.tenantId);
-      allow delete: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId));
-    }
-    
-    // ===== Job Types I18n Collection =====
-    match /job_types_i18n/{jobTypeId} {
-      // 読み取り（同一テナント内のアクティブユーザー）
-      allow read: if hasRole('developer') 
-                  || isUserActiveInTenant(resource.data.tenantId);
-      
-      // 作成・更新・削除（同一テナントの管理者のみ）
-      allow create: if hasRole('developer')
-                    || (hasRole('admin') && request.resource.data.tenantId == getUserData().tenantId);
-      allow update: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId)
-                        && request.resource.data.tenantId == resource.data.tenantId);
-      allow delete: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId));
-    }
-    
-    // ===== Evaluation Periods I18n Collection =====
-    match /evaluation_periods_i18n/{periodId} {
-      // 読み取り（同一テナント内のアクティブユーザー）
-      allow read: if hasRole('developer') 
-                  || isUserActiveInTenant(resource.data.tenantId);
-      
-      // 作成・更新・削除（同一テナントの管理者のみ）
-      allow create: if hasRole('developer')
-                    || (hasRole('admin') && request.resource.data.tenantId == getUserData().tenantId);
-      allow update: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId)
-                        && request.resource.data.tenantId == resource.data.tenantId);
-      allow delete: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId));
-    }
-    
-    // ===== Benchmarks Collection =====
-    match /benchmarks/{benchmarkId} {
-      // 読み取り（同一テナント内のアクティブユーザー）
-      allow read: if hasRole('developer') 
-                  || isUserActiveInTenant(resource.data.tenantId);
-      
-      // 作成・更新・削除（同一テナントの管理者のみ）
-      allow create: if hasRole('developer')
-                    || (hasRole('admin') && request.resource.data.tenantId == getUserData().tenantId);
-      allow update: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId)
-                        && request.resource.data.tenantId == resource.data.tenantId);
-      allow delete: if hasRole('developer')
-                    || (hasRole('admin') && isSameTenant(resource.data.tenantId));
-    }
-    
-    // ===== Additional Security Rules =====
-    
-    // バッチ操作の制限
+
+    // ===== Default Deny Rule =====
     match /{document=**} {
-      allow read, write: if false; // デフォルトで全拒否
+      allow read, write: if false;
     }
   }
 }
