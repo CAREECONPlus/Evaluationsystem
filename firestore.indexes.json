@@ -75,6 +75,50 @@
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "periodId", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "evaluation_items_i18n",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "languageCode", "order": "ASCENDING" },
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "sortOrder", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "evaluation_items_i18n",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "languageCode", "order": "ASCENDING" },
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "categoryName", "order": "ASCENDING" },
+        { "fieldPath": "sortOrder", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "categories_i18n",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "languageCode", "order": "ASCENDING" },
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "displayOrder", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "job_types_i18n",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "languageCode", "order": "ASCENDING" },
+        { "fieldPath": "tenantId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "evaluation_periods_i18n",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "languageCode", "order": "ASCENDING" },
+        { "fieldPath": "tenantId", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
