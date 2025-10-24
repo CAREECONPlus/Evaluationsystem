@@ -90,11 +90,97 @@ export class EvaluationFormPage {
     `;
   }
 
-  async init() {
+  async init(params) {
     this.app.currentPage = this;
+
+    // URLパラメータから評価IDを取得
+    const evaluationId = params ? params.get('id') : null;
+
     await this.loadInitialData();
+
+    // 既存の評価を読み込む
+    if (evaluationId) {
+      await this.loadExistingEvaluation(evaluationId);
+    }
+
     this.setupEventListeners();
     this.app.i18n.updateUI();
+  }
+
+  async loadExistingEvaluation(evaluationId) {
+    try {
+      const evaluation = await this.app.api.getEvaluationById(evaluationId);
+
+      if (!evaluation) {
+        this.app.showError('評価が見つかりませんでした');
+        this.app.navigate('#/evaluations');
+        return;
+      }
+
+      // アクセス権限チェック
+      const currentUser = this.app.currentUser;
+      const canView = currentUser.role === 'admin' ||
+                     evaluation.targetUserId === currentUser.uid ||
+                     evaluation.evaluatorId === currentUser.uid;
+
+      if (!canView) {
+        this.app.showError('この評価を閲覧する権限がありません');
+        this.app.navigate('#/evaluations');
+        return;
+      }
+
+      this.existingEvaluation = evaluation;
+
+      // 完了済みの場合は読み取り専用モード
+      if (evaluation.status === 'completed') {
+        this.isReadOnly = true;
+      }
+
+      // 対象者と期間を設定
+      setTimeout(async () => {
+        const targetUserSelect = document.getElementById('target-user-select');
+        const periodSelect = document.getElementById('period-select');
+
+        if (evaluation.targetUserId && targetUserSelect) {
+          targetUserSelect.value = evaluation.targetUserId;
+          targetUserSelect.disabled = true;
+          targetUserSelect.dispatchEvent(new Event('change'));
+        }
+
+        if (evaluation.periodId && periodSelect) {
+          // ユーザー選択後に期間を設定
+          setTimeout(() => {
+            periodSelect.value = evaluation.periodId;
+            periodSelect.disabled = true;
+            periodSelect.dispatchEvent(new Event('change'));
+
+            // 評価データを復元
+            if (evaluation.ratings) {
+              setTimeout(() => {
+                this.restoreEvaluationData(evaluation.ratings);
+              }, 500);
+            }
+          }, 300);
+        }
+      }, 300);
+
+    } catch (error) {
+      console.error('Error loading existing evaluation:', error);
+      this.app.showError('評価の読み込みに失敗しました');
+    }
+  }
+
+  restoreEvaluationData(ratings) {
+    // フォーム入力値を復元
+    Object.keys(ratings).forEach(key => {
+      const element = document.querySelector(`[data-evaluation-key="${key}"]`);
+      if (element) {
+        element.value = ratings[key];
+      }
+    });
+
+    // バリデーションを実行
+    this.validateForm();
   }
 
   async loadInitialData() {

@@ -13,7 +13,7 @@ export class EvaluationReportPage {
     this.currentTimeRange = 'last6months';
     
     // Phase 7: AnalyticsServiceの初期化
-    this.analytics = new AnalyticsService();
+    this.analytics = new AnalyticsService(app);
     
     // リアルタイム更新設定
     this.refreshInterval = null;
@@ -113,7 +113,7 @@ export class EvaluationReportPage {
         statistics: await this.analytics.calculateWorkerStatistics(filteredEvaluations),
         trends: await this.analytics.calculatePersonalTrends(filteredEvaluations),
         improvements: await this.analytics.analyzeImprovements(filteredEvaluations),
-        strengths: await this.analytics.analyzeStrengths(filteredEvaluations)
+        strengths: this.getTopStrengths(filteredEvaluations)
       };
 
       if (benchmarkData) {
@@ -319,11 +319,11 @@ export class EvaluationReportPage {
    */
   async loadPersonalBenchmark(userId) {
     try {
-      
+
       const benchmarkData = await this.app.api.getBenchmarkData(userId);
-      
+
       // ベンチマークデータが有効かチェック
-      if (benchmarkData.personal.evaluationCount > 0) {
+      if (benchmarkData && benchmarkData.personal && benchmarkData.personal.evaluationCount > 0) {
         return {
           personal: benchmarkData.personal,
           peer: benchmarkData.peer,
@@ -1309,6 +1309,12 @@ export class EvaluationReportPage {
     if (this.chartInstances && this.chartInstances.personalTrend) {
       this.chartInstances.personalTrend.destroy();
       delete this.chartInstances.personalTrend;
+    }
+
+    // Canvas上の既存のChartも破棄
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
     }
 
     const ctx = canvas.getContext('2d');
