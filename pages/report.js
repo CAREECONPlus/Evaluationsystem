@@ -1306,18 +1306,34 @@ export class EvaluationReportPage {
     // 総合評価
     const overallElement = document.getElementById('personalOverallScore');
     if (overallElement) {
-      const latestScore = evaluations.length > 0 ? evaluations[evaluations.length - 1]?.finalScore : 0;
-      overallElement.textContent = latestScore ? latestScore.toFixed(1) : '-';
+      if (evaluations.length > 0) {
+        const latestScore = parseFloat(evaluations[evaluations.length - 1]?.finalScore);
+        overallElement.textContent = (!isNaN(latestScore) && isFinite(latestScore))
+          ? latestScore.toFixed(1)
+          : '-';
+      } else {
+        overallElement.textContent = '-';
+      }
     }
 
     // 前回比較
     const changeElement = document.getElementById('personalScoreChange');
     if (changeElement && evaluations.length >= 2) {
-      const current = evaluations[evaluations.length - 1]?.finalScore || 0;
-      const previous = evaluations[evaluations.length - 2]?.finalScore || 0;
+      const current = parseFloat(evaluations[evaluations.length - 1]?.finalScore) || 0;
+      const previous = parseFloat(evaluations[evaluations.length - 2]?.finalScore) || 0;
       const change = current - previous;
-      changeElement.textContent = change >= 0 ? `+${change.toFixed(1)}` : change.toFixed(1);
-      changeElement.className = `card-title mb-0 text-${change >= 0 ? 'success' : 'danger'}`;
+
+      // Ensure change is a valid number
+      if (!isNaN(change) && isFinite(change)) {
+        changeElement.textContent = change >= 0 ? `+${change.toFixed(1)}` : change.toFixed(1);
+        changeElement.className = `card-title mb-0 text-${change >= 0 ? 'success' : 'danger'}`;
+      } else {
+        changeElement.textContent = '-';
+        changeElement.className = 'card-title mb-0 text-muted';
+      }
+    } else if (changeElement) {
+      changeElement.textContent = '-';
+      changeElement.className = 'card-title mb-0 text-muted';
     }
 
     // 改善項目数と強み項目数
