@@ -6,6 +6,11 @@ export class LoginPage {
   constructor(app) {
     this.app = app;
     this.isLoading = false;
+    this.loginAttempts = 0;
+    this.maxAttempts = 5;
+    this.lockoutTime = 15 * 60 * 1000; // 15分
+    this.isLockedOut = false;
+    this.lockoutEndTime = null;
   }
 
   async render() {
@@ -97,7 +102,7 @@ export class LoginPage {
                               <strong class="text-primary">管理者:</strong><br>
                               <small><code>admin@demo.com</code> / <code>admin123</code></small>
                             </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="fillDemoCredentials('admin@demo.com', 'admin123')">
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-demo-email="admin@demo.com" data-demo-password="admin123">
                               <i class="fas fa-user-cog"></i>
                             </button>
                           </div>
@@ -108,7 +113,7 @@ export class LoginPage {
                               <strong class="text-success">評価者:</strong><br>
                               <small><code>evaluator@demo.com</code> / <code>eval123</code></small>
                             </div>
-                            <button type="button" class="btn btn-sm btn-outline-success" onclick="fillDemoCredentials('evaluator@demo.com', 'eval123')">
+                            <button type="button" class="btn btn-sm btn-outline-success" data-demo-email="evaluator@demo.com" data-demo-password="eval123">
                               <i class="fas fa-user-check"></i>
                             </button>
                           </div>
@@ -119,7 +124,7 @@ export class LoginPage {
                               <strong class="text-info">作業員:</strong><br>
                               <small><code>worker@demo.com</code> / <code>work123</code></small>
                             </div>
-                            <button type="button" class="btn btn-sm btn-outline-info" onclick="fillDemoCredentials('worker@demo.com', 'work123')">
+                            <button type="button" class="btn btn-sm btn-outline-info" data-demo-email="worker@demo.com" data-demo-password="work123">
                               <i class="fas fa-user"></i>
                             </button>
                           </div>
@@ -160,41 +165,102 @@ export class LoginPage {
     }
 
     this.app.i18n.updateUI();
-    
-    // デモアカウント自動入力機能
-    window.fillDemoCredentials = (email, password) => {
-      const emailInput = document.getElementById('email');
-      const passwordInput = document.getElementById('password');
-      
-      if (emailInput && passwordInput) {
-        emailInput.value = email;
-        passwordInput.value = password;
-        
-        // 入力フィールドをハイライト
-        emailInput.classList.add('is-valid');
-        passwordInput.classList.add('is-valid');
-        
-        setTimeout(() => {
-          emailInput.classList.remove('is-valid');
-          passwordInput.classList.remove('is-valid');
-        }, 1000);
+
+    // 🔧 改善：グローバル変数を使わずイベントデリゲーションでデモアカウント入力
+    this.setupDemoAccountButtons();
+  }
+
+  /**
+   * デモアカウント自動入力機能（イベントデリゲーション版）
+   */
+  setupDemoAccountButtons() {
+    const demoSection = document.querySelector('.demo-accounts-section');
+    if (!demoSection) return;
+
+    demoSection.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-demo-email]');
+      if (!button) return;
+
+      const email = button.dataset.demoEmail;
+      const password = button.dataset.demoPassword;
+
+      if (email && password) {
+        this.fillDemoCredentials(email, password);
       }
-    };
+    });
+  }
+
+  /**
+   * デモアカウント情報を入力フィールドに設定
+   */
+  fillDemoCredentials(email, password) {
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+
+    if (emailInput && passwordInput) {
+      emailInput.value = email;
+      passwordInput.value = password;
+
+      // 入力フィールドをハイライト
+      emailInput.classList.add('is-valid');
+      passwordInput.classList.add('is-valid');
+
+      setTimeout(() => {
+        emailInput.classList.remove('is-valid');
+        passwordInput.classList.remove('is-valid');
+      }, 1000);
+    }
   }
 
   async handleLogin() {
     if (this.isLoading) return;
+
+    // ロックアウトチェック
+    if (this.isLockedOut) {
+      const remainingTime = Math.ceil((this.lockoutEndTime - Date.now()) / 1000 / 60);
+      if (remainingTime > 0) {
+        this.app.showError(`セキュリティのため、ログインが一時的にロックされています。${remainingTime}分後に再試行してください。`);
+        return;
+      } else {
+        // ロックアウト期間が終了したらリセット
+        this.resetLockout();
+      }
+    }
+
     this.setLoadingState(true);
     try {
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
       if (!email || !password) throw new Error(this.app.i18n.t("errors.email_password_required"));
+
       await this.app.login(email, password);
+
+      // ログイン成功時にカウントをリセット
+      this.resetLockout();
     } catch (error) {
-      this.app.showError(this.app.auth.getFirebaseAuthErrorMessage(error));
+      // ログイン失敗時の処理
+      this.loginAttempts++;
+      console.warn(`Login attempt ${this.loginAttempts}/${this.maxAttempts} failed:`, error.code || error.message);
+
+      if (this.loginAttempts >= this.maxAttempts) {
+        this.isLockedOut = true;
+        this.lockoutEndTime = Date.now() + this.lockoutTime;
+        console.error('Account locked due to too many failed login attempts');
+        this.app.showError(`ログインに${this.maxAttempts}回失敗しました。セキュリティのため、${this.lockoutTime / 60000}分間ロックされます。`);
+      } else {
+        const remainingAttempts = this.maxAttempts - this.loginAttempts;
+        const errorMessage = this.app.auth?.getFirebaseAuthErrorMessage?.(error) || error.message || '認証エラーが発生しました';
+        this.app.showError(`${errorMessage} (残り試行回数: ${remainingAttempts})`);
+      }
     } finally {
       this.setLoadingState(false);
     }
+  }
+
+  resetLockout() {
+    this.loginAttempts = 0;
+    this.isLockedOut = false;
+    this.lockoutEndTime = null;
   }
 
   async handleForgotPassword() {

@@ -48,6 +48,11 @@ export class EvaluationReportPage {
 
   /**
    * ユーザー権限の初期化
+   *
+   * 🔒 セキュリティ注意：
+   * このロール判定はUI表示制御のみに使用されます。
+   * 実際のデータアクセス権限はFirestoreセキュリティルールで制御されています。
+   * クライアント側のrole情報を改ざんしても、サーバー側で適切に保護されています。
    */
   async initializeUserPermissions() {
     try {
@@ -56,6 +61,7 @@ export class EvaluationReportPage {
         throw new Error('User not authenticated');
       }
 
+      // UI表示制御用のロール判定（セキュリティルールで実際の権限を制御）
       this.userRole = this.currentUser.role || 'worker';
       this.isWorker = this.userRole === 'worker';
       this.isEvaluator = this.userRole === 'evaluator';

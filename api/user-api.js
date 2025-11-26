@@ -3,18 +3,19 @@
  * ユーザー関連の全操作を担当
  */
 
-import { 
-  getDoc, 
-  doc, 
-  setDoc, 
-  updateDoc, 
-  deleteDoc, 
-  collection, 
-  query, 
-  where, 
-  orderBy, 
-  limit, 
-  getDocs 
+import {
+  getDoc,
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs,
+  writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { BaseAPI } from "./base-api.js";
@@ -71,6 +72,7 @@ export class UserAPI extends BaseAPI {
 
   /**
    * ユーザープロファイルを作成
+   * 🔧 改善：Batch Writeを使用してusersとglobal_usersの原子性を保証
    */
   async createUserProfile(userData) {
     try {
@@ -81,29 +83,35 @@ export class UserAPI extends BaseAPI {
 
       // データをクリーンアップ
       const cleanedUserData = this.cleanData(userData);
-      
-      console.log("UserAPI: Creating user profile with cleaned data:", cleanedUserData);
 
-      // usersコレクションに保存
-      await setDoc(doc(this.db, "users", userData.uid), {
+      this.logger.debug("Creating user profile with cleaned data:", cleanedUserData);
+
+      // Batch Writeを使用して原子性を保証
+      const batch = writeBatch(this.db);
+
+      const profileData = {
         ...cleanedUserData,
         createdAt: this.serverTimestamp(),
         updatedAt: this.serverTimestamp()
-      });
+      };
+
+      // usersコレクションに保存
+      const userRef = doc(this.db, "users", userData.uid);
+      batch.set(userRef, profileData);
 
       // global_usersにも保存（メールベース）
       if (userData.email) {
-        await setDoc(doc(this.db, "global_users", userData.email), {
-          ...cleanedUserData,
-          createdAt: this.serverTimestamp(),
-          updatedAt: this.serverTimestamp()
-        });
+        const globalUserRef = doc(this.db, "global_users", userData.email);
+        batch.set(globalUserRef, profileData);
       }
+
+      // バッチをコミット（両方とも成功するか、両方とも失敗する）
+      await batch.commit();
 
       // キャッシュをクリア
       this.clearCache('user_');
 
-      console.log("UserAPI: User profile created successfully");
+      this.logger.info("User profile created successfully:", userData.uid);
       return { success: true };
 
     } catch (error) {
@@ -235,42 +243,57 @@ export class UserAPI extends BaseAPI {
 
   /**
    * ユーザー情報を更新
+   * 🔧 改善：Batch Writeを使用してusersとglobal_usersの原子性を保証
    */
   async updateUser(userId, updateData) {
     try {
-      console.log("UserAPI: Updating user:", userId, updateData);
-      
+      this.logger.debug("Updating user:", userId, updateData);
+
       const userRef = doc(this.db, "users", userId);
-      
-      // 存在確認
-      await this.checkExists('users', userId, 'ユーザー');
-      
+
+      // 存在確認とメールアドレス取得
+      const userDoc = await getDoc(userRef);
+      if (!userDoc.exists()) {
+        throw createError.notFound('ユーザー', userId);
+      }
+
+      const userData = userDoc.data();
+
       // データをクリーンアップ
       const cleanData = this.cleanData(updateData);
-
-      await updateDoc(userRef, {
+      const updatePayload = {
         ...cleanData,
         updatedAt: this.serverTimestamp()
-      });
+      };
+
+      // Batch Writeを使用して原子性を保証
+      const batch = writeBatch(this.db);
+
+      // usersコレクションを更新
+      batch.update(userRef, updatePayload);
 
       // global_usersも更新（存在する場合）
-      const userDoc = await getDoc(userRef);
-      if (userDoc.exists() && userDoc.data().email) {
+      if (userData.email) {
         try {
-          const globalUserRef = doc(this.db, "global_users", userDoc.data().email);
-          await updateDoc(globalUserRef, {
-            ...cleanData,
-            updatedAt: this.serverTimestamp()
-          });
+          const globalUserRef = doc(this.db, "global_users", userData.email);
+          const globalUserDoc = await getDoc(globalUserRef);
+
+          if (globalUserDoc.exists()) {
+            batch.update(globalUserRef, updatePayload);
+          }
         } catch (globalError) {
-          console.warn("UserAPI: Failed to update global_users:", globalError);
+          this.logger.warn("Failed to prepare global_users update:", globalError);
+          // global_usersの更新に失敗してもusersの更新は続行
         }
       }
+
+      // バッチをコミット
+      await batch.commit();
 
       // キャッシュをクリア
       this.clearCache('user_');
 
-      console.log("UserAPI: User updated successfully");
+      this.logger.info("User updated successfully:", userId);
       return { success: true };
 
     } catch (error) {
@@ -280,34 +303,53 @@ export class UserAPI extends BaseAPI {
 
   /**
    * ユーザーを削除
+   * 🔧 改善：Batch Writeを使用してusersとglobal_usersの原子性を保証
    */
   async deleteUser(userId) {
     try {
-      console.log("UserAPI: Deleting user:", userId);
-      
+      this.logger.debug("Deleting user:", userId);
+
       // 存在確認とデータ取得
-      const userDoc = await this.checkExists('users', userId, 'ユーザー');
+      const userRef = doc(this.db, "users", userId);
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        throw createError.notFound('ユーザー', userId);
+      }
+
       const userData = userDoc.data();
 
       // 管理者権限チェック
       this.checkPermission(['admin'], 'ユーザーの削除');
 
+      // Batch Writeを使用して原子性を保証
+      const batch = writeBatch(this.db);
+
       // usersコレクションから削除
-      await deleteDoc(doc(this.db, "users", userId));
+      batch.delete(userRef);
 
       // global_usersからも削除（存在する場合）
       if (userData && userData.email) {
         try {
-          await deleteDoc(doc(this.db, "global_users", userData.email));
+          const globalUserRef = doc(this.db, "global_users", userData.email);
+          const globalUserDoc = await getDoc(globalUserRef);
+
+          if (globalUserDoc.exists()) {
+            batch.delete(globalUserRef);
+          }
         } catch (globalError) {
-          console.warn("UserAPI: Failed to delete from global_users:", globalError);
+          this.logger.warn("Failed to prepare global_users deletion:", globalError);
+          // global_usersの削除に失敗してもusersの削除は続行
         }
       }
+
+      // バッチをコミット
+      await batch.commit();
 
       // キャッシュをクリア
       this.clearCache('user_');
 
-      console.log("UserAPI: User deleted successfully");
+      this.logger.info("User deleted successfully:", userId);
       return { success: true };
 
     } catch (error) {
