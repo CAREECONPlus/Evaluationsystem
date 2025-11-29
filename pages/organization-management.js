@@ -654,6 +654,231 @@ export class OrganizationManagementPage {
   }
 
   /**
+   * 組織階層図をレンダリング
+   */
+  renderOrganizationChart() {
+    const container = document.getElementById('organizationChart');
+    if (!container || !this.users) return;
+
+    // ユーザーを役割と部門で分類
+    const admins = this.users.filter(u => u.role === 'admin');
+    const evaluators = this.users.filter(u => u.role === 'evaluator');
+    const workers = this.users.filter(u => u.role === 'worker');
+
+    // 部門でグループ化
+    const departmentGroups = {};
+    this.users.forEach(user => {
+      const dept = user.department || '未配属';
+      if (!departmentGroups[dept]) {
+        departmentGroups[dept] = {
+          admins: [],
+          evaluators: [],
+          workers: []
+        };
+      }
+
+      if (user.role === 'admin') {
+        departmentGroups[dept].admins.push(user);
+      } else if (user.role === 'evaluator') {
+        departmentGroups[dept].evaluators.push(user);
+      } else if (user.role === 'worker') {
+        departmentGroups[dept].workers.push(user);
+      }
+    });
+
+    if (Object.keys(departmentGroups).length === 0) {
+      container.innerHTML = `
+        <div class="alert alert-info text-center">
+          <i class="fas fa-info-circle me-2"></i>
+          組織データがありません
+        </div>
+      `;
+      return;
+    }
+
+    // 階層図のHTMLを生成
+    let html = '<div class="org-chart-container">';
+
+    // トップレベル - 全体の管理者
+    if (admins.length > 0) {
+      html += '<div class="org-level org-level-top">';
+      html += '<div class="org-level-title">経営層・管理者</div>';
+      html += '<div class="org-nodes">';
+      admins.forEach(admin => {
+        html += this.renderOrgNode(admin, 'admin');
+      });
+      html += '</div></div>';
+    }
+
+    // 部門レベル
+    Object.keys(departmentGroups).forEach(dept => {
+      const group = departmentGroups[dept];
+      const hasMembers = group.evaluators.length > 0 || group.workers.length > 0;
+
+      if (!hasMembers) return;
+
+      html += `<div class="org-department">`;
+      html += `<div class="org-department-header">
+        <i class="fas fa-building me-2"></i>
+        ${this.app.sanitizeHtml(dept)}
+      </div>`;
+
+      // 評価者レベル
+      if (group.evaluators.length > 0) {
+        html += '<div class="org-level">';
+        html += '<div class="org-level-title">評価者・管理職</div>';
+        html += '<div class="org-nodes">';
+        group.evaluators.forEach(evaluator => {
+          html += this.renderOrgNode(evaluator, 'evaluator');
+        });
+        html += '</div></div>';
+      }
+
+      // 一般社員レベル
+      if (group.workers.length > 0) {
+        html += '<div class="org-level">';
+        html += '<div class="org-level-title">一般社員</div>';
+        html += '<div class="org-nodes">';
+        group.workers.forEach(worker => {
+          html += this.renderOrgNode(worker, 'worker');
+        });
+        html += '</div></div>';
+      }
+
+      html += '</div>';
+    });
+
+    html += '</div>';
+
+    // スタイルを追加
+    html += `
+      <style>
+        .org-chart-container {
+          padding: 20px;
+          overflow-x: auto;
+        }
+        .org-level {
+          margin: 30px 0;
+        }
+        .org-level-top {
+          text-align: center;
+          margin-bottom: 40px;
+          padding-bottom: 30px;
+          border-bottom: 2px solid #dee2e6;
+        }
+        .org-level-title {
+          font-weight: 600;
+          color: #6c757d;
+          margin-bottom: 15px;
+          font-size: 0.9rem;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+        .org-nodes {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 15px;
+          justify-content: center;
+        }
+        .org-node {
+          background: white;
+          border: 2px solid #e9ecef;
+          border-radius: 8px;
+          padding: 15px;
+          min-width: 180px;
+          text-align: center;
+          transition: all 0.3s;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .org-node:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .org-node-admin {
+          border-color: #0d6efd;
+          background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+        }
+        .org-node-evaluator {
+          border-color: #198754;
+          background: linear-gradient(135deg, #f8fff9 0%, #fff 100%);
+        }
+        .org-node-worker {
+          border-color: #6c757d;
+        }
+        .org-node-avatar {
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+          margin: 0 auto 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          font-size: 1.2rem;
+          color: white;
+        }
+        .org-node-avatar-admin { background: #0d6efd; }
+        .org-node-avatar-evaluator { background: #198754; }
+        .org-node-avatar-worker { background: #6c757d; }
+        .org-node-name {
+          font-weight: 600;
+          margin-bottom: 5px;
+          color: #212529;
+        }
+        .org-node-role {
+          font-size: 0.8rem;
+          color: #6c757d;
+          margin-bottom: 3px;
+        }
+        .org-node-email {
+          font-size: 0.75rem;
+          color: #adb5bd;
+        }
+        .org-department {
+          margin: 30px 0;
+          padding: 20px;
+          background: #f8f9fa;
+          border-radius: 10px;
+          border-left: 4px solid #0d6efd;
+        }
+        .org-department-header {
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: #0d6efd;
+          margin-bottom: 20px;
+          padding-bottom: 10px;
+          border-bottom: 2px solid #dee2e6;
+        }
+      </style>
+    `;
+
+    container.innerHTML = html;
+  }
+
+  /**
+   * 組織ノードをレンダリング
+   */
+  renderOrgNode(user, roleType) {
+    const initial = user.name ? user.name.charAt(0).toUpperCase() : 'U';
+    const roleLabels = {
+      admin: '管理者',
+      evaluator: '評価者',
+      worker: '一般社員'
+    };
+
+    return `
+      <div class="org-node org-node-${roleType}">
+        <div class="org-node-avatar org-node-avatar-${roleType}">
+          ${initial}
+        </div>
+        <div class="org-node-name">${this.app.sanitizeHtml(user.name || '不明')}</div>
+        <div class="org-node-role">${roleLabels[roleType] || user.role}</div>
+        <div class="org-node-email">${this.app.sanitizeHtml(user.email || '')}</div>
+      </div>
+    `;
+  }
+
+  /**
    * ページの表示後処理
    */
   async postRender() {
@@ -662,6 +887,7 @@ export class OrganizationManagementPage {
       this.updateStatistics();
       this.renderDepartmentsList();
       this.renderUsersList();
+      this.renderOrganizationChart();
       this.setupFilterOptions();
 
       console.log("Organization Management: Page rendered successfully");
