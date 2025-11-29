@@ -257,20 +257,6 @@ export class SidebarComponent {
               </a>
             </li>
 
-            <!-- データ設定（管理者のみ） -->
-            <li class="nav-item" role="none">
-              <a 
-                class="nav-link text-white d-flex align-items-center ${this.isActive('/data-settings') ? 'active' : ''}" 
-                href="#/data-settings" 
-                data-link
-                role="menuitem"
-                aria-current="${this.isActive('/data-settings') ? 'page' : 'false'}"
-                tabindex="0"
-              >
-                <i class="fas fa-database nav-icon me-3" aria-hidden="true"></i>
-                <span data-i18n="nav.data_settings">データ設定</span>
-              </a>
-            </li>
             ` : ''}
 
             ${isDeveloper ? `

@@ -33,8 +33,13 @@ const TRANSLATIONS = {
       total_users: "総ユーザー数",
       active_users: "アクティブユーザー",
       completed_evaluations: "完了済み評価",
+      pending_evaluations: "承認待ち評価",
       recent_evaluations: "最近の評価",
-      system_stats: "システム統計"
+      system_stats: "システム統計",
+      system_overview: "システム概要と最新の活動状況",
+      performance_chart: "パフォーマンス推移",
+      no_recent_evaluations: "最近の評価はありません",
+      total_evaluations: "総評価数"
     },
 
     // ===== 認証関連 =====
@@ -61,13 +66,20 @@ const TRANSLATIONS = {
       role: "役割",
       status: "ステータス",
       active: "アクティブ",
-      inactive: "非アクティブ"
+      inactive: "非アクティブ",
+      job_types: "担当職種",
+      assigned_job_types: "割り当て職種",
+      invite_user: "ユーザー招待",
+      invitation_link: "招待リンク",
+      copy_invitation_link: "招待リンクをコピー",
+      invitation_code: "招待コード",
+      generate_invitation: "招待を生成"
     },
 
     // ===== 評価システム =====
     evaluations: {
-      title: "評価システム",
-      new_evaluation: "新規評価",
+      title: "評価一覧",
+      new_evaluation: "新規評価作成",
       edit_evaluation: "評価編集",
       target_user: "評価対象者",
       evaluator: "評価者",
@@ -80,7 +92,24 @@ const TRANSLATIONS = {
       safety_awareness: "安全意識",
       period: "評価期間",
       updated_at: "更新日時",
-      assignment_status: "割当状況"
+      assignment_status: "割当状況",
+      all_status: "すべてのステータス",
+      all_users: "すべてのユーザー",
+      all_assignments: "すべての担当",
+      assigned: "担当割り当て済み",
+      unassigned: "担当未割り当て",
+      my_evaluations: "私が評価者",
+      my_assignments: "私の担当",
+      other_evaluators: "他の評価者",
+      urgent: "緊急（承認待ち）",
+      this_week: "今週作成",
+      own_evaluations_only: "あなたの評価のみ表示されます",
+      reset_filters: "フィルターリセット",
+      search_placeholder: "評価対象者名で検索...",
+      items_count: "件",
+      in_progress: "進行中",
+      create_evaluation: "評価を作成",
+      view_report: "レポート表示"
     },
 
     // ===== 評価フォーム =====
@@ -92,9 +121,13 @@ const TRANSLATIONS = {
     status: {
       title: "ステータス",
       pending: "保留中",
+      pending_approval: "承認待ち",
       in_progress: "進行中",
       completed: "完了",
-      draft: "下書き"
+      draft: "下書き",
+      self_assessed: "自己評価完了",
+      approved: "承認済み",
+      rejected: "却下"
     },
 
     // ===== レポート =====
@@ -105,7 +138,17 @@ const TRANSLATIONS = {
       overall_evaluation: "総合評価",
       detailed_scores: "詳細スコア",
       score_comparison: "スコア比較",
-      process_history: "処理履歴"
+      process_history: "処理履歴",
+      subtitle: "評価データの分析と比較",
+      last_3_months: "過去3ヶ月",
+      last_6_months: "過去6ヶ月",
+      this_year: "今年",
+      all_time: "全期間",
+      performance_trend: "パフォーマンス推移",
+      evaluation_status: "評価ステータス分布",
+      detailed_data: "詳細データ",
+      admin_analytics: "管理者分析",
+      organization_skill_map: "組織スキルマップ"
     },
 
     // ===== 目標設定 =====
@@ -118,7 +161,33 @@ const TRANSLATIONS = {
       admin_approval_info: "目標は管理者の承認が必要です",
       select_evaluation_period: "評価期間を選択",
       add_goal: "目標を追加",
-      total_weight: "合計ウェイト"
+      total_weight: "合計ウェイト",
+      approvals: "目標承認",
+      pending_approvals: "承認待ちの目標",
+      approve: "承認",
+      reject: "却下",
+      approval_comment: "承認コメント"
+    },
+
+    // ===== 職種管理 =====
+    job_types: {
+      title: "職種管理",
+      add_job_type: "職種追加",
+      edit_job_type: "職種編集",
+      delete_job_type: "職種削除",
+      job_type_name: "職種名",
+      description: "説明",
+      evaluation_structure: "評価構造"
+    },
+
+    // ===== 組織管理 =====
+    organization: {
+      title: "組織管理",
+      hierarchy: "組織階層図",
+      departments: "部門",
+      teams: "チーム",
+      members: "メンバー",
+      skill_map: "組織スキルマップ"
     },
 
     // ===== 共通UI要素 =====
@@ -137,7 +206,17 @@ const TRANSLATIONS = {
       refresh: "更新",
       export: "エクスポート",
       import: "インポート",
-      back: "戻る"
+      back: "戻る",
+      view_all: "すべて表示",
+      loading: "読み込み中...",
+      loading_data: "データを読み込み中...",
+      no_data: "データがありません",
+      all: "すべて",
+      actions: "操作",
+      retry: "再試行",
+      view_details: "詳細表示",
+      copy: "コピー",
+      copied: "コピーしました"
     },
 
     // ===== エラー・メッセージ =====
@@ -149,6 +228,12 @@ const TRANSLATIONS = {
       network_error: "ネットワークエラーが発生しました",
       loading_error: "データの読み込みに失敗しました",
       validation_error: "入力内容を確認してください"
+    },
+
+    // ===== エラー =====
+    errors: {
+      loading_failed: "データの読み込みに失敗しました",
+      chart_library_failed: "グラフライブラリの読み込みに失敗しました"
     }
   },
 
@@ -175,10 +260,15 @@ const TRANSLATIONS = {
     dashboard: {
       title: "Dashboard",
       total_users: "Total Users",
-      active_users: "Active Users", 
+      active_users: "Active Users",
       completed_evaluations: "Completed Evaluations",
+      pending_evaluations: "Pending Approval",
       recent_evaluations: "Recent Evaluations",
-      system_stats: "System Statistics"
+      system_stats: "System Statistics",
+      system_overview: "System Overview and Recent Activity",
+      performance_chart: "Performance Trend",
+      no_recent_evaluations: "No recent evaluations",
+      total_evaluations: "Total Evaluations"
     },
 
     auth: {
@@ -203,11 +293,18 @@ const TRANSLATIONS = {
       role: "Role",
       status: "Status",
       active: "Active",
-      inactive: "Inactive"
+      inactive: "Inactive",
+      job_types: "Job Types",
+      assigned_job_types: "Assigned Job Types",
+      invite_user: "Invite User",
+      invitation_link: "Invitation Link",
+      copy_invitation_link: "Copy Invitation Link",
+      invitation_code: "Invitation Code",
+      generate_invitation: "Generate Invitation"
     },
 
     evaluations: {
-      title: "Evaluation System",
+      title: "Evaluations",
       new_evaluation: "New Evaluation",
       edit_evaluation: "Edit Evaluation",
       target_user: "Target User",
@@ -221,7 +318,24 @@ const TRANSLATIONS = {
       safety_awareness: "Safety Awareness",
       period: "Evaluation Period",
       updated_at: "Updated At",
-      assignment_status: "Assignment Status"
+      assignment_status: "Assignment Status",
+      all_status: "All Status",
+      all_users: "All Users",
+      all_assignments: "All Assignments",
+      assigned: "Assigned",
+      unassigned: "Unassigned",
+      my_evaluations: "My Evaluations",
+      my_assignments: "My Assignments",
+      other_evaluators: "Other Evaluators",
+      urgent: "Urgent (Pending Approval)",
+      this_week: "Created This Week",
+      own_evaluations_only: "Showing only your evaluations",
+      reset_filters: "Reset Filters",
+      search_placeholder: "Search by target user name...",
+      items_count: "items",
+      in_progress: "In Progress",
+      create_evaluation: "Create Evaluation",
+      view_report: "View Report"
     },
 
     evaluation: {
@@ -231,9 +345,13 @@ const TRANSLATIONS = {
     status: {
       title: "Status",
       pending: "Pending",
+      pending_approval: "Pending Approval",
       in_progress: "In Progress",
       completed: "Completed",
-      draft: "Draft"
+      draft: "Draft",
+      self_assessed: "Self-Assessed",
+      approved: "Approved",
+      rejected: "Rejected"
     },
 
     report: {
@@ -243,7 +361,17 @@ const TRANSLATIONS = {
       overall_evaluation: "Overall Evaluation",
       detailed_scores: "Detailed Scores",
       score_comparison: "Score Comparison",
-      process_history: "Process History"
+      process_history: "Process History",
+      subtitle: "Analysis and Comparison of Evaluation Data",
+      last_3_months: "Last 3 Months",
+      last_6_months: "Last 6 Months",
+      this_year: "This Year",
+      all_time: "All Time",
+      performance_trend: "Performance Trend",
+      evaluation_status: "Evaluation Status Distribution",
+      detailed_data: "Detailed Data",
+      admin_analytics: "Admin Analytics",
+      organization_skill_map: "Organization Skill Map"
     },
 
     goals: {
@@ -255,7 +383,31 @@ const TRANSLATIONS = {
       admin_approval_info: "Goals require administrator approval",
       select_evaluation_period: "Select Evaluation Period",
       add_goal: "Add Goal",
-      total_weight: "Total Weight"
+      total_weight: "Total Weight",
+      approvals: "Goal Approvals",
+      pending_approvals: "Pending Approvals",
+      approve: "Approve",
+      reject: "Reject",
+      approval_comment: "Approval Comment"
+    },
+
+    job_types: {
+      title: "Job Type Management",
+      add_job_type: "Add Job Type",
+      edit_job_type: "Edit Job Type",
+      delete_job_type: "Delete Job Type",
+      job_type_name: "Job Type Name",
+      description: "Description",
+      evaluation_structure: "Evaluation Structure"
+    },
+
+    organization: {
+      title: "Organization Management",
+      hierarchy: "Organization Hierarchy",
+      departments: "Departments",
+      teams: "Teams",
+      members: "Members",
+      skill_map: "Organization Skill Map"
     },
 
     common: {
@@ -273,17 +425,32 @@ const TRANSLATIONS = {
       refresh: "Refresh",
       export: "Export",
       import: "Import",
-      back: "Back"
+      back: "Back",
+      view_all: "View All",
+      loading: "Loading...",
+      loading_data: "Loading data...",
+      no_data: "No data available",
+      all: "All",
+      actions: "Actions",
+      retry: "Retry",
+      view_details: "View Details",
+      copy: "Copy",
+      copied: "Copied"
     },
 
     messages: {
       save_success: "Saved successfully",
       save_error: "Save failed",
-      delete_success: "Deleted successfully", 
+      delete_success: "Deleted successfully",
       delete_error: "Delete failed",
       network_error: "Network error occurred",
       loading_error: "Failed to load data",
       validation_error: "Please check your input"
+    },
+
+    errors: {
+      loading_failed: "Failed to load data",
+      chart_library_failed: "Failed to load chart library"
     }
   },
 
@@ -312,8 +479,33 @@ const TRANSLATIONS = {
       total_users: "Tổng người dùng",
       active_users: "Người dùng hoạt động",
       completed_evaluations: "Đánh giá hoàn thành",
+      pending_evaluations: "Chờ phê duyệt",
       recent_evaluations: "Đánh giá gần đây",
-      system_stats: "Thống kê hệ thống"
+      system_stats: "Thống kê hệ thống",
+      system_overview: "Tổng quan hệ thống và hoạt động gần đây",
+      performance_chart: "Xu hướng hiệu suất",
+      no_recent_evaluations: "Không có đánh giá gần đây",
+      total_evaluations: "Tổng số đánh giá"
+    },
+
+    users: {
+      title: "Quản lý người dùng",
+      add_user: "Thêm người dùng mới",
+      edit_user: "Chỉnh sửa người dùng",
+      delete_user: "Xóa người dùng",
+      name: "Tên",
+      email: "Email",
+      role: "Vai trò",
+      status: "Trạng thái",
+      active: "Hoạt động",
+      inactive: "Không hoạt động",
+      job_types: "Loại công việc",
+      assigned_job_types: "Loại công việc được phân công",
+      invite_user: "Mời người dùng",
+      invitation_link: "Liên kết mời",
+      copy_invitation_link: "Sao chép liên kết mời",
+      invitation_code: "Mã mời",
+      generate_invitation: "Tạo lời mời"
     },
 
     auth: {
@@ -329,8 +521,8 @@ const TRANSLATIONS = {
     },
 
     evaluations: {
-      title: "Hệ thống Đánh giá",
-      new_evaluation: "Đánh giá mới",
+      title: "Danh sách đánh giá",
+      new_evaluation: "Tạo đánh giá mới",
       edit_evaluation: "Chỉnh sửa đánh giá",
       target_user: "Người được đánh giá",
       evaluator: "Người đánh giá",
@@ -343,7 +535,24 @@ const TRANSLATIONS = {
       safety_awareness: "Ý thức an toàn",
       period: "Kỳ đánh giá",
       updated_at: "Cập nhật lúc",
-      assignment_status: "Trạng thái phân công"
+      assignment_status: "Trạng thái phân công",
+      all_status: "Tất cả trạng thái",
+      all_users: "Tất cả người dùng",
+      all_assignments: "Tất cả phân công",
+      assigned: "Đã phân công",
+      unassigned: "Chưa phân công",
+      my_evaluations: "Đánh giá của tôi",
+      my_assignments: "Phân công của tôi",
+      other_evaluators: "Người đánh giá khác",
+      urgent: "Khẩn cấp (Chờ phê duyệt)",
+      this_week: "Tạo tuần này",
+      own_evaluations_only: "Chỉ hiển thị đánh giá của bạn",
+      reset_filters: "Đặt lại bộ lọc",
+      search_placeholder: "Tìm kiếm theo tên người được đánh giá...",
+      items_count: "mục",
+      in_progress: "Đang tiến hành",
+      create_evaluation: "Tạo đánh giá",
+      view_report: "Xem báo cáo"
     },
 
     evaluation: {
@@ -353,9 +562,13 @@ const TRANSLATIONS = {
     status: {
       title: "Trạng thái",
       pending: "Chờ xử lý",
+      pending_approval: "Chờ phê duyệt",
       in_progress: "Đang tiến hành",
       completed: "Hoàn thành",
-      draft: "Bản nháp"
+      draft: "Bản nháp",
+      self_assessed: "Tự đánh giá hoàn thành",
+      approved: "Đã phê duyệt",
+      rejected: "Từ chối"
     },
 
     report: {
@@ -365,7 +578,17 @@ const TRANSLATIONS = {
       overall_evaluation: "Đánh giá tổng thể",
       detailed_scores: "Điểm chi tiết",
       score_comparison: "So sánh điểm",
-      process_history: "Lịch sử xử lý"
+      process_history: "Lịch sử xử lý",
+      subtitle: "Phân tích và so sánh dữ liệu đánh giá",
+      last_3_months: "3 tháng qua",
+      last_6_months: "6 tháng qua",
+      this_year: "Năm nay",
+      all_time: "Tất cả thời gian",
+      performance_trend: "Xu hướng hiệu suất",
+      evaluation_status: "Phân phối trạng thái đánh giá",
+      detailed_data: "Dữ liệu chi tiết",
+      admin_analytics: "Phân tích quản trị",
+      organization_skill_map: "Bản đồ kỹ năng tổ chức"
     },
 
     goals: {
@@ -377,7 +600,31 @@ const TRANSLATIONS = {
       admin_approval_info: "Mục tiêu cần được quản trị viên phê duyệt",
       select_evaluation_period: "Chọn kỳ đánh giá",
       add_goal: "Thêm mục tiêu",
-      total_weight: "Tổng trọng số"
+      total_weight: "Tổng trọng số",
+      approvals: "Phê duyệt mục tiêu",
+      pending_approvals: "Chờ phê duyệt",
+      approve: "Phê duyệt",
+      reject: "Từ chối",
+      approval_comment: "Nhận xét phê duyệt"
+    },
+
+    job_types: {
+      title: "Quản lý loại công việc",
+      add_job_type: "Thêm loại công việc",
+      edit_job_type: "Chỉnh sửa loại công việc",
+      delete_job_type: "Xóa loại công việc",
+      job_type_name: "Tên loại công việc",
+      description: "Mô tả",
+      evaluation_structure: "Cấu trúc đánh giá"
+    },
+
+    organization: {
+      title: "Quản lý tổ chức",
+      hierarchy: "Sơ đồ tổ chức",
+      departments: "Phòng ban",
+      teams: "Nhóm",
+      members: "Thành viên",
+      skill_map: "Bản đồ kỹ năng tổ chức"
     },
 
     common: {
@@ -395,7 +642,17 @@ const TRANSLATIONS = {
       refresh: "Làm mới",
       export: "Xuất",
       import: "Nhập",
-      back: "Quay lại"
+      back: "Quay lại",
+      view_all: "Xem tất cả",
+      loading: "Đang tải...",
+      loading_data: "Đang tải dữ liệu...",
+      no_data: "Không có dữ liệu",
+      all: "Tất cả",
+      actions: "Hành động",
+      retry: "Thử lại",
+      view_details: "Xem chi tiết",
+      copy: "Sao chép",
+      copied: "Đã sao chép"
     },
 
     messages: {
@@ -406,6 +663,11 @@ const TRANSLATIONS = {
       network_error: "Lỗi mạng xảy ra",
       loading_error: "Không thể tải dữ liệu",
       validation_error: "Vui lòng kiểm tra đầu vào"
+    },
+
+    errors: {
+      loading_failed: "Không thể tải dữ liệu",
+      chart_library_failed: "Không thể tải thư viện biểu đồ"
     }
   }
 };
