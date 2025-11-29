@@ -137,33 +137,110 @@ export class UserManagementPage {
 
       <!-- User Invite Modal -->
       <div class="modal fade" id="inviteUserModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title" data-i18n="users.invite_user">ユーザーを招待</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-              <form id="invite-user-form">
-                <div class="mb-3">
-                  <label for="invite-email" class="form-label" data-i18n="auth.email">メールアドレス</label>
-                  <input type="email" class="form-control" id="invite-email" required>
+              <!-- Tab Navigation -->
+              <ul class="nav nav-tabs mb-3" id="inviteTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link active" id="link-tab" data-bs-toggle="tab"
+                          data-bs-target="#link-tab-pane" type="button" role="tab">
+                    <i class="fas fa-link me-2"></i>
+                    <span data-i18n="users.invitation_link">招待リンク</span>
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="email-tab" data-bs-toggle="tab"
+                          data-bs-target="#email-tab-pane" type="button" role="tab">
+                    <i class="fas fa-envelope me-2"></i>
+                    <span data-i18n="users.email_invitation">メール招待</span>
+                  </button>
+                </li>
+              </ul>
+
+              <!-- Tab Content -->
+              <div class="tab-content" id="inviteTabContent">
+                <!-- Invitation Link Tab -->
+                <div class="tab-pane fade show active" id="link-tab-pane" role="tabpanel">
+                  <div class="mb-3">
+                    <label for="link-invite-role" class="form-label" data-i18n="users.role">役割</label>
+                    <select class="form-select" id="link-invite-role" required>
+                      <option value="evaluator" data-i18n="roles.evaluator">評価者</option>
+                      <option value="worker" data-i18n="roles.worker">一般ユーザー</option>
+                    </select>
+                  </div>
+
+                  <div class="mb-3">
+                    <button type="button" class="btn btn-success w-100" id="generate-link-btn">
+                      <i class="fas fa-magic me-2"></i>
+                      <span data-i18n="users.generate_invitation">招待リンクを生成</span>
+                    </button>
+                  </div>
+
+                  <!-- Generated Link Display -->
+                  <div id="generated-link-container" class="d-none">
+                    <div class="alert alert-success">
+                      <h6 class="alert-heading">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <span data-i18n="users.invitation_link_generated">招待リンクが生成されました</span>
+                      </h6>
+                      <hr>
+                      <div class="mb-2">
+                        <label class="form-label small" data-i18n="users.invitation_code">招待コード</label>
+                        <div class="input-group">
+                          <input type="text" class="form-control font-monospace" id="invitation-code-display" readonly>
+                          <button class="btn btn-outline-secondary" type="button" id="copy-code-btn"
+                                  title="コードをコピー">
+                            <i class="fas fa-copy"></i>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="mb-0">
+                        <label class="form-label small" data-i18n="users.invitation_url">招待URL</label>
+                        <div class="input-group">
+                          <input type="text" class="form-control font-monospace small" id="invitation-url-display" readonly>
+                          <button class="btn btn-primary" type="button" id="copy-url-btn">
+                            <i class="fas fa-copy me-2"></i>
+                            <span data-i18n="users.copy_link">リンクをコピー</span>
+                          </button>
+                        </div>
+                      </div>
+                      <small class="text-muted mt-2 d-block">
+                        <i class="fas fa-info-circle me-1"></i>
+                        このリンクを共有することでユーザーを招待できます
+                      </small>
+                    </div>
+                  </div>
                 </div>
-                <div class="mb-3">
-                  <label for="invite-role" class="form-label" data-i18n="users.role">役割</label>
-                  <select class="form-select" id="invite-role" required>
-                    <option value="evaluator" data-i18n="roles.evaluator">評価者</option>
-                    <option value="worker" data-i18n="roles.worker">一般ユーザー</option>
-                  </select>
+
+                <!-- Email Invitation Tab -->
+                <div class="tab-pane fade" id="email-tab-pane" role="tabpanel">
+                  <form id="invite-user-form">
+                    <div class="mb-3">
+                      <label for="invite-email" class="form-label" data-i18n="auth.email">メールアドレス</label>
+                      <input type="email" class="form-control" id="invite-email" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="invite-role" class="form-label" data-i18n="users.role">役割</label>
+                      <select class="form-select" id="invite-role" required>
+                        <option value="evaluator" data-i18n="roles.evaluator">評価者</option>
+                        <option value="worker" data-i18n="roles.worker">一般ユーザー</option>
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label for="invite-message" class="form-label" data-i18n="users.invitation_message">招待メッセージ（任意）</label>
+                      <textarea class="form-control" id="invite-message" rows="3"></textarea>
+                    </div>
+                  </form>
                 </div>
-                <div class="mb-3">
-                  <label for="invite-message" class="form-label" data-i18n="users.invitation_message">招待メッセージ（任意）</label>
-                  <textarea class="form-control" id="invite-message" rows="3"></textarea>
-                </div>
-              </form>
+              </div>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" 
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
                       data-i18n="common.cancel">キャンセル</button>
               <button type="button" class="btn btn-primary" id="send-invitation-btn">
                 <span class="spinner-border spinner-border-sm d-none" role="status"></span>
@@ -538,6 +615,37 @@ export class UserManagementPage {
       });
     }
 
+    // 招待リンク生成ボタン
+    const generateLinkBtn = document.getElementById('generate-link-btn');
+    if (generateLinkBtn) {
+      generateLinkBtn.addEventListener('click', () => {
+        this.generateInvitationLink();
+      });
+    }
+
+    // コピーボタン
+    const copyCodeBtn = document.getElementById('copy-code-btn');
+    if (copyCodeBtn) {
+      copyCodeBtn.addEventListener('click', () => {
+        this.copyToClipboard('invitation-code-display', 'コードをコピーしました');
+      });
+    }
+
+    const copyUrlBtn = document.getElementById('copy-url-btn');
+    if (copyUrlBtn) {
+      copyUrlBtn.addEventListener('click', () => {
+        this.copyToClipboard('invitation-url-display', '招待リンクをコピーしました');
+      });
+    }
+
+    // タブ切り替え時の処理
+    const inviteTab = document.getElementById('inviteTab');
+    if (inviteTab) {
+      inviteTab.addEventListener('shown.bs.tab', (event) => {
+        this.onTabChange(event.target.id);
+      });
+    }
+
     // ユーザー保存ボタン
     const saveUserBtn = document.getElementById('save-user-btn');
     if (saveUserBtn) {
@@ -598,14 +706,27 @@ export class UserManagementPage {
     try {
       // 既存のモーダルが開いている場合は閉じる
       this.forceCloseModal('inviteUserModal');
-      
+
       // フォームをリセット
       const form = document.getElementById('invite-user-form');
       if (form) {
         form.reset();
         form.classList.remove('was-validated');
       }
-      
+
+      // 生成されたリンクをクリア
+      const linkContainer = document.getElementById('generated-link-container');
+      if (linkContainer) {
+        linkContainer.classList.add('d-none');
+      }
+
+      // タブを最初（リンク）にリセット
+      const linkTab = document.getElementById('link-tab');
+      if (linkTab) {
+        const tab = new bootstrap.Tab(linkTab);
+        tab.show();
+      }
+
       // 送信ボタンの状態をリセット
       const submitBtn = document.getElementById('send-invitation-btn');
       const spinner = submitBtn?.querySelector('.spinner-border');
@@ -614,15 +735,17 @@ export class UserManagementPage {
       }
       if (submitBtn) {
         submitBtn.disabled = false;
+        // リンクタブがデフォルトなので送信ボタンは非表示
+        submitBtn.style.display = 'none';
       }
-      
+
       // モーダルを表示
       const modal = new bootstrap.Modal(document.getElementById('inviteUserModal'), {
         backdrop: 'static',  // 背景クリックで閉じないように
         keyboard: false      // ESCキーで閉じないように
       });
       modal.show();
-      
+
     } catch (error) {
       console.error('Failed to show invite modal:', error);
       this.app.showError('招待フォームの表示に失敗しました');
@@ -820,16 +943,110 @@ export class UserManagementPage {
     };
   }
 
+  async generateInvitationLink() {
+    const roleSelect = document.getElementById('link-invite-role');
+    const generateBtn = document.getElementById('generate-link-btn');
+
+    if (!roleSelect || !generateBtn) return;
+
+    const role = roleSelect.value;
+
+    try {
+      // ボタンを無効化
+      generateBtn.disabled = true;
+      generateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>生成中...';
+
+      // 招待を作成（メールアドレスなしで）
+      const invitationData = await this.app.api.createInvitation({
+        email: '', // リンク方式ではメール不要
+        role: role,
+        type: 'link', // リンク招待であることを示す
+        message: ''
+      });
+
+      // 招待コードを取得
+      const invitationCode = invitationData.code || invitationData.id;
+
+      // 招待URLを生成
+      const baseUrl = window.location.origin + window.location.pathname;
+      const invitationUrl = `${baseUrl}#/invitation-accept?code=${invitationCode}`;
+
+      // UIに表示
+      this.displayGeneratedLink(invitationCode, invitationUrl);
+
+      this.app.showSuccess('招待リンクを生成しました');
+
+    } catch (error) {
+      console.error('Failed to generate invitation link:', error);
+      this.app.showError('招待リンクの生成に失敗しました: ' + error.message);
+    } finally {
+      // ボタンを元に戻す
+      generateBtn.disabled = false;
+      generateBtn.innerHTML = '<i class="fas fa-magic me-2"></i><span data-i18n="users.generate_invitation">招待リンクを生成</span>';
+    }
+  }
+
+  displayGeneratedLink(code, url) {
+    const container = document.getElementById('generated-link-container');
+    const codeDisplay = document.getElementById('invitation-code-display');
+    const urlDisplay = document.getElementById('invitation-url-display');
+
+    if (container && codeDisplay && urlDisplay) {
+      codeDisplay.value = code;
+      urlDisplay.value = url;
+      container.classList.remove('d-none');
+    }
+  }
+
+  async copyToClipboard(elementId, successMessage) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+
+    try {
+      const text = element.value;
+
+      // クリップボードAPIを使用
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // フォールバック: 古いブラウザ対応
+        element.select();
+        element.setSelectionRange(0, 99999); // モバイル対応
+        document.execCommand('copy');
+      }
+
+      this.app.showSuccess(successMessage || 'コピーしました');
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+
+      // フォールバック: 選択状態にする
+      element.select();
+      this.app.showError('コピーに失敗しました。手動で選択してコピーしてください。');
+    }
+  }
+
+  onTabChange(tabId) {
+    const sendInvitationBtn = document.getElementById('send-invitation-btn');
+    if (!sendInvitationBtn) return;
+
+    // メール招待タブの時のみ送信ボタンを表示
+    if (tabId === 'email-tab') {
+      sendInvitationBtn.style.display = 'inline-block';
+    } else {
+      sendInvitationBtn.style.display = 'none';
+    }
+  }
+
   cleanup() {
     // グローバル参照をクリーンアップ
     if (window.userManagement === this) {
       delete window.userManagement;
     }
-    
+
     // モーダル関連のクリーンアップ
     this.forceCloseModal('inviteUserModal');
     this.forceCloseModal('editUserModal');
-    
+
   }
 
   // 職種バッジを生成

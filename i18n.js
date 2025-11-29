@@ -58,6 +58,7 @@ const TRANSLATIONS = {
     // ===== ユーザー管理 =====
     users: {
       title: "ユーザー管理",
+      subtitle: "組織内のユーザーを管理します",
       add_user: "新規ユーザー追加",
       edit_user: "ユーザー編集",
       delete_user: "ユーザー削除",
@@ -67,13 +68,27 @@ const TRANSLATIONS = {
       status: "ステータス",
       active: "アクティブ",
       inactive: "非アクティブ",
+      pending: "承認待ち",
       job_types: "担当職種",
       assigned_job_types: "割り当て職種",
       invite_user: "ユーザー招待",
       invitation_link: "招待リンク",
+      invitation_url: "招待URL",
       copy_invitation_link: "招待リンクをコピー",
+      copy_link: "リンクをコピー",
       invitation_code: "招待コード",
-      generate_invitation: "招待を生成"
+      generate_invitation: "招待リンクを生成",
+      invitation_link_generated: "招待リンクが生成されました",
+      email_invitation: "メール招待",
+      send_invitation: "招待を送信",
+      invitation_message: "招待メッセージ（任意）",
+      all_status: "すべてのステータス",
+      all_roles: "すべての役割",
+      total_users: "総ユーザー数",
+      active_users: "アクティブ",
+      pending_users: "承認待ち",
+      admin_users: "管理者",
+      suspended: "停止中"
     },
 
     // ===== 評価システム =====
@@ -285,6 +300,7 @@ const TRANSLATIONS = {
 
     users: {
       title: "User Management",
+      subtitle: "Manage users in your organization",
       add_user: "Add New User",
       edit_user: "Edit User",
       delete_user: "Delete User",
@@ -294,13 +310,27 @@ const TRANSLATIONS = {
       status: "Status",
       active: "Active",
       inactive: "Inactive",
+      pending: "Pending",
       job_types: "Job Types",
       assigned_job_types: "Assigned Job Types",
       invite_user: "Invite User",
       invitation_link: "Invitation Link",
+      invitation_url: "Invitation URL",
       copy_invitation_link: "Copy Invitation Link",
+      copy_link: "Copy Link",
       invitation_code: "Invitation Code",
-      generate_invitation: "Generate Invitation"
+      generate_invitation: "Generate Invitation Link",
+      invitation_link_generated: "Invitation link generated",
+      email_invitation: "Email Invitation",
+      send_invitation: "Send Invitation",
+      invitation_message: "Invitation Message (Optional)",
+      all_status: "All Statuses",
+      all_roles: "All Roles",
+      total_users: "Total Users",
+      active_users: "Active",
+      pending_users: "Pending",
+      admin_users: "Administrators",
+      suspended: "Suspended"
     },
 
     evaluations: {
@@ -490,6 +520,7 @@ const TRANSLATIONS = {
 
     users: {
       title: "Quản lý người dùng",
+      subtitle: "Quản lý người dùng trong tổ chức của bạn",
       add_user: "Thêm người dùng mới",
       edit_user: "Chỉnh sửa người dùng",
       delete_user: "Xóa người dùng",
@@ -499,13 +530,27 @@ const TRANSLATIONS = {
       status: "Trạng thái",
       active: "Hoạt động",
       inactive: "Không hoạt động",
+      pending: "Đang chờ",
       job_types: "Loại công việc",
       assigned_job_types: "Loại công việc được phân công",
       invite_user: "Mời người dùng",
       invitation_link: "Liên kết mời",
+      invitation_url: "URL mời",
       copy_invitation_link: "Sao chép liên kết mời",
+      copy_link: "Sao chép liên kết",
       invitation_code: "Mã mời",
-      generate_invitation: "Tạo lời mời"
+      generate_invitation: "Tạo liên kết mời",
+      invitation_link_generated: "Liên kết mời đã được tạo",
+      email_invitation: "Mời qua email",
+      send_invitation: "Gửi lời mời",
+      invitation_message: "Tin nhắn mời (Tùy chọn)",
+      all_status: "Tất cả trạng thái",
+      all_roles: "Tất cả vai trò",
+      total_users: "Tổng số người dùng",
+      active_users: "Hoạt động",
+      pending_users: "Đang chờ",
+      admin_users: "Quản trị viên",
+      suspended: "Bị đình chỉ"
     },
 
     auth: {

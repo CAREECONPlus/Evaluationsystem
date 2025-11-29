@@ -256,22 +256,33 @@ export class EvaluationFormPage {
     }
   }
 
-  renderUserSelect() {
+  renderUserSelect(filteredUserIds = null) {
     const select = document.getElementById('target-user-select');
     if (!select) return;
-    
+
+    // フィルタリングされたユーザーリストを使用
+    let usersToShow = this.usersForEvaluation;
+    if (filteredUserIds && filteredUserIds.length > 0) {
+      usersToShow = this.usersForEvaluation.filter(user => filteredUserIds.includes(user.id));
+    }
+
     select.innerHTML = `
       <option value="" data-i18n="common.select">選択してください</option>
-      ${this.usersForEvaluation.map(user => 
+      ${usersToShow.map(user =>
         `<option value="${user.id}">${this.app.sanitizeHtml(user.name)}</option>`
       ).join('')}
     `;
+
+    // オプションがない場合のメッセージ
+    if (usersToShow.length === 0) {
+      select.innerHTML = `<option value="" disabled>この期間で評価可能なユーザーがいません</option>`;
+    }
   }
 
   renderPeriodSelect() {
     const select = document.getElementById('period-select');
     if (!select) return;
-    
+
     select.innerHTML = `
       <option value="" data-i18n="common.select">選択してください</option>
       ${(this.periods || []).map(period =>
@@ -282,9 +293,59 @@ export class EvaluationFormPage {
 
   setupEventListeners() {
     document.getElementById('target-user-select').addEventListener('change', () => this.onSelectionChange());
-    document.getElementById('period-select').addEventListener('change', () => this.onSelectionChange());
+    document.getElementById('period-select').addEventListener('change', () => this.onPeriodChange());
     document.getElementById('submit-evaluation-btn').addEventListener('click', () => this.submitEvaluation());
     document.getElementById('save-draft-btn').addEventListener('click', () => this.saveDraft());
+  }
+
+  /**
+   * 期間選択時の処理（未完了の評価のみフィルタリング）
+   */
+  async onPeriodChange() {
+    const periodId = document.getElementById('period-select').value;
+    const userSelect = document.getElementById('target-user-select');
+
+    if (!periodId) {
+      // 期間が未選択の場合は全ユーザーを表示
+      this.renderUserSelect();
+      userSelect.value = '';
+      document.getElementById('evaluation-content').classList.add('d-none');
+      document.getElementById('target-user-info').classList.add('d-none');
+      document.getElementById('submit-evaluation-btn').disabled = true;
+      return;
+    }
+
+    try {
+      // この期間の全評価を取得
+      const evaluations = await this.app.api.getEvaluations({ periodId: periodId });
+
+      // 完了済み評価のユーザーIDリストを作成
+      const completedUserIds = evaluations
+        .filter(e => e.status === 'completed')
+        .map(e => e.targetUserId);
+
+      // 未完了または評価が存在しないユーザーのみをフィルタリング
+      const availableUserIds = this.usersForEvaluation
+        .filter(user => !completedUserIds.includes(user.id))
+        .map(user => user.id);
+
+      // ユーザーリストを更新
+      this.renderUserSelect(availableUserIds);
+
+      // 現在の選択をクリア
+      userSelect.value = '';
+      document.getElementById('evaluation-content').classList.add('d-none');
+      document.getElementById('target-user-info').classList.add('d-none');
+      document.getElementById('submit-evaluation-btn').disabled = true;
+
+    } catch (error) {
+      console.error('Error filtering users by period:', error);
+      // エラー時は全ユーザーを表示
+      this.renderUserSelect();
+    }
+
+    // 選択変更処理を呼び出す
+    this.onSelectionChange();
   }
 
   async onSelectionChange() {
