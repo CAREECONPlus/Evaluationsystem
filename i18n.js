@@ -124,7 +124,9 @@ const TRANSLATIONS = {
       items_count: "件",
       in_progress: "進行中",
       create_evaluation: "評価を作成",
-      view_report: "レポート表示"
+      view_report: "レポート表示",
+      start_evaluation: "評価開始",
+      continue_evaluation: "続ける"
     },
 
     // ===== 評価フォーム =====
@@ -365,7 +367,9 @@ const TRANSLATIONS = {
       items_count: "items",
       in_progress: "In Progress",
       create_evaluation: "Create Evaluation",
-      view_report: "View Report"
+      view_report: "View Report",
+      start_evaluation: "Start Evaluation",
+      continue_evaluation: "Continue"
     },
 
     evaluation: {
@@ -597,7 +601,9 @@ const TRANSLATIONS = {
       items_count: "mục",
       in_progress: "Đang tiến hành",
       create_evaluation: "Tạo đánh giá",
-      view_report: "Xem báo cáo"
+      view_report: "Xem báo cáo",
+      start_evaluation: "Bắt đầu đánh giá",
+      continue_evaluation: "Tiếp tục"
     },
 
     evaluation: {

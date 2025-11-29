@@ -614,6 +614,24 @@ export class EvaluationsPage {
                         <i class="fas fa-chart-bar"></i>
                       </a>
                       ` : ''}
+                      ${canEdit && evaluation.status === 'draft' ? `
+                      <a href="#/evaluation-form?id=${evaluation.id}"
+                         class="btn btn-sm btn-primary"
+                         data-link
+                         title="評価を開始">
+                        <i class="fas fa-edit me-1"></i>
+                        <span data-i18n="evaluations.start_evaluation">評価開始</span>
+                      </a>
+                      ` : ''}
+                      ${canEdit && evaluation.status !== 'draft' && evaluation.status !== 'completed' ? `
+                      <a href="#/evaluation-form?id=${evaluation.id}"
+                         class="btn btn-sm btn-warning"
+                         data-link
+                         title="評価を続ける">
+                        <i class="fas fa-edit me-1"></i>
+                        <span data-i18n="evaluations.continue_evaluation">続ける</span>
+                      </a>
+                      ` : ''}
                       <a href="#/evaluation-form?id=${evaluation.id}"
                          class="btn btn-sm btn-outline-primary"
                          data-link
