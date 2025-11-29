@@ -189,12 +189,29 @@ const TRANSLATIONS = {
     // ===== 職種管理 =====
     job_types: {
       title: "職種管理",
-      add_job_type: "職種追加",
+      subtitle: "職種の登録と管理",
+      add_job_type: "新規職種追加",
       edit_job_type: "職種編集",
       delete_job_type: "職種削除",
       job_type_name: "職種名",
+      category: "カテゴリー",
       description: "説明",
-      evaluation_structure: "評価構造"
+      evaluation_structure: "評価構造",
+      search_placeholder: "職種名で検索...",
+      export: "エクスポート",
+      total_job_types: "総職種数",
+      active_job_types: "有効な職種",
+      inactive_job_types: "無効な職種",
+      category_count: "カテゴリ数",
+      job_type_list: "職種一覧",
+      status: "ステータス",
+      actions: "操作",
+      save: "保存",
+      cancel: "キャンセル",
+      confirm_delete: "この職種を削除してもよろしいですか？",
+      created_at: "作成日",
+      updated_at: "更新日",
+      required: "必須"
     },
 
     // ===== 組織管理 =====
@@ -427,12 +444,29 @@ const TRANSLATIONS = {
 
     job_types: {
       title: "Job Type Management",
-      add_job_type: "Add Job Type",
+      subtitle: "Register and manage job types",
+      add_job_type: "Add New Job Type",
       edit_job_type: "Edit Job Type",
       delete_job_type: "Delete Job Type",
       job_type_name: "Job Type Name",
+      category: "Category",
       description: "Description",
-      evaluation_structure: "Evaluation Structure"
+      evaluation_structure: "Evaluation Structure",
+      search_placeholder: "Search by job type name...",
+      export: "Export",
+      total_job_types: "Total Job Types",
+      active_job_types: "Active Job Types",
+      inactive_job_types: "Inactive Job Types",
+      category_count: "Categories",
+      job_type_list: "Job Type List",
+      status: "Status",
+      actions: "Actions",
+      save: "Save",
+      cancel: "Cancel",
+      confirm_delete: "Are you sure you want to delete this job type?",
+      created_at: "Created",
+      updated_at: "Updated",
+      required: "Required"
     },
 
     organization: {
@@ -661,12 +695,29 @@ const TRANSLATIONS = {
 
     job_types: {
       title: "Quản lý loại công việc",
-      add_job_type: "Thêm loại công việc",
+      subtitle: "Đăng ký và quản lý các loại công việc",
+      add_job_type: "Thêm loại công việc mới",
       edit_job_type: "Chỉnh sửa loại công việc",
       delete_job_type: "Xóa loại công việc",
       job_type_name: "Tên loại công việc",
+      category: "Danh mục",
       description: "Mô tả",
-      evaluation_structure: "Cấu trúc đánh giá"
+      evaluation_structure: "Cấu trúc đánh giá",
+      search_placeholder: "Tìm kiếm theo tên loại công việc...",
+      export: "Xuất dữ liệu",
+      total_job_types: "Tổng số loại công việc",
+      active_job_types: "Loại công việc hoạt động",
+      inactive_job_types: "Loại công việc không hoạt động",
+      category_count: "Số danh mục",
+      job_type_list: "Danh sách loại công việc",
+      status: "Trạng thái",
+      actions: "Thao tác",
+      save: "Lưu",
+      cancel: "Hủy",
+      confirm_delete: "Bạn có chắc chắn muốn xóa loại công việc này không?",
+      created_at: "Ngày tạo",
+      updated_at: "Ngày cập nhật",
+      required: "Bắt buộc"
     },
 
     organization: {

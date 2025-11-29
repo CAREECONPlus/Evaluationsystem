@@ -20,15 +20,15 @@ export class JobTypeManagementPage {
           <div class="col">
             <h1 class="h3 mb-3">
               <i class="fas fa-briefcase me-2"></i>
-              職種管理
+              <span data-i18n="job_types.title">職種管理</span>
             </h1>
             <nav aria-label="breadcrumb">
               <ol class="breadcrumb">
                 <li class="breadcrumb-item">
-                  <a href="#/dashboard" data-link>ダッシュボード</a>
+                  <a href="#/dashboard" data-link data-i18n="nav.dashboard">ダッシュボード</a>
                 </li>
-                <li class="breadcrumb-item">設定</li>
-                <li class="breadcrumb-item active" aria-current="page">職種管理</li>
+                <li class="breadcrumb-item" data-i18n="nav.settings">設定</li>
+                <li class="breadcrumb-item active" aria-current="page" data-i18n="job_types.title">職種管理</li>
               </ol>
             </nav>
           </div>
@@ -41,20 +41,21 @@ export class JobTypeManagementPage {
               <span class="input-group-text">
                 <i class="fas fa-search"></i>
               </span>
-              <input type="text" 
-                     class="form-control" 
-                     id="jobTypeSearchInput" 
+              <input type="text"
+                     class="form-control"
+                     id="jobTypeSearchInput"
+                     data-i18n="job_types.search_placeholder"
                      placeholder="職種名で検索...">
             </div>
           </div>
           <div class="col-md-6 text-md-end mt-3 mt-md-0">
             <button class="btn btn-primary" id="addJobTypeBtn">
               <i class="fas fa-plus me-2"></i>
-              新規職種追加
+              <span data-i18n="job_types.add_job_type">新規職種追加</span>
             </button>
             <button class="btn btn-outline-secondary ms-2" id="exportJobTypesBtn">
               <i class="fas fa-download me-2"></i>
-              エクスポート
+              <span data-i18n="job_types.export">エクスポート</span>
             </button>
           </div>
         </div>
@@ -64,7 +65,7 @@ export class JobTypeManagementPage {
           <div class="col-md-3 mb-3">
             <div class="card border-primary">
               <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">総職種数</h6>
+                <h6 class="card-subtitle mb-2 text-muted" data-i18n="job_types.total_job_types">総職種数</h6>
                 <h3 class="card-title mb-0">
                   <span id="totalJobTypes">0</span>
                 </h3>
@@ -74,7 +75,7 @@ export class JobTypeManagementPage {
           <div class="col-md-3 mb-3">
             <div class="card border-success">
               <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">有効な職種</h6>
+                <h6 class="card-subtitle mb-2 text-muted" data-i18n="job_types.active_job_types">有効な職種</h6>
                 <h3 class="card-title mb-0 text-success">
                   <span id="activeJobTypes">0</span>
                 </h3>
@@ -84,7 +85,7 @@ export class JobTypeManagementPage {
           <div class="col-md-3 mb-3">
             <div class="card border-warning">
               <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">無効な職種</h6>
+                <h6 class="card-subtitle mb-2 text-muted" data-i18n="job_types.inactive_job_types">無効な職種</h6>
                 <h3 class="card-title mb-0 text-warning">
                   <span id="inactiveJobTypes">0</span>
                 </h3>
@@ -94,7 +95,7 @@ export class JobTypeManagementPage {
           <div class="col-md-3 mb-3">
             <div class="card border-info">
               <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">カテゴリ数</h6>
+                <h6 class="card-subtitle mb-2 text-muted" data-i18n="job_types.category_count">カテゴリ数</h6>
                 <h3 class="card-title mb-0 text-info">
                   <span id="categoryCount">0</span>
                 </h3>
@@ -106,7 +107,7 @@ export class JobTypeManagementPage {
         <!-- 職種リスト -->
         <div class="card">
           <div class="card-header">
-            <h5 class="card-title mb-0">職種一覧</h5>
+            <h5 class="card-title mb-0" data-i18n="job_types.job_type_list">職種一覧</h5>
           </div>
           <div class="card-body">
             <div id="jobTypeTableContainer">
@@ -125,19 +126,22 @@ export class JobTypeManagementPage {
         <div class="modal-dialog modal-lg">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="jobTypeModalLabel">職種編集</h5>
+              <h5 class="modal-title" id="jobTypeModalLabel" data-i18n="job_types.edit_job_type">職種編集</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
               <form id="jobTypeForm">
                 <div class="row">
                   <div class="col-md-6 mb-3">
-                    <label for="jobTypeName" class="form-label">職種名 <span class="text-danger">*</span></label>
+                    <label for="jobTypeName" class="form-label">
+                      <span data-i18n="job_types.job_type_name">職種名</span>
+                      <span class="text-danger">*</span>
+                    </label>
                     <input type="text" class="form-control" id="jobTypeName" required>
                     <div class="invalid-feedback">職種名を入力してください</div>
                   </div>
                   <div class="col-md-6 mb-3">
-                    <label for="jobTypeCategory" class="form-label">カテゴリー</label>
+                    <label for="jobTypeCategory" class="form-label" data-i18n="job_types.category">カテゴリー</label>
                     <input type="text" class="form-control" id="jobTypeCategory" 
                            list="categoryList" placeholder="例: 建築、設備、仕上げ">
                     <datalist id="categoryList">
