@@ -396,7 +396,7 @@ export class EvaluationAPI extends BaseAPI {
   }
 
   /**
-   * 評価チャートデータを取得
+   * 評価チャートデータを取得（実際の評価データから生成）
    */
   async getEvaluationChartData(userId = null) {
     try {
@@ -406,28 +406,138 @@ export class EvaluationAPI extends BaseAPI {
         return cached;
       }
 
-      console.log("EvaluationAPI: Loading evaluation chart data...");
-      
+      console.log("EvaluationAPI: Loading evaluation chart data from real data...");
+
       const tenantId = await this.getCurrentTenantId();
-      
-      // サンプルチャートデータを生成（実際の実装では評価データから生成）
+      const currentUser = this.auth.currentUser;
+      const targetUserId = userId || currentUser?.uid;
+
+      // 完了済みの評価を取得
+      let evaluationsQuery = query(
+        collection(this.db, "evaluations"),
+        where("tenantId", "==", tenantId),
+        where("status", "==", "completed")
+      );
+
+      // 特定ユーザーの評価を取得する場合
+      if (targetUserId) {
+        evaluationsQuery = query(
+          collection(this.db, "evaluations"),
+          where("tenantId", "==", tenantId),
+          where("targetUserId", "==", targetUserId),
+          where("status", "==", "completed")
+        );
+      }
+
+      const evaluationsSnapshot = await getDocs(evaluationsQuery);
+      const evaluations = evaluationsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      console.log(`EvaluationAPI: Found ${evaluations.length} completed evaluations for chart`);
+
+      if (evaluations.length === 0) {
+        // 評価データがない場合は空のチャートデータを返す
+        return {
+          labels: [],
+          datasets: []
+        };
+      }
+
+      // 評価項目を収集（全評価から一意の項目を抽出）
+      const criteriaSet = new Set();
+      evaluations.forEach(evaluation => {
+        if (evaluation.scores && typeof evaluation.scores === 'object') {
+          Object.keys(evaluation.scores).forEach(key => criteriaSet.add(key));
+        }
+      });
+
+      const criteria = Array.from(criteriaSet);
+
+      if (criteria.length === 0) {
+        console.warn("EvaluationAPI: No evaluation criteria found");
+        return {
+          labels: [],
+          datasets: []
+        };
+      }
+
+      // 日本語ラベルマッピング
+      const labelMapping = {
+        technical_skills: '技術力',
+        communication: 'コミュニケーション',
+        teamwork: 'チームワーク',
+        problem_solving: '問題解決',
+        safety_awareness: '安全意識',
+        leadership: 'リーダーシップ',
+        work_quality: '作業品質',
+        efficiency: '効率性',
+        reliability: '信頼性',
+        initiative: '主体性'
+      };
+
+      const labels = criteria.map(c => labelMapping[c] || c);
+
+      // ユーザー個人の平均スコアを計算
+      const userScores = criteria.map(criterion => {
+        const scores = evaluations
+          .map(e => e.scores && e.scores[criterion] ? parseFloat(e.scores[criterion]) : null)
+          .filter(score => score !== null && !isNaN(score));
+
+        return scores.length > 0
+          ? scores.reduce((sum, score) => sum + score, 0) / scores.length
+          : 0;
+      });
+
+      // 全体平均を計算（組織全体の評価から）
+      let allEvaluationsQuery = query(
+        collection(this.db, "evaluations"),
+        where("tenantId", "==", tenantId),
+        where("status", "==", "completed")
+      );
+
+      const allEvaluationsSnapshot = await getDocs(allEvaluationsQuery);
+      const allEvaluations = allEvaluationsSnapshot.docs.map(doc => doc.data());
+
+      const organizationScores = criteria.map(criterion => {
+        const scores = allEvaluations
+          .map(e => e.scores && e.scores[criterion] ? parseFloat(e.scores[criterion]) : null)
+          .filter(score => score !== null && !isNaN(score));
+
+        return scores.length > 0
+          ? scores.reduce((sum, score) => sum + score, 0) / scores.length
+          : 0;
+      });
+
       const chartData = {
-        labels: ['技術力', 'コミュニケーション', 'チームワーク', '問題解決', '安全意識'],
+        labels: labels,
         datasets: [{
-          label: 'あなたの評価',
-          data: [4.2, 3.8, 4.5, 3.9, 4.7],
+          label: targetUserId ? 'あなたの評価' : '組織平均',
+          data: userScores,
           borderColor: 'rgba(54, 162, 235, 1)',
-          backgroundColor: 'rgba(54, 162, 235, 0.2)'
-        }, {
-          label: '部署平均',
-          data: [3.8, 3.6, 4.1, 3.7, 4.3],
-          borderColor: 'rgba(255, 99, 132, 1)',
-          backgroundColor: 'rgba(255, 99, 132, 0.2)'
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6
         }]
       };
 
+      // ユーザー指定時は組織平均も追加
+      if (targetUserId && allEvaluations.length > evaluations.length) {
+        chartData.datasets.push({
+          label: '組織平均',
+          data: organizationScores,
+          borderColor: 'rgba(255, 99, 132, 1)',
+          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        });
+      }
+
       this.setCache(cacheKey, chartData, 300000); // 5分キャッシュ
-      console.log("EvaluationAPI: Chart data loaded");
+      console.log("EvaluationAPI: Chart data loaded from real evaluations");
       return chartData;
 
     } catch (error) {

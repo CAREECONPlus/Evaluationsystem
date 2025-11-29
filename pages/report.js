@@ -1873,7 +1873,7 @@ export class EvaluationReportPage {
   }
 
   /**
-   * 組織スキルマップ
+   * 組織スキルマップ（実際の評価データから生成）
    */
   async renderOrganizationSkillMap() {
     const canvas = document.getElementById('organizationSkillMap');
@@ -1896,34 +1896,100 @@ export class EvaluationReportPage {
 
     const ctx = canvas.getContext('2d');
 
-    // スキルマップのダミーデータ
-    const skillCategories = ['技術力', 'コミュニケーション', '責任感', '協調性', 'リーダーシップ', '問題解決', '学習意欲', '時間管理'];
-    const departmentData = [
-      {
-        label: '開発部',
-        data: [4.5, 3.8, 4.2, 4.0, 3.9, 4.3, 4.1, 3.7],
-        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-        borderColor: 'rgba(54, 162, 235, 1)'
-      },
-      {
-        label: '営業部',
-        data: [3.2, 4.6, 4.1, 4.3, 4.2, 3.8, 3.9, 4.0],
-        backgroundColor: 'rgba(255, 99, 132, 0.6)',
-        borderColor: 'rgba(255, 99, 132, 1)'
-      },
-      {
-        label: '管理部',
-        data: [3.5, 4.2, 4.5, 4.1, 4.0, 4.2, 3.8, 4.3],
-        backgroundColor: 'rgba(255, 205, 86, 0.6)',
-        borderColor: 'rgba(255, 205, 86, 1)'
-      },
-      {
-        label: '人事部',
-        data: [3.3, 4.4, 4.3, 4.5, 3.8, 4.0, 4.1, 4.2],
-        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-        borderColor: 'rgba(75, 192, 192, 1)'
+    // 実際の評価データから職種別のスキルマップを生成
+    const evaluations = this.reportData?.allEvaluations || [];
+    const completedEvaluations = evaluations.filter(e => e.status === 'completed' && e.scores);
+
+    if (completedEvaluations.length === 0) {
+      // データがない場合はメッセージを表示
+      const container = canvas.parentElement;
+      container.innerHTML = '<div class="alert alert-info text-center">評価データがありません</div>';
+      return;
+    }
+
+    // 評価項目を収集
+    const criteriaSet = new Set();
+    completedEvaluations.forEach(evaluation => {
+      if (evaluation.scores) {
+        Object.keys(evaluation.scores).forEach(key => criteriaSet.add(key));
       }
+    });
+
+    const criteria = Array.from(criteriaSet);
+
+    // 日本語ラベルマッピング
+    const labelMapping = {
+      technical_skills: '技術力',
+      communication: 'コミュニケーション',
+      teamwork: '協調性',
+      problem_solving: '問題解決',
+      safety_awareness: '安全意識',
+      leadership: 'リーダーシップ',
+      work_quality: '作業品質',
+      efficiency: '効率性',
+      reliability: '信頼性',
+      initiative: '主体性'
+    };
+
+    const skillCategories = criteria.map(c => labelMapping[c] || c);
+
+    // 職種別にグループ化
+    const jobTypeScores = {};
+    const colors = [
+      { bg: 'rgba(54, 162, 235, 0.6)', border: 'rgba(54, 162, 235, 1)' },
+      { bg: 'rgba(255, 99, 132, 0.6)', border: 'rgba(255, 99, 132, 1)' },
+      { bg: 'rgba(255, 205, 86, 0.6)', border: 'rgba(255, 205, 86, 1)' },
+      { bg: 'rgba(75, 192, 192, 0.6)', border: 'rgba(75, 192, 192, 1)' },
+      { bg: 'rgba(153, 102, 255, 0.6)', border: 'rgba(153, 102, 255, 1)' },
+      { bg: 'rgba(255, 159, 64, 0.6)', border: 'rgba(255, 159, 64, 1)' }
     ];
+
+    completedEvaluations.forEach(evaluation => {
+      const jobType = evaluation.jobTypeName || evaluation.jobTypeId || '未分類';
+
+      if (!jobTypeScores[jobType]) {
+        jobTypeScores[jobType] = {};
+        criteria.forEach(criterion => {
+          jobTypeScores[jobType][criterion] = [];
+        });
+      }
+
+      criteria.forEach(criterion => {
+        const score = evaluation.scores && evaluation.scores[criterion]
+          ? parseFloat(evaluation.scores[criterion])
+          : null;
+        if (score !== null && !isNaN(score)) {
+          jobTypeScores[jobType][criterion].push(score);
+        }
+      });
+    });
+
+    // 職種別の平均スコアを計算
+    const departmentData = Object.keys(jobTypeScores).map((jobType, index) => {
+      const avgScores = criteria.map(criterion => {
+        const scores = jobTypeScores[jobType][criterion];
+        return scores.length > 0
+          ? scores.reduce((sum, score) => sum + score, 0) / scores.length
+          : 0;
+      });
+
+      const colorIndex = index % colors.length;
+      return {
+        label: jobType,
+        data: avgScores,
+        backgroundColor: colors[colorIndex].bg,
+        borderColor: colors[colorIndex].border,
+        borderWidth: 2,
+        pointRadius: 3,
+        pointHoverRadius: 5
+      };
+    });
+
+    if (departmentData.length === 0) {
+      const container = canvas.parentElement;
+      container.innerHTML = '<div class="alert alert-info text-center">職種別のデータがありません</div>';
+      return;
+    }
 
     this.chartInstances.organizationSkillMap = new Chart(ctx, {
       type: 'radar',
@@ -1946,6 +2012,13 @@ export class EvaluationReportPage {
         plugins: {
           legend: {
             position: 'bottom'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return context.dataset.label + ': ' + context.parsed.r.toFixed(2);
+              }
+            }
           }
         }
       }
