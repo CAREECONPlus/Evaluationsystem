@@ -262,5 +262,36 @@
     "login_failed_generic": "Đã xảy ra lỗi không mong muốn khi đăng nhập.",
     "email_already_in_use": "Địa chỉ email này đã được sử dụng.",
     "weak_password": "Mật khẩu phải có ít nhất 6 ký tự."
+  },
+  "job_types": {
+    "title": "Quản lý loại công việc",
+    "search_placeholder": "Tìm kiếm loại công việc...",
+    "add_job_type": "Thêm loại công việc mới",
+    "export": "Xuất",
+    "total_job_types": "Tổng số loại công việc",
+    "active_job_types": "Loại công việc đang hoạt động",
+    "inactive_job_types": "Loại công việc không hoạt động",
+    "category_count": "Số lượng danh mục",
+    "job_type_list": "Danh sách loại công việc",
+    "edit_job_type": "Chỉnh sửa loại công việc",
+    "job_type_name": "Tên loại công việc",
+    "category": "Danh mục",
+    "status": "Trạng thái",
+    "actions": "Hành động",
+    "add_new_job_type": "Thêm loại công việc mới",
+    "save_changes": "Lưu thay đổi",
+    "confirm_delete": "Bạn có chắc chắn muốn xóa loại công việc này không?"
+  },
+  "notifications": {
+    "title": "Thông báo",
+    "mark_all_read": "Đánh dấu tất cả đã đọc",
+    "no_notifications": "Không có thông báo",
+    "quick_actions": "Hành động nhanh",
+    "type": {
+      "evaluation_pending": "Đánh giá đang chờ",
+      "evaluation_completed": "Đánh giá hoàn thành"
+    },
+    "evaluation_pending": "Đánh giá của {{userName}} đang chờ phê duyệt",
+    "admin_evaluation_pending": "Đánh giá của {{userName}} đang chờ phê duyệt bởi {{evaluatorName}}"
   }
 }

@@ -406,17 +406,31 @@
     "worker": "作業員",
     "manager": "管理者",
     "supervisor": "監督者"
-  }
-}
-
-{
-  "common": {
-    "notifications": "通知",
-    "mark_all_read": "すべて既読",
-    "no_notifications": "通知はありません",
-    "quick_actions": "クイックアクション"
+  },
+  "job_types": {
+    "title": "職種管理",
+    "search_placeholder": "職種を検索...",
+    "add_job_type": "新規職種追加",
+    "export": "エクスポート",
+    "total_job_types": "総職種数",
+    "active_job_types": "有効な職種",
+    "inactive_job_types": "無効な職種",
+    "category_count": "カテゴリ数",
+    "job_type_list": "職種一覧",
+    "edit_job_type": "職種編集",
+    "job_type_name": "職種名",
+    "category": "カテゴリー",
+    "status": "ステータス",
+    "actions": "操作",
+    "add_new_job_type": "新規職種を追加",
+    "save_changes": "変更を保存",
+    "confirm_delete": "この職種を削除しますか？"
   },
   "notifications": {
+    "title": "通知",
+    "mark_all_read": "すべて既読",
+    "no_notifications": "通知はありません",
+    "quick_actions": "クイックアクション",
     "type": {
       "evaluation_pending": "評価承認待ち",
       "evaluation_completed": "評価完了"
