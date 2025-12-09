@@ -18,16 +18,16 @@ export class EvaluationPeriodsPage {
   async init() {
     try {
       console.log("Evaluation Periods: Initializing...");
-      
+
       // 管理者権限チェック
       this.currentUser = await this.app.api.getCurrentUserData();
       if (!this.currentUser || this.currentUser.role !== 'admin') {
-        throw new Error('管理者権限が必要です');
+        throw new Error(this.app.i18n.t('evaluation_periods_v2.error_admin_required'));
       }
 
       await this.loadPeriods();
       this.isInitialized = true;
-      
+
       console.log("Evaluation Periods: Initialized successfully");
     } catch (error) {
       console.error("Evaluation Periods: Failed to initialize:", error);
@@ -57,26 +57,26 @@ export class EvaluationPeriodsPage {
       <div class="evaluation-periods-page p-md-4 p-3">
         <div class="page-header mb-4">
           <h1 class="page-title h2 mb-1">
-            <i class="fas fa-calendar-alt me-2"></i>評価期間管理
+            <i class="fas fa-calendar-alt me-2"></i>${this.app.i18n.t('evaluation_periods_v2.title')}
           </h1>
-          <p class="page-subtitle text-dark mb-0">評価サイクル・職種別設定・期間管理の統合管理</p>
+          <p class="page-subtitle text-dark mb-0">${this.app.i18n.t('evaluation_periods_v2.subtitle')}</p>
         </div>
 
         <!-- タブナビゲーション -->
         <ul class="nav nav-tabs mb-4" id="evaluationPeriodsTab" role="tablist">
           <li class="nav-item" role="presentation">
             <button class="nav-link active" id="basic-settings-tab" data-bs-toggle="tab" data-bs-target="#basic-settings" type="button" role="tab" aria-controls="basic-settings" aria-selected="true">
-              <i class="fas fa-cog me-2"></i>基本設定
+              <i class="fas fa-cog me-2"></i>${this.app.i18n.t('evaluation_periods_v2.tab_basic')}
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="job-specific-tab" data-bs-toggle="tab" data-bs-target="#job-specific" type="button" role="tab" aria-controls="job-specific" aria-selected="false">
-              <i class="fas fa-users-cog me-2"></i>職種別設定
+              <i class="fas fa-users-cog me-2"></i>${this.app.i18n.t('evaluation_periods_v2.tab_job_specific')}
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="period-management-tab" data-bs-toggle="tab" data-bs-target="#period-management" type="button" role="tab" aria-controls="period-management" aria-selected="false">
-              <i class="fas fa-calendar-check me-2"></i>期間管理
+              <i class="fas fa-calendar-check me-2"></i>${this.app.i18n.t('evaluation_periods_v2.tab_period_management')}
             </button>
           </li>
         </ul>
@@ -871,18 +871,19 @@ export class EvaluationPeriodsPage {
    */
   getTypeLabel(type) {
     const typeMap = {
-      'quarterly': '四半期',
-      'semi-annual': '半期',
-      'annual': '年次'
+      'quarterly': this.app.i18n.t('evaluation_periods_v2.type_quarterly'),
+      'semi-annual': this.app.i18n.t('evaluation_periods_v2.type_semiannual'),
+      'annual': this.app.i18n.t('evaluation_periods_v2.type_annual'),
+      'monthly': this.app.i18n.t('evaluation_periods_v2.type_monthly')
     };
     return typeMap[type] || type;
   }
 
   getStatusLabel(status) {
     const statusMap = {
-      'scheduled': '予定',
-      'active': '実施中',
-      'completed': '完了'
+      'scheduled': this.app.i18n.t('evaluation_periods_v2.status_scheduled'),
+      'active': this.app.i18n.t('evaluation_periods_v2.status_active'),
+      'completed': this.app.i18n.t('evaluation_periods_v2.status_completed')
     };
     return statusMap[status] || status;
   }
@@ -913,6 +914,9 @@ export class EvaluationPeriodsPage {
    */
   async postRender() {
     try {
+      // i18n適用
+      this.app.i18n.updateUI();
+
       // ルーターが既にinit()を呼び出しているため、ここでは呼び出さない
       this.setupEventListeners();
       this.updateStatistics();
@@ -925,7 +929,7 @@ export class EvaluationPeriodsPage {
       console.log("Evaluation Periods: Page rendered successfully");
     } catch (error) {
       console.error("Evaluation Periods: Failed to post-render:", error);
-      this.app.showError('ページの初期化に失敗しました');
+      this.app.showError(this.app.i18n.t('evaluation_periods_v2.error_page_init'));
     }
   }
 
