@@ -390,6 +390,9 @@ export class OrganizationManagementPage {
         </div>
       </div>
     `).join('');
+
+    // グローバル参照を設定（ボタンから呼び出すため）
+    window.organizationPage = this;
   }
 
   /**
@@ -455,6 +458,9 @@ export class OrganizationManagementPage {
         </table>
       </div>
     `;
+
+    // グローバル参照を設定（ボタンから呼び出すため）
+    window.organizationPage = this;
   }
 
   /**
