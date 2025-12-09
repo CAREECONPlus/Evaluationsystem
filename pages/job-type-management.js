@@ -138,12 +138,12 @@ export class JobTypeManagementPage {
                       <span class="text-danger">*</span>
                     </label>
                     <input type="text" class="form-control" id="jobTypeName" required>
-                    <div class="invalid-feedback">職種名を入力してください</div>
+                    <div class="invalid-feedback" data-i18n="job_types.job_type_name_required">職種名を入力してください</div>
                   </div>
                   <div class="col-md-6 mb-3">
                     <label for="jobTypeCategory" class="form-label" data-i18n="job_types.category">カテゴリー</label>
-                    <input type="text" class="form-control" id="jobTypeCategory" 
-                           list="categoryList" placeholder="例: 建築、設備、仕上げ">
+                    <input type="text" class="form-control" id="jobTypeCategory"
+                           list="categoryList" data-i18n-placeholder="job_types.category_placeholder" placeholder="例: 建築、設備、仕上げ">
                     <datalist id="categoryList">
                       <option value="建築">
                       <option value="設備">
@@ -155,36 +155,36 @@ export class JobTypeManagementPage {
                 </div>
                 <div class="row">
                   <div class="col-md-6 mb-3">
-                    <label for="jobTypeCode" class="form-label">職種コード</label>
-                    <input type="text" class="form-control" id="jobTypeCode" placeholder="例: JT001">
+                    <label for="jobTypeCode" class="form-label" data-i18n="job_types.job_type_code">職種コード</label>
+                    <input type="text" class="form-control" id="jobTypeCode" data-i18n-placeholder="job_types.code_placeholder" placeholder="例: JT001">
                   </div>
                   <div class="col-md-6 mb-3">
-                    <label for="jobTypeStatus" class="form-label">ステータス</label>
+                    <label for="jobTypeStatus" class="form-label" data-i18n="job_types.status">ステータス</label>
                     <select class="form-select" id="jobTypeStatus">
-                      <option value="active">有効</option>
-                      <option value="inactive">無効</option>
+                      <option value="active" data-i18n="job_types.status_active">有効</option>
+                      <option value="inactive" data-i18n="job_types.status_inactive">無効</option>
                     </select>
                   </div>
                 </div>
                 <div class="mb-3">
-                  <label for="jobTypeDescription" class="form-label">説明</label>
+                  <label for="jobTypeDescription" class="form-label" data-i18n="job_types.description">説明</label>
                   <textarea class="form-control" id="jobTypeDescription" rows="3"></textarea>
                 </div>
                 <div class="mb-3">
-                  <label for="jobTypeSkills" class="form-label">必要スキル</label>
-                  <textarea class="form-control" id="jobTypeSkills" rows="3" 
-                          placeholder="必要な資格やスキルを記入"></textarea>
+                  <label for="jobTypeSkills" class="form-label" data-i18n="job_types.required_skills">必要スキル</label>
+                  <textarea class="form-control" id="jobTypeSkills" rows="3"
+                          data-i18n-placeholder="job_types.skills_placeholder" placeholder="必要な資格やスキルを記入"></textarea>
                 </div>
                 <div class="mb-3">
-                  <label for="jobTypeEvalItems" class="form-label">評価項目</label>
-                  <textarea class="form-control" id="jobTypeEvalItems" rows="3" 
-                          placeholder="この職種特有の評価項目を記入"></textarea>
+                  <label for="jobTypeEvalItems" class="form-label" data-i18n="job_types.evaluation_items">評価項目</label>
+                  <textarea class="form-control" id="jobTypeEvalItems" rows="3"
+                          data-i18n-placeholder="job_types.eval_items_placeholder" placeholder="この職種特有の評価項目を記入"></textarea>
                 </div>
               </form>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-              <button type="button" class="btn btn-primary" id="saveJobTypeBtn">保存</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">キャンセル</button>
+              <button type="button" class="btn btn-primary" id="saveJobTypeBtn" data-i18n="common.save">保存</button>
             </div>
           </div>
         </div>
@@ -193,13 +193,16 @@ export class JobTypeManagementPage {
   }
 
   async init(params) {
-    
+
+    // i18nの適用
+    this.app.i18n.updateUI();
+
     // イベントリスナーの設定
     this.setupEventListeners();
-    
+
     // データの読み込み
     await this.loadJobTypes();
-    
+
     // 統計情報の更新
     this.updateStatistics();
   }
@@ -266,7 +269,7 @@ export class JobTypeManagementPage {
       
     } catch (error) {
       console.error('JobTypeManagement: Error loading job types:', error);
-      this.app.showError('職種データの読み込みに失敗しました');
+      this.app.showError(this.app.i18n.t('job_types.loading_error'));
       
       // エラー時は空のテーブルを表示
       this.jobTypes = [];
@@ -286,9 +289,9 @@ export class JobTypeManagementPage {
       container.innerHTML = `
         <div class="text-center py-5">
           <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-          <p class="text-muted">職種が登録されていません</p>
+          <p class="text-muted">${this.app.i18n.t('job_types.no_job_types')}</p>
           <button class="btn btn-primary" onclick="document.getElementById('addJobTypeBtn').click()">
-            <i class="fas fa-plus me-2"></i>職種を追加
+            <i class="fas fa-plus me-2"></i>${this.app.i18n.t('job_types.add_first_job_type')}
           </button>
         </div>
       `;
@@ -300,12 +303,12 @@ export class JobTypeManagementPage {
         <table class="table table-hover">
           <thead>
             <tr>
-              <th>職種名</th>
-              <th>カテゴリー</th>
-              <th>コード</th>
-              <th>ステータス</th>
-              <th>作成日</th>
-              <th>操作</th>
+              <th>${this.app.i18n.t('job_types.job_type_name')}</th>
+              <th>${this.app.i18n.t('job_types.category')}</th>
+              <th>${this.app.i18n.t('job_types.code')}</th>
+              <th>${this.app.i18n.t('job_types.status')}</th>
+              <th>${this.app.i18n.t('job_types.created_at')}</th>
+              <th>${this.app.i18n.t('job_types.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -322,17 +325,17 @@ export class JobTypeManagementPage {
                 </td>
                 <td>${jobType.code || '-'}</td>
                 <td>
-                  ${jobType.status === 'active' ? 
-                    '<span class="badge bg-success">有効</span>' : 
-                    '<span class="badge bg-warning">無効</span>'}
+                  ${jobType.status === 'active' ?
+                    `<span class="badge bg-success">${this.app.i18n.t('job_types.status_active')}</span>` :
+                    `<span class="badge bg-warning">${this.app.i18n.t('job_types.status_inactive')}</span>`}
                 </td>
                 <td>${this.app.formatDate(jobType.createdAt)}</td>
                 <td>
-                  <button class="btn btn-sm btn-outline-primary me-1" 
+                  <button class="btn btn-sm btn-outline-primary me-1"
                           onclick="window.app.router.currentPageInstance.editJobType('${jobType.id}')">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button class="btn btn-sm btn-outline-danger" 
+                  <button class="btn btn-sm btn-outline-danger"
                           onclick="window.app.router.currentPageInstance.deleteJobType('${jobType.id}')">
                     <i class="fas fa-trash"></i>
                   </button>
@@ -363,11 +366,11 @@ export class JobTypeManagementPage {
 
   showAddJobTypeModal() {
     this.currentEditingJobType = null;
-    
+
     // フォームをリセット
     document.getElementById('jobTypeForm').reset();
-    document.getElementById('jobTypeModalLabel').textContent = '新規職種追加';
-    
+    document.getElementById('jobTypeModalLabel').textContent = this.app.i18n.t('job_types.add_job_type');
+
     // モーダルを表示
     const modal = new bootstrap.Modal(document.getElementById('jobTypeModal'));
     modal.show();
@@ -376,9 +379,9 @@ export class JobTypeManagementPage {
   editJobType(jobTypeId) {
     const jobType = this.jobTypes.find(jt => jt.id === jobTypeId);
     if (!jobType) return;
-    
+
     this.currentEditingJobType = jobType;
-    
+
     // フォームに値を設定
     document.getElementById('jobTypeName').value = jobType.name || '';
     document.getElementById('jobTypeCategory').value = jobType.category || '';
@@ -387,9 +390,9 @@ export class JobTypeManagementPage {
     document.getElementById('jobTypeDescription').value = jobType.description || '';
     document.getElementById('jobTypeSkills').value = jobType.skills || '';
     document.getElementById('jobTypeEvalItems').value = jobType.evaluationItems || '';
-    
-    document.getElementById('jobTypeModalLabel').textContent = '職種編集';
-    
+
+    document.getElementById('jobTypeModalLabel').textContent = this.app.i18n.t('job_types.edit_job_type');
+
     // モーダルを表示
     const modal = new bootstrap.Modal(document.getElementById('jobTypeModal'));
     modal.show();
@@ -413,29 +416,29 @@ export class JobTypeManagementPage {
     };
     
     try {
-      this.app.showLoading('保存中...');
-      
+      this.app.showLoading(this.app.i18n.t('job_types.saving'));
+
       if (this.currentEditingJobType) {
         // 更新
         jobTypeData.id = this.currentEditingJobType.id;
         await this.app.api.saveJobType(jobTypeData);
-        this.app.showSuccess('職種を更新しました');
+        this.app.showSuccess(this.app.i18n.t('job_types.save_success_update'));
       } else {
         // 新規作成
         await this.app.api.saveJobType(jobTypeData);
-        this.app.showSuccess('職種を追加しました');
+        this.app.showSuccess(this.app.i18n.t('job_types.save_success_create'));
       }
-      
+
       // モーダルを閉じる
       bootstrap.Modal.getInstance(document.getElementById('jobTypeModal')).hide();
-      
+
       // データを再読み込み
       await this.loadJobTypes();
       this.updateStatistics();
-      
+
     } catch (error) {
       console.error('JobTypeManagement: Error saving job type:', error);
-      this.app.showError('職種の保存に失敗しました');
+      this.app.showError(this.app.i18n.t('job_types.save_error'));
     } finally {
       this.app.hideLoading();
     }
@@ -444,32 +447,32 @@ export class JobTypeManagementPage {
   async deleteJobType(jobTypeId) {
     const jobType = this.jobTypes.find(jt => jt.id === jobTypeId);
     if (!jobType) return;
-    
+
     const confirmed = await this.app.confirm(
-      `「${jobType.name}」を削除してもよろしいですか？`,
-      '職種の削除'
+      this.app.i18n.t('job_types.delete_confirm_message').replace('{name}', jobType.name),
+      this.app.i18n.t('job_types.delete_confirm_title')
     );
-    
+
     if (!confirmed) return;
-    
+
     try {
-      this.app.showLoading('削除中...');
-      
+      this.app.showLoading(this.app.i18n.t('job_types.deleting'));
+
       // APIで削除（実装が必要な場合）
       // await this.app.api.deleteJobType(jobTypeId);
-      
+
       // ローカルデータから削除
       this.jobTypes = this.jobTypes.filter(jt => jt.id !== jobTypeId);
       this.filteredJobTypes = this.filteredJobTypes.filter(jt => jt.id !== jobTypeId);
-      
+
       this.renderJobTypeTable();
       this.updateStatistics();
-      
-      this.app.showSuccess('職種を削除しました');
-      
+
+      this.app.showSuccess(this.app.i18n.t('job_types.delete_success'));
+
     } catch (error) {
       console.error('JobTypeManagement: Error deleting job type:', error);
-      this.app.showError('職種の削除に失敗しました');
+      this.app.showError(this.app.i18n.t('job_types.delete_error'));
     } finally {
       this.app.hideLoading();
     }
@@ -495,36 +498,42 @@ export class JobTypeManagementPage {
   exportJobTypes() {
     try {
       // CSVデータを作成
-      const headers = ['職種名', 'カテゴリー', 'コード', 'ステータス', '説明'];
+      const headers = [
+        this.app.i18n.t('job_types.job_type_name'),
+        this.app.i18n.t('job_types.category'),
+        this.app.i18n.t('job_types.code'),
+        this.app.i18n.t('job_types.status'),
+        this.app.i18n.t('job_types.description')
+      ];
       const rows = this.jobTypes.map(jt => [
         jt.name,
         jt.category || '',
         jt.code || '',
-        jt.status === 'active' ? '有効' : '無効',
+        jt.status === 'active' ? this.app.i18n.t('job_types.status_active') : this.app.i18n.t('job_types.status_inactive'),
         jt.description || ''
       ]);
-      
+
       const csvContent = [
         headers.join(','),
         ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
       ].join('\n');
-      
+
       // ダウンロード
       const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      link.setAttribute('download', `職種一覧_${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute('download', `${this.app.i18n.t('job_types.job_type_list')}_${new Date().toISOString().split('T')[0]}.csv`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
-      this.app.showSuccess('エクスポートが完了しました');
-      
+
+      this.app.showSuccess(this.app.i18n.t('job_types.export_success'));
+
     } catch (error) {
       console.error('JobTypeManagement: Export error:', error);
-      this.app.showError('エクスポートに失敗しました');
+      this.app.showError(this.app.i18n.t('job_types.export_error'));
     }
   }
 
