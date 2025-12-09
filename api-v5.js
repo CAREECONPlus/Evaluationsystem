@@ -3134,10 +3134,10 @@ export class API {
       }
 
       const periodsRef = collection(this.db, "evaluationPeriods");
+      // インデックス不要にするため orderBy を削除
       const querySnapshot = await getDocs(query(
         periodsRef,
-        where("tenantId", "==", currentUser.tenantId),
-        orderBy("createdAt", "desc")
+        where("tenantId", "==", currentUser.tenantId)
       ));
 
       const periods = [];
@@ -3152,6 +3152,13 @@ export class API {
           createdAt: data.createdAt,
           updatedAt: data.updatedAt
         });
+      });
+
+      // クライアント側で createdAt の降順にソート
+      periods.sort((a, b) => {
+        const aTime = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+        const bTime = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+        return bTime - aTime; // 降順
       });
 
       console.log(`API v5: Loaded ${periods.length} evaluation periods from Firebase`);
