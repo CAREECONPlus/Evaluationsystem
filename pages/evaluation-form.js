@@ -304,6 +304,7 @@ export class EvaluationFormPage {
   async onPeriodChange() {
     const periodId = document.getElementById('period-select').value;
     const userSelect = document.getElementById('target-user-select');
+    const previouslySelectedUserId = userSelect.value; // 現在選択されているユーザーIDを保存
 
     if (!periodId) {
       // 期間が未選択の場合は全ユーザーを表示
@@ -332,16 +333,25 @@ export class EvaluationFormPage {
       // ユーザーリストを更新
       this.renderUserSelect(availableUserIds);
 
-      // 現在の選択をクリア
-      userSelect.value = '';
-      document.getElementById('evaluation-content').classList.add('d-none');
-      document.getElementById('target-user-info').classList.add('d-none');
-      document.getElementById('submit-evaluation-btn').disabled = true;
+      // 以前選択されていたユーザーが利用可能なリストに含まれている場合は選択を保持
+      if (previouslySelectedUserId && availableUserIds.includes(previouslySelectedUserId)) {
+        userSelect.value = previouslySelectedUserId;
+      } else {
+        // 以前の選択が利用できない場合のみクリア
+        userSelect.value = '';
+        document.getElementById('evaluation-content').classList.add('d-none');
+        document.getElementById('target-user-info').classList.add('d-none');
+        document.getElementById('submit-evaluation-btn').disabled = true;
+      }
 
     } catch (error) {
       console.error('Error filtering users by period:', error);
       // エラー時は全ユーザーを表示
       this.renderUserSelect();
+      // エラー時も以前の選択を保持しようと試みる
+      if (previouslySelectedUserId) {
+        userSelect.value = previouslySelectedUserId;
+      }
     }
 
     // 選択変更処理を呼び出す

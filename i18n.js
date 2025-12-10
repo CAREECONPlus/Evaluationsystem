@@ -1374,12 +1374,14 @@ class UnifiedI18n {
 
   /**
    * HTMLページの翻訳を適用
+   * @param {HTMLElement} container - 翻訳を適用するコンテナ（省略時はdocument全体）
    */
-  applyTranslations() {
-    document.querySelectorAll('[data-i18n]').forEach(element => {
+  applyTranslations(container = document) {
+    // data-i18n属性を持つ要素の翻訳
+    container.querySelectorAll('[data-i18n]').forEach(element => {
       const key = element.getAttribute('data-i18n');
       const translation = this.t(key);
-      
+
       if (element.getAttribute('data-i18n-attr')) {
         // 属性値の翻訳
         const attr = element.getAttribute('data-i18n-attr');
@@ -1389,13 +1391,40 @@ class UnifiedI18n {
         element.textContent = translation;
       }
     });
+
+    // data-i18n-placeholder属性を持つ要素の翻訳
+    container.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+      const key = element.getAttribute('data-i18n-placeholder');
+      element.placeholder = this.t(key);
+    });
+
+    // data-i18n-title属性を持つ要素の翻訳
+    container.querySelectorAll('[data-i18n-title]').forEach(element => {
+      const key = element.getAttribute('data-i18n-title');
+      element.title = this.t(key);
+    });
+
+    // data-i18n-alt属性を持つ要素の翻訳
+    container.querySelectorAll('[data-i18n-alt]').forEach(element => {
+      const key = element.getAttribute('data-i18n-alt');
+      element.alt = this.t(key);
+    });
+
+    // data-i18n-label属性を持つ要素の翻訳
+    container.querySelectorAll('[data-i18n-label]').forEach(element => {
+      const key = element.getAttribute('data-i18n-label');
+      if (element.hasAttribute('aria-label')) {
+        element.setAttribute('aria-label', this.t(key));
+      }
+    });
   }
 
   /**
    * UI更新メソッド（login.jsとの互換性のため）
+   * @param {HTMLElement} container - 翻訳を適用するコンテナ（省略時はdocument全体）
    */
-  updateUI() {
-    this.applyTranslations();
+  updateUI(container = document) {
+    this.applyTranslations(container);
   }
 
   /**

@@ -331,11 +331,11 @@ export class JobTypeManagementPage {
                 </td>
                 <td>${this.app.formatDate(jobType.createdAt)}</td>
                 <td>
-                  <button class="btn btn-sm btn-outline-primary me-1"
+                  <button class="btn btn-sm btn-outline-primary me-1" title="${this.app.i18n.t('common.edit')}"
                           onclick="window.app.router.currentPageInstance.editJobType('${jobType.id}')">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button class="btn btn-sm btn-outline-danger"
+                  <button class="btn btn-sm btn-outline-danger" title="${this.app.i18n.t('common.delete')}"
                           onclick="window.app.router.currentPageInstance.deleteJobType('${jobType.id}')">
                     <i class="fas fa-trash"></i>
                   </button>
@@ -346,6 +346,9 @@ export class JobTypeManagementPage {
         </table>
       </div>
     `;
+
+    // 動的に生成されたコンテンツに対してi18nを適用
+    this.app.i18n.updateUI();
   }
 
   handleSearch(searchTerm) {
@@ -371,6 +374,9 @@ export class JobTypeManagementPage {
     document.getElementById('jobTypeForm').reset();
     document.getElementById('jobTypeModalLabel').textContent = this.app.i18n.t('job_types.add_job_type');
 
+    // モーダル内の翻訳を適用
+    this.app.i18n.updateUI(document.getElementById('jobTypeModal'));
+
     // モーダルを表示
     const modal = new bootstrap.Modal(document.getElementById('jobTypeModal'));
     modal.show();
@@ -392,6 +398,9 @@ export class JobTypeManagementPage {
     document.getElementById('jobTypeEvalItems').value = jobType.evaluationItems || '';
 
     document.getElementById('jobTypeModalLabel').textContent = this.app.i18n.t('job_types.edit_job_type');
+
+    // モーダル内の翻訳を適用
+    this.app.i18n.updateUI(document.getElementById('jobTypeModal'));
 
     // モーダルを表示
     const modal = new bootstrap.Modal(document.getElementById('jobTypeModal'));
