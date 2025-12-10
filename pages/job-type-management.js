@@ -44,7 +44,7 @@ export class JobTypeManagementPage {
               <input type="text"
                      class="form-control"
                      id="jobTypeSearchInput"
-                     data-i18n="job_types.search_placeholder"
+                     data-i18n-placeholder="job_types.search_placeholder"
                      placeholder="職種名で検索...">
             </div>
           </div>
@@ -346,9 +346,6 @@ export class JobTypeManagementPage {
         </table>
       </div>
     `;
-
-    // 動的に生成されたコンテンツに対してi18nを適用
-    this.app.i18n.updateUI();
   }
 
   handleSearch(searchTerm) {
