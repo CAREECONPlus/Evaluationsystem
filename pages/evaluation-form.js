@@ -354,8 +354,8 @@ export class EvaluationFormPage {
       }
     }
 
-    // 選択変更処理を呼び出す
-    this.onSelectionChange();
+    // 選択変更処理を呼び出す（awaitで完了を待つ）
+    await this.onSelectionChange();
   }
 
   async onSelectionChange() {
