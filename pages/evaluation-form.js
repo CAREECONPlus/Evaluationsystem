@@ -256,9 +256,12 @@ export class EvaluationFormPage {
     }
   }
 
-  renderUserSelect(filteredUserIds = null) {
+  renderUserSelect(filteredUserIds = null, preserveSelection = true) {
     const select = document.getElementById('target-user-select');
     if (!select) return;
+
+    // 現在の選択値を保存
+    const currentValue = preserveSelection ? select.value : '';
 
     // フィルタリングされたユーザーリストを使用
     let usersToShow = this.usersForEvaluation;
@@ -276,6 +279,15 @@ export class EvaluationFormPage {
     // オプションがない場合のメッセージ
     if (usersToShow.length === 0) {
       select.innerHTML = `<option value="" disabled>この期間で評価可能なユーザーがいません</option>`;
+    }
+
+    // 選択を復元（可能な場合）
+    if (preserveSelection && currentValue) {
+      // 選択値が新しいリストに存在するか確認
+      const optionExists = Array.from(select.options).some(option => option.value === currentValue);
+      if (optionExists) {
+        select.value = currentValue;
+      }
     }
   }
 
@@ -304,12 +316,10 @@ export class EvaluationFormPage {
   async onPeriodChange() {
     const periodId = document.getElementById('period-select').value;
     const userSelect = document.getElementById('target-user-select');
-    const previouslySelectedUserId = userSelect.value; // 現在選択されているユーザーIDを保存
 
     if (!periodId) {
       // 期間が未選択の場合は全ユーザーを表示
-      this.renderUserSelect();
-      userSelect.value = '';
+      this.renderUserSelect(null, false);
       document.getElementById('evaluation-content').classList.add('d-none');
       document.getElementById('target-user-info').classList.add('d-none');
       document.getElementById('submit-evaluation-btn').disabled = true;
@@ -330,15 +340,11 @@ export class EvaluationFormPage {
         .filter(user => !completedUserIds.includes(user.id))
         .map(user => user.id);
 
-      // ユーザーリストを更新
-      this.renderUserSelect(availableUserIds);
+      // ユーザーリストを更新（選択は自動的に保持される）
+      this.renderUserSelect(availableUserIds, true);
 
-      // 以前選択されていたユーザーが利用可能なリストに含まれている場合は選択を保持
-      if (previouslySelectedUserId && availableUserIds.includes(previouslySelectedUserId)) {
-        userSelect.value = previouslySelectedUserId;
-      } else {
-        // 以前の選択が利用できない場合のみクリア
-        userSelect.value = '';
+      // 選択がクリアされた場合（ユーザーが利用不可になった場合）
+      if (!userSelect.value) {
         document.getElementById('evaluation-content').classList.add('d-none');
         document.getElementById('target-user-info').classList.add('d-none');
         document.getElementById('submit-evaluation-btn').disabled = true;
@@ -346,12 +352,8 @@ export class EvaluationFormPage {
 
     } catch (error) {
       console.error('Error filtering users by period:', error);
-      // エラー時は全ユーザーを表示
-      this.renderUserSelect();
-      // エラー時も以前の選択を保持しようと試みる
-      if (previouslySelectedUserId) {
-        userSelect.value = previouslySelectedUserId;
-      }
+      // エラー時は全ユーザーを表示（選択は保持）
+      this.renderUserSelect(null, true);
     }
 
     // 選択変更処理を呼び出す（awaitで完了を待つ）
