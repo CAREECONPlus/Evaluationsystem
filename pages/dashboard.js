@@ -130,9 +130,14 @@ export class DashboardPage {
   renderStatsCards() {
     const container = document.getElementById("stats-cards-container");
     if (!container) return;
-    
+
     const stats = this.stats || this.getDefaultStats();
-    
+
+    // undefinedを0に変換
+    const totalUsers = stats.totalUsers ?? 0;
+    const completedEvaluations = stats.completedEvaluations ?? 0;
+    const pendingEvaluations = stats.pendingEvaluations ?? 0;
+
     container.innerHTML = `
       <div class="col-md-4 mb-3">
         <div class="card shadow-sm h-100">
@@ -140,7 +145,7 @@ export class DashboardPage {
             <i class="fas fa-users fa-2x text-primary me-3"></i>
             <div>
               <h6 class="card-subtitle text-muted mb-1" data-i18n="dashboard.total_users">総ユーザー数</h6>
-              <div class="card-title h4 mb-0">${stats.totalUsers}</div>
+              <div class="card-title h4 mb-0">${totalUsers}</div>
             </div>
           </div>
         </div>
@@ -151,7 +156,7 @@ export class DashboardPage {
             <i class="fas fa-check-circle fa-2x text-success me-3"></i>
             <div>
               <h6 class="card-subtitle text-muted mb-1" data-i18n="dashboard.completed_evaluations">完了済み評価</h6>
-              <div class="card-title h4 mb-0">${stats.completedEvaluations}</div>
+              <div class="card-title h4 mb-0">${completedEvaluations}</div>
             </div>
           </div>
         </div>
@@ -162,7 +167,7 @@ export class DashboardPage {
             <i class="fas fa-hourglass-half fa-2x text-warning me-3"></i>
             <div>
               <h6 class="card-subtitle text-muted mb-1" data-i18n="dashboard.pending_evaluations">承認待ち評価</h6>
-              <div class="card-title h4 mb-0">${stats.pendingEvaluations}</div>
+              <div class="card-title h4 mb-0">${pendingEvaluations}</div>
             </div>
           </div>
         </div>
