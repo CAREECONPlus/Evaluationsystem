@@ -133,10 +133,12 @@ export class DashboardPage {
 
     const stats = this.stats || this.getDefaultStats();
 
-    // undefinedを0に変換
-    const totalUsers = stats.totalUsers ?? 0;
-    const completedEvaluations = stats.completedEvaluations ?? 0;
-    const pendingEvaluations = stats.pendingEvaluations ?? 0;
+    // undefinedを0に変換（互換性のある方法）
+    const totalUsers = (stats.totalUsers !== undefined && stats.totalUsers !== null) ? stats.totalUsers : 0;
+    const completedEvaluations = (stats.completedEvaluations !== undefined && stats.completedEvaluations !== null) ? stats.completedEvaluations : 0;
+    const pendingEvaluations = (stats.pendingEvaluations !== undefined && stats.pendingEvaluations !== null) ? stats.pendingEvaluations : 0;
+
+    console.log('Dashboard stats:', { totalUsers, completedEvaluations, pendingEvaluations, rawStats: stats });
 
     container.innerHTML = `
       <div class="col-md-4 mb-3">
