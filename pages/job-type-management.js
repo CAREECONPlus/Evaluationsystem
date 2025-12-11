@@ -193,6 +193,14 @@ export class JobTypeManagementPage {
   }
 
   async init(params) {
+    // デバッグ: i18nが正しく設定されているか確認
+    console.log('JobTypeManagement init: this.app:', this.app);
+    console.log('JobTypeManagement init: this.app.i18n:', this.app.i18n);
+    if (this.app && this.app.i18n) {
+      console.log('JobTypeManagement init: i18n.t test:', this.app.i18n.t('job_types.title'));
+      console.log('JobTypeManagement init: Current language:', this.app.i18n.getCurrentLanguage());
+    }
+
     // イベントリスナーの設定
     this.setupEventListeners();
 
@@ -204,8 +212,9 @@ export class JobTypeManagementPage {
 
     // 翻訳を適用（DOMが完全に準備できた後に実行）
     setTimeout(() => {
+      console.log('JobTypeManagement: Calling updateUI');
       this.app.i18n.updateUI();
-    }, 0);
+    }, 100);
   }
 
   setupEventListeners() {
@@ -285,6 +294,10 @@ export class JobTypeManagementPage {
   renderJobTypeTable() {
     const container = document.getElementById('jobTypeTableContainer');
     if (!container) return;
+
+    // デバッグ: i18nが利用可能か確認
+    console.log('JobTypeManagement: this.app.i18n:', this.app.i18n);
+    console.log('JobTypeManagement: Testing translation:', this.app.i18n.t('job_types.title'));
 
     if (this.filteredJobTypes.length === 0) {
       container.innerHTML = `
