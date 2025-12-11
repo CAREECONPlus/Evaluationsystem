@@ -201,6 +201,11 @@ export class JobTypeManagementPage {
 
     // 統計情報の更新
     this.updateStatistics();
+
+    // 翻訳を適用（DOMが完全に準備できた後に実行）
+    setTimeout(() => {
+      this.app.i18n.updateUI();
+    }, 0);
   }
 
   setupEventListeners() {
@@ -367,7 +372,9 @@ export class JobTypeManagementPage {
     document.getElementById('jobTypeForm').reset();
 
     // モーダルタイトルを設定
-    document.getElementById('jobTypeModalLabel').textContent = this.app.i18n.t('job_types.add_job_type');
+    const modalLabel = document.getElementById('jobTypeModalLabel');
+    modalLabel.textContent = this.app.i18n.t('job_types.add_job_type');
+    modalLabel.setAttribute('data-i18n', 'job_types.add_job_type');
 
     // モーダルを表示
     const modal = new bootstrap.Modal(document.getElementById('jobTypeModal'));
@@ -390,7 +397,9 @@ export class JobTypeManagementPage {
     document.getElementById('jobTypeEvalItems').value = jobType.evaluationItems || '';
 
     // モーダルタイトルを設定
-    document.getElementById('jobTypeModalLabel').textContent = this.app.i18n.t('job_types.edit_job_type');
+    const modalLabel = document.getElementById('jobTypeModalLabel');
+    modalLabel.textContent = this.app.i18n.t('job_types.edit_job_type');
+    modalLabel.setAttribute('data-i18n', 'job_types.edit_job_type');
 
     // モーダルを表示
     const modal = new bootstrap.Modal(document.getElementById('jobTypeModal'));
