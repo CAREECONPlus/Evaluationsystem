@@ -193,10 +193,6 @@ export class JobTypeManagementPage {
   }
 
   async init(params) {
-
-    // i18nの適用
-    this.app.i18n.updateUI();
-
     // イベントリスナーの設定
     this.setupEventListeners();
 
@@ -369,10 +365,9 @@ export class JobTypeManagementPage {
 
     // フォームをリセット
     document.getElementById('jobTypeForm').reset();
-    document.getElementById('jobTypeModalLabel').textContent = this.app.i18n.t('job_types.add_job_type');
 
-    // モーダル内の翻訳を適用
-    this.app.i18n.updateUI(document.getElementById('jobTypeModal'));
+    // モーダルタイトルを設定
+    document.getElementById('jobTypeModalLabel').textContent = this.app.i18n.t('job_types.add_job_type');
 
     // モーダルを表示
     const modal = new bootstrap.Modal(document.getElementById('jobTypeModal'));
@@ -394,10 +389,8 @@ export class JobTypeManagementPage {
     document.getElementById('jobTypeSkills').value = jobType.skills || '';
     document.getElementById('jobTypeEvalItems').value = jobType.evaluationItems || '';
 
+    // モーダルタイトルを設定
     document.getElementById('jobTypeModalLabel').textContent = this.app.i18n.t('job_types.edit_job_type');
-
-    // モーダル内の翻訳を適用
-    this.app.i18n.updateUI(document.getElementById('jobTypeModal'));
 
     // モーダルを表示
     const modal = new bootstrap.Modal(document.getElementById('jobTypeModal'));

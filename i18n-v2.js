@@ -201,8 +201,56 @@ const TRANSLATIONS = {
     // ===== 目標管理 =====
     goals: {
       approvals_title: "目標承認",
-      pending_goals: "承認待ち目標", 
+      pending_goals: "承認待ち目標",
       approved_goals: "承認済み目標"
+    },
+
+    // ===== 職種管理 =====
+    job_types: {
+      title: "職種管理",
+      search_placeholder: "職種を検索...",
+      add_job_type: "新規職種追加",
+      export: "エクスポート",
+      total_job_types: "総職種数",
+      active_job_types: "有効な職種",
+      inactive_job_types: "無効な職種",
+      category_count: "カテゴリ数",
+      job_type_list: "職種一覧",
+      edit_job_type: "職種編集",
+      job_type_name: "職種名",
+      job_type_name_required: "職種名を入力してください",
+      category: "カテゴリー",
+      category_placeholder: "例: 建築、設備、仕上げ",
+      job_type_code: "職種コード",
+      code_placeholder: "例: JT001",
+      status: "ステータス",
+      status_active: "有効",
+      status_inactive: "無効",
+      description: "説明",
+      required_skills: "必要スキル",
+      skills_placeholder: "必要な資格やスキルを記入",
+      evaluation_items: "評価項目",
+      eval_items_placeholder: "この職種特有の評価項目を記入",
+      actions: "操作",
+      created_at: "作成日",
+      code: "コード",
+      add_new_job_type: "新規職種を追加",
+      save_changes: "変更を保存",
+      confirm_delete: "この職種を削除しますか？",
+      no_job_types: "職種が登録されていません",
+      add_first_job_type: "職種を追加",
+      loading_error: "職種データの読み込みに失敗しました",
+      save_success_update: "職種を更新しました",
+      save_success_create: "職種を追加しました",
+      save_error: "職種の保存に失敗しました",
+      delete_confirm_message: "「{name}」を削除してもよろしいですか？",
+      delete_confirm_title: "職種の削除",
+      delete_success: "職種を削除しました",
+      delete_error: "職種の削除に失敗しました",
+      export_success: "エクスポートが完了しました",
+      export_error: "エクスポートに失敗しました",
+      saving: "保存中...",
+      deleting: "削除中..."
     },
 
     // ===== ユーザープロフィール =====
@@ -543,6 +591,54 @@ const TRANSLATIONS = {
       description: "Description",
       order: "Order",
       language: "Language"
+    },
+
+    // ===== Job Type Management =====
+    job_types: {
+      title: "Job Type Management",
+      search_placeholder: "Search job types...",
+      add_job_type: "Add New Job Type",
+      export: "Export",
+      total_job_types: "Total Job Types",
+      active_job_types: "Active Job Types",
+      inactive_job_types: "Inactive Job Types",
+      category_count: "Category Count",
+      job_type_list: "Job Type List",
+      edit_job_type: "Edit Job Type",
+      job_type_name: "Job Type Name",
+      job_type_name_required: "Please enter job type name",
+      category: "Category",
+      category_placeholder: "e.g., Construction, Equipment, Finishing",
+      job_type_code: "Job Type Code",
+      code_placeholder: "e.g., JT001",
+      status: "Status",
+      status_active: "Active",
+      status_inactive: "Inactive",
+      description: "Description",
+      required_skills: "Required Skills",
+      skills_placeholder: "Enter required qualifications and skills",
+      evaluation_items: "Evaluation Items",
+      eval_items_placeholder: "Enter job-specific evaluation items",
+      actions: "Actions",
+      created_at: "Created At",
+      code: "Code",
+      add_new_job_type: "Add New Job Type",
+      save_changes: "Save Changes",
+      confirm_delete: "Are you sure you want to delete this job type?",
+      no_job_types: "No job types registered",
+      add_first_job_type: "Add Job Type",
+      loading_error: "Failed to load job type data",
+      save_success_update: "Job type updated successfully",
+      save_success_create: "Job type added successfully",
+      save_error: "Failed to save job type",
+      delete_confirm_message: "Are you sure you want to delete \"{name}\"?",
+      delete_confirm_title: "Delete Job Type",
+      delete_success: "Job type deleted successfully",
+      delete_error: "Failed to delete job type",
+      export_success: "Export completed successfully",
+      export_error: "Export failed",
+      saving: "Saving...",
+      deleting: "Deleting..."
     }
   },
 
@@ -745,6 +841,54 @@ const TRANSLATIONS = {
       description: "Mô tả",
       order: "Thứ tự",
       language: "Ngôn ngữ"
+    },
+
+    // ===== Job Type Management =====
+    job_types: {
+      title: "Quản lý loại công việc",
+      search_placeholder: "Tìm kiếm loại công việc...",
+      add_job_type: "Thêm loại công việc mới",
+      export: "Xuất",
+      total_job_types: "Tổng số loại công việc",
+      active_job_types: "Loại công việc đang hoạt động",
+      inactive_job_types: "Loại công việc không hoạt động",
+      category_count: "Số lượng danh mục",
+      job_type_list: "Danh sách loại công việc",
+      edit_job_type: "Chỉnh sửa loại công việc",
+      job_type_name: "Tên loại công việc",
+      job_type_name_required: "Vui lòng nhập tên loại công việc",
+      category: "Danh mục",
+      category_placeholder: "ví dụ: Xây dựng, Thiết bị, Hoàn thiện",
+      job_type_code: "Mã loại công việc",
+      code_placeholder: "ví dụ: JT001",
+      status: "Trạng thái",
+      status_active: "Hoạt động",
+      status_inactive: "Không hoạt động",
+      description: "Mô tả",
+      required_skills: "Kỹ năng cần thiết",
+      skills_placeholder: "Nhập các bằng cấp và kỹ năng cần thiết",
+      evaluation_items: "Các mục đánh giá",
+      eval_items_placeholder: "Nhập các mục đánh giá theo loại công việc",
+      actions: "Hành động",
+      created_at: "Ngày tạo",
+      code: "Mã",
+      add_new_job_type: "Thêm loại công việc mới",
+      save_changes: "Lưu thay đổi",
+      confirm_delete: "Bạn có chắc chắn muốn xóa loại công việc này không?",
+      no_job_types: "Chưa có loại công việc nào được đăng ký",
+      add_first_job_type: "Thêm loại công việc",
+      loading_error: "Tải dữ liệu loại công việc thất bại",
+      save_success_update: "Cập nhật loại công việc thành công",
+      save_success_create: "Thêm loại công việc thành công",
+      save_error: "Lưu loại công việc thất bại",
+      delete_confirm_message: "Bạn có chắc chắn muốn xóa \"{name}\" không?",
+      delete_confirm_title: "Xóa loại công việc",
+      delete_success: "Xóa loại công việc thành công",
+      delete_error: "Xóa loại công việc thất bại",
+      export_success: "Xuất dữ liệu thành công",
+      export_error: "Xuất dữ liệu thất bại",
+      saving: "Đang lưu...",
+      deleting: "Đang xóa..."
     }
   }
 };
@@ -928,12 +1072,14 @@ class UnifiedI18n {
 
   /**
    * HTMLページの翻訳を適用
+   * @param {HTMLElement} container - 翻訳を適用するコンテナ（省略時はdocument全体）
    */
-  applyTranslations() {
-    document.querySelectorAll('[data-i18n]').forEach(element => {
+  applyTranslations(container = document) {
+    // data-i18n属性を持つ要素の翻訳
+    container.querySelectorAll('[data-i18n]').forEach(element => {
       const key = element.getAttribute('data-i18n');
       const translation = this.t(key);
-      
+
       if (element.getAttribute('data-i18n-attr')) {
         // 属性値の翻訳
         const attr = element.getAttribute('data-i18n-attr');
@@ -943,13 +1089,32 @@ class UnifiedI18n {
         element.textContent = translation;
       }
     });
+
+    // data-i18n-placeholder属性を持つ要素の翻訳
+    container.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+      const key = element.getAttribute('data-i18n-placeholder');
+      element.placeholder = this.t(key);
+    });
+
+    // data-i18n-title属性を持つ要素の翻訳
+    container.querySelectorAll('[data-i18n-title]').forEach(element => {
+      const key = element.getAttribute('data-i18n-title');
+      element.title = this.t(key);
+    });
+
+    // data-i18n-alt属性を持つ要素の翻訳
+    container.querySelectorAll('[data-i18n-alt]').forEach(element => {
+      const key = element.getAttribute('data-i18n-alt');
+      element.alt = this.t(key);
+    });
   }
 
   /**
    * UI更新メソッド（login.jsとの互換性のため）
+   * @param {HTMLElement} container - 翻訳を適用するコンテナ（省略時はdocument全体）
    */
-  updateUI() {
-    this.applyTranslations();
+  updateUI(container = document) {
+    this.applyTranslations(container);
   }
 
   /**
