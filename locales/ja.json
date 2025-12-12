@@ -464,6 +464,22 @@
     },
     "evaluation_pending": "{{userName}}さんの評価が承認待ちです",
     "admin_evaluation_pending": "{{userName}}さんの評価が{{evaluatorName}}の承認待ちです"
+  },
+  "evaluation_periods_v2": {
+    "title": "評価期間設定",
+    "subtitle": "評価期間の設定と管理",
+    "tab_basic": "基本設定",
+    "tab_job_specific": "職種別設定",
+    "tab_period_management": "期間管理",
+    "type_quarterly": "四半期",
+    "type_semiannual": "半期",
+    "type_annual": "年次",
+    "type_monthly": "月次",
+    "status_scheduled": "予定",
+    "status_active": "進行中",
+    "status_completed": "完了",
+    "error_admin_required": "管理者権限が必要です",
+    "error_page_init": "ページの初期化に失敗しました"
   }
 }
 

@@ -113,54 +113,54 @@ export class EvaluationPeriodsPage {
         <div class="col-lg-8">
           <div class="card">
             <div class="card-header">
-              <h5 class="mb-0">全社共通評価サイクル設定</h5>
+              <h5 class="mb-0">${this.app.i18n.t('evaluation_periods_v2.basic_title')}</h5>
             </div>
             <div class="card-body">
               <form id="basicSettingsForm">
                 <div class="row mb-3">
                   <div class="col-md-6">
-                    <label class="form-label">評価サイクル</label>
+                    <label class="form-label">${this.app.i18n.t('evaluation_periods_v2.cycle_label')}</label>
                     <select class="form-select" id="evaluationCycle" required>
-                      <option value="">選択してください</option>
-                      <option value="quarterly">四半期評価（3ヶ月）</option>
-                      <option value="semi-annual">半期評価（6ヶ月）</option>
-                      <option value="annual">年次評価（12ヶ月）</option>
+                      <option value="">${this.app.i18n.t('evaluation_periods_v2.select_placeholder')}</option>
+                      <option value="quarterly">${this.app.i18n.t('evaluation_periods_v2.cycle_quarterly')}</option>
+                      <option value="semi-annual">${this.app.i18n.t('evaluation_periods_v2.cycle_semiannual')}</option>
+                      <option value="annual">${this.app.i18n.t('evaluation_periods_v2.cycle_annual')}</option>
                     </select>
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label">評価年度開始月</label>
+                    <label class="form-label">${this.app.i18n.t('evaluation_periods_v2.fiscal_start_label')}</label>
                     <select class="form-select" id="fiscalYearStart" required>
-                      <option value="1">1月</option>
-                      <option value="4" selected>4月</option>
-                      <option value="7">7月</option>
-                      <option value="10">10月</option>
+                      <option value="1">${this.app.i18n.t('evaluation_periods_v2.month_1')}</option>
+                      <option value="4" selected>${this.app.i18n.t('evaluation_periods_v2.month_4')}</option>
+                      <option value="7">${this.app.i18n.t('evaluation_periods_v2.month_7')}</option>
+                      <option value="10">${this.app.i18n.t('evaluation_periods_v2.month_10')}</option>
                     </select>
                   </div>
                 </div>
 
                 <div class="row mb-3">
                   <div class="col-md-6">
-                    <label class="form-label">評価開始猶予期間（日）</label>
+                    <label class="form-label">${this.app.i18n.t('evaluation_periods_v2.grace_start_label')}</label>
                     <input type="number" class="form-control" id="gracePeriodStart" value="7" min="0" max="30">
-                    <small class="form-text text-muted">期間開始前に評価を開始できる日数</small>
+                    <small class="form-text text-muted">${this.app.i18n.t('evaluation_periods_v2.grace_start_help')}</small>
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label">評価終了猶予期間（日）</label>
+                    <label class="form-label">${this.app.i18n.t('evaluation_periods_v2.grace_end_label')}</label>
                     <input type="number" class="form-control" id="gracePeriodEnd" value="7" min="0" max="30">
-                    <small class="form-text text-muted">期間終了後も評価を受け付ける日数</small>
+                    <small class="form-text text-muted">${this.app.i18n.t('evaluation_periods_v2.grace_end_help')}</small>
                   </div>
                 </div>
 
                 <div class="mb-3">
-                  <label class="form-label">デフォルト期間テンプレート</label>
+                  <label class="form-label">${this.app.i18n.t('evaluation_periods_v2.template_label')}</label>
                   <textarea class="form-control" id="periodTemplate" rows="3"
-                    placeholder="例: {year}年度 第{quarter}四半期評価">2024年度 第1四半期評価</textarea>
-                  <small class="form-text text-muted">新しい期間作成時のデフォルト名称パターン</small>
+                    placeholder="${this.app.i18n.t('evaluation_periods_v2.template_placeholder')}">${this.app.i18n.t('evaluation_periods_v2.template_default')}</textarea>
+                  <small class="form-text text-muted">${this.app.i18n.t('evaluation_periods_v2.template_help')}</small>
                 </div>
 
                 <div class="d-flex justify-content-end">
-                  <button type="button" class="btn btn-outline-secondary me-2" id="resetBasicSettings">リセット</button>
-                  <button type="submit" class="btn btn-primary">基本設定を保存</button>
+                  <button type="button" class="btn btn-outline-secondary me-2" id="resetBasicSettings">${this.app.i18n.t('evaluation_periods_v2.reset_button')}</button>
+                  <button type="submit" class="btn btn-primary">${this.app.i18n.t('evaluation_periods_v2.save_basic_button')}</button>
                 </div>
               </form>
             </div>
@@ -170,24 +170,24 @@ export class EvaluationPeriodsPage {
         <div class="col-lg-4">
           <div class="card">
             <div class="card-header">
-              <h6 class="mb-0">設定プレビュー</h6>
+              <h6 class="mb-0">${this.app.i18n.t('evaluation_periods_v2.preview_title')}</h6>
             </div>
             <div class="card-body">
               <div id="settingsPreview">
-                <p class="text-muted">左側で設定を選択すると、プレビューが表示されます。</p>
+                <p class="text-muted">${this.app.i18n.t('evaluation_periods_v2.preview_message')}</p>
               </div>
             </div>
           </div>
 
           <div class="card mt-3">
             <div class="card-header">
-              <h6 class="mb-0">設定ガイド</h6>
+              <h6 class="mb-0">${this.app.i18n.t('evaluation_periods_v2.guide_title')}</h6>
             </div>
             <div class="card-body">
               <small class="text-muted">
-                <strong>四半期評価:</strong> 3ヶ月ごとの頻繁な評価<br>
-                <strong>半期評価:</strong> 6ヶ月ごとのバランス型<br>
-                <strong>年次評価:</strong> 年1回の包括的な評価
+                <strong>${this.app.i18n.t('evaluation_periods_v2.type_quarterly')}:</strong> ${this.app.i18n.t('evaluation_periods_v2.guide_quarterly')}<br>
+                <strong>${this.app.i18n.t('evaluation_periods_v2.type_semiannual')}:</strong> ${this.app.i18n.t('evaluation_periods_v2.guide_semiannual')}<br>
+                <strong>${this.app.i18n.t('evaluation_periods_v2.type_annual')}:</strong> ${this.app.i18n.t('evaluation_periods_v2.guide_annual')}
               </small>
             </div>
           </div>
@@ -205,7 +205,7 @@ export class EvaluationPeriodsPage {
         <div class="col-lg-4">
           <div class="card">
             <div class="card-header">
-              <h5 class="mb-0">職種選択</h5>
+              <h5 class="mb-0">${this.app.i18n.t('evaluation_periods_v2.job_select_title')}</h5>
             </div>
             <div class="list-group list-group-flush" id="jobTypesList">
               <!-- 職種リストがここに表示されます -->
@@ -216,13 +216,13 @@ export class EvaluationPeriodsPage {
         <div class="col-lg-8">
           <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-              <h5 class="mb-0">職種別評価期間設定</h5>
-              <span class="badge bg-secondary" id="selectedJobTypeBadge">職種を選択</span>
+              <h5 class="mb-0">${this.app.i18n.t('evaluation_periods_v2.job_settings_title')}</h5>
+              <span class="badge bg-secondary" id="selectedJobTypeBadge">${this.app.i18n.t('evaluation_periods_v2.job_select_badge')}</span>
             </div>
             <div class="card-body" id="jobSpecificSettings">
               <div class="text-center p-5 text-muted">
                 <i class="fas fa-arrow-left fa-2x mb-3"></i>
-                <p>左のリストから職種を選択して、個別の評価期間設定を行ってください。</p>
+                <p>${this.app.i18n.t('evaluation_periods_v2.job_select_message')}</p>
               </div>
             </div>
           </div>
@@ -242,7 +242,7 @@ export class EvaluationPeriodsPage {
           <div class="col-md-3 mb-3">
             <div class="card border-primary">
               <div class="card-body text-center">
-                <h6 class="card-subtitle mb-2 text-muted">総期間数</h6>
+                <h6 class="card-subtitle mb-2 text-muted">${this.app.i18n.t('evaluation_periods_v2.stat_total')}</h6>
                 <h3 class="card-title mb-0 text-primary" id="totalPeriods">-</h3>
               </div>
             </div>
@@ -250,7 +250,7 @@ export class EvaluationPeriodsPage {
           <div class="col-md-3 mb-3">
             <div class="card border-success">
               <div class="card-body text-center">
-                <h6 class="card-subtitle mb-2 text-muted">実施中</h6>
+                <h6 class="card-subtitle mb-2 text-muted">${this.app.i18n.t('evaluation_periods_v2.stat_active')}</h6>
                 <h3 class="card-title mb-0 text-success" id="activePeriods">-</h3>
               </div>
             </div>
@@ -258,7 +258,7 @@ export class EvaluationPeriodsPage {
           <div class="col-md-3 mb-3">
             <div class="card border-info">
               <div class="card-body text-center">
-                <h6 class="card-subtitle mb-2 text-muted">完了</h6>
+                <h6 class="card-subtitle mb-2 text-muted">${this.app.i18n.t('evaluation_periods_v2.stat_completed')}</h6>
                 <h3 class="card-title mb-0 text-info" id="completedPeriods">-</h3>
               </div>
             </div>
@@ -266,7 +266,7 @@ export class EvaluationPeriodsPage {
           <div class="col-md-3 mb-3">
             <div class="card border-warning">
               <div class="card-body text-center">
-                <h6 class="card-subtitle mb-2 text-muted">予定</h6>
+                <h6 class="card-subtitle mb-2 text-muted">${this.app.i18n.t('evaluation_periods_v2.stat_scheduled')}</h6>
                 <h3 class="card-title mb-0 text-warning" id="scheduledPeriods">-</h3>
               </div>
             </div>
@@ -276,34 +276,34 @@ export class EvaluationPeriodsPage {
         <!-- 期間管理 -->
         <div class="card">
           <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">評価期間一覧</h5>
+            <h5 class="mb-0">${this.app.i18n.t('evaluation_periods_v2.periods_title')}</h5>
             <button class="btn btn-primary" id="addPeriodBtn">
-              <i class="fas fa-plus me-1"></i>新しい期間を追加
+              <i class="fas fa-plus me-1"></i>${this.app.i18n.t('evaluation_periods_v2.add_period_button')}
             </button>
           </div>
           <div class="card-body">
             <div class="row mb-3">
               <div class="col-md-4">
-                <label class="form-label">ステータスでフィルター</label>
+                <label class="form-label">${this.app.i18n.t('evaluation_periods_v2.filter_status_label')}</label>
                 <select class="form-select" id="statusFilter">
-                  <option value="">すべて</option>
-                  <option value="active">実施中</option>
-                  <option value="completed">完了</option>
-                  <option value="scheduled">予定</option>
+                  <option value="">${this.app.i18n.t('evaluation_periods_v2.filter_all')}</option>
+                  <option value="active">${this.app.i18n.t('evaluation_periods_v2.status_active')}</option>
+                  <option value="completed">${this.app.i18n.t('evaluation_periods_v2.status_completed')}</option>
+                  <option value="scheduled">${this.app.i18n.t('evaluation_periods_v2.status_scheduled')}</option>
                 </select>
               </div>
               <div class="col-md-4">
-                <label class="form-label">タイプでフィルター</label>
+                <label class="form-label">${this.app.i18n.t('evaluation_periods_v2.filter_type_label')}</label>
                 <select class="form-select" id="typeFilter">
-                  <option value="">すべて</option>
-                  <option value="quarterly">四半期</option>
-                  <option value="semi-annual">半期</option>
-                  <option value="annual">年次</option>
+                  <option value="">${this.app.i18n.t('evaluation_periods_v2.filter_all')}</option>
+                  <option value="quarterly">${this.app.i18n.t('evaluation_periods_v2.type_quarterly')}</option>
+                  <option value="semi-annual">${this.app.i18n.t('evaluation_periods_v2.type_semiannual')}</option>
+                  <option value="annual">${this.app.i18n.t('evaluation_periods_v2.type_annual')}</option>
                 </select>
               </div>
               <div class="col-md-4 d-flex align-items-end">
                 <button class="btn btn-outline-secondary" id="refreshBtn">
-                  <i class="fas fa-sync-alt me-1"></i>更新
+                  <i class="fas fa-sync-alt me-1"></i>${this.app.i18n.t('evaluation_periods_v2.refresh_button')}
                 </button>
               </div>
             </div>
@@ -319,74 +319,74 @@ export class EvaluationPeriodsPage {
           <div class="modal-dialog modal-lg">
             <div class="modal-content">
               <div class="modal-header">
-                <h5 class="modal-title" id="periodModalTitle">新しい評価期間</h5>
+                <h5 class="modal-title" id="periodModalTitle">${this.app.i18n.t('evaluation_periods_v2.modal_title_new')}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
               </div>
               <div class="modal-body">
                 <form id="periodForm">
                   <div class="row">
                     <div class="col-md-6 mb-3">
-                      <label class="form-label">期間名 <span class="text-danger">*</span></label>
+                      <label class="form-label">${this.app.i18n.t('evaluation_periods_v2.modal_name_label')} <span class="text-danger">${this.app.i18n.t('evaluation_periods_v2.modal_name_required')}</span></label>
                       <input type="text" class="form-control" id="periodName" required>
-                      <div class="form-text">例: 2024年第1四半期評価</div>
+                      <div class="form-text">${this.app.i18n.t('evaluation_periods_v2.modal_name_example')}</div>
                     </div>
                     <div class="col-md-6 mb-3">
-                      <label class="form-label">タイプ <span class="text-danger">*</span></label>
+                      <label class="form-label">${this.app.i18n.t('evaluation_periods_v2.modal_type_label')} <span class="text-danger">${this.app.i18n.t('evaluation_periods_v2.modal_type_required')}</span></label>
                       <select class="form-select" id="periodType" required>
-                        <option value="">選択してください</option>
-                        <option value="quarterly">四半期</option>
-                        <option value="semi-annual">半期</option>
-                        <option value="annual">年次</option>
+                        <option value="">${this.app.i18n.t('evaluation_periods_v2.select_placeholder')}</option>
+                        <option value="quarterly">${this.app.i18n.t('evaluation_periods_v2.type_quarterly')}</option>
+                        <option value="semi-annual">${this.app.i18n.t('evaluation_periods_v2.type_semiannual')}</option>
+                        <option value="annual">${this.app.i18n.t('evaluation_periods_v2.type_annual')}</option>
                       </select>
                     </div>
                   </div>
-                  
+
                   <div class="row">
                     <div class="col-md-6 mb-3">
-                      <label class="form-label">開始日 <span class="text-danger">*</span></label>
+                      <label class="form-label">${this.app.i18n.t('evaluation_periods_v2.modal_start_label')} <span class="text-danger">${this.app.i18n.t('evaluation_periods_v2.modal_start_required')}</span></label>
                       <input type="date" class="form-control" id="startDate" required>
                     </div>
                     <div class="col-md-6 mb-3">
-                      <label class="form-label">終了日 <span class="text-danger">*</span></label>
+                      <label class="form-label">${this.app.i18n.t('evaluation_periods_v2.modal_end_label')} <span class="text-danger">${this.app.i18n.t('evaluation_periods_v2.modal_end_required')}</span></label>
                       <input type="date" class="form-control" id="endDate" required>
                     </div>
                   </div>
 
                   <div class="row">
                     <div class="col-md-6 mb-3">
-                      <label class="form-label">ステータス</label>
+                      <label class="form-label">${this.app.i18n.t('evaluation_periods_v2.modal_status_label')}</label>
                       <select class="form-select" id="periodStatus">
-                        <option value="scheduled">予定</option>
-                        <option value="active">実施中</option>
-                        <option value="completed">完了</option>
+                        <option value="scheduled">${this.app.i18n.t('evaluation_periods_v2.status_scheduled')}</option>
+                        <option value="active">${this.app.i18n.t('evaluation_periods_v2.status_active')}</option>
+                        <option value="completed">${this.app.i18n.t('evaluation_periods_v2.status_completed')}</option>
                       </select>
                     </div>
                     <div class="col-md-6 mb-3">
-                      <label class="form-label">期間日数</label>
+                      <label class="form-label">${this.app.i18n.t('evaluation_periods_v2.modal_duration_label')}</label>
                       <input type="text" class="form-control" id="periodDuration" readonly>
                     </div>
                   </div>
 
                   <div class="mb-3">
-                    <label class="form-label">説明</label>
-                    <textarea class="form-control" id="periodDescription" rows="3" 
-                              placeholder="この評価期間に関する説明や特記事項"></textarea>
+                    <label class="form-label">${this.app.i18n.t('evaluation_periods_v2.modal_description_label')}</label>
+                    <textarea class="form-control" id="periodDescription" rows="3"
+                              placeholder="${this.app.i18n.t('evaluation_periods_v2.modal_description_placeholder')}"></textarea>
                   </div>
 
                   <!-- 評価期間の自動設定 -->
                   <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
-                    開始日・終了日を設定すると、期間日数が自動計算されます。
+                    ${this.app.i18n.t('evaluation_periods_v2.modal_info_message')}
                   </div>
                 </form>
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-outline-danger me-auto d-none" onclick="window.app.router.currentPageInstance.confirmDeletePeriod()">
-                  <i class="fas fa-trash me-1"></i>削除
+                  <i class="fas fa-trash me-1"></i>${this.app.i18n.t('evaluation_periods_v2.modal_delete_button')}
                 </button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">${this.app.i18n.t('evaluation_periods_v2.modal_cancel_button')}</button>
                 <button type="submit" class="btn btn-primary" form="periodForm">
-                  <span class="submit-text">保存</span>
+                  <span class="submit-text">${this.app.i18n.t('evaluation_periods_v2.modal_save_button')}</span>
                   <span class="spinner-border spinner-border-sm ms-2 d-none" role="status"></span>
                 </button>
               </div>
@@ -491,12 +491,12 @@ export class EvaluationPeriodsPage {
     if (!container) return;
 
     const filteredPeriods = this.getFilteredPeriods();
-    
+
     if (filteredPeriods.length === 0) {
       container.innerHTML = `
         <div class="text-center text-muted py-4">
           <i class="fas fa-calendar fa-3x mb-3"></i>
-          <p>評価期間が登録されていません</p>
+          <p>${this.app.i18n.t('evaluation_periods_v2.no_periods')}</p>
         </div>
       `;
       return;
@@ -507,12 +507,12 @@ export class EvaluationPeriodsPage {
         <table class="table table-hover">
           <thead>
             <tr>
-              <th>期間名</th>
-              <th>タイプ</th>
-              <th>期間</th>
-              <th>日数</th>
-              <th>ステータス</th>
-              <th>操作</th>
+              <th>${this.app.i18n.t('evaluation_periods_v2.table_period_name')}</th>
+              <th>${this.app.i18n.t('evaluation_periods_v2.table_type')}</th>
+              <th>${this.app.i18n.t('evaluation_periods_v2.table_duration')}</th>
+              <th>${this.app.i18n.t('evaluation_periods_v2.table_days')}</th>
+              <th>${this.app.i18n.t('evaluation_periods_v2.table_status')}</th>
+              <th>${this.app.i18n.t('evaluation_periods_v2.table_actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -531,7 +531,7 @@ export class EvaluationPeriodsPage {
                     ～ ${this.formatDate(period.endDate)}
                   </small>
                 </td>
-                <td>${this.calculatePeriodDuration(period.startDate, period.endDate)}日</td>
+                <td>${this.calculatePeriodDuration(period.startDate, period.endDate)}${this.app.i18n.t('evaluation_periods_v2.days_suffix')}</td>
                 <td>
                   <span class="badge ${this.getStatusBadgeClass(period.status)}">
                     ${this.getStatusLabel(period.status)}
@@ -585,7 +585,7 @@ export class EvaluationPeriodsPage {
 
       const modalTitle = document.getElementById('periodModalTitle');
       if (modalTitle) {
-        modalTitle.textContent = '新しい評価期間';
+        modalTitle.textContent = this.app.i18n.t('evaluation_periods_v2.modal_title_new');
       }
 
       // 削除ボタンを非表示（新規追加時）
@@ -600,7 +600,7 @@ export class EvaluationPeriodsPage {
       const modalElement = document.getElementById('periodModal');
       if (!modalElement) {
         console.error('Period modal element not found');
-        this.app.showError('モーダルが見つかりません');
+        this.app.showError(this.app.i18n.t('evaluation_periods_v2.error_modal_not_found'));
         return;
       }
 
@@ -630,7 +630,7 @@ export class EvaluationPeriodsPage {
     if (!period) return;
 
     this.editingPeriodId = periodId;
-    document.getElementById('periodModalTitle').textContent = '評価期間の編集';
+    document.getElementById('periodModalTitle').textContent = this.app.i18n.t('evaluation_periods_v2.modal_title_edit');
 
     // 削除ボタンを表示（編集時）
     const deleteBtn = document.querySelector('#periodModal .btn-outline-danger');
@@ -679,6 +679,11 @@ export class EvaluationPeriodsPage {
       description: document.getElementById('periodDescription').value || ''
     };
 
+    // 更新の場合はIDを含める
+    if (this.editingPeriodId) {
+      periodData.id = this.editingPeriodId;
+    }
+
     try {
       const submitBtn = document.querySelector('#periodModal .btn-primary');
       const spinner = submitBtn.querySelector('.spinner-border');
@@ -688,15 +693,9 @@ export class EvaluationPeriodsPage {
       spinner.classList.remove('d-none');
       submitText.textContent = '保存中...';
 
-      if (this.editingPeriodId) {
-        // 更新処理（将来実装）
-        await this.app.api.updateEvaluationPeriod(this.editingPeriodId, periodData);
-        console.log('Evaluation Periods: Period updated:', this.editingPeriodId);
-      } else {
-        // 新規追加 - Firebase APIを使用
-        await this.app.api.saveEvaluationPeriod(periodData);
-        console.log('Evaluation Periods: New period saved to Firebase');
-      }
+      // saveEvaluationPeriodは新規作成と更新の両方に対応
+      await this.app.api.saveEvaluationPeriod(periodData);
+      console.log('Evaluation Periods: Period saved to Firebase:', this.editingPeriodId || 'new');
 
       // データの再読み込み
       await this.loadPeriods();
@@ -707,11 +706,11 @@ export class EvaluationPeriodsPage {
       const modal = bootstrap.Modal.getInstance(document.getElementById('periodModal'));
       modal.hide();
 
-      this.app.showSuccess('評価期間を保存しました');
+      this.app.showSuccess(this.app.i18n.t('evaluation_periods_v2.success_period_saved'));
 
     } catch (error) {
       console.error('Evaluation Periods: Failed to save period:', error);
-      this.app.showError('評価期間の保存に失敗しました: ' + error.message);
+      this.app.showError(this.app.i18n.t('evaluation_periods_v2.error_period_save') + ': ' + error.message);
     } finally {
       const submitBtn = document.querySelector('#periodModal .btn-primary');
       const spinner = submitBtn.querySelector('.spinner-border');
@@ -735,7 +734,8 @@ export class EvaluationPeriodsPage {
 
     this.editingPeriodId = targetId;
 
-    if (confirm(`評価期間「${period.name}」を削除してもよろしいですか？\n\n※この操作は取り消せません。`)) {
+    const message = this.app.i18n.t('evaluation_periods_v2.confirm_delete_period').replace('{name}', period.name);
+    if (confirm(message)) {
       this.deletePeriod();
     }
   }
@@ -758,11 +758,11 @@ export class EvaluationPeriodsPage {
       const periodModal = bootstrap.Modal.getInstance(document.getElementById('periodModal'));
       if (periodModal) periodModal.hide();
 
-      this.app.showSuccess('評価期間を削除しました');
+      this.app.showSuccess(this.app.i18n.t('evaluation_periods_v2.success_period_deleted'));
 
     } catch (error) {
       console.error('Evaluation Periods: Failed to delete period:', error);
-      this.app.showError('評価期間の削除に失敗しました: ' + error.message);
+      this.app.showError(this.app.i18n.t('evaluation_periods_v2.error_period_delete') + ': ' + error.message);
     }
   }
 
@@ -792,8 +792,8 @@ export class EvaluationPeriodsPage {
       const end = new Date(endDate);
       const diffTime = Math.abs(end - start);
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      document.getElementById('periodDuration').value = `${diffDays}日`;
+
+      document.getElementById('periodDuration').value = `${diffDays}${this.app.i18n.t('evaluation_periods_v2.days_suffix')}`;
     }
   }
 
@@ -960,7 +960,7 @@ export class EvaluationPeriodsPage {
       const submitBtn = form.querySelector('button[type="submit"]');
       const originalText = submitBtn.textContent;
       submitBtn.disabled = true;
-      submitBtn.textContent = '保存中...';
+      submitBtn.textContent = this.app.i18n.t('evaluation_periods_v2.modal_saving');
 
       try {
         // 将来実装: Firebase APIで保存
@@ -969,7 +969,7 @@ export class EvaluationPeriodsPage {
         // 一時的な遅延でAPI呼び出しをシミュレート
         await new Promise(resolve => setTimeout(resolve, 500));
 
-        this.app.showSuccess('基本設定を保存しました');
+        this.app.showSuccess(this.app.i18n.t('evaluation_periods_v2.success_basic_saved'));
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = originalText;
@@ -977,7 +977,7 @@ export class EvaluationPeriodsPage {
 
     } catch (error) {
       console.error('Evaluation Periods: Failed to save basic settings:', error);
-      this.app.showError('基本設定の保存に失敗しました: ' + error.message);
+      this.app.showError(this.app.i18n.t('evaluation_periods_v2.error_basic_save') + ': ' + error.message);
     }
   }
 
@@ -989,9 +989,9 @@ export class EvaluationPeriodsPage {
     document.getElementById('fiscalYearStart').value = '4';
     document.getElementById('gracePeriodStart').value = '7';
     document.getElementById('gracePeriodEnd').value = '7';
-    document.getElementById('periodTemplate').value = '2024年度 第1四半期評価';
+    document.getElementById('periodTemplate').value = this.app.i18n.t('evaluation_periods_v2.template_default');
 
-    this.app.showSuccess('基本設定をリセットしました');
+    this.app.showSuccess(this.app.i18n.t('evaluation_periods_v2.success_basic_reset'));
   }
 
   /**
@@ -1006,7 +1006,7 @@ export class EvaluationPeriodsPage {
       jobTypesList.innerHTML = `
         <div class="list-group-item text-center text-muted p-4">
           <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-          読み込み中...
+          ${this.app.i18n.t('evaluation_periods_v2.loading')}
         </div>
       `;
 
@@ -1017,7 +1017,7 @@ export class EvaluationPeriodsPage {
         jobTypesList.innerHTML = `
           <div class="list-group-item text-center text-muted p-4">
             <i class="fas fa-info-circle me-2"></i>
-            登録された職種がありません
+            ${this.app.i18n.t('evaluation_periods_v2.no_job_types')}
           </div>
         `;
         return;
@@ -1028,9 +1028,9 @@ export class EvaluationPeriodsPage {
         <a href="#" class="list-group-item list-group-item-action" onclick="window.app.router.currentPageInstance.selectJobType('${jobType.id}', '${jobType.name}')">
           <div class="d-flex w-100 justify-content-between">
             <h6 class="mb-1">${jobType.name}</h6>
-            <small class="text-muted">${jobType.status === 'active' ? '有効' : '無効'}</small>
+            <small class="text-muted">${jobType.status === 'active' ? this.app.i18n.t('evaluation_periods_v2.job_active') : this.app.i18n.t('evaluation_periods_v2.job_inactive')}</small>
           </div>
-          <p class="mb-1 text-muted small">${jobType.description || '説明なし'}</p>
+          <p class="mb-1 text-muted small">${jobType.description || this.app.i18n.t('evaluation_periods_v2.no_description')}</p>
         </a>
       `).join('');
 
@@ -1041,7 +1041,7 @@ export class EvaluationPeriodsPage {
         jobTypesList.innerHTML = `
           <div class="list-group-item text-center text-danger p-4">
             <i class="fas fa-exclamation-triangle me-2"></i>
-            職種データの読み込みに失敗しました
+            ${this.app.i18n.t('evaluation_periods_v2.error_job_load')}
           </div>
         `;
       }
@@ -1075,31 +1075,31 @@ export class EvaluationPeriodsPage {
     settingsContainer.innerHTML = `
       <form id="jobSpecificForm">
         <div class="mb-3">
-          <label class="form-label">選択中の職種: <strong>${jobTypeName}</strong></label>
+          <label class="form-label">${this.app.i18n.t('evaluation_periods_v2.job_selected_label')}: <strong>${jobTypeName}</strong></label>
         </div>
 
         <div class="mb-3">
-          <label class="form-label">専用評価サイクル</label>
+          <label class="form-label">${this.app.i18n.t('evaluation_periods_v2.job_cycle_label')}</label>
           <select class="form-select" id="jobSpecificCycle">
-            <option value="">全社設定に従う</option>
-            <option value="monthly">月次評価（1ヶ月）</option>
-            <option value="quarterly">四半期評価（3ヶ月）</option>
-            <option value="semi-annual">半期評価（6ヶ月）</option>
-            <option value="annual">年次評価（12ヶ月）</option>
+            <option value="">${this.app.i18n.t('evaluation_periods_v2.job_cycle_default')}</option>
+            <option value="monthly">${this.app.i18n.t('evaluation_periods_v2.job_cycle_monthly')}</option>
+            <option value="quarterly">${this.app.i18n.t('evaluation_periods_v2.cycle_quarterly')}</option>
+            <option value="semi-annual">${this.app.i18n.t('evaluation_periods_v2.cycle_semiannual')}</option>
+            <option value="annual">${this.app.i18n.t('evaluation_periods_v2.cycle_annual')}</option>
           </select>
-          <small class="form-text text-muted">この職種専用の評価サイクルを設定できます</small>
+          <small class="form-text text-muted">${this.app.i18n.t('evaluation_periods_v2.job_cycle_help')}</small>
         </div>
 
         <div class="mb-3">
-          <label class="form-label">評価項目の重み付け</label>
+          <label class="form-label">${this.app.i18n.t('evaluation_periods_v2.job_weights_label')}</label>
           <div class="row">
             <div class="col-md-6">
-              <label class="form-label small">技術力</label>
+              <label class="form-label small">${this.app.i18n.t('evaluation_periods_v2.job_weight_technical')}</label>
               <input type="range" class="form-range" id="technicalWeight" min="0" max="100" value="25">
               <small class="text-muted">25%</small>
             </div>
             <div class="col-md-6">
-              <label class="form-label small">コミュニケーション</label>
+              <label class="form-label small">${this.app.i18n.t('evaluation_periods_v2.job_weight_communication')}</label>
               <input type="range" class="form-range" id="communicationWeight" min="0" max="100" value="25">
               <small class="text-muted">25%</small>
             </div>
@@ -1107,7 +1107,7 @@ export class EvaluationPeriodsPage {
         </div>
 
         <div class="d-flex justify-content-end">
-          <button type="submit" class="btn btn-primary">職種別設定を保存</button>
+          <button type="submit" class="btn btn-primary">${this.app.i18n.t('evaluation_periods_v2.job_save_button')}</button>
         </div>
       </form>
     `;
@@ -1141,10 +1141,10 @@ export class EvaluationPeriodsPage {
       // 将来実装: Firebase APIで保存
       // await this.app.api.saveJobSpecificSettings(settings);
 
-      this.app.showSuccess('職種別設定を保存しました');
+      this.app.showSuccess(this.app.i18n.t('evaluation_periods_v2.success_job_saved'));
     } catch (error) {
       console.error('Failed to save job-specific settings:', error);
-      this.app.showError('職種別設定の保存に失敗しました');
+      this.app.showError(this.app.i18n.t('evaluation_periods_v2.error_job_save'));
     }
   }
 
