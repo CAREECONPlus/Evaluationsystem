@@ -1,4 +1,5 @@
 import { AnalyticsService } from '../services/analytics-service.js';
+import { jobTypeChartConfig } from '../services/job-type-chart-config.js';
 
 /**
  * Reports Overview Page Component
@@ -11,15 +12,18 @@ export class EvaluationReportPage {
     this.chartInstances = {};
     this.isInitialized = false;
     this.currentTimeRange = 'last6months';
-    
+
     // Phase 7: AnalyticsServiceの初期化
     this.analytics = new AnalyticsService(app);
-    
+
+    // 職種別グラフ設定サービス
+    this.jobTypeConfig = jobTypeChartConfig;
+
     // リアルタイム更新設定
     this.refreshInterval = null;
     this.autoRefreshEnabled = true;
     this.refreshIntervalMs = 300000; // 5分間隔
-    
+
     // 権限別設定
     this.currentUser = null;
     this.userRole = null;
@@ -27,6 +31,9 @@ export class EvaluationReportPage {
     this.isEvaluator = false;
     this.isAdmin = false;
     this.subordinateIds = [];
+
+    // 職種情報
+    this.userJobType = null;
   }
 
   async render() {
@@ -67,6 +74,10 @@ export class EvaluationReportPage {
       this.isEvaluator = this.userRole === 'evaluator';
       this.isAdmin = this.userRole === 'admin';
 
+      // ユーザーの職種情報を取得
+      this.userJobType = this.currentUser.jobType || this.currentUser.job_type || null;
+      console.log('Reports: User job type:', this.userJobType);
+
       // 評価者の場合は担当する作業員IDを取得
       if (this.isEvaluator) {
         this.subordinateIds = await this.getSubordinateIds();
@@ -76,6 +87,7 @@ export class EvaluationReportPage {
       console.error('Reports: Failed to initialize user permissions:', error);
       this.userRole = 'worker';
       this.isWorker = true;
+      this.userJobType = null;
     }
   }
 
@@ -1431,29 +1443,39 @@ export class EvaluationReportPage {
     }
 
     const ctx = canvas.getContext('2d');
-    
-    // 実際の評価データからレーダーチャートデータを生成
-    const radarData = this.generateRadarChartData();
+
+    // 職種別の設定を取得
+    const jobTypeConfig = this.jobTypeConfig.getConfigForJobType(this.userJobType);
+    console.log('Reports: Using job type config:', jobTypeConfig.displayName, jobTypeConfig.primarySkills);
+
+    // 実際の評価データからレーダーチャートデータを生成（職種別）
+    const radarData = this.generateJobTypeRadarChartData(jobTypeConfig);
     const categories = radarData.labels;
     const currentScores = radarData.current;
     const previousScores = radarData.previous;
+
+    // 職種別の色設定を使用
+    const primaryColor = jobTypeConfig.colors[0] || 'rgba(54, 162, 235, 1)';
+    const secondaryColor = 'rgba(255, 159, 64, 1)';
 
     this.chartInstances.personalRadar = new Chart(ctx, {
       type: 'radar',
       data: {
         labels: categories,
         datasets: [{
-          label: '今回評価',
+          label: `今回評価 (${jobTypeConfig.displayName})`,
           data: currentScores,
-          borderColor: 'rgba(54, 162, 235, 1)',
-          backgroundColor: 'rgba(54, 162, 235, 0.2)',
-          pointBackgroundColor: 'rgba(54, 162, 235, 1)'
+          borderColor: primaryColor,
+          backgroundColor: primaryColor.replace('1)', '0.2)'),
+          pointBackgroundColor: primaryColor,
+          borderWidth: 2
         }, {
           label: '前回評価',
           data: previousScores,
-          borderColor: 'rgba(255, 159, 64, 1)',
-          backgroundColor: 'rgba(255, 159, 64, 0.2)',
-          pointBackgroundColor: 'rgba(255, 159, 64, 1)'
+          borderColor: secondaryColor,
+          backgroundColor: secondaryColor.replace('1)', '0.2)'),
+          pointBackgroundColor: secondaryColor,
+          borderWidth: 2
         }]
       },
       options: {
@@ -1462,7 +1484,28 @@ export class EvaluationReportPage {
         scales: {
           r: {
             beginAtZero: true,
-            max: 5
+            max: 5,
+            ticks: {
+              stepSize: 1
+            },
+            pointLabels: {
+              font: {
+                size: 12
+              }
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return context.dataset.label + ': ' + context.parsed.r.toFixed(1);
+              }
+            }
           }
         }
       }
@@ -2769,6 +2812,64 @@ export class EvaluationReportPage {
     const previous = skillCategories.map(skill => 
       previousEvaluation?.ratings?.[skill] || 0
     );
+
+    return { labels, current, previous };
+  }
+
+  /**
+   * 職種別レーダーチャートデータ生成
+   * @param {Object} jobTypeConfig - 職種別設定
+   * @returns {Object} レーダーチャートデータ
+   */
+  generateJobTypeRadarChartData(jobTypeConfig) {
+    const evaluations = this.reportData?.evaluations || [];
+    const completedEvaluations = evaluations.filter(e => e.status === 'completed' && e.ratings);
+
+    // 職種別の評価項目を取得
+    const primarySkills = jobTypeConfig.primarySkills;
+    const labels = primarySkills.map(skill => this.jobTypeConfig.getSkillLabel(skill));
+
+    if (completedEvaluations.length === 0) {
+      return {
+        labels: labels,
+        current: new Array(primarySkills.length).fill(0),
+        previous: new Array(primarySkills.length).fill(0)
+      };
+    }
+
+    // 最新の評価データを取得
+    const latestEvaluation = completedEvaluations[0];
+    const previousEvaluation = completedEvaluations[1]; // 2番目に新しい評価
+
+    // スキルキーのマッピング（データベースのキー名と職種設定のキー名の対応）
+    const skillKeyMapping = {
+      'technical_skills': 'technical_skills',
+      'communication': 'communication',
+      'leadership': 'leadership',
+      'teamwork': 'teamwork',
+      'problem_solving': 'problem_solving',
+      'safety_awareness': 'safety_awareness',
+      'work_quality': 'work_quality',
+      'efficiency': 'efficiency',
+      'creativity': 'creativity',
+      'precision': 'precision',
+      'attention_to_detail': 'attention_to_detail',
+      'planning': 'planning',
+      'analytical_skills': 'analytical_skills',
+      'responsibility': 'responsibility',
+      // データベースでの代替キー名
+      'technical': 'technical_skills'
+    };
+
+    const current = primarySkills.map(skill => {
+      const dbKey = skillKeyMapping[skill] || skill;
+      return latestEvaluation.ratings?.[dbKey] || latestEvaluation.ratings?.[skill] || 0;
+    });
+
+    const previous = primarySkills.map(skill => {
+      const dbKey = skillKeyMapping[skill] || skill;
+      return previousEvaluation?.ratings?.[dbKey] || previousEvaluation?.ratings?.[skill] || 0;
+    });
 
     return { labels, current, previous };
   }
