@@ -221,7 +221,7 @@ export class UserManagementPage {
                 <div class="tab-pane fade" id="email-tab-pane" role="tabpanel">
                   <form id="invite-user-form">
                     <div class="mb-3">
-                      <label for="invite-email" class="form-label" data-i18n="auth.email">メールアドレス</label>
+                      <label for="invite-email" class="form-label" data-i18n="users.email">メールアドレス</label>
                       <input type="email" class="form-control" id="invite-email" required>
                     </div>
                     <div class="mb-3">
@@ -263,11 +263,11 @@ export class UserManagementPage {
               <form id="edit-user-form">
                 <input type="hidden" id="edit-user-id">
                 <div class="mb-3">
-                  <label for="edit-user-name" class="form-label" data-i18n="auth.name">氏名</label>
+                  <label for="edit-user-name" class="form-label" data-i18n="users.name">氏名</label>
                   <input type="text" class="form-control" id="edit-user-name" required>
                 </div>
                 <div class="mb-3">
-                  <label for="edit-user-email" class="form-label" data-i18n="auth.email">メールアドレス</label>
+                  <label for="edit-user-email" class="form-label" data-i18n="users.email">メールアドレス</label>
                   <input type="email" class="form-control" id="edit-user-email" readonly>
                 </div>
                 <div class="mb-3">
@@ -435,10 +435,10 @@ export class UserManagementPage {
         <table class="table table-hover mb-0">
           <thead class="table-light">
             <tr>
-              <th data-i18n="auth.name">氏名</th>
-              <th data-i18n="auth.email">メールアドレス</th>
+              <th data-i18n="users.name">氏名</th>
+              <th data-i18n="users.email">メールアドレス</th>
               <th data-i18n="users.role">役割</th>
-              <th>担当職種</th>
+              <th data-i18n="common.job_types">担当職種</th>
               <th data-i18n="users.status">ステータス</th>
               <th data-i18n="common.created_at">作成日</th>
               <th data-i18n="common.actions">操作</th>
