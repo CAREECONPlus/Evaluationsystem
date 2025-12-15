@@ -124,7 +124,14 @@ const TRANSLATIONS = {
       reset_filters: "フィルターリセット",
       items_count: "項目数",
       search_placeholder: "評価対象者名で検索...",
+      period: "評価期間",
       evaluation_period: "評価期間",
+      updated_at: "更新日",
+      assignment_status: "担当状況",
+      assigned_to_me: "私の担当",
+      requires_approval: "承認が必要です",
+      start_evaluation: "評価開始",
+      continue_evaluation: "続ける",
       no_matching_evaluations: "該当する評価がありません",
       save_draft: "下書き保存",
       submit: "提出"
@@ -164,11 +171,13 @@ const TRANSLATIONS = {
       department: "部門",
       position: "役職",
       job_types: "職種",
-      view_all: "すべて表示"
+      view_all: "すべて表示",
+      unknown: "不明"
     },
 
     // ===== ステータス =====
     status: {
+      title: "ステータス",
       draft: "下書き",
       self_assessed: "自己評価完了",
       pending_approval: "承認待ち",
@@ -607,7 +616,14 @@ const TRANSLATIONS = {
       search_placeholder: "Search by target user name...",
       form_title: "Evaluation Form",
       target_info: "Target User Information",
+      period: "Evaluation Period",
       evaluation_period: "Evaluation Period",
+      updated_at: "Updated At",
+      assignment_status: "Assignment Status",
+      assigned_to_me: "My Assignment",
+      requires_approval: "Approval Required",
+      start_evaluation: "Start Evaluation",
+      continue_evaluation: "Continue",
       no_matching_evaluations: "No matching evaluations found",
       save_draft: "Save Draft",
       submit: "Submit"
@@ -646,10 +662,12 @@ const TRANSLATIONS = {
       department: "Department",
       position: "Position",
       job_types: "Job Types",
-      view_all: "View All"
+      view_all: "View All",
+      unknown: "Unknown"
     },
 
     status: {
+      title: "Status",
       draft: "Draft",
       self_assessed: "Self-Assessed",
       pending_approval: "Pending Approval",
@@ -854,7 +872,8 @@ const TRANSLATIONS = {
       department: "Phòng ban",
       position: "Vị trí",
       job_types: "Loại công việc",
-      view_all: "Xem tất cả"
+      view_all: "Xem tất cả",
+      unknown: "Không rõ"
     },
 
     messages: {
@@ -952,10 +971,33 @@ const TRANSLATIONS = {
       search_placeholder: "Tìm kiếm theo tên người được đánh giá...",
       form_title: "Mẫu đánh giá",
       target_info: "Thông tin người được đánh giá",
+      period: "Chu kỳ đánh giá",
       evaluation_period: "Chu kỳ đánh giá",
+      updated_at: "Ngày cập nhật",
+      assignment_status: "Trạng thái nhiệm vụ",
+      assigned_to_me: "Nhiệm vụ của tôi",
+      requires_approval: "Cần phê duyệt",
+      start_evaluation: "Bắt đầu đánh giá",
+      continue_evaluation: "Tiếp tục",
       no_matching_evaluations: "Không tìm thấy đánh giá phù hợp",
       save_draft: "Lưu nháp",
       submit: "Gửi"
+    },
+
+    status: {
+      title: "Trạng thái",
+      draft: "Nháp",
+      self_assessed: "Tự đánh giá hoàn thành",
+      pending_approval: "Chờ phê duyệt",
+      completed: "Hoàn thành",
+      in_progress: "Đang tiến hành"
+    },
+
+    roles: {
+      admin: "Quản trị viên",
+      evaluator: "Người đánh giá",
+      supervisor: "Giám sát",
+      worker: "Công nhân"
     },
 
     settings: {

@@ -578,7 +578,6 @@ export class EvaluationsPage {
                       </div>
                       <div>
                         <strong>${this.app.sanitizeHtml(evaluation.targetUserName || this.app.i18n.t('common.unknown'))}</strong>
-                        <br><small class="text-muted">${this.app.sanitizeHtml(evaluation.targetUserEmail || '')}</small>
                       </div>
                     </div>
                   </td>
@@ -906,7 +905,6 @@ export class EvaluationsPage {
                       </div>
                       <div>
                         <h6 class="card-title mb-0">${this.app.sanitizeHtml(evaluation.targetUserName || '不明')}</h6>
-                        <small class="text-muted">${this.app.sanitizeHtml(evaluation.targetUserEmail || '')}</small>
                       </div>
                     </div>
                     <span class="badge ${this.app.getStatusBadgeClass(evaluation.status)}">

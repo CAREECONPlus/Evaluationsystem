@@ -10,6 +10,7 @@ export class EvaluationPeriodsPage {
     this.currentUser = null;
     this.periods = [];
     this.editingPeriodId = null;
+    this.periodModalInstance = null; // モーダルインスタンスを保存
   }
 
   /**
@@ -606,16 +607,58 @@ export class EvaluationPeriodsPage {
 
       // Bootstrapモーダルを表示
       if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-        const modal = new bootstrap.Modal(modalElement);
-        modal.show();
+        // 既存のBootstrapインスタンスをチェック
+        let existingInstance = bootstrap.Modal.getInstance(modalElement);
+
+        if (existingInstance) {
+          console.log('Evaluation Periods: Disposing existing modal instance');
+          existingInstance.dispose();
+        }
+
+        // モーダル要素をリセット
+        modalElement.classList.remove('show');
+        modalElement.style.display = '';
+        modalElement.setAttribute('aria-hidden', 'true');
+        modalElement.removeAttribute('aria-modal');
+        modalElement.removeAttribute('role');
+
+        // 既存のバックドロップを削除
+        const existingBackdrops = document.querySelectorAll('.modal-backdrop');
+        existingBackdrops.forEach(backdrop => backdrop.remove());
+
+        // 新しいモーダルインスタンスを作成
+        this.periodModalInstance = new bootstrap.Modal(modalElement, {
+          backdrop: true,
+          keyboard: true,
+          focus: true
+        });
+
+        console.log('Evaluation Periods: Showing modal...');
+        this.periodModalInstance.show();
+
+        // モーダルが表示された後のイベントリスナー
+        modalElement.addEventListener('shown.bs.modal', () => {
+          console.log('Evaluation Periods: Modal is now visible');
+          // モーダルが確実に表示されているか確認
+          console.log('Modal display:', modalElement.style.display);
+          console.log('Modal classes:', modalElement.className);
+        }, { once: true });
+
       } else {
+        console.error('Bootstrap Modal is not available');
         // Bootstrapが利用できない場合の代替表示
         modalElement.style.display = 'block';
         modalElement.classList.add('show');
         document.body.classList.add('modal-open');
+
+        // バックドロップを手動で作成
+        const backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop fade show';
+        backdrop.id = 'manual-backdrop';
+        document.body.appendChild(backdrop);
       }
 
-      console.log('Evaluation Periods: Modal should be visible now');
+      console.log('Evaluation Periods: Modal initialization complete');
     } catch (error) {
       console.error('Evaluation Periods: Failed to show modal:', error);
       this.app.showError('モーダルの表示に失敗しました: ' + error.message);
@@ -649,8 +692,31 @@ export class EvaluationPeriodsPage {
     const modalElement = document.getElementById('periodModal');
     if (modalElement) {
       if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-        const modal = new bootstrap.Modal(modalElement);
-        modal.show();
+        // 既存のBootstrapインスタンスをチェック
+        let existingInstance = bootstrap.Modal.getInstance(modalElement);
+
+        if (existingInstance) {
+          existingInstance.dispose();
+        }
+
+        // モーダル要素をリセット
+        modalElement.classList.remove('show');
+        modalElement.style.display = '';
+        modalElement.setAttribute('aria-hidden', 'true');
+        modalElement.removeAttribute('aria-modal');
+        modalElement.removeAttribute('role');
+
+        // 既存のバックドロップを削除
+        const existingBackdrops = document.querySelectorAll('.modal-backdrop');
+        existingBackdrops.forEach(backdrop => backdrop.remove());
+
+        // 新しいモーダルインスタンスを作成
+        this.periodModalInstance = new bootstrap.Modal(modalElement, {
+          backdrop: true,
+          keyboard: true,
+          focus: true
+        });
+        this.periodModalInstance.show();
       } else {
         // Bootstrapが利用できない場合の代替表示
         modalElement.style.display = 'block';
@@ -703,8 +769,16 @@ export class EvaluationPeriodsPage {
       this.updateStatistics();
 
       // モーダルを閉じる
-      const modal = bootstrap.Modal.getInstance(document.getElementById('periodModal'));
-      modal.hide();
+      if (this.periodModalInstance) {
+        this.periodModalInstance.hide();
+      } else {
+        // フォールバック: Bootstrapインスタンスを取得
+        const modalElement = document.getElementById('periodModal');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) {
+          modal.hide();
+        }
+      }
 
       this.app.showSuccess(this.app.i18n.t('evaluation_periods_v2.success_period_saved'));
 
@@ -755,8 +829,12 @@ export class EvaluationPeriodsPage {
       this.updateStatistics();
 
       // モーダルを閉じる
-      const periodModal = bootstrap.Modal.getInstance(document.getElementById('periodModal'));
-      if (periodModal) periodModal.hide();
+      if (this.periodModalInstance) {
+        this.periodModalInstance.hide();
+      } else {
+        const periodModal = bootstrap.Modal.getInstance(document.getElementById('periodModal'));
+        if (periodModal) periodModal.hide();
+      }
 
       this.app.showSuccess(this.app.i18n.t('evaluation_periods_v2.success_period_deleted'));
 
@@ -1152,6 +1230,16 @@ export class EvaluationPeriodsPage {
    * クリーンアップ
    */
   cleanup() {
+    // モーダルインスタンスを破棄
+    if (this.periodModalInstance) {
+      try {
+        this.periodModalInstance.dispose();
+      } catch (e) {
+        console.warn('Failed to dispose modal during cleanup:', e);
+      }
+      this.periodModalInstance = null;
+    }
+
     this.isInitialized = false;
     this.editingPeriodId = null;
     // グローバル参照をクリア
