@@ -2058,6 +2058,39 @@ export class API {
         updatedAt: serverTimestamp()
       };
 
+      // スキルディメンションスコアの自動計算
+      if (evaluationData.ratings && evaluationData.jobTypeId) {
+        try {
+          // 評価構造を取得
+          const structure = await this.getEvaluationStructure(evaluationData.jobTypeId);
+
+          if (structure && structure.categories) {
+            evaluation.structureId = structure.id || 'default';
+            evaluation.structureVersion = structure.version || '2.0';
+
+            // スキルディメンションスコアを計算
+            const calculatedScores = await this.calculateSkillDimensionScores(
+              evaluationData.ratings,
+              structure
+            );
+
+            evaluation.skillDimensionScores = calculatedScores.dimensionScores;
+            evaluation.categoryScores = calculatedScores.categoryScores;
+            evaluation.finalScore = calculatedScores.finalScore;
+            evaluation.calculationMetadata = {
+              calculatedAt: new Date(),
+              calculationVersion: "2.0",
+              itemCount: Object.keys(evaluationData.ratings).filter(k => !k.includes('comment')).length
+            };
+
+            console.log("API: Skill dimension scores calculated:", calculatedScores);
+          }
+        } catch (calcError) {
+          console.error("API: Error calculating skill scores, continuing without them:", calcError);
+          // スコア計算の失敗は評価保存を妨げない
+        }
+      }
+
       let docRef;
       if (evaluationData.id) {
         // 更新
@@ -2070,8 +2103,30 @@ export class API {
         evaluation.id = docRef.id;
         await setDoc(docRef, evaluation);
       }
-      
+
       console.log("API: Evaluation saved successfully:", docRef.id);
+
+      // 完了状態の評価の場合、スキル履歴を記録
+      if (evaluation.status === 'completed' && evaluation.skillDimensionScores) {
+        try {
+          await this.recordSkillHistory({
+            ...evaluation,
+            id: docRef.id
+          });
+        } catch (historyError) {
+          console.error("API: Error recording skill history:", historyError);
+          // 履歴記録の失敗は評価保存を妨げない
+        }
+
+        // 組織プロファイル更新をトリガー
+        try {
+          await this.triggerOrganizationProfileUpdate(currentUser.tenantId);
+        } catch (profileError) {
+          console.error("API: Error triggering profile update:", profileError);
+          // プロファイル更新トリガーの失敗は評価保存を妨げない
+        }
+      }
+
       return { success: true, id: docRef.id };
 
     } catch (error) {
@@ -3169,11 +3224,11 @@ export class API {
     }
   }
 
-  // 組織構造取得  
+  // 組織構造取得
   async getOrganizationStructure() {
     try {
       // 一時認証システム使用時はモックデータを返す
-      if (window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE || 
+      if (window.FORCE_TEMP_AUTH || window.DISABLE_FIREBASE ||
           (this.app.currentUser && this.app.currentUser.isTemp)) {
         const tempAuthModule = await import('./temp-auth-v2.js');
         return new tempAuthModule.TempAuth().getMockOrganizationStructure();
@@ -3184,6 +3239,293 @@ export class API {
       return new tempAuthModule.TempAuth().getMockOrganizationStructure();
     } catch (error) {
       console.error("API: Error loading organization structure:", error);
+      throw error;
+    }
+  }
+
+  // ===== Skill Dimension Score Calculation =====
+
+  /**
+   * スキルディメンションスコアの計算
+   * @param {Object} ratings - 評価項目と点数のオブジェクト
+   * @param {Object} structure - 評価構造
+   * @returns {Object} 計算されたスコア
+   */
+  async calculateSkillDimensionScores(ratings, structure) {
+    try {
+      const dimensionScores = {};
+      const categoryScores = {};
+
+      // 各カテゴリを処理
+      for (const category of structure.categories || []) {
+        let categoryTotal = 0;
+        let categoryWeight = 0;
+
+        // 各評価項目を処理
+        for (const item of category.items || []) {
+          const score = parseFloat(ratings[item.id]) || 0;
+          const weight = item.weight || 1.0;
+
+          // スキルディメンションごとに集計
+          const dimension = item.skillDimension;
+          if (dimension) {
+            if (!dimensionScores[dimension]) {
+              dimensionScores[dimension] = {
+                total: 0,
+                weight: 0,
+                count: 0
+              };
+            }
+
+            dimensionScores[dimension].total += score * weight;
+            dimensionScores[dimension].weight += weight;
+            dimensionScores[dimension].count += 1;
+          }
+
+          // カテゴリスコアの計算
+          categoryTotal += score * weight;
+          categoryWeight += weight;
+        }
+
+        // カテゴリの重み付き平均
+        categoryScores[category.id] = categoryWeight > 0
+          ? categoryTotal / categoryWeight
+          : 0;
+      }
+
+      // スキルディメンションの重み付き平均を計算
+      const finalDimensionScores = {};
+      for (const [dimension, data] of Object.entries(dimensionScores)) {
+        finalDimensionScores[dimension] = data.weight > 0
+          ? parseFloat((data.total / data.weight).toFixed(2))
+          : 0;
+      }
+
+      // 総合スコアの計算（カテゴリの重み付き平均）
+      let finalScoreTotal = 0;
+      let finalScoreWeight = 0;
+
+      for (const category of structure.categories || []) {
+        const categoryWeight = category.weight || 1.0;
+        const categoryScore = categoryScores[category.id] || 0;
+
+        finalScoreTotal += categoryScore * categoryWeight;
+        finalScoreWeight += categoryWeight;
+      }
+
+      const finalScore = finalScoreWeight > 0
+        ? parseFloat((finalScoreTotal / finalScoreWeight).toFixed(2))
+        : 0;
+
+      return {
+        dimensionScores: finalDimensionScores,
+        categoryScores: categoryScores,
+        finalScore: finalScore
+      };
+    } catch (error) {
+      console.error("API: Error calculating skill dimension scores:", error);
+      return {
+        dimensionScores: {},
+        categoryScores: {},
+        finalScore: 0
+      };
+    }
+  }
+
+  /**
+   * スキル履歴の記録
+   * @param {Object} evaluation - 評価データ
+   */
+  async recordSkillHistory(evaluation) {
+    try {
+      const historyDoc = {
+        userId: evaluation.targetUserId,
+        userName: evaluation.targetUserName,
+        jobTypeId: evaluation.jobTypeId,
+        periodId: evaluation.periodId,
+        evaluationId: evaluation.id,
+        evaluatedAt: evaluation.submittedAt || new Date(),
+
+        skillScores: evaluation.skillDimensionScores,
+        overallScore: evaluation.finalScore,
+
+        tenantId: evaluation.tenantId,
+        createdAt: serverTimestamp()
+      };
+
+      // 前回のスコアを取得して変化を計算
+      const previousHistory = await this.getLatestSkillHistory(
+        evaluation.targetUserId,
+        evaluation.periodId
+      );
+
+      if (previousHistory) {
+        const changes = {};
+        for (const [dimension, score] of Object.entries(
+          evaluation.skillDimensionScores || {}
+        )) {
+          const prevScore = previousHistory.skillScores?.[dimension] || 0;
+          changes[dimension] = parseFloat((score - prevScore).toFixed(2));
+        }
+
+        historyDoc.changes = changes;
+        historyDoc.growthRate = {
+          overall: previousHistory.overallScore > 0
+            ? parseFloat(((evaluation.finalScore - previousHistory.overallScore) /
+              previousHistory.overallScore).toFixed(2))
+            : 0
+        };
+      }
+
+      // 履歴を保存
+      const historyRef = doc(collection(this.db, "userSkillHistory"));
+      await setDoc(historyRef, historyDoc);
+
+      console.log("API: Skill history recorded:", historyRef.id);
+
+    } catch (error) {
+      console.error("API: Error recording skill history:", error);
+      // 履歴記録の失敗は評価保存を妨げない
+    }
+  }
+
+  /**
+   * 最新のスキル履歴を取得
+   * @param {string} userId - ユーザーID
+   * @param {string} currentPeriodId - 現在の評価期間ID（除外）
+   * @returns {Object|null} 最新のスキル履歴
+   */
+  async getLatestSkillHistory(userId, currentPeriodId) {
+    try {
+      const historyQuery = query(
+        collection(this.db, "userSkillHistory"),
+        where("userId", "==", userId),
+        orderBy("evaluatedAt", "desc"),
+        limit(1)
+      );
+
+      const snapshot = await getDocs(historyQuery);
+
+      if (snapshot.empty) {
+        return null;
+      }
+
+      const latestDoc = snapshot.docs[0];
+      const data = latestDoc.data();
+
+      // 同じ評価期間のデータは除外
+      if (data.periodId === currentPeriodId) {
+        return null;
+      }
+
+      return {
+        id: latestDoc.id,
+        ...data
+      };
+
+    } catch (error) {
+      console.error("API: Error getting latest skill history:", error);
+      return null;
+    }
+  }
+
+  /**
+   * 組織プロファイル更新のトリガー
+   * @param {string} tenantId - テナントID
+   */
+  async triggerOrganizationProfileUpdate(tenantId) {
+    try {
+      // 更新リクエストをキューに追加
+      await setDoc(
+        doc(this.db, "organizationProfileUpdateQueue", tenantId),
+        {
+          tenantId: tenantId,
+          requestedAt: serverTimestamp(),
+          status: "pending"
+        },
+        { merge: true }
+      );
+
+      console.log("API: Organization profile update triggered for tenant:", tenantId);
+
+    } catch (error) {
+      console.error("API: Error triggering profile update:", error);
+      // 更新トリガーの失敗は評価保存を妨げない
+    }
+  }
+
+  /**
+   * スキルディメンション一覧を取得
+   * @returns {Array} スキルディメンションのリスト
+   */
+  async getSkillDimensions() {
+    try {
+      const dimensionsQuery = query(
+        collection(this.db, "skillDimensions"),
+        where("isActive", "==", true),
+        orderBy("displayOrder", "asc")
+      );
+
+      const snapshot = await getDocs(dimensionsQuery);
+      const dimensions = [];
+
+      snapshot.forEach((doc) => {
+        dimensions.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+
+      return dimensions;
+
+    } catch (error) {
+      console.error("API: Error loading skill dimensions:", error);
+      return [];
+    }
+  }
+
+  /**
+   * 組織スキルプロファイルを取得
+   * @param {string} periodId - 評価期間ID（オプション）
+   * @returns {Object} 組織スキルプロファイル
+   */
+  async getOrganizationSkillProfile(periodId = null) {
+    try {
+      const currentUser = await this.getCurrentUserData();
+      if (!currentUser || !currentUser.tenantId) {
+        throw new Error("テナント情報が見つかりません");
+      }
+
+      let profileQuery = query(
+        collection(this.db, "organizationSkillProfiles"),
+        where("tenantId", "==", currentUser.tenantId),
+        orderBy("generatedAt", "desc"),
+        limit(1)
+      );
+
+      if (periodId) {
+        profileQuery = query(
+          collection(this.db, "organizationSkillProfiles"),
+          where("tenantId", "==", currentUser.tenantId),
+          where("periodId", "==", periodId),
+          limit(1)
+        );
+      }
+
+      const snapshot = await getDocs(profileQuery);
+
+      if (snapshot.empty) {
+        console.log("API: No organization skill profile found");
+        return null;
+      }
+
+      return {
+        id: snapshot.docs[0].id,
+        ...snapshot.docs[0].data()
+      };
+
+    } catch (error) {
+      console.error("API: Error loading organization skill profile:", error);
       throw error;
     }
   }
