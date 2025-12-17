@@ -35,7 +35,10 @@ const TRANSLATIONS = {
       evaluation_periods: "評価期間設定",
       data_settings: "データ設定",
       developer: "開発者管理",
-      profile: "プロフィール"
+      profile: "プロフィール",
+      skill_map: "スキルマップ",
+      skill_comparison: "スキル比較",
+      skill_trend_report: "スキル推移"
     },
 
     // ===== ダッシュボード =====
@@ -541,7 +544,10 @@ const TRANSLATIONS = {
       evaluation_periods: "Evaluation Periods",
       data_settings: "Data Settings",
       developer: "Developer",
-      profile: "Profile"
+      profile: "Profile",
+      skill_map: "Skill Map",
+      skill_comparison: "Skill Comparison",
+      skill_trend_report: "Skill Trends"
     },
 
     dashboard: {
@@ -815,7 +821,10 @@ const TRANSLATIONS = {
       evaluation_periods: "Chu kỳ đánh giá",
       data_settings: "Cài đặt dữ liệu",
       developer: "Nhà phát triển",
-      profile: "Hồ sơ"
+      profile: "Hồ sơ",
+      skill_map: "Bản đồ kỹ năng",
+      skill_comparison: "So sánh kỹ năng",
+      skill_trend_report: "Xu hướng kỹ năng"
     },
 
     dashboard: {
