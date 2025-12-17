@@ -46,6 +46,11 @@ export class EvaluationReportDetailPage {
             <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#summary-tab" data-i18n="report.summary"></button>
           </li>
           <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#skill-analysis-tab">
+              <i class="fas fa-brain me-1"></i>スキル分析
+            </button>
+          </li>
+          <li class="nav-item">
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#comparison-tab" data-i18n="report.comparison"></button>
           </li>
           <li class="nav-item">
@@ -55,6 +60,7 @@ export class EvaluationReportDetailPage {
 
         <div class="tab-content">
           ${this.renderSummaryTab()}
+          ${this.renderSkillAnalysisTab()}
           ${this.renderComparisonTab()}
           ${this.renderHistoryTab()}
         </div>
@@ -159,6 +165,148 @@ export class EvaluationReportDetailPage {
               ` : ''}
             </div>
             ` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderSkillAnalysisTab() {
+    const skillScores = this.evaluation.skillDimensionScores || {};
+    const hasSkillData = Object.keys(skillScores).length > 0;
+
+    // スキルディメンション名の日本語マッピング
+    const skillNameMap = {
+      technical_skills: '技術スキル',
+      communication: 'コミュニケーション',
+      teamwork: 'チームワーク',
+      leadership: 'リーダーシップ',
+      problem_solving: '問題解決力',
+      safety_awareness: '安全意識',
+      efficiency: '作業効率',
+      work_quality: '作業品質',
+      precision: '精密性',
+      creativity: '創造性',
+      planning: '計画性',
+      analytical_skills: '分析力',
+      responsibility: '責任感',
+      attention_to_detail: '注意力'
+    };
+
+    if (!hasSkillData) {
+      return `
+        <div class="tab-pane fade" id="skill-analysis-tab">
+          <div class="card">
+            <div class="card-body text-center py-5">
+              <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+              <h5 class="text-muted">スキル分析データがありません</h5>
+              <p class="text-muted">この評価にはスキルディメンションデータが含まれていません。</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="tab-pane fade" id="skill-analysis-tab">
+        <div class="row">
+          <div class="col-md-8 mb-4">
+            <div class="card">
+              <div class="card-body">
+                <h4 class="card-title mb-4">
+                  <i class="fas fa-chart-radar me-2"></i>スキルディメンション分析
+                </h4>
+                <canvas id="skillDimensionChart"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-4">
+            <div class="card">
+              <div class="card-body">
+                <h4 class="card-title mb-4">
+                  <i class="fas fa-list me-2"></i>スキル別スコア
+                </h4>
+                <div class="skill-scores-list">
+                  ${Object.entries(skillScores)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([skill, score]) => {
+                      const skillName = skillNameMap[skill] || skill;
+                      const percentage = (score / 5) * 100;
+                      const colorClass = score >= 4 ? 'success' : score >= 3 ? 'primary' : score >= 2 ? 'warning' : 'danger';
+
+                      return `
+                        <div class="mb-3">
+                          <div class="d-flex justify-content-between mb-1">
+                            <small class="fw-bold">${this.app.sanitizeHtml(skillName)}</small>
+                            <small class="text-muted">${score.toFixed(2)} / 5.0</small>
+                          </div>
+                          <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-${colorClass}" role="progressbar"
+                                 style="width: ${percentage}%"
+                                 aria-valuenow="${score}"
+                                 aria-valuemin="0"
+                                 aria-valuemax="5">
+                              ${score.toFixed(1)}
+                            </div>
+                          </div>
+                        </div>
+                      `;
+                    }).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-body">
+                <h4 class="card-title mb-4">
+                  <i class="fas fa-trophy me-2"></i>強みと改善点
+                </h4>
+                <div class="row">
+                  <div class="col-md-6">
+                    <h5 class="text-success">
+                      <i class="fas fa-star me-2"></i>強み（上位3つ）
+                    </h5>
+                    <ul class="list-group">
+                      ${Object.entries(skillScores)
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 3)
+                        .map(([skill, score]) => {
+                          const skillName = skillNameMap[skill] || skill;
+                          return `
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                              ${this.app.sanitizeHtml(skillName)}
+                              <span class="badge bg-success rounded-pill">${score.toFixed(2)}</span>
+                            </li>
+                          `;
+                        }).join('')}
+                    </ul>
+                  </div>
+                  <div class="col-md-6">
+                    <h5 class="text-warning">
+                      <i class="fas fa-exclamation-triangle me-2"></i>改善が推奨される項目
+                    </h5>
+                    <ul class="list-group">
+                      ${Object.entries(skillScores)
+                        .sort((a, b) => a[1] - b[1])
+                        .slice(0, 3)
+                        .map(([skill, score]) => {
+                          const skillName = skillNameMap[skill] || skill;
+                          return `
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                              ${this.app.sanitizeHtml(skillName)}
+                              <span class="badge bg-warning rounded-pill">${score.toFixed(2)}</span>
+                            </li>
+                          `;
+                        }).join('')}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -398,6 +546,75 @@ export class EvaluationReportDetailPage {
             r: {
               beginAtZero: true,
               max: 5
+            }
+          }
+        }
+      });
+    }
+
+    // スキルディメンションチャート
+    const skillCanvas = document.getElementById('skillDimensionChart');
+    if (skillCanvas && typeof Chart !== 'undefined' && this.evaluation.skillDimensionScores) {
+      const skillNameMap = {
+        technical_skills: '技術スキル',
+        communication: 'コミュニケーション',
+        teamwork: 'チームワーク',
+        leadership: 'リーダーシップ',
+        problem_solving: '問題解決力',
+        safety_awareness: '安全意識',
+        efficiency: '作業効率',
+        work_quality: '作業品質',
+        precision: '精密性',
+        creativity: '創造性',
+        planning: '計画性',
+        analytical_skills: '分析力',
+        responsibility: '責任感',
+        attention_to_detail: '注意力'
+      };
+
+      const skillScores = this.evaluation.skillDimensionScores;
+      const skillLabels = Object.keys(skillScores).map(skill => skillNameMap[skill] || skill);
+      const skillData = Object.values(skillScores);
+
+      new Chart(skillCanvas.getContext('2d'), {
+        type: 'radar',
+        data: {
+          labels: skillLabels,
+          datasets: [{
+            label: 'スキルスコア',
+            data: skillData,
+            borderColor: 'rgba(153, 102, 255, 1)',
+            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+            borderWidth: 2,
+            pointBackgroundColor: 'rgba(153, 102, 255, 1)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgba(153, 102, 255, 1)'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          scales: {
+            r: {
+              beginAtZero: true,
+              max: 5,
+              ticks: {
+                stepSize: 1
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top'
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.dataset.label + ': ' + context.parsed.r.toFixed(2) + ' / 5.0';
+                }
+              }
             }
           }
         }
