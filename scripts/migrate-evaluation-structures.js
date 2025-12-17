@@ -6,27 +6,14 @@
  *   node scripts/migrate-evaluation-structures.js
  */
 
-import { initializeApp } from 'firebase/app';
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  updateDoc,
-  doc
-} from 'firebase/firestore';
+import 'dotenv/config';
+import admin from 'firebase-admin';
+import { readFileSync } from 'fs';
 
-// Firebase設定を環境変数または設定ファイルから読み込む
-// 本番環境では適切な設定を使用してください
-const firebaseConfig = {
-  // プロジェクトの設定をここに記述
-  // または環境変数から読み込む
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.FIREBASE_APP_ID
-};
+// Firebase Admin SDKの初期化
+const serviceAccount = JSON.parse(
+  readFileSync('./serviceAccountKey.json', 'utf8')
+);
 
 // スキルディメンションマッピング定義
 // 評価項目名からスキルディメンションへのマッピング
@@ -81,15 +68,16 @@ async function migrateEvaluationStructures() {
   console.log('=========================================\n');
 
   try {
-    // Firebase初期化
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    // Firebase Admin初期化
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+    const db = admin.firestore();
 
-    console.log('✓ Firebase initialized successfully\n');
+    console.log('✓ Firebase Admin initialized successfully\n');
 
     // 評価構造を取得
-    const structuresRef = collection(db, 'evaluationStructures');
-    const snapshot = await getDocs(structuresRef);
+    const snapshot = await db.collection('evaluationStructures').get();
 
     console.log(`Found ${snapshot.size} evaluation structure(s)\n`);
 
@@ -191,7 +179,7 @@ async function migrateEvaluationStructures() {
       // 変更があれば更新
       if (modified) {
         try {
-          await updateDoc(doc(db, 'evaluationStructures', structureId), structure);
+          await db.collection('evaluationStructures').doc(structureId).update(structure);
           updated++;
           console.log('  ✓ Updated successfully');
           if (updates.length > 0) {

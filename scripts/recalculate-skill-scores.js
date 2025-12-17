@@ -10,18 +10,9 @@
  *   --limit=N    : 処理する評価の最大数を指定
  */
 
-import { initializeApp } from 'firebase/app';
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  getDoc,
-  updateDoc,
-  doc,
-  query,
-  where,
-  limit as firestoreLimit
-} from 'firebase/firestore';
+import 'dotenv/config';
+import admin from 'firebase-admin';
+import { readFileSync } from 'fs';
 
 // コマンドライン引数の解析
 const args = process.argv.slice(2);
@@ -29,15 +20,10 @@ const isDryRun = args.includes('--dry-run');
 const limitArg = args.find(arg => arg.startsWith('--limit='));
 const processLimit = limitArg ? parseInt(limitArg.split('=')[1]) : null;
 
-// Firebase設定
-const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.FIREBASE_APP_ID
-};
+// Firebase Admin SDKの初期化
+const serviceAccount = JSON.parse(
+  readFileSync('./serviceAccountKey.json', 'utf8')
+);
 
 /**
  * スキルディメンションスコアの計算
@@ -123,20 +109,22 @@ async function recalculateSkillScores() {
   }
 
   try {
-    // Firebase初期化
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    // Firebase Admin初期化
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+    const db = admin.firestore();
 
-    console.log('✓ Firebase initialized successfully\n');
+    console.log('✓ Firebase Admin initialized successfully\n');
 
     // 評価データを取得
-    let evaluationsQuery = collection(db, 'evaluations');
+    let evaluationsQuery = db.collection('evaluations');
 
     if (processLimit) {
-      evaluationsQuery = query(evaluationsQuery, firestoreLimit(processLimit));
+      evaluationsQuery = evaluationsQuery.limit(processLimit);
     }
 
-    const snapshot = await getDocs(evaluationsQuery);
+    const snapshot = await evaluationsQuery.get();
 
     console.log(`Found ${snapshot.size} evaluation(s)\n`);
 
@@ -178,11 +166,9 @@ async function recalculateSkillScores() {
 
       try {
         // 評価構造を取得
-        const structuresQuery = query(
-          collection(db, 'evaluationStructures'),
-          where('jobTypeId', '==', evaluation.jobTypeId)
-        );
-        const structuresSnapshot = await getDocs(structuresQuery);
+        const structuresSnapshot = await db.collection('evaluationStructures')
+          .where('jobTypeId', '==', evaluation.jobTypeId)
+          .get();
 
         if (structuresSnapshot.empty) {
           console.log(`  - No structure found for jobType: ${evaluation.jobTypeId}`);
@@ -231,7 +217,7 @@ async function recalculateSkillScores() {
 
         // 更新実行（dry-runでない場合）
         if (!isDryRun) {
-          await updateDoc(doc(db, 'evaluations', evaluationId), updateData);
+          await db.collection('evaluations').doc(evaluationId).update(updateData);
           console.log('  ✓ Updated in Firestore');
           updated++;
         } else {
