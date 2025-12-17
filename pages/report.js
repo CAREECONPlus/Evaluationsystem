@@ -2844,6 +2844,7 @@ export class EvaluationReportPage {
 
   /**
    * 組織統計を計算
+   * skillDimensionScores と ratings の両方に対応
    */
   calculateOrganizationStatistics(allEvaluations) {
     if (!allEvaluations || allEvaluations.length === 0) {
@@ -2857,45 +2858,119 @@ export class EvaluationReportPage {
     }
 
     const completedEvaluations = allEvaluations.filter(e => e.status === 'completed');
-    const totalScore = completedEvaluations.reduce((sum, e) => sum + (e.totalScore || 0), 0);
-    const avgScore = completedEvaluations.length > 0 ? totalScore / completedEvaluations.length : 0;
-    
+
+    // skillDimensionScoresを持つ評価を優先
+    const skillDimensionEvaluations = allEvaluations.filter(e =>
+      e.skillDimensionScores && Object.keys(e.skillDimensionScores).length > 0
+    );
+
+    const useSkillDimensions = skillDimensionEvaluations.length > 0;
+    const evaluationsForCalc = useSkillDimensions ? skillDimensionEvaluations : completedEvaluations;
+
+    // 平均スコアを計算
+    let avgScore = 0;
+    if (useSkillDimensions) {
+      // skillDimensionScoresから平均を計算
+      let totalScore = 0;
+      let scoreCount = 0;
+      evaluationsForCalc.forEach(e => {
+        if (e.skillDimensionScores) {
+          const scores = Object.values(e.skillDimensionScores);
+          totalScore += scores.reduce((sum, score) => sum + score, 0);
+          scoreCount += scores.length;
+        }
+      });
+      avgScore = scoreCount > 0 ? totalScore / scoreCount : 0;
+    } else {
+      // totalScoreから平均を計算（既存ロジック）
+      const totalScore = evaluationsForCalc.reduce((sum, e) => sum + (e.totalScore || 0), 0);
+      avgScore = evaluationsForCalc.length > 0 ? totalScore / evaluationsForCalc.length : 0;
+    }
+
     // ユニークなユーザー数を算出
     const uniqueUsers = new Set(allEvaluations.map(e => e.targetUserId)).size;
-    
+
     return {
       totalEmployees: uniqueUsers,
-      evaluationRate: allEvaluations.length > 0 ? (completedEvaluations.length / allEvaluations.length) * 100 : 0,
+      evaluationRate: allEvaluations.length > 0 ? (evaluationsForCalc.length / allEvaluations.length) * 100 : 0,
       averageScore: avgScore,
-      strongSkills: this.countSkillsAboveThreshold(completedEvaluations, 4.0),
-      weakSkills: this.countSkillsBelowThreshold(completedEvaluations, 3.0)
+      strongSkills: this.countSkillsAboveThreshold(evaluationsForCalc, 4.0, useSkillDimensions),
+      weakSkills: this.countSkillsBelowThreshold(evaluationsForCalc, 3.0, useSkillDimensions)
     };
   }
 
   /**
    * 閾値以上のスキル数をカウント
+   * skillDimensionScores と ratings の両方に対応
    */
-  countSkillsAboveThreshold(evaluations, threshold) {
-    return evaluations.reduce((count, evaluation) => {
-      if (evaluation.ratings) {
-        const highRatings = Object.values(evaluation.ratings).filter(rating => rating >= threshold);
-        return count + highRatings.length;
+  countSkillsAboveThreshold(evaluations, threshold, useSkillDimensions = false) {
+    const skillAverages = {};
+    const skillCounts = {};
+
+    evaluations.forEach(evaluation => {
+      const scores = useSkillDimensions ? evaluation.skillDimensionScores : evaluation.ratings;
+
+      if (scores) {
+        Object.entries(scores).forEach(([skill, rating]) => {
+          if (typeof rating === 'number') {
+            if (!skillAverages[skill]) {
+              skillAverages[skill] = 0;
+              skillCounts[skill] = 0;
+            }
+            skillAverages[skill] += rating;
+            skillCounts[skill]++;
+          }
+        });
       }
-      return count;
-    }, 0);
+    });
+
+    // 平均を計算して閾値以上のスキルをカウント
+    let count = 0;
+    Object.keys(skillAverages).forEach(skill => {
+      const avg = skillAverages[skill] / skillCounts[skill];
+      if (avg >= threshold) {
+        count++;
+      }
+    });
+
+    return count;
   }
 
   /**
    * 閾値以下のスキル数をカウント
+   * skillDimensionScores と ratings の両方に対応
    */
-  countSkillsBelowThreshold(evaluations, threshold) {
-    return evaluations.reduce((count, evaluation) => {
-      if (evaluation.ratings) {
-        const lowRatings = Object.values(evaluation.ratings).filter(rating => rating <= threshold);
-        return count + lowRatings.length;
+  countSkillsBelowThreshold(evaluations, threshold, useSkillDimensions = false) {
+    const skillAverages = {};
+    const skillCounts = {};
+
+    evaluations.forEach(evaluation => {
+      const scores = useSkillDimensions ? evaluation.skillDimensionScores : evaluation.ratings;
+
+      if (scores) {
+        Object.entries(scores).forEach(([skill, rating]) => {
+          if (typeof rating === 'number') {
+            if (!skillAverages[skill]) {
+              skillAverages[skill] = 0;
+              skillCounts[skill] = 0;
+            }
+            skillAverages[skill] += rating;
+            skillCounts[skill]++;
+          }
+        });
       }
-      return count;
-    }, 0);
+    });
+
+    // 平均を計算して閾値以下のスキルをカウント
+    let count = 0;
+    Object.keys(skillAverages).forEach(skill => {
+      const avg = skillAverages[skill] / skillCounts[skill];
+      if (avg < threshold) {
+        count++;
+      }
+    });
+
+    return count;
   }
 
   /**
@@ -2914,10 +2989,22 @@ export class EvaluationReportPage {
 
   /**
    * 組織のスキル分析
+   * skillDimensionScores と ratings の両方に対応
    */
   analyzeOrganizationSkills(evaluations) {
-    const completedEvaluations = evaluations.filter(e => e.status === 'completed' && e.ratings);
-    
+    // skillDimensionScores を持つ評価を優先
+    const skillDimensionEvaluations = evaluations.filter(e =>
+      e.skillDimensionScores && Object.keys(e.skillDimensionScores).length > 0
+    );
+
+    const ratingsEvaluations = evaluations.filter(e =>
+      e.status === 'completed' && e.ratings && Object.keys(e.ratings).length > 0
+    );
+
+    const completedEvaluations = skillDimensionEvaluations.length > 0
+      ? skillDimensionEvaluations
+      : ratingsEvaluations;
+
     if (completedEvaluations.length === 0) {
       return {
         topSkills: [],
@@ -2928,17 +3015,22 @@ export class EvaluationReportPage {
 
     const skillAverages = {};
     const skillCounts = {};
+    const useSkillDimensions = skillDimensionEvaluations.length > 0;
 
     // 各スキルの平均値を計算
     completedEvaluations.forEach(evaluation => {
-      if (evaluation.ratings) {
-        Object.entries(evaluation.ratings).forEach(([skill, rating]) => {
-          if (!skillAverages[skill]) {
-            skillAverages[skill] = 0;
-            skillCounts[skill] = 0;
+      const scores = useSkillDimensions ? evaluation.skillDimensionScores : evaluation.ratings;
+
+      if (scores) {
+        Object.entries(scores).forEach(([skill, rating]) => {
+          if (typeof rating === 'number') {
+            if (!skillAverages[skill]) {
+              skillAverages[skill] = 0;
+              skillCounts[skill] = 0;
+            }
+            skillAverages[skill] += rating;
+            skillCounts[skill]++;
           }
-          skillAverages[skill] += rating;
-          skillCounts[skill]++;
         });
       }
     });
@@ -2955,24 +3047,51 @@ export class EvaluationReportPage {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([skill, score]) => ({
-        name: this.getSkillCategoryName(skill),
+        name: this.getSkillDisplayName(skill, useSkillDimensions),
         score: score.toFixed(1)
       }));
 
     const improvementAreas = skillEntries
-      .filter(([_, score]) => score < 3.0)
+      .filter(([_, score]) => score < 3.5)
       .sort((a, b) => a[1] - b[1])
       .slice(0, 5)
       .map(([skill, score]) => ({
-        name: this.getSkillCategoryName(skill),
+        name: this.getSkillDisplayName(skill, useSkillDimensions),
         score: score.toFixed(1)
       }));
 
     return {
       topSkills,
       improvementAreas,
-      skillDistribution: skillAverages
+      skillDistribution: skillAverages,
+      useSkillDimensions: useSkillDimensions
     };
+  }
+
+  /**
+   * スキル表示名を取得（skillDimensionScores用のマッピングを追加）
+   */
+  getSkillDisplayName(skillKey, useSkillDimensions) {
+    if (useSkillDimensions) {
+      const skillDimensionMap = {
+        technical_skills: '技術スキル',
+        communication: 'コミュニケーション',
+        teamwork: 'チームワーク',
+        leadership: 'リーダーシップ',
+        problem_solving: '問題解決力',
+        safety_awareness: '安全意識',
+        efficiency: '作業効率',
+        work_quality: '作業品質',
+        precision: '精密性',
+        creativity: '創造性',
+        planning: '計画性',
+        analytical_skills: '分析力',
+        responsibility: '責任感',
+        attention_to_detail: '注意力'
+      };
+      return skillDimensionMap[skillKey] || skillKey;
+    }
+    return this.getSkillCategoryName(skillKey);
   }
 
   /**
