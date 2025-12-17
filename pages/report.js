@@ -689,6 +689,29 @@ export class EvaluationReportPage {
           </div>
         </div>
 
+        <!-- スキルディメンション分析 -->
+        <div class="row mb-4">
+          <div class="col-12 mb-4">
+            <div class="chart-card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                  <i class="fas fa-brain me-2 text-info"></i>スキルディメンション成長トレンド
+                </h5>
+                <span class="badge bg-info">Phase 2 New Feature</span>
+              </div>
+              <div class="card-body">
+                <div id="skillDimensionTrendContainer">
+                  <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>スキルデータを読み込んでいます...</p>
+                  </div>
+                </div>
+                <canvas id="skillDimensionTrendChart" style="display:none;"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 改善ポイントと強み -->
         <div class="row mb-4">
           <div class="col-lg-6 mb-4">
@@ -1300,6 +1323,7 @@ export class EvaluationReportPage {
       // チャートの描画
       await this.renderPersonalTrendChart();
       await this.renderPersonalRadarChart();
+      await this.renderSkillDimensionTrendChart();
       await this.renderImprovementPoints();
       await this.renderStrengthPoints();
 
@@ -1510,6 +1534,174 @@ export class EvaluationReportPage {
         }
       }
     });
+  }
+
+  /**
+   * スキルディメンション成長トレンドチャート
+   */
+  async renderSkillDimensionTrendChart() {
+    const canvas = document.getElementById('skillDimensionTrendChart');
+    const container = document.getElementById('skillDimensionTrendContainer');
+
+    if (!canvas || typeof Chart === 'undefined') {
+      console.warn("Reports: Cannot render skill dimension trend chart");
+      if (container) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-info-circle"></i>
+            <p>チャートライブラリが利用できません</p>
+          </div>
+        `;
+      }
+      return;
+    }
+
+    // スキルディメンションデータを評価から抽出
+    const evaluations = this.reportData?.evaluations || [];
+    const skillDimensionData = this.extractSkillDimensionTrends(evaluations);
+
+    if (!skillDimensionData || skillDimensionData.labels.length === 0) {
+      if (container) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-chart-line"></i>
+            <p>スキルディメンションデータがありません</p>
+            <small class="text-muted">評価にskillDimensionScoresが含まれている必要があります</small>
+          </div>
+        `;
+      }
+      return;
+    }
+
+    // コンテナを非表示にし、キャンバスを表示
+    if (container) container.style.display = 'none';
+    canvas.style.display = 'block';
+
+    // 既存のチャートを破棄
+    if (this.chartInstances && this.chartInstances.skillDimensionTrend) {
+      this.chartInstances.skillDimensionTrend.destroy();
+      delete this.chartInstances.skillDimensionTrend;
+    }
+
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
+    }
+
+    const ctx = canvas.getContext('2d');
+
+    this.chartInstances.skillDimensionTrend = new Chart(ctx, {
+      type: 'line',
+      data: skillDimensionData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 5,
+            ticks: {
+              stepSize: 0.5
+            },
+            title: {
+              display: true,
+              text: 'スキルスコア'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: '評価期間'
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + ' / 5.0';
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  /**
+   * 評価データからスキルディメンショントレンドを抽出
+   */
+  extractSkillDimensionTrends(evaluations) {
+    if (!evaluations || evaluations.length === 0) {
+      return null;
+    }
+
+    // スキルディメンションデータを持つ評価のみフィルタ
+    const skillEvaluations = evaluations.filter(e => e.skillDimensionScores && Object.keys(e.skillDimensionScores).length > 0);
+
+    if (skillEvaluations.length === 0) {
+      return null;
+    }
+
+    // スキルディメンション名の日本語マッピング
+    const skillNameMap = {
+      technical_skills: '技術スキル',
+      communication: 'コミュニケーション',
+      teamwork: 'チームワーク',
+      leadership: 'リーダーシップ',
+      problem_solving: '問題解決力',
+      safety_awareness: '安全意識',
+      efficiency: '作業効率',
+      work_quality: '作業品質',
+      precision: '精密性',
+      creativity: '創造性',
+      planning: '計画性',
+      analytical_skills: '分析力',
+      responsibility: '責任感',
+      attention_to_detail: '注意力'
+    };
+
+    // 全スキルディメンションを収集
+    const allSkills = new Set();
+    skillEvaluations.forEach(e => {
+      Object.keys(e.skillDimensionScores).forEach(skill => allSkills.add(skill));
+    });
+
+    // ラベル生成（評価期間名または日付）
+    const labels = skillEvaluations.map(e => {
+      return e.periodName || new Date(e.createdAt?.seconds * 1000 || Date.now()).toLocaleDateString('ja-JP');
+    });
+
+    // 各スキルディメンションのデータセットを生成
+    const colorPalette = [
+      'rgba(153, 102, 255, 1)', 'rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)',
+      'rgba(255, 206, 86, 1)', 'rgba(75, 192, 192, 1)', 'rgba(255, 159, 64, 1)',
+      'rgba(199, 199, 199, 1)', 'rgba(83, 102, 255, 1)'
+    ];
+
+    const datasets = Array.from(allSkills).map((skill, index) => {
+      const color = colorPalette[index % colorPalette.length];
+      const data = skillEvaluations.map(e => e.skillDimensionScores[skill] || null);
+
+      return {
+        label: skillNameMap[skill] || skill,
+        data: data,
+        borderColor: color,
+        backgroundColor: color.replace('1)', '0.2)'),
+        borderWidth: 2,
+        fill: false,
+        tension: 0.1
+      };
+    });
+
+    return {
+      labels: labels,
+      datasets: datasets
+    };
   }
 
   /**
