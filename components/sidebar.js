@@ -276,6 +276,63 @@ export class SidebarComponent {
             </li>
             ` : ''}
 
+            ${isAdmin || isEvaluator ? `
+            <!-- スキル分析セクション -->
+            <li class="nav-divider my-2" role="none">
+              <hr class="border-light border-opacity-30 mx-3">
+            </li>
+            <li class="nav-item" role="none">
+              <div class="nav-section-header px-3 py-1">
+                <small class="text-white-50 fw-semibold">スキル分析</small>
+              </div>
+            </li>
+
+            <!-- スキルマップ -->
+            <li class="nav-item" role="none">
+              <a
+                class="nav-link text-white d-flex align-items-center ${this.isActive('/skill-map') ? 'active' : ''}"
+                href="#/skill-map"
+                data-link
+                role="menuitem"
+                aria-current="${this.isActive('/skill-map') ? 'page' : 'false'}"
+                tabindex="0"
+              >
+                <i class="fas fa-project-diagram nav-icon me-3" aria-hidden="true"></i>
+                <span data-i18n="nav.skill_map">スキルマップ</span>
+              </a>
+            </li>
+
+            <!-- スキル比較 -->
+            <li class="nav-item" role="none">
+              <a
+                class="nav-link text-white d-flex align-items-center ${this.isActive('/skill-comparison') ? 'active' : ''}"
+                href="#/skill-comparison"
+                data-link
+                role="menuitem"
+                aria-current="${this.isActive('/skill-comparison') ? 'page' : 'false'}"
+                tabindex="0"
+              >
+                <i class="fas fa-balance-scale nav-icon me-3" aria-hidden="true"></i>
+                <span data-i18n="nav.skill_comparison">スキル比較</span>
+              </a>
+            </li>
+
+            <!-- スキル推移レポート -->
+            <li class="nav-item" role="none">
+              <a
+                class="nav-link text-white d-flex align-items-center ${this.isActive('/skill-trend-report') ? 'active' : ''}"
+                href="#/skill-trend-report"
+                data-link
+                role="menuitem"
+                aria-current="${this.isActive('/skill-trend-report') ? 'page' : 'false'}"
+                tabindex="0"
+              >
+                <i class="fas fa-chart-line nav-icon me-3" aria-hidden="true"></i>
+                <span data-i18n="nav.skill_trend_report">スキル推移</span>
+              </a>
+            </li>
+            ` : ''}
+
             <!-- 区切り線 -->
             <li class="nav-divider my-3" role="none">
               <hr class="border-light border-opacity-30 mx-3">

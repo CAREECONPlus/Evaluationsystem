@@ -52,7 +52,18 @@
     "developer": "Nhà phát triển",
     "logout": "Đăng xuất",
     "profile": "Hồ sơ",
-    "evaluation": "Nhập đánh giá"
+    "evaluation": "Nhập đánh giá",
+    "help": "Trợ giúp",
+    "home": "Trang chủ",
+    "job_types": "Quản lý loại công việc",
+    "multilingual_admin": "Quản lý đa ngôn ngữ",
+    "organization_management": "Quản lý tổ chức",
+    "evaluation_periods": "Thiết lập kỳ đánh giá",
+    "self_evaluation": "Tự đánh giá",
+    "skill_map": "Bản đồ kỹ năng",
+    "skill_comparison": "So sánh kỹ năng",
+    "skill_trend_report": "Xu hướng kỹ năng",
+    "goal_setting": "Thiết lập mục tiêu"
   },
   "auth": {
     "login": "Đăng nhập",

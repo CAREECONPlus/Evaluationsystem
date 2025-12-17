@@ -22,6 +22,8 @@ import { TranslationQualityManagementPage } from "./pages/translation-quality-ma
 import { SelfEvaluationPage } from "./pages/self-evaluation.js"
 import { OrganizationManagementPage } from "./pages/organization-management.js"
 import { EvaluationPeriodsPage } from "./pages/evaluation-periods-v2.js"
+import { SkillComparisonPage } from "./pages/skill-comparison.js"
+import { SkillTrendReportPage } from "./pages/skill-trend-report.js"
 
 export class Router {
   constructor(app) {
@@ -153,6 +155,18 @@ export class Router {
         auth: true,
         roles: ["admin"],
         title: "評価期間設定",
+      },
+      "/skill-comparison": {
+        component: SkillComparisonPage,
+        auth: true,
+        roles: ["admin", "evaluator"],
+        title: "スキル比較",
+      },
+      "/skill-trend-report": {
+        component: SkillTrendReportPage,
+        auth: true,
+        roles: ["admin", "evaluator"],
+        title: "スキル推移レポート",
       },
     }
 

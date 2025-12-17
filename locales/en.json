@@ -52,7 +52,18 @@
     "developer": "Developer",
     "logout": "Logout",
     "profile": "Profile",
-    "evaluation": "Evaluation Input"
+    "evaluation": "Evaluation Input",
+    "help": "Help",
+    "home": "Home",
+    "job_types": "Job Types",
+    "multilingual_admin": "Multilingual Admin",
+    "organization_management": "Organization",
+    "evaluation_periods": "Evaluation Periods",
+    "self_evaluation": "Self Evaluation",
+    "skill_map": "Skill Map",
+    "skill_comparison": "Skill Comparison",
+    "skill_trend_report": "Skill Trends",
+    "goal_setting": "Goal Setting"
   },
   "auth": {
     "login": "Login",

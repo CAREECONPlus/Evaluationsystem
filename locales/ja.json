@@ -65,7 +65,15 @@
     "profile": "プロフィール",
     "evaluation": "評価入力",
     "help": "ヘルプ",
-    "home": "ホーム"
+    "home": "ホーム",
+    "job_types": "職種管理",
+    "multilingual_admin": "多言語管理",
+    "organization_management": "組織管理",
+    "evaluation_periods": "評価期間設定",
+    "self_evaluation": "自己評価",
+    "skill_map": "スキルマップ",
+    "skill_comparison": "スキル比較",
+    "skill_trend_report": "スキル推移"
   },
   "auth": {
     "login": "ログイン",
