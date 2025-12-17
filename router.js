@@ -5,6 +5,7 @@ import { UserManagementPage } from "./pages/user-management.js"
 import { EvaluationsPage } from "./pages/evaluations.js"
 import { EvaluationReportPage } from "./pages/report.js"
 import { EvaluationReportDetailPage } from "./pages/evaluation-report-detail.js"
+import { SkillMapPage } from "./pages/skill-map.js"
 import { SettingsPage } from "./pages/settings.js"
 import { EvaluationFormPage } from "./pages/evaluation-form.js"
 import { GoalSettingPage } from "./pages/goal-setting.js"
@@ -56,6 +57,12 @@ export class Router {
         component: EvaluationReportDetailPage,
         auth: true,
         title: "評価詳細レポート",
+      },
+      "/skill-map": {
+        component: SkillMapPage,
+        auth: true,
+        roles: ["admin", "evaluator"],
+        title: "スキルマップ",
       },
       "/settings": {
         component: SettingsPage,
