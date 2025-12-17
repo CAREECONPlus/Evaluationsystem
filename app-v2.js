@@ -1,4 +1,4 @@
-import { i18n } from "./i18n-v2.js?v=gh-pages-20250118"
+import { i18n } from "./i18n-v2.js?v=gh-pages-20251217"
 import { API } from "./api-v5.js?v=gh-pages-20250118"
 import { Auth } from "./auth-v4.js?v=gh-pages-20250118"
 import { Router } from "./router.js?v=gh-pages-20250118"
